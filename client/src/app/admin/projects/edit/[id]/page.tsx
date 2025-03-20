@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-
-// Proje statüsleri için tip tanımı
-type ProjectStatus = 'Planning' | 'InProgress' | 'Completed' | 'Cancelled';
+import { ProjectStatus, Project, TeamMember, Equipment } from '@/types/project';
 
 // Form verileri için arayüz
 interface FormData {
+  id: string;
   name: string;
-  client: string;
+  description: string;
+  customer: string;
   startDate: string;
   endDate: string;
   location: string;
@@ -19,42 +19,45 @@ interface FormData {
   budget: number;
   team: string[];
   equipment: string[];
-  description: string;
   notes: string;
 }
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  Planning: 'Planlama',
-  InProgress: 'Devam Ediyor',
-  Completed: 'Tamamlandı',
-  Cancelled: 'İptal Edildi',
+  'active': 'Aktif',
+  'planned': 'Planlandı',
+  'completed': 'Tamamlandı',
+  'cancelled': 'İptal Edildi',
+  'pending': 'Beklemede'
 };
 
-// Ekip üyesi seçimi için örnek veriler
-const sampleTeamMembers = [
-  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör' },
-  { id: '2', name: 'Mehmet Öz', role: 'Video Mühendisi' },
-  { id: '3', name: 'Ayşe Demir', role: 'Grafik Tasarımcı' },
-  { id: '4', name: 'Selin Yıldız', role: 'Proje Koordinatörü' },
-  { id: '5', name: 'Burak Aydın', role: 'Ses Mühendisi' },
-  { id: '6', name: 'Zeynep Kaya', role: 'Işık Şefi' },
-  { id: '7', name: 'Mustafa Çelik', role: 'LED Operatörü' },
-  { id: '8', name: 'Özge Yılmaz', role: 'Prodüksiyon Asistanı' },
-  { id: '9', name: 'Mert Demir', role: 'Teknik Destek' },
+// Örnek takım üyeleri
+const sampleTeamMembers: TeamMember[] = [
+  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör', email: 'ahmet.yilmaz@skpro.com', phone: '+90 532 111 1111', status: 'active' },
+  { id: '2', name: 'Mehmet Demir', role: 'Video Operatörü', email: 'mehmet.demir@skpro.com', phone: '+90 533 222 2222', status: 'active' },
+  { id: '3', name: 'Ayşe Kaya', role: 'Işık Operatörü', email: 'ayse.kaya@skpro.com', phone: '+90 534 333 3333', status: 'active' },
+  { id: '4', name: 'Can Öztürk', role: 'Ses Operatörü', email: 'can.ozturk@skpro.com', phone: '+90 535 444 4444', status: 'active' },
+  { id: '5', name: 'Zeynep Aydın', role: 'LED Operatörü', email: 'zeynep.aydin@skpro.com', phone: '+90 536 555 5555', status: 'active' },
+  { id: '6', name: 'Ali Çelik', role: 'Teknik Asistan', email: 'ali.celik@skpro.com', phone: '+90 537 666 6666', status: 'active' },
+  { id: '7', name: 'Fatma Şahin', role: 'Video Operatörü', email: 'fatma.sahin@skpro.com', phone: '+90 538 777 7777', status: 'active' },
+  { id: '8', name: 'Emre Yıldız', role: 'Ses Operatörü', email: 'emre.yildiz@skpro.com', phone: '+90 539 888 8888', status: 'active' },
+  { id: '9', name: 'Selin Arslan', role: 'Işık Operatörü', email: 'selin.arslan@skpro.com', phone: '+90 540 999 9999', status: 'active' },
+  { id: '10', name: 'Burak Kara', role: 'LED Operatörü', email: 'burak.kara@skpro.com', phone: '+90 541 000 0000', status: 'active' },
+  { id: '11', name: 'Deniz Yalçın', role: 'Teknik Asistan', email: 'deniz.yalcin@skpro.com', phone: '+90 542 111 0000', status: 'active' }
 ];
 
-// Ekipman seçimi için örnek veriler
-const sampleEquipments = [
-  { id: '1', name: 'Analog Way Aquilon RS4', category: 'VideoSwitcher' },
-  { id: '2', name: 'Dataton Watchpax 60', category: 'MediaServer' },
-  { id: '3', name: 'Blackmagic ATEM 4 M/E', category: 'VideoSwitcher' },
-  { id: '4', name: 'Barco UDX-4K32', category: 'Projector' },
-  { id: '5', name: 'Sony PVM-X2400', category: 'Monitor' },
-  { id: '6', name: 'Dell Precision 7920', category: 'Workstation' },
-  { id: '7', name: 'DiGiCo S31', category: 'AudioMixer' },
-  { id: '8', name: 'GrandMA3 Light', category: 'LightingConsole' },
-  { id: '9', name: 'Shure ULXD4', category: 'WirelessMicrophone' },
+// Örnek ekipmanlar
+const sampleEquipment: Equipment[] = [
+  { id: '1', name: 'Analog Way Aquilon RS4', model: 'Aquilon RS4', serialNumber: 'AW-123456', category: 'Video Switcher', status: 'available' },
+  { id: '2', name: 'Dataton Watchpax 60', model: 'Watchpax 60', serialNumber: 'DT-789012', category: 'Media Server', status: 'available' },
+  { id: '3', name: 'Blackmagic ATEM 4 M/E', model: 'ATEM 4 M/E Constellation HD', serialNumber: 'BM-345678', category: 'Video Switcher', status: 'available' },
+  { id: '4', name: 'Barco UDX-4K32', model: 'UDX-4K32', serialNumber: 'BC-901234', category: 'Projeksiyon', status: 'available' },
+  { id: '5', name: 'Sony PVM-X2400', model: 'PVM-X2400', serialNumber: 'SN-567890', category: 'Monitör', status: 'available' },
+  { id: '6', name: 'Dell Precision 7920', model: 'Precision 7920', serialNumber: 'DL-123789', category: 'Workstation', status: 'available' },
+  { id: '7', name: 'DiGiCo S31', model: 'S31', serialNumber: 'DG-456123', category: 'Ses Mikseri', status: 'available' },
+  { id: '8', name: 'GrandMA3 Light', model: 'MA3 Light', serialNumber: 'GM-789456', category: 'Işık Konsolu', status: 'available' },
+  { id: '9', name: 'Shure ULXD4', model: 'ULXD4', serialNumber: 'SH-012345', category: 'Kablosuz Mikrofon', status: 'available' },
+  { id: '10', name: 'ROE Visual CB5', model: 'Carbon CB5', serialNumber: 'ROE-678901', category: 'LED Panel', status: 'available' }
 ];
 
 // Müşteri seçimi için örnek veriler
@@ -67,92 +70,30 @@ const sampleClients = [
   { id: '6', name: 'Eğitim Kurumu' },
 ];
 
-// Örnek proje verileri
-const sampleProjects = [
+// Örnek projeler (gerçek uygulamada API'den gelecek)
+const sampleProjects: Project[] = [
   {
     id: '1',
-    name: 'Teknoloji Zirvesi 2023',
-    client: 'TechCon Group',
-    startDate: '2023-11-10',
-    endDate: '2023-11-12',
+    name: 'Teknoloji Konferansı 2024',
+    description: 'Yıllık teknoloji konferansı için görsel-işitsel prodüksiyon hizmetleri',
+    customer: {
+      id: '101',
+      name: 'Ahmet Yılmaz',
+      companyName: 'TechCorp',
+      email: 'ahmet.yilmaz@techcorp.com',
+      phone: '+90 532 123 4567'
+    },
+    startDate: '2024-03-15',
+    endDate: '2024-03-17',
+    status: 'active',
+    budget: 150000,
     location: 'İstanbul Kongre Merkezi',
-    status: 'Completed',
-    budget: 450000,
-    team: ['1', '2', '3', '4'],
-    equipment: ['1', '2', '3', '4', '5'],
-    description: 'Uluslararası teknoloji firmalarının katılımıyla gerçekleşen üç günlük konferans. Ana sahnede panel konuşmaları ve ürün tanıtımları yapıldı.',
-    notes: 'Etkinlik çok başarılı geçti. Gelecek yıl için daha büyük bir mekan düşünülmeli.'
-  },
-  {
-    id: '2',
-    name: 'Startup Haftası 2023',
-    client: 'X Teknoloji A.Ş.',
-    startDate: '2023-12-05',
-    endDate: '2023-12-07',
-    location: 'Lütfi Kırdar Kongre Merkezi',
-    status: 'Completed',
-    budget: 350000,
-    team: ['2', '3', '5', '6'],
-    equipment: ['2', '3', '6'],
-    description: 'Girişimcilik ekosistemini bir araya getiren üç günlük etkinlik serisi. Startup sunumları, yatırımcı görüşmeleri ve workshop çalışmaları düzenlendi.',
-    notes: 'Kablosuz mikrofon sisteminde bazı sorunlar yaşandı, sonraki etkinliklerde yedek sistemler hazır bulundurulmalı.'
-  },
-  {
-    id: '3',
-    name: 'Dijital Pazarlama Konferansı',
-    client: 'Y İletişim',
-    startDate: '2024-02-15',
-    endDate: '2024-02-16',
-    location: 'Hilton Convention Center',
-    status: 'InProgress',
-    budget: 280000,
-    team: ['1', '4', '7', '8'],
-    equipment: ['1', '3', '4', '7'],
-    description: 'Dijital pazarlama trendlerinin ve yeni teknolojilerin konuşulacağı iki günlük konferans.',
-    notes: 'Mekan keşfi tamamlandı, teknik kurulum planları hazırlanıyor.'
-  },
-  {
-    id: '4',
-    name: 'Müzik Ödülleri 2024',
-    client: 'Z Organizasyon',
-    startDate: '2024-03-20',
-    endDate: '2024-03-20',
-    location: 'Volkswagen Arena',
-    status: 'Planning',
-    budget: 650000,
-    team: ['1', '2', '5', '6', '7', '9'],
-    equipment: ['1', '2', '3', '4', '5', '7', '8', '9'],
-    description: 'Türkiye\'nin en prestijli müzik ödülleri gecesi. Canlı performanslar ve ödül törenleri düzenlenecek.',
-    notes: 'Sanatçılarla koordinasyon toplantıları başladı, sahne tasarımı için çalışılıyor.'
-  },
-  {
-    id: '5',
-    name: 'Kurumsal Ürün Lansmanı',
-    client: 'Mega Holding',
-    startDate: '2024-04-10',
-    endDate: '2024-04-10',
-    location: 'Four Seasons Hotel',
-    status: 'Planning',
-    budget: 180000,
-    team: ['3', '4', '8'],
-    equipment: ['2', '3', '5'],
-    description: 'Şirketin yeni ürün serisinin tanıtım etkinliği. Basın mensupları ve iş ortakları katılacak.',
-    notes: 'Ürün demoları için ekstra teknik ekipman gerekebilir, bütçe revize edilmeli.'
-  },
-  {
-    id: '6',
-    name: 'Bilimsel Araştırma Paneli',
-    client: 'Eğitim Kurumu',
-    startDate: '2023-10-05',
-    endDate: '2023-10-07',
-    location: 'Üniversite Kampüsü',
-    status: 'Cancelled',
-    budget: 120000,
-    team: ['2', '4'],
-    equipment: ['3', '6'],
-    description: 'Akademisyenlerin katılımıyla düzenlenecek bilimsel araştırma ve teknoloji paneli.',
-    notes: 'Fon yetersizliği nedeniyle iptal edildi.'
-  },
+    team: sampleTeamMembers.filter(member => ['2', '4', '6'].includes(member.id)),
+    equipment: sampleEquipment.filter(eq => ['3', '5', '8'].includes(eq.id)),
+    notes: 'Ana salon ve 3 yan salon için teknik destek sağlanacak',
+    createdAt: '2024-02-01',
+    updatedAt: '2024-02-15'
+  }
 ];
 
 export default function EditProject() {
@@ -162,16 +103,17 @@ export default function EditProject() {
   
   // Form state'leri
   const [formData, setFormData] = useState<FormData>({
+    id: '',
     name: '',
-    client: '',
+    description: '',
+    customer: '',
     startDate: '',
     endDate: '',
     location: '',
-    status: 'Planning',
+    status: 'planned' as ProjectStatus,
     budget: 0,
     team: [],
     equipment: [],
-    description: '',
     notes: ''
   });
   
@@ -196,7 +138,28 @@ export default function EditProject() {
         // const data = await response.json();
         
         // Şimdilik örnek verileri kullanıyoruz
-        const foundProject = sampleProjects.find(p => p.id === projectId);
+        const foundProject = sampleProjects.find(p => p.id === projectId) || {
+          id: '',
+          name: '',
+          description: '',
+          customer: {
+            id: '',
+            name: '',
+            companyName: '',
+            email: '',
+            phone: ''
+          },
+          startDate: '',
+          endDate: '',
+          status: 'planned' as ProjectStatus,
+          budget: 0,
+          location: '',
+          team: [],
+          equipment: [],
+          notes: '',
+          createdAt: '',
+          updatedAt: ''
+        };
         
         // Proje bulunamazsa 404 sayfasına yönlendir
         if (!foundProject) {
@@ -207,29 +170,30 @@ export default function EditProject() {
         
         // Form verilerini ayarla
         setFormData({
+          id: foundProject.id,
           name: foundProject.name,
-          client: foundProject.client,
+          description: foundProject.description,
+          customer: foundProject.customer.id,
           startDate: foundProject.startDate,
           endDate: foundProject.endDate,
           location: foundProject.location,
-          status: foundProject.status,
+          status: foundProject.status as ProjectStatus,
           budget: foundProject.budget,
-          team: foundProject.team,
-          equipment: foundProject.equipment,
-          description: foundProject.description || '',
+          team: foundProject.team.map(t => t.id),
+          equipment: foundProject.equipment.map(e => e.id),
           notes: foundProject.notes || ''
         });
         
         // Ekip ve ekipman checkbox'larını mevcut verilerle doldur
         const teamStates: { [key: string]: boolean } = {};
         sampleTeamMembers.forEach(member => {
-          teamStates[member.id] = foundProject.team.includes(member.id);
+          teamStates[member.id] = foundProject.team.some(t => t.id === member.id);
         });
         setTeamCheckboxes(teamStates);
         
         const equipmentStates: { [key: string]: boolean } = {};
-        sampleEquipments.forEach(equipment => {
-          equipmentStates[equipment.id] = foundProject.equipment.includes(equipment.id);
+        sampleEquipment.forEach(equipment => {
+          equipmentStates[equipment.id] = foundProject.equipment.some(e => e.id === equipment.id);
         });
         setEquipmentCheckboxes(equipmentStates);
         
@@ -304,7 +268,7 @@ export default function EditProject() {
       return false;
     }
     
-    if (!formData.client) {
+    if (!formData.customer) {
       setError('Müşteri seçmelisiniz');
       return false;
     }
@@ -459,13 +423,13 @@ export default function EditProject() {
             
             {/* Müşteri */}
             <div>
-              <label htmlFor="client" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="customer" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Müşteri <span className="text-red-500">*</span>
               </label>
               <select
-                id="client"
-                name="client"
-                value={formData.client}
+                id="customer"
+                name="customer"
+                value={formData.customer}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white"
                 required
@@ -616,11 +580,11 @@ export default function EditProject() {
                 Ekipmanlar
               </label>
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-                {sampleEquipments.length === 0 ? (
+                {sampleEquipment.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">Ekipman bulunamadı</p>
                 ) : (
                   <div className="space-y-2">
-                    {sampleEquipments.map(equipment => (
+                    {sampleEquipment.map(equipment => (
                       <div key={equipment.id} className="flex items-start">
                         <div className="flex items-center h-5">
                           <input

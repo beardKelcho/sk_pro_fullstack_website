@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { FormError } from '@/types/form';
 
 // Kullanıcı arayüzü
 interface User {
@@ -158,7 +159,7 @@ export default function EditTask() {
   const [loading, setLoading] = useState(true);
   
   // Hata durumu
-  const [errors, setErrors] = useState<Partial<Record<keyof TaskForm, string>>>({});
+  const [errors, setErrors] = useState<FormError<TaskForm>>({});
   
   // İşleniyor durumu
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -327,7 +328,6 @@ export default function EditTask() {
     } catch (error) {
       console.error('Görev güncelleme hatası:', error);
       setErrors({
-        ...errors,
         form: 'Görev güncellenirken bir hata oluştu. Lütfen tekrar deneyin.'
       });
       setIsSubmitting(false);

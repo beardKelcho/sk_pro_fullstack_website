@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { FormError } from '@/types/form';
 
 // Müşteri statüsü için tip tanımı
 type ClientStatus = 'Active' | 'Inactive';
@@ -45,7 +46,7 @@ export default function AddClient() {
     status: 'Active',
     notes: ''
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [errors, setErrors] = useState<FormError<FormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   
@@ -108,7 +109,7 @@ export default function AddClient() {
     setIsSubmitting(true);
     
     try {
-      // API entegrasyonu olduğunda burada backend'e veri gönderilecek
+      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
       // const response = await fetch('/api/admin/clients', {
       //   method: 'POST',
       //   headers: {
@@ -120,10 +121,13 @@ export default function AddClient() {
       // if (!response.ok) {
       //   throw new Error('Müşteri eklenirken bir hata oluştu');
       // }
+      // 
+      // const data = await response.json();
       
-      // Simüle edilmiş başarılı yanıt
+      // Şimdilik API çağrısı simülasyonu
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Başarı durumu göster
       setShowSuccessNotification(true);
       
       // 2 saniye sonra müşteri listesine yönlendir
@@ -134,7 +138,6 @@ export default function AddClient() {
     } catch (error) {
       console.error('Müşteri ekleme hatası:', error);
       setErrors({
-        ...errors,
         form: 'Müşteri eklenirken bir hata oluştu. Lütfen tekrar deneyin.'
       });
       setIsSubmitting(false);

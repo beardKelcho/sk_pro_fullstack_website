@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { ProjectStatus } from '@/types/project';
 
 // Müşteri ve Proje türleri
 interface Client {
@@ -32,18 +33,20 @@ interface Project {
 
 // Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  Planning: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  InProgress: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  Completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  Cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  'active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  'planned': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  'completed': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+  'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
 };
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  Planning: 'Planlama',
-  InProgress: 'Devam Ediyor',
-  Completed: 'Tamamlandı',
-  Cancelled: 'İptal Edildi',
+  'active': 'Aktif',
+  'planned': 'Planlandı',
+  'completed': 'Tamamlandı',
+  'cancelled': 'İptal Edildi',
+  'pending': 'Beklemede'
 };
 
 // Örnek müşteri verileri

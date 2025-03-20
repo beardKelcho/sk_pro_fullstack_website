@@ -1,0 +1,10 @@
+# SK Production robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://skproduction.com/sitemap.xml
+
+# Disallow admin routes
+Disallow: /admin/
+Disallow: /api/ 

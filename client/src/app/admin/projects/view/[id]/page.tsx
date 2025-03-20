@@ -4,9 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-
-// Proje durumları
-type ProjectStatus = 'Planlama' | 'Devam Ediyor' | 'Tamamlandı' | 'Ertelendi' | 'İptal Edildi';
+import { ProjectStatus } from '@/types/project';
 
 // Müşteri tipi
 interface Customer {
@@ -43,6 +41,8 @@ interface TeamMember {
   role: string;
   email: string;
   phone: string;
+  avatar?: string;
+  status: string;
 }
 
 // Ekipman tipi
@@ -52,6 +52,7 @@ interface Equipment {
   model: string;
   serialNumber: string;
   category: string;
+  status: string;
 }
 
 // Zaman çizelgesi öğesi tipi
@@ -61,155 +62,188 @@ interface TimelineItem {
   description: string;
 }
 
-// Durum renkleri
+// Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  'Planlama': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  'Devam Ediyor': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  'Tamamlandı': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  'Ertelendi': 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
-  'İptal Edildi': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+  'active': 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200',
+  'planned': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
+  'completed': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+  'cancelled': 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200',
+  'pending': 'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
 };
 
-// Örnek proje verileri (gerçek uygulamada API'den gelecek)
-const sampleProjects: Project[] = [
+// Durum Türkçe isimleri
+const statusNames: Record<ProjectStatus, string> = {
+  'active': 'Aktif',
+  'planned': 'Planlandı',
+  'completed': 'Tamamlandı',
+  'cancelled': 'İptal Edildi',
+  'pending': 'Beklemede'
+};
+
+// Takım üyesi tipi
+interface TeamMemberLocal {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  status: string;
+  avatar?: string;
+}
+
+// Ekipman tipi
+interface EquipmentLocal {
+  id: string;
+  name: string;
+  model: string;
+  serialNumber: string;
+  category: string;
+  status: string;
+}
+
+// Proje tipi
+interface ProjectLocal {
+  id: string;
+  name: string;
+  description: string;
+  customer: {
+    id: string;
+    name: string;
+    companyName: string;
+    email: string;
+    phone: string;
+  };
+  startDate: string;
+  endDate: string;
+  status: ProjectStatus;
+  budget: number;
+  location: string;
+  team: TeamMemberLocal[];
+  equipment: EquipmentLocal[];
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Örnek takım üyeleri
+const sampleTeamMembers: TeamMemberLocal[] = [
+  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör', email: 'ahmet.yilmaz@skpro.com', phone: '+90 532 111 1111', status: 'active' },
+  { id: '2', name: 'Mehmet Demir', role: 'Video Operatörü', email: 'mehmet.demir@skpro.com', phone: '+90 533 222 2222', status: 'active' },
+  { id: '3', name: 'Ayşe Kaya', role: 'Işık Operatörü', email: 'ayse.kaya@skpro.com', phone: '+90 534 333 3333', status: 'active' },
+  { id: '4', name: 'Can Öztürk', role: 'Ses Operatörü', email: 'can.ozturk@skpro.com', phone: '+90 535 444 4444', status: 'active' },
+  { id: '5', name: 'Zeynep Aydın', role: 'LED Operatörü', email: 'zeynep.aydin@skpro.com', phone: '+90 536 555 5555', status: 'active' },
+  { id: '6', name: 'Ali Çelik', role: 'Teknik Asistan', email: 'ali.celik@skpro.com', phone: '+90 537 666 6666', status: 'active' },
+  { id: '7', name: 'Fatma Şahin', role: 'Video Operatörü', email: 'fatma.sahin@skpro.com', phone: '+90 538 777 7777', status: 'active' },
+  { id: '8', name: 'Emre Yıldız', role: 'Ses Operatörü', email: 'emre.yildiz@skpro.com', phone: '+90 539 888 8888', status: 'active' },
+  { id: '9', name: 'Selin Arslan', role: 'Işık Operatörü', email: 'selin.arslan@skpro.com', phone: '+90 540 999 9999', status: 'active' },
+  { id: '10', name: 'Burak Kara', role: 'LED Operatörü', email: 'burak.kara@skpro.com', phone: '+90 541 000 0000', status: 'active' },
+  { id: '11', name: 'Deniz Yalçın', role: 'Teknik Asistan', email: 'deniz.yalcin@skpro.com', phone: '+90 542 111 0000', status: 'active' }
+];
+
+// Örnek ekipmanlar
+const sampleEquipments: EquipmentLocal[] = [
+  { id: '1', name: 'Analog Way Aquilon RS4', model: 'Aquilon RS4', serialNumber: 'AW-123456', category: 'Video Switcher', status: 'available' },
+  { id: '2', name: 'Dataton Watchpax 60', model: 'Watchpax 60', serialNumber: 'DT-789012', category: 'Media Server', status: 'available' },
+  { id: '3', name: 'Blackmagic ATEM 4 M/E', model: 'ATEM 4 M/E Constellation HD', serialNumber: 'BM-345678', category: 'Video Switcher', status: 'available' },
+  { id: '4', name: 'Barco UDX-4K32', model: 'UDX-4K32', serialNumber: 'BC-901234', category: 'Projeksiyon', status: 'available' },
+  { id: '5', name: 'Sony PVM-X2400', model: 'PVM-X2400', serialNumber: 'SN-567890', category: 'Monitör', status: 'available' },
+  { id: '6', name: 'Dell Precision 7920', model: 'Precision 7920', serialNumber: 'DL-123789', category: 'Workstation', status: 'available' },
+  { id: '7', name: 'DiGiCo S31', model: 'S31', serialNumber: 'DG-456123', category: 'Ses Mikseri', status: 'available' },
+  { id: '8', name: 'GrandMA3 Light', model: 'MA3 Light', serialNumber: 'GM-789456', category: 'Işık Konsolu', status: 'available' },
+  { id: '9', name: 'Shure ULXD4', model: 'ULXD4', serialNumber: 'SH-012345', category: 'Kablosuz Mikrofon', status: 'available' },
+  { id: '10', name: 'ROE Visual CB5', model: 'Carbon CB5', serialNumber: 'ROE-678901', category: 'LED Panel', status: 'available' }
+];
+
+// Örnek projeler
+const sampleProjects: ProjectLocal[] = [
   {
     id: '1',
-    name: 'Vodafone Kurumsal Etkinlik',
-    description: 'Vodafone kurumsal müşteriler için büyük çaplı sunum ve tanıtım etkinliği',
+    name: 'Teknoloji Konferansı 2024',
+    description: 'Yıllık teknoloji konferansı için görsel-işitsel prodüksiyon hizmetleri',
     customer: {
       id: '101',
       name: 'Ahmet Yılmaz',
-      companyName: 'Vodafone Türkiye',
-      email: 'ahmet.yilmaz@vodafone.com',
+      companyName: 'TechCorp',
+      email: 'ahmet.yilmaz@techcorp.com',
       phone: '+90 532 123 4567'
     },
-    startDate: '2023-12-10',
-    endDate: '2023-12-12',
-    status: 'Devam Ediyor',
-    budget: 250000,
-    location: 'Lütfi Kırdar Kongre Merkezi, İstanbul',
-    team: ['1', '3', '5', '8'],
-    equipment: ['1', '2', '4', '7'],
-    notes: 'Ekstra LED ekranlar için hazırlık yapılacak. Yedek medya server götürülecek.',
-    createdAt: '2023-10-15T14:30:00Z',
-    updatedAt: '2023-11-20T09:15:00Z'
+    startDate: '2024-03-15',
+    endDate: '2024-03-17',
+    status: 'active',
+    budget: 150000,
+    location: 'İstanbul Kongre Merkezi',
+    team: sampleTeamMembers.filter(member => ['2', '4', '6'].includes(member.id)),
+    equipment: sampleEquipments.filter(eq => ['3', '5', '8'].includes(eq.id)),
+    notes: 'Ana salon ve 3 yan salon için teknik destek sağlanacak',
+    createdAt: '2024-02-01',
+    updatedAt: '2024-02-15'
   },
   {
     id: '2',
-    name: 'TEB Yıl Sonu Değerlendirme',
-    description: 'TEB yıl sonu değerlendirme ve 2024 hedefler toplantısı',
+    name: 'Kurumsal Lansman Etkinliği',
+    description: 'Yeni ürün lansmanı için tam kapsamlı prodüksiyon hizmetleri',
     customer: {
       id: '102',
-      name: 'Zeynep Kaya',
-      companyName: 'Türk Ekonomi Bankası',
-      email: 'zeynep.kaya@teb.com',
+      name: 'InnovaCorp',
+      companyName: 'InnovaCorp',
+      email: 'info@innovacorporation.com',
       phone: '+90 533 765 4321'
     },
-    startDate: '2023-12-20',
-    endDate: '2023-12-20',
-    status: 'Planlama',
-    budget: 150000,
-    location: 'TEB Genel Müdürlük, İstanbul',
-    team: ['2', '4', '6'],
-    equipment: ['3', '5', '8'],
-    createdAt: '2023-11-01T10:00:00Z',
-    updatedAt: '2023-11-15T16:45:00Z'
+    startDate: '2024-04-01',
+    endDate: '2024-04-01',
+    status: 'planned',
+    budget: 85000,
+    location: 'Hilton Convention Center',
+    team: sampleTeamMembers.filter(member => ['1', '2', '7', '9'].includes(member.id)),
+    equipment: sampleEquipments.filter(eq => ['1', '2', '3', '6'].includes(eq.id)),
+    notes: 'LED ekran kurulumu ve canlı yayın desteği gerekiyor',
+    createdAt: '2024-02-10',
+    updatedAt: '2024-02-20'
   },
   {
     id: '3',
-    name: 'Mercedes-Benz Yeni Model Lansmanı',
-    description: 'Yeni elektrikli SUV model lansmanı ve basın etkinliği',
+    name: 'Müzik Festivali 2024',
+    description: '3 günlük açık hava müzik festivali teknik prodüksiyonu',
     customer: {
       id: '103',
-      name: 'Murat Öztürk',
-      companyName: 'Mercedes-Benz Türkiye',
-      email: 'murat.ozturk@mercedes-benz.com',
+      name: 'Festival Productions',
+      companyName: 'Festival Productions',
+      email: 'info@festivalproductions.com',
       phone: '+90 535 876 5432'
     },
-    startDate: '2023-11-10',
-    endDate: '2023-11-12',
-    status: 'Tamamlandı',
-    budget: 350000,
-    location: 'Tersane İstanbul',
-    team: ['1', '2', '7', '9'],
-    equipment: ['1', '2', '3', '6'],
-    notes: 'Müşteri tüm ekipmanlardan çok memnun kaldı. Gelecek etkinlikleri de konuşmak istiyorlar.',
-    createdAt: '2023-09-05T11:20:00Z',
-    updatedAt: '2023-11-13T14:30:00Z'
+    startDate: '2024-07-15',
+    endDate: '2024-07-17',
+    status: 'pending',
+    budget: 250000,
+    location: 'KüçükÇiftlik Park',
+    team: sampleTeamMembers.filter(member => ['3', '5', '8', '10'].includes(member.id)),
+    equipment: sampleEquipments.filter(eq => ['1', '4', '9', '10'].includes(eq.id)),
+    notes: '2 sahne için tam teknik ekipman ve personel desteği',
+    createdAt: '2024-02-20',
+    updatedAt: '2024-02-25'
   },
   {
     id: '4',
-    name: 'Turkcell Teknoloji Zirvesi',
-    description: '5G teknolojileri ve dijital dönüşüm zirvesi',
+    name: 'Yılsonu Gala Gecesi',
+    description: 'Şirket yılsonu gala gecesi için AV prodüksiyon hizmetleri',
     customer: {
       id: '104',
-      name: 'Elif Demir',
-      companyName: 'Turkcell',
-      email: 'elif.demir@turkcell.com',
+      name: 'Global Bank',
+      companyName: 'Global Bank',
+      email: 'info@globalbank.com',
       phone: '+90 536 987 6543'
     },
-    startDate: '2024-01-15',
-    endDate: '2024-01-17',
-    status: 'Planlama',
-    budget: 400000,
-    location: 'Haliç Kongre Merkezi, İstanbul',
-    team: ['3', '5', '8', '10'],
-    equipment: ['1', '4', '9', '10'],
-    notes: 'Teknik gereksinimler şubat başında belirlenecek. Müşteri AR deneyimi talep edebilir.',
-    createdAt: '2023-10-25T09:45:00Z',
-    updatedAt: '2023-11-05T13:10:00Z'
-  },
-  {
-    id: '5',
-    name: 'Koç Holding İnovasyon Günleri',
-    description: 'Koç Holding şirketleri için inovasyon ve dijital dönüşüm etkinliği',
-    customer: {
-      id: '105',
-      name: 'Mehmet Koç',
-      companyName: 'Koç Holding',
-      email: 'mehmet.koc@koc.com.tr',
-      phone: '+90 537 234 5678'
-    },
-    startDate: '2023-09-05',
-    endDate: '2023-09-08',
-    status: 'Tamamlandı',
-    budget: 500000,
-    location: 'Koç Müzesi, İstanbul',
-    team: ['1', '4', '7', '11'],
-    equipment: ['2', '5', '7', '8'],
-    notes: 'Çok başarılı geçti. Şubat 2024 için yeni etkinlik görüşülecek.',
-    createdAt: '2023-06-15T08:30:00Z',
-    updatedAt: '2023-09-10T16:20:00Z'
+    startDate: '2024-12-20',
+    endDate: '2024-12-20',
+    status: 'planned',
+    budget: 120000,
+    location: 'Four Seasons Hotel',
+    team: sampleTeamMembers.filter(member => ['1', '4', '7', '11'].includes(member.id)),
+    equipment: sampleEquipments.filter(eq => ['2', '5', '7', '8'].includes(eq.id)),
+    notes: 'Özel video içerik prodüksiyonu ve canlı performans teknik desteği',
+    createdAt: '2024-03-01',
+    updatedAt: '2024-03-05'
   }
-];
-
-// Örnek takım üyeleri (gerçek uygulamada API'den gelecek)
-const sampleTeamMembers: TeamMember[] = [
-  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör', email: 'ahmet.yilmaz@skpro.com', phone: '+90 532 111 1111' },
-  { id: '2', name: 'Mehmet Öz', role: 'Video Mühendisi', email: 'mehmet.oz@skpro.com', phone: '+90 533 222 2222' },
-  { id: '3', name: 'Ayşe Demir', role: 'Grafik Tasarımcı', email: 'ayse.demir@skpro.com', phone: '+90 534 333 3333' },
-  { id: '4', name: 'Selin Yıldız', role: 'Proje Koordinatörü', email: 'selin.yildiz@skpro.com', phone: '+90 535 444 4444' },
-  { id: '5', name: 'Burak Aydın', role: 'Ses Mühendisi', email: 'burak.aydin@skpro.com', phone: '+90 536 555 5555' },
-  { id: '6', name: 'Zeynep Kaya', role: 'Işık Şefi', email: 'zeynep.kaya@skpro.com', phone: '+90 537 666 6666' },
-  { id: '7', name: 'Mustafa Çelik', role: 'LED Operatörü', email: 'mustafa.celik@skpro.com', phone: '+90 538 777 7777' },
-  { id: '8', name: 'Özge Yılmaz', role: 'Prodüksiyon Asistanı', email: 'ozge.yilmaz@skpro.com', phone: '+90 539 888 8888' },
-  { id: '9', name: 'Mert Demir', role: 'Teknik Destek', email: 'mert.demir@skpro.com', phone: '+90 540 999 9999' },
-  { id: '10', name: 'Elif Şahin', role: 'Medya Server Operatörü', email: 'elif.sahin@skpro.com', phone: '+90 541 000 0000' },
-  { id: '11', name: 'Kemal Kara', role: 'Kameraman', email: 'kemal.kara@skpro.com', phone: '+90 542 111 0000' }
-];
-
-// Örnek ekipmanlar (gerçek uygulamada API'den gelecek)
-const sampleEquipments: Equipment[] = [
-  { id: '1', name: 'Analog Way Aquilon RS4', model: 'Aquilon RS4', serialNumber: 'AW-123456', category: 'Video Switcher' },
-  { id: '2', name: 'Dataton Watchpax 60', model: 'Watchpax 60', serialNumber: 'DT-789012', category: 'Media Server' },
-  { id: '3', name: 'Blackmagic ATEM 4 M/E', model: 'ATEM 4 M/E Constellation HD', serialNumber: 'BM-345678', category: 'Video Switcher' },
-  { id: '4', name: 'Barco UDX-4K32', model: 'UDX-4K32', serialNumber: 'BC-901234', category: 'Projeksiyon' },
-  { id: '5', name: 'Sony PVM-X2400', model: 'PVM-X2400', serialNumber: 'SN-567890', category: 'Monitör' },
-  { id: '6', name: 'Dell Precision 7920', model: 'Precision 7920', serialNumber: 'DL-123789', category: 'Workstation' },
-  { id: '7', name: 'DiGiCo S31', model: 'S31', serialNumber: 'DG-456123', category: 'Ses Mikseri' },
-  { id: '8', name: 'GrandMA3 Light', model: 'MA3 Light', serialNumber: 'GM-789456', category: 'Işık Konsolu' },
-  { id: '9', name: 'Shure ULXD4', model: 'ULXD4', serialNumber: 'SH-012345', category: 'Kablosuz Mikrofon' },
-  { id: '10', name: 'ROE Visual CB5', model: 'Carbon CB5', serialNumber: 'ROE-678901', category: 'LED Panel' }
 ];
 
 // Örnek zaman çizelgesi (gerçek uygulamada API'den gelecek)
@@ -376,87 +410,88 @@ const calculateProgress = (startDate: string, endDate: string): number => {
 // Örnek proje verisi
 const sampleProject: Project = {
   id: '1',
-  name: 'Teknoloji Zirvesi 2023',
-  description: 'Teknoloji Zirvesi 2023, Türkiye\'nin en büyük teknoloji etkinliklerinden biridir. Bu etkinlikte SK Production olarak tüm görüntü rejisi ve medya server hizmetlerini sağlıyoruz.\n\nEtkinlik 3 gün sürecek ve 5 farklı sahne kurulumu gerçekleştirilecektir. Ana sahne için Analog Way Aquilon RS4 ve yardımcı sahneler için Analog Way Pulse 4K kullanılacaktır.',
+  name: 'Teknoloji Konferansı 2024',
+  description: 'Yıllık teknoloji konferansı için görsel-işitsel prodüksiyon hizmetleri',
   customer: {
     id: '101',
-    companyName: 'TechEvents A.Ş.',
     name: 'Ahmet Yılmaz',
-    email: 'ahmet@techevents.com',
-    phone: '+90 532 123 45 67'
+    companyName: 'TechCorp',
+    email: 'ahmet.yilmaz@techcorp.com',
+    phone: '+90 532 123 4567'
   },
-  startDate: '2023-11-15',
-  endDate: '2023-11-18',
-  status: 'Devam Ediyor',
-  budget: 750000,
-  location: 'İstanbul Kongre Merkezi, Harbiye',
+  startDate: '2024-03-15',
+  endDate: '2024-03-17',
+  status: 'InProgress' as ProjectStatus,
+  budget: 75000,
+  location: 'İstanbul Kongre Merkezi',
   team: [
     {
-      id: '201',
-      name: 'Mehmet Kaya',
+      id: '1',
+      name: 'Ahmet Yılmaz',
       role: 'Görüntü Yönetmeni',
-      email: 'm.kaya@skproduction.com',
-      phone: '+90 533 765 43 21'
+      email: 'ahmet.yilmaz@techcon.com',
+      phone: '+90 532 123 4567',
+      avatar: '/avatars/1.jpg'
     },
     {
-      id: '202',
-      name: 'Zeynep Demir',
-      role: 'Media Server Operatörü',
-      email: 'z.demir@skproduction.com',
-      phone: '+90 535 987 65 43'
+      id: '3',
+      name: 'Mehmet Demir',
+      role: 'Medya Server Operatörü',
+      email: 'mehmet.demir@techcon.com',
+      phone: '+90 533 765 4321',
+      avatar: '/avatars/3.jpg'
     },
     {
-      id: '203',
-      name: 'Ali Yıldız',
+      id: '5',
+      name: 'Ayşe Kaya',
       role: 'Teknik Direktör',
-      email: 'a.yildiz@skproduction.com',
-      phone: '+90 536 234 56 78'
+      email: 'ayse.kaya@techcon.com',
+      phone: '+90 534 333 3333',
+      avatar: '/avatars/5.jpg'
     },
     {
-      id: '204',
-      name: 'Ayşe Şahin',
-      role: 'Işık Tasarımcısı',
-      email: 'a.sahin@skproduction.com',
-      phone: '+90 537 345 67 89'
+      id: '8',
+      name: 'Can Özkan',
+      role: 'LED Operatörü',
+      email: 'can.ozkan@techcon.com',
+      phone: '+90 535 444 4444',
+      avatar: '/avatars/8.jpg'
     }
-  ],
+  ] as TeamMember[],
   equipment: [
     {
-      id: '301',
+      id: '1',
       name: 'Analog Way Aquilon RS4',
-      model: 'RS4',
-      serialNumber: 'AW2023456',
-      category: 'VideoSwitcher'
+      model: 'Aquilon RS4',
+      serialNumber: 'AW-123456',
+      category: 'Video Switcher',
+      status: 'InUse'
     },
     {
-      id: '302',
-      name: 'Analog Way Pulse 4K',
-      model: 'Pulse 4K',
-      serialNumber: 'AW2023789',
-      category: 'VideoSwitcher'
-    },
-    {
-      id: '303',
+      id: '2',
       name: 'Dataton Watchpax 60',
       model: 'Watchpax 60',
-      serialNumber: 'DT789012',
-      category: 'MediaServer'
+      serialNumber: 'DT-789012',
+      category: 'Media Server',
+      status: 'InUse'
     },
     {
-      id: '304',
-      name: 'Barco UDX-4K32',
-      model: 'UDX-4K32',
-      serialNumber: 'BC456789',
-      category: 'Projeksiyon'
+      id: '4',
+      name: 'Barco UDX-4K40',
+      model: 'UDX-4K40',
+      serialNumber: 'BC-901234',
+      category: 'Projeksiyon',
+      status: 'InUse'
     },
     {
-      id: '305',
-      name: 'Samsung LED Wall',
+      id: '7',
+      name: 'Samsung The Wall',
       model: 'The Wall',
       serialNumber: 'SM123456',
-      category: 'LED'
+      category: 'LED Ekran',
+      status: 'InUse'
     }
-  ],
+  ] as Equipment[],
   timeline: [
     {
       title: 'Proje Başlangıcı',
@@ -509,9 +544,9 @@ const sampleProject: Project = {
       description: 'Ekip ile proje değerlendirme toplantısı.'
     }
   ],
-  notes: 'Müşteri, tüm sahnelerde 4K çözünürlük istiyor. Ana sahnede özel LED duvar tasarımı için ekstra hazırlık gerekecek. VIP konuşmacılar için ayrı teknik brief hazırlanacak.',
-  createdAt: '2023-10-01T10:30:00Z',
-  updatedAt: '2023-11-01T14:15:00Z'
+  notes: 'Üç günlük konferans boyunca tam zamanlı hizmet verilecek.',
+  createdAt: '2024-02-01',
+  updatedAt: '2024-03-10'
 };
 
 export default function ViewProject() {
@@ -632,7 +667,7 @@ export default function ViewProject() {
           </div>
           <p className="mt-1 text-gray-600 dark:text-gray-300 flex items-center">
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[project.status]}`}>
-              {project.status}
+              {statusNames[project.status]}
             </span>
             <span className="mx-2">•</span>
             <span>{project.customer.companyName}</span>
@@ -718,7 +753,7 @@ export default function ViewProject() {
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Durum</dt>
                     <dd className="mt-1">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[project.status]}`}>
-                        {project.status}
+                        {statusNames[project.status]}
                       </span>
                     </dd>
                   </div>

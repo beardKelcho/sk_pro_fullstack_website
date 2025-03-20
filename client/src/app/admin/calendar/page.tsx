@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-// Proje statüsleri için tip tanımı
-type ProjectStatus = 'Planning' | 'InProgress' | 'Completed' | 'Cancelled';
+import { ProjectStatus } from '@/types/project';
 
 // Proje arayüzü
 interface Project {
@@ -41,20 +39,33 @@ interface EquipmentReservation {
   endDate: string;
 }
 
+// Takvim hücresi tipi
+type CalendarCell = {
+  day: number;
+  isCurrentMonth: boolean;
+  hasEvent: boolean;
+  events: any[];
+};
+
+// Takvim satırı tipi
+type CalendarRow = CalendarCell[];
+
 // Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  Planning: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  InProgress: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  Completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  Cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  'active': 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200',
+  'planned': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
+  'completed': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+  'cancelled': 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200',
+  'pending': 'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
 };
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  Planning: 'Planlama',
-  InProgress: 'Devam Ediyor',
-  Completed: 'Tamamlandı',
-  Cancelled: 'İptal Edildi',
+  'active': 'Tamamlandı',
+  'planned': 'Planlama',
+  'completed': 'Tamamlandı',
+  'cancelled': 'İptal Edildi',
+  'pending': 'Devam Ediyor'
 };
 
 // Örnek proje verileri
@@ -66,7 +77,7 @@ const sampleProjects: Project[] = [
     startDate: '2023-11-10',
     endDate: '2023-11-12',
     location: 'İstanbul Kongre Merkezi',
-    status: 'Completed',
+    status: 'completed',
     team: ['1', '2', '3', '4'],
     equipment: ['1', '2', '3', '4', '5'],
   },
@@ -77,7 +88,7 @@ const sampleProjects: Project[] = [
     startDate: '2023-12-05',
     endDate: '2023-12-07',
     location: 'Lütfi Kırdar Kongre Merkezi',
-    status: 'Completed',
+    status: 'completed',
     team: ['2', '3', '5', '6'],
     equipment: ['2', '3', '6'],
   },
@@ -88,7 +99,7 @@ const sampleProjects: Project[] = [
     startDate: '2024-02-15',
     endDate: '2024-02-16',
     location: 'Hilton Convention Center',
-    status: 'InProgress',
+    status: 'pending',
     team: ['1', '4', '7', '8'],
     equipment: ['1', '3', '4', '7'],
   },
@@ -99,7 +110,7 @@ const sampleProjects: Project[] = [
     startDate: '2024-03-20',
     endDate: '2024-03-20',
     location: 'Volkswagen Arena',
-    status: 'Planning',
+    status: 'planned',
     team: ['1', '2', '5', '6', '7', '9'],
     equipment: ['1', '2', '3', '4', '5', '7', '8', '9'],
   },
@@ -110,7 +121,7 @@ const sampleProjects: Project[] = [
     startDate: '2024-04-10',
     endDate: '2024-04-10',
     location: 'Four Seasons Hotel',
-    status: 'Planning',
+    status: 'planned',
     team: ['3', '4', '8'],
     equipment: ['2', '3', '5'],
   },
@@ -121,7 +132,7 @@ const sampleProjects: Project[] = [
     startDate: '2023-10-05',
     endDate: '2023-10-07',
     location: 'Üniversite Kampüsü',
-    status: 'Cancelled',
+    status: 'cancelled',
     team: ['2', '4'],
     equipment: ['3', '6'],
   },
@@ -150,6 +161,14 @@ const sampleReservations: EquipmentReservation[] = [
   { id: '6', equipmentId: '2', projectId: '5', startDate: '2024-04-10', endDate: '2024-04-10' },
 ];
 
+interface Event {
+  id: string;
+  name: string;
+  status: ProjectStatus;
+  startDate: string;
+  endDate: string;
+}
+
 export default function Calendar() {
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -157,7 +176,7 @@ export default function Calendar() {
   const [showProjects, setShowProjects] = useState(true);
   const [showEquipment, setShowEquipment] = useState(true);
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
-  const [selectedProjectStatuses, setSelectedProjectStatuses] = useState<ProjectStatus[]>(['Planning', 'InProgress']);
+  const [selectedProjectStatuses, setSelectedProjectStatuses] = useState<ProjectStatus[]>(['planned', 'pending']);
   
   // Tarihi formatlama
   const formatDate = (dateString: string) => {
@@ -254,109 +273,79 @@ export default function Calendar() {
     return date.toLocaleDateString('tr-TR', options);
   };
   
-  // Takvimde belirli bir günde etkinlik olup olmadığını kontrol et
-  const hasEvent = (day: number) => {
-    if (!day) return false;
-    
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  // Belirli bir gün için etkinlikleri getir
+  function getEventsForDay(day: number, year: number, month: number): Event[] {
     const date = new Date(year, month, day);
-    const dateString = date.toISOString().split('T')[0];
+    const formattedDate = date.toISOString().split('T')[0];
     
-    return filteredProjects.some(project => {
-      const projectStart = new Date(project.startDate);
-      const projectEnd = new Date(project.endDate);
-      const currentDay = new Date(dateString);
-      
-      return currentDay >= projectStart && currentDay <= projectEnd;
-    });
-  };
-  
-  // Belirli bir günde olan etkinlikleri getir
-  const getEventsForDay = (day: number) => {
-    if (!day) return [];
-    
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const date = new Date(year, month, day);
-    const dateString = date.toISOString().split('T')[0];
-    
-    return filteredProjects.filter(project => {
-      const projectStart = new Date(project.startDate);
-      const projectEnd = new Date(project.endDate);
-      const currentDay = new Date(dateString);
-      
-      return currentDay >= projectStart && currentDay <= projectEnd;
-    });
-  };
+    return sampleProjects
+      .filter(project => {
+        const startDate = new Date(project.startDate);
+        const endDate = new Date(project.endDate);
+        return date >= startDate && date <= endDate;
+      })
+      .map(project => ({
+        id: project.id,
+        name: project.name,
+        status: project.status as ProjectStatus,
+        startDate: project.startDate,
+        endDate: project.endDate
+      }));
+  }
   
   // Ay görünümü oluştur
   const renderMonth = () => {
-    const { firstDayOfWeek, daysInMonth } = getMonthDetails(currentDate);
-    const days = [];
+    const { firstDayOfWeek, daysInMonth, year, month } = getMonthDetails(currentDate);
     
-    // Önceki aydan gereken günleri ekle
-    for (let i = 1; i < firstDayOfWeek; i++) {
-      days.push(null);
-    }
-    
-    // Ayın günlerini ekle
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
-    
-    // Günlük satırları oluştur
-    const rows = [];
-    let cells = [];
-    
-    // Haftanın günleri
-    const weekDays = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-    
-    days.forEach((day, index) => {
-      const today = new Date();
-      const isToday = day === today.getDate() && 
-                        currentDate.getMonth() === today.getMonth() && 
-                        currentDate.getFullYear() === today.getFullYear();
+    // Takvim hücreleri oluştur
+    const days = Array.from({ length: daysInMonth }, (_, i) => {
+      const day = i + 1;
+      const events = getEventsForDay(day, year, month);
       
-      const hasEvents = hasEvent(day);
-      
-      cells.push(
-        <td key={index} className={`border dark:border-gray-700 p-1 h-32 w-32 align-top ${
-          !day ? 'bg-gray-100 dark:bg-gray-800/30' : ''
-        } ${isToday ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
-          {day && (
-            <>
-              <div className="flex flex-col h-full">
-                <div className={`flex justify-between ${
-                  isToday ? 'font-bold text-blue-600 dark:text-blue-400' : ''
-                }`}>
-                  <span className="text-sm">{day}</span>
-                  {hasEvents && (
-                    <span className="rounded-full h-2 w-2 bg-[#0066CC] dark:bg-primary-light"></span>
-                  )}
-                </div>
-                <div className="flex-grow overflow-y-auto mt-1">
-                  {getEventsForDay(day).map((event, eventIndex) => (
-                    <Link href={`/admin/projects/view/${event.id}`} key={eventIndex}>
-                      <div className={`p-1 mb-1 text-xs rounded truncate ${statusColors[event.status]}`}>
-                        {event.name}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </td>
-      );
-      
-      // Her 7 günde bir yeni satır oluştur
-      if ((index + 1) % 7 === 0 || index === days.length - 1) {
-        rows.push(<tr key={index}>{cells}</tr>);
-        cells = [];
-      }
+      return {
+        day,
+        isCurrentMonth: true,
+        hasEvent: events.length > 0,
+        events
+      } as CalendarCell;
     });
-    
+
+    // Önceki ayın günlerini ekle
+    const prevMonthDays = Array.from({ length: firstDayOfWeek - 1 }, (_, i) => {
+      const day = new Date(year, month, 0).getDate() - (firstDayOfWeek - 2) + i;
+      const events = getEventsForDay(day, year, month - 1);
+      
+      return {
+        day,
+        isCurrentMonth: false,
+        hasEvent: events.length > 0,
+        events
+      } as CalendarCell;
+    });
+
+    // Sonraki ayın günlerini ekle
+    const remainingDays = 7 - ((days.length + prevMonthDays.length) % 7);
+    const nextMonthDays = Array.from({ length: remainingDays }, (_, i) => {
+      const day = i + 1;
+      const events = getEventsForDay(day, year, month + 1);
+      
+      return {
+        day,
+        isCurrentMonth: false,
+        hasEvent: events.length > 0,
+        events
+      } as CalendarCell;
+    });
+
+    // Tüm günleri birleştir
+    const allDays = [...prevMonthDays, ...days, ...nextMonthDays];
+
+    // Günleri haftalara böl
+    const rows: CalendarRow[] = [];
+    for (let i = 0; i < allDays.length; i += 7) {
+      rows.push(allDays.slice(i, i + 7));
+    }
+
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
@@ -387,17 +376,48 @@ export default function Calendar() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full border-collapse border dark:border-gray-700">
             <thead>
               <tr>
-                {weekDays.map(day => (
-                  <th key={day} className="p-2 border-r h-10 border-b dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+                {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((day, index) => (
+                  <th key={index} className="border dark:border-gray-700 p-2 bg-gray-50 dark:bg-gray-800/50">
                     {day}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody>{rows}</tbody>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row.map((cell, cellIndex) => (
+                    <td
+                      key={cellIndex}
+                      className={`border dark:border-gray-700 p-1 h-32 w-32 align-top ${
+                        !cell.isCurrentMonth ? 'bg-gray-100 dark:bg-gray-800/30' : ''
+                      }`}
+                    >
+                      <div className="flex flex-col h-full">
+                        <div className="flex justify-between">
+                          <span className="text-sm">{cell.day}</span>
+                          {cell.hasEvent && (
+                            <span className="rounded-full h-2 w-2 bg-[#0066CC] dark:bg-primary-light"></span>
+                          )}
+                        </div>
+                        <div className="flex-grow overflow-y-auto mt-1">
+                          {cell.events.map((event: Event, eventIndex) => (
+                            <Link href={`/admin/projects/view/${event.id}`} key={eventIndex}>
+                              <div className={`p-1 mb-1 text-xs rounded truncate ${statusColors[event.status]}`}>
+                                {event.name}
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       </div>

@@ -142,9 +142,14 @@ export default function AdminLogin() {
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Şifre
                 </label>
-                <a href="#" className="text-sm text-[#0066CC] dark:text-primary-light hover:underline">
+                <Link 
+                  href={{
+                    pathname: '/admin/forgot-password'
+                  }}
+                  className="text-sm text-[#0066CC] dark:text-primary-light hover:underline"
+                >
                   Şifremi Unuttum
-                </a>
+                </Link>
               </div>
               <input
                 type="password"

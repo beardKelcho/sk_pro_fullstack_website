@@ -1,48 +1,72 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
   images: {
-    domains: ['images.unsplash.com'],
-    formats: ['image/avif', 'image/webp'],
+    domains: ['localhost'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60,
+    formats: ['image/webp'],
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
   },
   experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['@heroicons/react', 'react-icons'],
-  },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    serverActions: true,
+    typedRoutes: true,
   },
   webpack: (config, { dev, isServer }) => {
-    // Production optimizations
+    // SVG optimizasyonu
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ['@svgr/webpack'],
+    });
+
+    // Production optimizasyonları
     if (!dev && !isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
+      Object.assign(config.optimization.splitChunks.cacheGroups, {
+        commons: {
+          name: 'commons',
           chunks: 'all',
-          minSize: 20000,
-          maxSize: 244000,
-          minChunks: 1,
-          maxAsyncRequests: 30,
-          maxInitialRequests: 30,
-          cacheGroups: {
-            defaultVendors: {
-              test: /[\\/]node_modules[\\/]/,
-              priority: -10,
-              reuseExistingChunk: true,
-            },
-            default: {
-              minChunks: 2,
-              priority: -20,
-              reuseExistingChunk: true,
-            },
-          },
+          minChunks: 2,
         },
-      };
+      });
     }
+
     return config;
+  },
+  headers: async () => {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
   },
 };
 

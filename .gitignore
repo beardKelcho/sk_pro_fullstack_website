@@ -1,65 +1,53 @@
-# dependencies
+# Dependencies
 node_modules/
-.pnp
+.pnp/
 .pnp.js
+.yarn-integrity
 
-# testing
-coverage/
-
-# next.js
-.next/
-out/
-build/
-dist/
-
-# production
-build/
-dist/
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
+# Environment Variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+client/.env
+client/.env.local
+server/.env
+server/.env.local
 
-# vercel
-.vercel
+# Testing
+coverage/
+.nyc_output/
 
-# Logs
-logs
-*.log
+# Next.js
+.next/
+out/
+build/
+dist/
+.nuxt/
+*.tsbuildinfo
+next-env.d.ts
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Environment variables
-**/.env
-**/.env.local
-**/.env.development.local
-**/.env.test.local
-**/.env.production.local
-
-# Logs
-logs
-*.log
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# OS files
+# Local env files
+.env*.local
+
+# Vercel
+.vercel
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# OS
 .DS_Store
 *.DS_Store?
 ._*
@@ -67,45 +55,23 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
+# Cache
+.cache/
+.eslintcache
+.stylelintcache
+.npm
 
-# Next.js specific
-**/.vercel
-**/*.tsbuildinfo
-**/next-env.d.ts
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# IDE
-.idea/
-.vscode/
-*.sublime-workspace
-*.sublime-project
-
-# OS
-.DS_Store
-Thumbs.db
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# Vercel
-.vercel
-
-# PWA
-public/sw.js
-public/workbox-*.js
+# Logs
+logs
+*.log
 
 # Optional npm cache directory
 .npm
@@ -113,31 +79,18 @@ public/workbox-*.js
 # Optional eslint cache
 .eslintcache
 
-# Optional stylelint cache
-.stylelintcache
+# Optional REPL history
+.node_repl_history
 
-# Yarn Integrity file
-.yarn-integrity
+# Output of 'npm pack'
+*.tgz
 
-# Cache directories
-.cache/
-.next/
-.nuxt/
-dist/
+# Serverless directories
+.serverless/
 
-# Mac files
-.DS_Store
+# Local Netlify folder
+.netlify
 
-# Windows files
-Thumbs.db
-Desktop.ini
-
-# Linux
-*~
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log* 
+# PWA
+public/sw.js
+public/workbox-*.js 

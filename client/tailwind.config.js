@@ -9,9 +9,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#0066CC', // SK Production mavi rengi
-        'primary-dark': '#004C99', // Daha koyu mavi tonu
-        'primary-light': '#4D94DB', // Daha açık mavi tonu
+        primary: {
+          DEFAULT: '#0066CC', // SK Production mavi rengi
+          dark: '#004C99', // Daha koyu mavi tonu
+          light: '#4D94DB', // Daha açık mavi tonu
+        },
         // Karanlık mod renkleri
         dark: {
           background: '#121212', // Koyu arkaplan

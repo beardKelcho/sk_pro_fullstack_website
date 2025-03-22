@@ -673,9 +673,9 @@ Karmaşık state yönetimi gereksinimleri için:
 - **Erişim Reddedildi (403) Sayfası:** Yetkisiz erişim durumları için özel sayfa
 - **Bakım Modu Sayfası:** Planlı bakım zamanlarında gösterilecek sayfa
 
-## 10. Geliştirme Notları ve Sorun Giderme
+## 13. Geliştirme Notları ve Sorun Giderme
 
-### 10.1. Next.js Hydration Sorunları
+### 13.1. Next.js Hydration Sorunları
 
 Next.js uygulamalarında server-side rendering (SSR) ve client-side rendering arasındaki uyumsuzluklar (hydration mismatch) yaygın sorunlardır. Bu sorunlar genellikle aşağıdaki durumlarda ortaya çıkar:
 
@@ -726,7 +726,7 @@ Next.js uygulamalarında server-side rendering (SSR) ve client-side rendering ar
    }, []);
    ```
 
-### 10.2. Next.js Yapılandırma Önerileri
+### 13.2. Next.js Yapılandırma Önerileri
 
 Next.js yapılandırmasında (`next.config.js`) güncel sürüme göre aşağıdaki ayarlar önerilir:
 
@@ -744,7 +744,7 @@ const nextConfig = {
 module.exports = nextConfig;
 ```
 
-### 10.3. Performans Optimizasyonu
+### 13.3. Performans Optimizasyonu
 
 - Büyük bileşenler için lazy loading ve React.lazy kullanın
 - Görsel optimizasyonu için Next.js Image bileşenini kullanın
@@ -752,7 +752,7 @@ module.exports = nextConfig;
 - Kullanıcı etkileşiminden önce görünmeyen bileşenleri geciktirerek yükleyin
 - Gereksiz render'ları önlemek için memoization (useMemo, useCallback) kullanın
 
-### 10.4. Erişilebilirlik Standartları
+### 13.4. Erişilebilirlik Standartları
 
 Projenin WCAG 2.1 AA standartlarına uygun olması için:
 
@@ -761,3 +761,292 @@ Projenin WCAG 2.1 AA standartlarına uygun olması için:
 - 4.5:1 minimum kontrast oranı
 - Form elemanlarında uygun label ve aria attribute'ları
 - Screen reader uyumluluğu
+
+## 14. Eksik Yapılandırmalar ve Düzeltilmesi Gereken Noktalar
+
+### 14.1. Klasör Yapısı Düzenlemeleri
+
+#### Client Tarafı
+```bash
+client/
+├── src/
+│   ├── components/          # Yeniden kullanılabilir bileşenler
+│   │   ├── common/          # Genel bileşenler
+│   │   ├── layout/          # Layout bileşenleri
+│   │   ├── modals/          # Modal bileşenleri
+│   │   └── sections/        # Sayfa bölümleri
+│   ├── pages/               # Next.js sayfaları
+│   ├── hooks/               # Özel React hook'ları
+│   ├── context/             # Context API kullanımı
+│   ├── services/            # API hizmetleri
+│   ├── utils/               # Yardımcı fonksiyonlar
+│   └── types/               # TypeScript tip tanımlamaları
+```
+
+#### Server Tarafı
+```bash
+server/
+├── src/
+│   ├── config/              # Yapılandırma dosyaları
+│   ├── controllers/         # İşlev denetleyicileri
+│   ├── models/              # Veritabanı modelleri
+│   ├── routes/              # API endpoint'leri
+│   ├── middleware/          # Ara yazılımlar
+│   ├── services/            # İş mantığı servisleri
+│   ├── utils/               # Yardımcı fonksiyonlar
+│   └── types/               # TypeScript tip tanımlamaları
+```
+
+### 14.2. Güvenlik Yapılandırmaları
+
+#### Environment Variables
+```bash
+# .env.example
+NEXT_PUBLIC_API_URL=http://localhost:3001
+MONGODB_URI=mongodb://localhost:27017/skproduction
+JWT_SECRET=your-secret-key
+JWT_REFRESH_SECRET=your-refresh-secret-key
+```
+
+#### Güvenlik Middleware'leri
+```typescript
+// server/src/middleware/security.ts
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+
+export const securityMiddleware = [
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  }),
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+  })
+];
+```
+
+### 14.3. Test Yapılandırması
+
+#### Jest Konfigürasyonu
+```javascript
+// client/jest.config.js
+module.exports = {
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  }
+};
+```
+
+#### E2E Test Yapılandırması
+```javascript
+// client/cypress.config.js
+module.exports = {
+  e2e: {
+    baseUrl: 'http://localhost:3000',
+    supportFile: 'cypress/support/e2e.ts',
+    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'
+  }
+};
+```
+
+### 14.4. Dokümantasyon Yapılandırması
+
+#### Swagger/OpenAPI
+```typescript
+// server/src/config/swagger.ts
+import swaggerJsdoc from 'swagger-jsdoc';
+
+export const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'SK Production API',
+      version: '1.0.0',
+      description: 'SK Production API dokümantasyonu'
+    }
+  },
+  apis: ['./src/routes/*.ts']
+};
+```
+
+#### Storybook Yapılandırması
+```javascript
+// client/.storybook/main.js
+module.exports = {
+  stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+  addons: [
+    '@storybook/addon-links',
+    '@storybook/addon-essentials'
+  ],
+  framework: '@storybook/react'
+};
+```
+
+### 14.5. Performans Optimizasyonları
+
+#### Next.js Image Optimizasyonu
+```javascript
+// next.config.js
+const nextConfig = {
+  images: {
+    domains: ['localhost'],
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  }
+};
+```
+
+#### Bundle Analizi
+```javascript
+// next.config.js
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true'
+});
+
+module.exports = withBundleAnalyzer(nextConfig);
+```
+
+### 14.6. CI/CD Yapılandırması
+
+#### GitHub Actions
+```yaml
+# .github/workflows/main.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
+      - name: Run E2E tests
+        run: npm run test:e2e
+```
+
+### 14.7. Erişilebilirlik Yapılandırması
+
+#### axe-core Entegrasyonu
+```typescript
+// client/src/utils/accessibility.ts
+import { axe, toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+export const checkAccessibility = async (component: React.ReactElement) => {
+  const { container } = render(component);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+};
+```
+
+### 14.8. Monitoring ve Logging
+
+#### Sentry Entegrasyonu
+```typescript
+// client/src/utils/sentry.ts
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: 1.0,
+});
+```
+
+#### Logging Middleware
+```typescript
+// server/src/middleware/logging.ts
+import winston from 'winston';
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'combined.log' })
+  ]
+});
+
+export const loggingMiddleware = (req, res, next) => {
+  logger.info(`${req.method} ${req.url}`);
+  next();
+};
+```
+
+## 15. Önerilen Sonraki Adımlar
+
+1. **Klasör Yapısının Oluşturulması**
+   - Eksik klasörlerin oluşturulması
+   - Temel dosyaların yerleştirilmesi
+   - Import/export yapılarının düzenlenmesi
+
+2. **Güvenlik Yapılandırmalarının Tamamlanması**
+   - Environment variables yönetimi
+   - Güvenlik middleware'lerinin eklenmesi
+   - Input validasyonlarının güçlendirilmesi
+
+3. **Test Altyapısının Kurulması**
+   - Unit testlerin yazılması
+   - Integration testlerin hazırlanması
+   - E2E testlerin oluşturulması
+
+4. **Dokümantasyon Araçlarının Entegrasyonu**
+   - Swagger/OpenAPI kurulumu
+   - Storybook entegrasyonu
+   - JSDoc/TSDoc kullanımı
+
+5. **Performans Optimizasyonlarının Yapılması**
+   - Code splitting stratejisinin uygulanması
+   - Bundle analizi ve optimizasyonu
+   - Web Vitals izleme sisteminin kurulması
+
+6. **Monitoring ve Logging Sisteminin Kurulması**
+   - Sentry entegrasyonu
+   - Logging middleware'lerinin eklenmesi
+   - Performans izleme araçlarının kurulumu
+
+7. **Erişilebilirlik İyileştirmeleri**
+   - WCAG 2.1 AA uyumluluğunun sağlanması
+   - Screen reader uyumluluğunun test edilmesi
+   - Klavye navigasyonunun iyileştirilmesi
+
+8. **SEO Optimizasyonları**
+   - Meta etiketlerinin düzenlenmesi
+   - Yapılandırılmış verilerin eklenmesi
+   - XML sitemap oluşturulması
+
+9. **Deployment ve CI/CD**
+   - Vercel yapılandırması
+   - GitHub Actions workflow'larının hazırlanması
+   - Monitoring sisteminin kurulması
+
+10. **Dokümantasyon ve Kullanıcı Kılavuzları**
+    - API dokümantasyonunun hazırlanması
+    - Kullanıcı kılavuzlarının oluşturulması
+    - Geliştirici dokümantasyonunun hazırlanması

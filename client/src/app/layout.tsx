@@ -3,7 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '../context/ThemeContext';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import Footer from '@/components/layout/Footer';
+import FooterWrapper from '@/components/layout/FooterWrapper';
 
 const montserrat = Montserrat({ subsets: ['latin'] });
 const inter = Inter({ subsets: ['latin'] });
@@ -72,7 +72,7 @@ export default function RootLayout({
       <body className={`${montserrat.className} antialiased min-h-screen`}>
         <ThemeProvider>
           {children}
-          <Footer />
+          <FooterWrapper />
         </ThemeProvider>
       </body>
     </html>

@@ -30,7 +30,7 @@ const Footer = () => {
                   <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-.88-.018-2.013-1.227-2.013-1.227 0-1.415.957-1.415 1.949v5.668h-3v-11h2.85v1.026h.041c.345-.666 1.19-1.369 2.45-1.369 2.619 0 3.065 1.724 3.065 3.966v6.376z"/>
                 </svg>
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-gray-300 dark:text-dark-secondary hover:text-white">
+              <a href="https://www.instagram.com/skprotr/" target="_blank" rel="noopener noreferrer" className="text-gray-300 dark:text-dark-secondary hover:text-white">
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fillRule="evenodd"

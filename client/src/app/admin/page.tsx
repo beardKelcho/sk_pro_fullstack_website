@@ -95,18 +95,20 @@ export default function AdminLogin() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#0A1128] to-[#001F54] dark:from-[#050914] dark:to-[#0A1128] p-4">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
         <div className="bg-[#0066CC] dark:bg-primary-light p-6 text-center">
-          <Link href="/">
-            <div className="flex justify-center mb-4">
-              {/* SK Production logosu */}
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#0066CC] font-bold text-xl">
-                SK
-              </div>
+          <div className="flex justify-center mb-4">
+            <div>
+              <Image 
+                src="/images/sk-logo.png" 
+                alt="SK Production Logo"
+                width={120}
+                height={40}
+                priority
+              />
             </div>
-          </Link>
+          </div>
           <h1 className="text-2xl font-bold text-white">SK Production Admin</h1>
           <p className="text-white/80 mt-2">Yönetim paneline giriş yapın</p>
         </div>
-        
         <div className="p-8">
           {loginError && (
             <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-md text-sm">

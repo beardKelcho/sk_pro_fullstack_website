@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface AdminHeaderProps {
   onToggleSidebar: () => void;
@@ -12,6 +13,14 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   const pathname = usePathname();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationPanel, setShowNotificationPanel] = useState(false);
+  
+  // Ref'ler
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const notificationPanelRef = useRef<HTMLDivElement>(null);
+  
+  // Click-outside handlers
+  useClickOutside(profileMenuRef, () => setShowProfileMenu(false));
+  useClickOutside(notificationPanelRef, () => setShowNotificationPanel(false));
   
   // Sayfa başlığını bulma
   const getPageTitle = () => {
@@ -69,7 +78,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
         </button>
         
         {/* Bildirimler */}
-        <div className="relative">
+        <div className="relative" ref={notificationPanelRef}>
           <button 
             className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 relative"
             onClick={() => setShowNotificationPanel(!showNotificationPanel)}
@@ -143,7 +152,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
         </div>
         
         {/* Profil menüsü */}
-        <div className="relative">
+        <div className="relative" ref={profileMenuRef}>
           <button 
             className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
             onClick={() => setShowProfileMenu(!showProfileMenu)}

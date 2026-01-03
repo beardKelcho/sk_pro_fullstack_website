@@ -1,0 +1,196 @@
+import { Request, Response, NextFunction } from 'express';
+import { body, validationResult } from 'express-validator';
+import sanitizeHtml from 'sanitize-html';
+import { FilterXSS } from 'xss';
+
+// XSS koruması için özel filtre
+const xssFilter = new FilterXSS({
+  whiteList: {
+    a: ['href', 'title', 'target'],
+    p: [],
+    br: [],
+    strong: [],
+    em: [],
+    ul: [],
+    ol: [],
+    li: [],
+    h1: [],
+    h2: [],
+    h3: [],
+    h4: [],
+    h5: [],
+    h6: [],
+  },
+  stripIgnoreTag: true,
+  stripIgnoreTagBody: ['script'],
+});
+
+// Genel input sanitizasyonu
+export const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
+  // Request body'deki tüm string değerleri sanitize et
+  if (req.body) {
+    Object.keys(req.body).forEach(key => {
+      if (typeof req.body[key] === 'string') {
+        req.body[key] = xssFilter.process(req.body[key] as string);
+      }
+    });
+  }
+
+  // Query parametrelerini sanitize et
+  if (req.query) {
+    Object.keys(req.query).forEach(key => {
+      if (typeof req.query[key] === 'string') {
+        req.query[key] = xssFilter.process(req.query[key] as string);
+      }
+    });
+  }
+
+  next();
+};
+
+// Kullanıcı girişi validasyonu
+export const validateLogin = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Geçerli bir e-posta adresi giriniz'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Şifre en az 6 karakter olmalıdır'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
+
+// Kullanıcı kaydı validasyonu
+export const validateRegister = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Geçerli bir e-posta adresi giriniz'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Şifre en az 6 karakter olmalıdır')
+    .matches(/\d/)
+    .withMessage('Şifre en az bir rakam içermelidir')
+    .matches(/[a-z]/)
+    .withMessage('Şifre en az bir küçük harf içermelidir')
+    .matches(/[A-Z]/)
+    .withMessage('Şifre en az bir büyük harf içermelidir'),
+  body('name')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('İsim en az 2 karakter olmalıdır')
+    .matches(/^[a-zA-ZğüşıöçĞÜŞİÖÇ\s]+$/)
+    .withMessage('İsim sadece harf içermelidir'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
+
+// Ekipman ekleme/düzenleme validasyonu
+export const validateEquipment = [
+  body('name')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Ekipman adı en az 2 karakter olmalıdır'),
+  body('type')
+    .isIn(['VideoSwitcher', 'MediaServer', 'Monitor', 'Cable', 'AudioEquipment', 'Camera', 'Display', 'Audio', 'Lighting', 'Accessory'])
+    .withMessage('Geçersiz ekipman kategorisi'),
+  body('status')
+    .isIn(['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'DAMAGED'])
+    .withMessage('Geçersiz ekipman durumu'),
+  body('serialNumber')
+    .optional()
+    .trim()
+    .isLength({ min: 3 })
+    .withMessage('Seri numarası en az 3 karakter olmalıdır'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
+
+// Proje ekleme/düzenleme validasyonu
+export const validateProject = [
+  body('name')
+    .trim()
+    .isLength({ min: 3 })
+    .withMessage('Proje adı en az 3 karakter olmalıdır'),
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ min: 10 })
+    .withMessage('Proje açıklaması en az 10 karakter olmalıdır'),
+  body('startDate')
+    .isISO8601()
+    .withMessage('Geçerli bir başlangıç tarihi giriniz'),
+  body('endDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Geçerli bir bitiş tarihi giriniz'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
+
+// Müşteri ekleme/düzenleme validasyonu
+export const validateClient = [
+  body('name')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('Müşteri adı en az 2 karakter olmalıdır'),
+  body('email')
+    .optional()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Geçerli bir e-posta adresi giriniz'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
+
+// Kullanıcı ekleme/düzenleme validasyonu
+export const validateUser = [
+  body('name')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('İsim en az 2 karakter olmalıdır'),
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Geçerli bir e-posta adresi giriniz'),
+  body('role')
+    .isIn(['ADMIN', 'TECHNICIAN', 'INVENTORY_MANAGER', 'USER'])
+    .withMessage('Geçersiz kullanıcı rolü'),
+  body('password')
+    .optional()
+    .isLength({ min: 6 })
+    .withMessage('Şifre en az 6 karakter olmalıdır'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+]; 

@@ -8,7 +8,8 @@ import { useTheme } from '../../context/ThemeContext';
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,6 +44,7 @@ const Navbar = () => {
               width={50}
               height={50}
               className="mr-2"
+              style={{ width: 'auto', height: 'auto' }}
             />
           </Link>
 

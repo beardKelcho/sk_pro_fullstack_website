@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getAllUsers, deleteUser, getRoleLabel, mapBackendRoleToFrontend } from '@/services/userService';
+import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 
 // Kullanıcı türü tanımlama
 interface User {
@@ -101,11 +103,10 @@ const sampleUsers: User[] = [
 // Rol renklerini tanımlama
 const roleColors = {
   'Admin': 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400',
+  'Firma Sahibi': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400',
   'Proje Yöneticisi': 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
-  'Teknik Direktör': 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
-  'Teknisyen': 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400',
-  'Medya Server Uzmanı': 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-400',
-  'Görüntü Yönetmeni': 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400'
+  'Depo Sorumlusu': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
+  'Teknisyen': 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400'
 };
 
 // Departman listesi
@@ -114,37 +115,47 @@ const departments = ['Yönetim', 'Teknik', 'Medya', 'Görüntü'];
 export default function UserList() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('Tümü');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('Tümü');
   const [selectedStatus, setSelectedStatus] = useState<string>('Tümü');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState<{ id: string; name: string } | null>(null);
   
-  // Kullanıcı verilerini yükleme
+  // Kullanıcı verilerini getirme
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
+      setError(null);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch('/api/admin/users');
-        // if (!response.ok) throw new Error('Kullanıcı verileri alınamadı');
-        // const data = await response.json();
-        // setUsers(data);
-        
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          setUsers(sampleUsers);
-          setLoading(false);
-        }, 500);
-        
-      } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        const response = await getAllUsers();
+        // Backend'den gelen response formatına göre düzenle
+        const usersList = response.users || response;
+        // Backend formatını frontend formatına dönüştür
+        const formattedUsers = Array.isArray(usersList) ? usersList.map((item: any) => ({
+          id: item._id || item.id,
+          name: item.name,
+          email: item.email,
+          role: mapBackendRoleToFrontend(item.role) as 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen',
+          department: '',
+          status: (item.isActive ? 'Aktif' : 'Pasif') as 'Aktif' | 'Pasif',
+          avatar: item.name?.substring(0, 2).toUpperCase() || '',
+          phone: '',
+          lastActive: item.updatedAt || new Date().toISOString()
+        })) : [];
+        setUsers(formattedUsers);
+      } catch (err) {
+        console.error('Kullanıcı yükleme hatası:', err);
+        setError('Kullanıcılar alınamadı.');
+      } finally {
         setLoading(false);
       }
     };
-    
     fetchUsers();
   }, []);
   
@@ -179,24 +190,16 @@ export default function UserList() {
   // Kullanıcı silme işlevi
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
-    
+    setIsDeleting(true);
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch(`/api/admin/users/${userToDelete}`, {
-      //   method: 'DELETE',
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Kullanıcı silinirken bir hata oluştu');
-      // }
-      
-      // Şimdilik örnek veriyi güncelliyoruz
-      setUsers(users.filter(user => user.id !== userToDelete));
+      await deleteUser(userToDelete);
+      setUsers(prevUsers => prevUsers.filter(u => u.id !== userToDelete));
       setShowDeleteModal(false);
       setUserToDelete(null);
-      
     } catch (error) {
-      console.error('Silme hatası:', error);
+      setError('Kullanıcı silinirken bir hata oluştu.');
+    } finally {
+      setIsDeleting(false);
     }
   };
   
@@ -407,6 +410,16 @@ export default function UserList() {
                         </Link>
                         <button 
                           onClick={() => {
+                            setSelectedUserForPassword({ id: user.id, name: user.name });
+                            setShowPasswordModal(true);
+                          }}
+                          className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
+                          title="Şifre Değiştir"
+                        >
+                          Şifre
+                        </button>
+                        <button 
+                          onClick={() => {
                             setUserToDelete(user.id);
                             setShowDeleteModal(true);
                           }}
@@ -456,6 +469,22 @@ export default function UserList() {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Şifre Değiştirme Modal */}
+      {selectedUserForPassword && (
+        <ChangePasswordModal
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setSelectedUserForPassword(null);
+          }}
+          userId={selectedUserForPassword.id}
+          userName={selectedUserForPassword.name}
+          onSuccess={() => {
+            // Şifre değiştirildikten sonra yapılacak işlemler
+          }}
+        />
       )}
     </div>
   );

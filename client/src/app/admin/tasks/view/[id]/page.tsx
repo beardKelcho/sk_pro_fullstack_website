@@ -174,19 +174,29 @@ export default function ViewTask() {
     const fetchTaskData = async () => {
       setLoading(true);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch(`/api/admin/tasks/${taskId}`);
-        // if (!response.ok) throw new Error('Görev verisi alınamadı');
-        // const data = await response.json();
-        // setTask(data);
+        const { getTaskById } = await import('@/services/taskService');
+        const taskData = await getTaskById(taskId);
         
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          const foundTask = sampleTasks.find(t => t.id === taskId);
-          setTask(foundTask || null);
-          setLoading(false);
-        }, 500);
+        // Backend formatını frontend formatına dönüştür
+        const formattedTask = {
+          id: taskData._id || taskData.id || '',
+          title: taskData.title,
+          description: taskData.description || '',
+          priority: (taskData.priority === 'LOW' ? 'Düşük' :
+                   taskData.priority === 'MEDIUM' ? 'Orta' :
+                   taskData.priority === 'HIGH' ? 'Yüksek' : 'Acil') as 'Düşük' | 'Orta' | 'Yüksek' | 'Acil',
+          status: (taskData.status === 'TODO' ? 'Atandı' :
+                 taskData.status === 'IN_PROGRESS' ? 'Devam Ediyor' :
+                 taskData.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
+          dueDate: taskData.dueDate || '',
+          assignedTo: typeof taskData.assignedTo === 'object' ? (taskData.assignedTo as any)._id || (taskData.assignedTo as any).id : taskData.assignedTo || '',
+          relatedProject: typeof taskData.project === 'object' ? (taskData.project as any)._id || (taskData.project as any).id : taskData.project || '',
+          createdAt: taskData.createdAt || new Date().toISOString(),
+          updatedAt: taskData.updatedAt || new Date().toISOString()
+        };
         
+        setTask(formattedTask);
+        setLoading(false);
       } catch (error) {
         console.error('Veri yükleme hatası:', error);
         setLoading(false);

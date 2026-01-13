@@ -64,20 +64,18 @@ interface TimelineItem {
 
 // Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  'active': 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200',
-  'planned': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
-  'completed': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
-  'cancelled': 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200',
-  'pending': 'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
+  'PLANNING': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+  'ACTIVE': 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200',
+  'COMPLETED': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
+  'CANCELLED': 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200'
 };
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'active': 'Aktif',
-  'planned': 'Planlandı',
-  'completed': 'Tamamlandı',
-  'cancelled': 'İptal Edildi',
-  'pending': 'Beklemede'
+  'PLANNING': 'Planlama',
+  'ACTIVE': 'Devam Ediyor',
+  'COMPLETED': 'Tamamlandı',
+  'CANCELLED': 'İptal Edildi'
 };
 
 // Takım üyesi tipi
@@ -169,7 +167,7 @@ const sampleProjects: ProjectLocal[] = [
     },
     startDate: '2024-03-15',
     endDate: '2024-03-17',
-    status: 'active',
+    status: 'ACTIVE',
     budget: 150000,
     location: 'İstanbul Kongre Merkezi',
     team: sampleTeamMembers.filter(member => ['2', '4', '6'].includes(member.id)),
@@ -191,7 +189,7 @@ const sampleProjects: ProjectLocal[] = [
     },
     startDate: '2024-04-01',
     endDate: '2024-04-01',
-    status: 'planned',
+    status: 'PLANNING',
     budget: 85000,
     location: 'Hilton Convention Center',
     team: sampleTeamMembers.filter(member => ['1', '2', '7', '9'].includes(member.id)),
@@ -213,7 +211,7 @@ const sampleProjects: ProjectLocal[] = [
     },
     startDate: '2024-07-15',
     endDate: '2024-07-17',
-    status: 'pending',
+    status: 'PLANNING',
     budget: 250000,
     location: 'KüçükÇiftlik Park',
     team: sampleTeamMembers.filter(member => ['3', '5', '8', '10'].includes(member.id)),
@@ -235,7 +233,7 @@ const sampleProjects: ProjectLocal[] = [
     },
     startDate: '2024-12-20',
     endDate: '2024-12-20',
-    status: 'planned',
+    status: 'PLANNING',
     budget: 120000,
     location: 'Four Seasons Hotel',
     team: sampleTeamMembers.filter(member => ['1', '4', '7', '11'].includes(member.id)),
@@ -580,11 +578,49 @@ export default function ViewProject() {
       try {
         setLoading(true);
         
-        // API isteği simülasyonu
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const { getProjectById } = await import('@/services/projectService');
+        const projectData = await getProjectById(projectId);
         
-        // Gerçek bir API yerine örnek veriyi kullanıyoruz
-        setProject(sampleProject);
+        // Backend formatını frontend formatına dönüştür
+        const formattedProject = {
+          id: projectData._id || projectData.id || '',
+          name: projectData.name,
+          description: projectData.description || '',
+          customer: typeof projectData.client === 'object' && projectData.client ? {
+            id: (projectData.client as any)._id || (projectData.client as any).id || '',
+            name: (projectData.client as any).name || '',
+            companyName: (projectData.client as any).companyName || (projectData.client as any).name || '',
+            email: (projectData.client as any).email || '',
+            phone: (projectData.client as any).phone || ''
+          } : { id: '', name: '', companyName: '', email: '', phone: '' },
+          startDate: projectData.startDate,
+          endDate: projectData.endDate || '',
+          status: (projectData.status as ProjectStatus) || 'PLANNING',
+          budget: projectData.budget || 0,
+          location: projectData.location || '',
+          team: Array.isArray(projectData.team) ? projectData.team.map((t: any) => typeof t === 'object' ? {
+            id: t._id || t.id || '',
+            name: t.name || '',
+            role: t.role || '',
+            email: t.email || '',
+            phone: t.phone || '',
+            status: t.status || 'active',
+            avatar: t.avatar
+          } : { id: t || '', name: '', role: '', email: '', phone: '', status: 'active' }) : [],
+          equipment: Array.isArray(projectData.equipment) ? projectData.equipment.map((e: any) => typeof e === 'object' ? {
+            id: e._id || e.id || '',
+            name: e.name || '',
+            model: e.model || '',
+            serialNumber: e.serialNumber || '',
+            category: e.category || '',
+            status: e.status || ''
+          } : { id: e || '', name: '', model: '', serialNumber: '', category: '', status: '' }) : [],
+          notes: projectData.notes || '',
+          createdAt: projectData.createdAt || new Date().toISOString(),
+          updatedAt: projectData.updatedAt || new Date().toISOString()
+        };
+        
+        setProject(formattedProject);
         setLoading(false);
       } catch (err) {
         console.error('Proje yüklenirken hata oluştu:', err);

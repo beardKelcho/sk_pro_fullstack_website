@@ -2,152 +2,40 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getAllProjects, deleteProject } from '@/services/projectService';
+import ExportButton from '@/components/admin/ExportButton';
+import { Project, ProjectStatus, ProjectStatusDisplay, Client } from '@/types/project';
 
-// Proje durumları
-type ProjectStatus = 'Planlama' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi';
+// Backend enum'larını Türkçe string'e çeviren yardımcı fonksiyon
+const getStatusDisplay = (status: ProjectStatus): ProjectStatusDisplay => {
+  const statusMap: Record<ProjectStatus, ProjectStatusDisplay> = {
+    'PLANNING': 'Planlama',
+    'ACTIVE': 'Devam Ediyor',
+    'COMPLETED': 'Tamamlandı',
+    'CANCELLED': 'İptal Edildi'
+  };
+  return statusMap[status] || 'Planlama';
+};
 
-// Müşteri tipi
-interface Customer {
-  id: string;
-  name: string;
-  companyName: string;
-  email: string;
-  phone: string;
+// Türkçe string'i backend enum'a çeviren yardımcı fonksiyon
+const getStatusFromDisplay = (display: ProjectStatusDisplay): ProjectStatus => {
+  const displayMap: Record<ProjectStatusDisplay, ProjectStatus> = {
+    'Planlama': 'PLANNING',
+    'Devam Ediyor': 'ACTIVE',
+    'Tamamlandı': 'COMPLETED',
+    'İptal Edildi': 'CANCELLED'
+  };
+  return displayMap[display] || 'PLANNING';
+};
+
+// Görüntüleme için genişletilmiş Project tipi
+interface ProjectDisplay extends Omit<Project, 'status' | 'client'> {
+  status: ProjectStatusDisplay;
+  customer: Client; // Görüntüleme için 'customer' alias'ı
 }
 
-// Proje tipi
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  customer: Customer;
-  startDate: string;
-  endDate: string;
-  status: ProjectStatus;
-  budget?: number;
-  location: string;
-  team: string[];
-  equipment: string[];
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Örnek projeler
-const sampleProjects: Project[] = [
-  {
-    id: '1',
-    name: 'Vodafone Kurumsal Etkinlik',
-    description: 'Vodafone kurumsal müşteriler için büyük çaplı sunum ve tanıtım etkinliği',
-    customer: {
-      id: '101',
-      name: 'Ahmet Yılmaz',
-      companyName: 'Vodafone Türkiye',
-      email: 'ahmet.yilmaz@vodafone.com',
-      phone: '+90 532 123 4567'
-    },
-    startDate: '2023-12-10',
-    endDate: '2023-12-12',
-    status: 'Devam Ediyor',
-    budget: 250000,
-    location: 'Lütfi Kırdar Kongre Merkezi, İstanbul',
-    team: ['1', '3', '5', '8'],
-    equipment: ['1', '2', '4', '7'],
-    notes: 'Ekstra LED ekranlar için hazırlık yapılacak. Yedek medya server götürülecek.',
-    createdAt: '2023-10-15T14:30:00Z',
-    updatedAt: '2023-11-20T09:15:00Z'
-  },
-  {
-    id: '2',
-    name: 'TEB Yıl Sonu Değerlendirme',
-    description: 'TEB yıl sonu değerlendirme ve 2024 hedefler toplantısı',
-    customer: {
-      id: '102',
-      name: 'Zeynep Kaya',
-      companyName: 'Türk Ekonomi Bankası',
-      email: 'zeynep.kaya@teb.com',
-      phone: '+90 533 765 4321'
-    },
-    startDate: '2023-12-20',
-    endDate: '2023-12-20',
-    status: 'Planlama',
-    budget: 150000,
-    location: 'TEB Genel Müdürlük, İstanbul',
-    team: ['2', '4', '6'],
-    equipment: ['3', '5', '8'],
-    createdAt: '2023-11-01T10:00:00Z',
-    updatedAt: '2023-11-15T16:45:00Z'
-  },
-  {
-    id: '3',
-    name: 'Mercedes-Benz Yeni Model Lansmanı',
-    description: 'Yeni elektrikli SUV model lansmanı ve basın etkinliği',
-    customer: {
-      id: '103',
-      name: 'Murat Öztürk',
-      companyName: 'Mercedes-Benz Türkiye',
-      email: 'murat.ozturk@mercedes-benz.com',
-      phone: '+90 535 876 5432'
-    },
-    startDate: '2023-11-10',
-    endDate: '2023-11-12',
-    status: 'Tamamlandı',
-    budget: 350000,
-    location: 'Tersane İstanbul',
-    team: ['1', '2', '7', '9'],
-    equipment: ['1', '2', '3', '6'],
-    notes: 'Müşteri tüm ekipmanlardan çok memnun kaldı. Gelecek etkinlikleri de konuşmak istiyorlar.',
-    createdAt: '2023-09-05T11:20:00Z',
-    updatedAt: '2023-11-13T14:30:00Z'
-  },
-  {
-    id: '4',
-    name: 'Turkcell Teknoloji Zirvesi',
-    description: '5G teknolojileri ve dijital dönüşüm zirvesi',
-    customer: {
-      id: '104',
-      name: 'Elif Demir',
-      companyName: 'Turkcell',
-      email: 'elif.demir@turkcell.com',
-      phone: '+90 536 987 6543'
-    },
-    startDate: '2024-01-15',
-    endDate: '2024-01-17',
-    status: 'Planlama',
-    budget: 400000,
-    location: 'Haliç Kongre Merkezi, İstanbul',
-    team: ['3', '5', '8', '10'],
-    equipment: ['1', '4', '9', '10'],
-    notes: 'Teknik gereksinimler şubat başında belirlenecek. Müşteri AR deneyimi talep edebilir.',
-    createdAt: '2023-10-25T09:45:00Z',
-    updatedAt: '2023-11-05T13:10:00Z'
-  },
-  {
-    id: '5',
-    name: 'Koç Holding İnovasyon Günleri',
-    description: 'Koç Holding şirketleri için inovasyon ve dijital dönüşüm etkinliği',
-    customer: {
-      id: '105',
-      name: 'Mehmet Koç',
-      companyName: 'Koç Holding',
-      email: 'mehmet.koc@koc.com.tr',
-      phone: '+90 537 234 5678'
-    },
-    startDate: '2023-09-05',
-    endDate: '2023-09-08',
-    status: 'Tamamlandı',
-    budget: 500000,
-    location: 'Koç Müzesi, İstanbul',
-    team: ['1', '4', '7', '11'],
-    equipment: ['2', '5', '7', '8'],
-    notes: 'Çok başarılı geçti. Şubat 2024 için yeni etkinlik görüşülecek.',
-    createdAt: '2023-06-15T08:30:00Z',
-    updatedAt: '2023-09-10T16:20:00Z'
-  }
-];
-
-// Durum renkleri
-const statusColors: Record<ProjectStatus, string> = {
+// Durum renkleri (Türkçe görüntüleme için)
+const statusColors: Record<ProjectStatusDisplay, string> = {
   'Planlama': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   'Devam Ediyor': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   'Tamamlandı': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
@@ -155,34 +43,73 @@ const statusColors: Record<ProjectStatus, string> = {
 };
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectDisplay[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
-  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<ProjectDisplay | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Proje verilerini getirme
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
+      setError(null);
       try {
-        // API entegrasyonu burada yapılacak
-        // const response = await fetch('/api/projects');
-        // const data = await response.json();
-        
-        // Şimdilik örnek veriler
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setProjects(sampleProjects);
-      } catch (error) {
-        console.error('Projeler yüklenirken hata oluştu:', error);
+        const response = await getAllProjects();
+        // Backend'den gelen response formatına göre düzenle
+        const projectsList = response.projects || response;
+        // Backend formatını frontend formatına dönüştür
+        const formattedProjects: ProjectDisplay[] = Array.isArray(projectsList) ? projectsList.map((item: any) => {
+          const backendStatus = item.status as ProjectStatus;
+          const clientData = typeof item.client === 'object' && item.client ? item.client : null;
+          
+          return {
+            id: item._id || item.id || '',
+            _id: item._id,
+            name: item.name || '',
+            description: item.description || '',
+            customer: clientData ? {
+              id: clientData._id || clientData.id || '',
+              _id: clientData._id,
+              name: clientData.name || '',
+              companyName: clientData.companyName || clientData.name || '',
+              email: clientData.email || '',
+              phone: clientData.phone || '',
+              address: clientData.address,
+              industry: clientData.industry,
+              city: clientData.city,
+              status: clientData.status
+            } : {
+              id: '',
+              name: '',
+              companyName: '',
+              email: '',
+              phone: ''
+            },
+            startDate: item.startDate || '',
+            endDate: item.endDate || '',
+            status: getStatusDisplay(backendStatus),
+            budget: item.budget || 0,
+            location: item.location || '',
+            team: Array.isArray(item.team) ? item.team.map((t: any) => typeof t === 'string' ? t : (t._id || t.id || '')) : [],
+            equipment: Array.isArray(item.equipment) ? item.equipment.map((e: any) => typeof e === 'string' ? e : (e._id || e.id || '')) : [],
+            notes: item.notes || '',
+            createdAt: item.createdAt || new Date().toISOString(),
+            updatedAt: item.updatedAt || new Date().toISOString()
+          };
+        }) : [];
+        setProjects(formattedProjects);
+      } catch (err) {
+        console.error('Proje yükleme hatası:', err);
+        setError('Projeler alınamadı.');
       } finally {
         setLoading(false);
       }
     };
-    
     fetchProjects();
   }, []);
 
@@ -193,7 +120,7 @@ export default function ProjectsPage() {
   };
 
   // Silme modalını aç
-  const handleDeleteClick = (project: Project) => {
+  const handleDeleteClick = (project: ProjectDisplay) => {
     setProjectToDelete(project);
     setShowDeleteModal(true);
   };
@@ -201,23 +128,14 @@ export default function ProjectsPage() {
   // Projeyi sil
   const handleDeleteConfirm = async () => {
     if (!projectToDelete) return;
-    
     setIsDeleting(true);
-    
     try {
-      // API entegrasyonu burada yapılacak
-      // await fetch(`/api/projects/${projectToDelete.id}`, {
-      //   method: 'DELETE',
-      // });
-      
-      // Şimdilik yerel state güncelleme
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await deleteProject(projectToDelete.id);
       setProjects(prevProjects => prevProjects.filter(p => p.id !== projectToDelete.id));
-      
       setShowDeleteModal(false);
       setProjectToDelete(null);
     } catch (error) {
-      console.error('Proje silinirken hata oluştu:', error);
+      setError('Proje silinirken bir hata oluştu.');
     } finally {
       setIsDeleting(false);
     }
@@ -260,7 +178,12 @@ export default function ProjectsPage() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Projeler</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-300">Tüm etkinlik ve organizasyon projelerini yönetin</p>
         </div>
-        <div className="mt-4 md:mt-0">
+        <div className="mt-4 md:mt-0 flex gap-2">
+          <ExportButton
+            endpoint="/export/projects"
+            filename="projects-export.csv"
+            label="Dışa Aktar"
+          />
           <Link href="/admin/projects/add">
             <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

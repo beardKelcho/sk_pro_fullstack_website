@@ -142,7 +142,7 @@ const formatDate = (dateString?: string): string => {
 
 export default function MaintenancePage() {
   const [loading, setLoading] = useState<boolean>(true);
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [equipment, setEquipment] = useState<any[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [maintenanceStatusFilter, setMaintenanceStatusFilter] = useState<string>('');
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -154,13 +154,24 @@ export default function MaintenancePage() {
   useEffect(() => {
     const fetchEquipment = async () => {
       try {
-        // API entegrasyonu burada yapılacak
-        // const response = await fetch('/api/admin/equipment');
-        // const data = await response.json();
-        
-        // Şimdilik örnek veriyi kullan
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setEquipment(sampleEquipment);
+        const { getAllEquipment } = await import('@/services/equipmentService');
+        const response = await getAllEquipment();
+        const equipmentList = response.equipment || response;
+        const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: any) => ({
+          id: item._id || item.id || '',
+          name: item.name || '',
+          model: item.model || '',
+          serialNumber: item.serialNumber || '',
+          category: (item.type || item.category || 'VideoSwitcher') as 'VideoSwitcher' | 'MediaServer' | 'Camera' | 'Display' | 'Audio' | 'Lighting' | 'Cable' | 'Accessory',
+          status: (item.status || 'Available') as 'Available' | 'InUse' | 'Maintenance' | 'Broken',
+          purchaseDate: item.purchaseDate,
+          lastMaintenanceDate: item.lastMaintenanceDate,
+          nextMaintenanceDate: item.nextMaintenanceDate,
+          location: item.location || '',
+          specs: item.specs || {},
+          notes: item.notes || ''
+        })) : [];
+        setEquipment(formattedEquipment as any);
         setLoading(false);
       } catch (error) {
         console.error('Ekipman verileri yüklenirken hata:', error);
@@ -220,35 +231,39 @@ export default function MaintenancePage() {
     setUpdatingMaintenance(true);
     
     try {
-      // API entegrasyonu burada yapılacak
-      // const response = await fetch(`/api/admin/equipment/${selectedEquipment.id}/maintenance`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     lastMaintenanceDate: new Date().toISOString().split('T')[0],
-      //     nextMaintenanceDate: newMaintenanceDate,
-      //   }),
-      // });
-      
-      // API entegrasyonu olmadığı için yerel veriyi güncelle
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
+      // Maintenance kaydı oluştur veya güncelle
+      const { createMaintenance } = await import('@/services/maintenanceService');
       const today = new Date().toISOString().split('T')[0];
       
-      setEquipment(prevEquipment => 
-        prevEquipment.map(eq => 
-          eq.id === selectedEquipment.id 
-            ? { 
-                ...eq, 
-                lastMaintenanceDate: today,
-                nextMaintenanceDate: newMaintenanceDate,
-                status: 'Available' as const 
-              } 
-            : eq
-        )
-      );
+      // Önce mevcut bakım kaydını kontrol et ve tamamla
+      // Sonra yeni bakım kaydı oluştur
+      await createMaintenance({
+        equipment: selectedEquipment.id,
+        type: 'ROUTINE',
+        description: 'Periyodik bakım tamamlandı',
+        scheduledDate: newMaintenanceDate,
+        status: 'SCHEDULED',
+        assignedTo: '', // Kullanıcı ID'si buraya gelecek
+      });
+      
+      // Ekipman listesini yeniden yükle
+      const { getAllEquipment } = await import('@/services/equipmentService');
+      const response = await getAllEquipment();
+      const equipmentList = response.equipment || response;
+      const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: any) => ({
+        id: item._id || item.id,
+        name: item.name,
+        model: item.model || '',
+        serialNumber: item.serialNumber || '',
+        category: item.type || item.category,
+        status: item.status,
+        purchaseDate: item.purchaseDate,
+        lastMaintenanceDate: item.lastMaintenanceDate,
+        nextMaintenanceDate: item.nextMaintenanceDate,
+        location: item.location || '',
+        notes: item.notes || ''
+      })) : [];
+      setEquipment(formattedEquipment);
       
       setUpdatingMaintenance(false);
       setShowModal(false);

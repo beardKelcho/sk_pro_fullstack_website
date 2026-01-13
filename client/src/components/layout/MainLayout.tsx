@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Navbar from './Navbar';
+import Header from './Header';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -9,9 +9,11 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow">{children}</main>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-grow">
+        {children}
+      </main>
     </div>
   );
 };

@@ -1,75 +1,223 @@
 /** @type {import('next').NextConfig} */
+const { withSentryConfig } = require('@sentry/nextjs');
+
 const nextConfig = {
   reactStrictMode: true,
-  poweredByHeader: false,
-  compress: true,
+  swcMinify: true,
   images: {
+    domains: ['localhost'],
     remotePatterns: [
       {
         protocol: 'http',
         hostname: 'localhost',
+        port: '5001',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '5001',
+        pathname: '/api/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.ngrok-free.app',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.ngrok.io',
+        pathname: '/**',
       },
     ],
+    formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    formats: ['image/webp'],
-  },
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  eslint: {
-    ignoreDuringBuilds: false,
+    unoptimized: false, // Production'da optimize et
+    minimumCacheTTL: 60, // 60 saniye cache
   },
   experimental: {
-    typedRoutes: true,
+    optimizeCss: true,
+    scrollRestoration: true,
+    optimizePackageImports: ['@vercel/analytics', 'framer-motion'],
+  },
+  compiler: {
+    // Development'ta da console.log ve console.debug'ı kaldır, sadece error ve warn kalsın
+    removeConsole: process.env.NODE_ENV === 'production' ? true : {
+      exclude: ['error', 'warn'],
+    },
+  },
+  // API rewrites - Backend'i frontend üzerinden proxy et (ngrok için)
+  rewrites: async () => {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${backendUrl}/api/:path*`,
+      },
+      {
+        source: '/api-docs/:path*',
+        destination: `${backendUrl}/api-docs/:path*`,
+      },
+      {
+        source: '/uploads/:path*',
+        destination: `${backendUrl}/uploads/:path*`,
+      },
+    ];
+  },
+  headers: async () => {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin'
+          }
+        ],
+      },
+    ]
   },
   webpack: (config, { dev, isServer }) => {
-    // SVG optimizasyonu
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
-
-    // Production optimizasyonları
-    if (!dev && !isServer) {
-      config.optimization.splitChunks.cacheGroups = {
-        commons: {
-          name: 'commons',
-          chunks: 'all',
-          minChunks: 2,
-        },
-      };
+    // Bundle analizi için
+    if (process.env.ANALYZE) {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
+      // config.plugins'in var olduğundan ve array olduğundan emin ol
+      if (!config.plugins) {
+        config.plugins = [];
+      }
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'server',
+          analyzerPort: isServer ? 8888 : 8889,
+          openAnalyzer: true,
+        })
+      )
     }
 
-    return config;
+    // Production optimizasyonları
+    if (!dev) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          minSize: 20000,
+          maxSize: 244000, // ~240 KB (performance budget için)
+          minChunks: 1,
+          maxAsyncRequests: 30,
+          maxInitialRequests: 30,
+          cacheGroups: {
+            // Vendor chunks (node_modules)
+            defaultVendors: {
+              test: /[\\/]node_modules[\\/]/,
+              priority: -10,
+              reuseExistingChunk: true,
+              name(module) {
+                // Büyük kütüphaneleri ayrı chunk'lara ayır
+                const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
+                if (packageName) {
+                  // Büyük kütüphaneler için ayrı chunk
+                  const largeLibs = ['react', 'react-dom', 'next', '@tanstack/react-query', 'recharts', 'react-grid-layout'];
+                  if (largeLibs.some(lib => packageName.includes(lib))) {
+                    return `vendor-${packageName.replace('@', '').replace('/', '-')}`;
+                  }
+                }
+                return 'vendor';
+              },
+            },
+            // Common chunks
+            common: {
+              minChunks: 2,
+              priority: -20,
+              reuseExistingChunk: true,
+            },
+            // Default
+            default: {
+              minChunks: 2,
+              priority: -30,
+              reuseExistingChunk: true,
+            },
+          },
+        },
+      }
+    }
+
+    return config
   },
-  headers: async () => [
-    {
-      source: '/:path*',
-      headers: [
-        {
-          key: 'X-DNS-Prefetch-Control',
-          value: 'on',
-        },
-        {
-          key: 'X-XSS-Protection',
-          value: '1; mode=block',
-        },
-        {
-          key: 'X-Frame-Options',
-          value: 'SAMEORIGIN',
-        },
-        {
-          key: 'X-Content-Type-Options',
-          value: 'nosniff',
-        },
-        {
-          key: 'Referrer-Policy',
-          value: 'origin-when-cross-origin',
-        },
-      ],
-    },
-  ],
+}
+
+// Sentry config (sadece production'da ve DSN varsa)
+// SENTRY_ORG ve SENTRY_PROJECT source map upload için gerekli ama opsiyonel
+const hasSentryDSN = 
+  process.env.NODE_ENV === 'production' &&
+  (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN);
+
+// SENTRY_ORG ve SENTRY_PROJECT validation (undefined, null, boş string kontrolü)
+const hasSentryOrg = process.env.SENTRY_ORG && process.env.SENTRY_ORG.trim() !== '';
+const hasSentryProject = process.env.SENTRY_PROJECT && process.env.SENTRY_PROJECT.trim() !== '';
+
+const hasSentrySourceMapConfig = 
+  hasSentryDSN &&
+  hasSentryOrg &&
+  hasSentryProject;
+
+// Sentry webpack plugin options
+// Org ve project sadece geçerli değerler varsa ekle (source map upload için gerekli)
+const sentryWebpackPluginOptions = {
+  // Sentry webpack plugin options
+  silent: true, // Suppresses source map uploading logs during build
+  
+  // Source maps
+  widenClientFileUpload: true,
+  transpileClientSDK: true,
+  tunnelRoute: '/monitoring',
+  hideSourceMaps: true,
+  disableLogger: true,
+  
+  // Automatic release tracking
+  automaticVercelReleases: false, // Manuel release tracking kullanıyoruz
+  
+  // Org ve project sadece geçerli değerler varsa ekle (source map upload için gerekli)
+  // Undefined/null/boş string olursa source map upload devre dışı kalır ama Sentry çalışmaya devam eder
+  ...(hasSentryOrg && { org: process.env.SENTRY_ORG }),
+  ...(hasSentryProject && { project: process.env.SENTRY_PROJECT }),
+  ...(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_AUTH_TOKEN.trim() !== '' && { 
+    authToken: process.env.SENTRY_AUTH_TOKEN 
+  }),
 };
 
-module.exports = nextConfig; 
+// Sentry ile wrap et
+// - DSN varsa: Sentry aktif (error tracking çalışır)
+// - DSN + Org + Project varsa: Sentry aktif + source map upload çalışır
+// - Hiçbiri yoksa: Sentry devre dışı
+module.exports = hasSentryDSN && hasSentrySourceMapConfig
+  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+  : hasSentryDSN && !hasSentrySourceMapConfig
+  ? (() => {
+      // DSN var ama org/project yok - sadece error tracking, source map upload yok
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('⚠️  Sentry: DSN found but SENTRY_ORG/SENTRY_PROJECT missing or empty. Source map upload disabled.');
+      }
+      return nextConfig;
+    })()
+  : nextConfig; 

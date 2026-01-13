@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import ExportButton from '@/components/admin/ExportButton';
 
 // Müşteri türü tanımlama
 interface Client {
@@ -18,97 +18,6 @@ interface Client {
   createdAt: string;
   notes?: string;
 }
-
-// Örnek müşteri verileri
-const sampleClients: Client[] = [
-  {
-    id: '1',
-    name: 'TechCon Group',
-    contactPerson: 'Ahmet Yılmaz',
-    email: 'ahmet.yilmaz@techcongroup.com',
-    phone: '+90 532 123 45 67',
-    address: 'Maslak Mah. Büyükdere Cad. No:123, İstanbul',
-    industry: 'Etkinlik Organizasyonu',
-    projectCount: 5,
-    status: 'Active',
-    createdAt: '2022-08-15',
-    notes: 'Teknoloji sektöründeki en büyük müşterilerimizden. Yıllık olarak 3-4 büyük etkinlik yapıyorlar.'
-  },
-  {
-    id: '2',
-    name: 'X Teknoloji A.Ş.',
-    contactPerson: 'Zeynep Öztürk',
-    email: 'zeynep.ozturk@xteknoloji.com',
-    phone: '+90 533 234 56 78',
-    address: 'Kozyatağı Mah. Bağdat Cad. No:45, İstanbul',
-    industry: 'Kurumsal',
-    projectCount: 3,
-    status: 'Active',
-    createdAt: '2022-10-20',
-    notes: 'Ürün tanıtımlarını genellikle canlı yayın olarak da paylaşıyorlar.'
-  },
-  {
-    id: '3',
-    name: 'Y İletişim',
-    contactPerson: 'Mehmet Kaya',
-    email: 'mehmet.kaya@yiletisim.com',
-    phone: '+90 532 345 67 89',
-    address: 'Beşiktaş Mah. Cevdetpaşa Cad. No:67, İstanbul',
-    industry: 'Televizyon',
-    projectCount: 2,
-    status: 'Active',
-    createdAt: '2023-01-05'
-  },
-  {
-    id: '4',
-    name: 'Z Organizasyon',
-    contactPerson: 'Ayşe Demir',
-    email: 'ayse.demir@zorganizasyon.com',
-    phone: '+90 535 456 78 90',
-    address: 'Bağcılar Mah. Merkez Cad. No:89, İstanbul',
-    industry: 'Konser & Sahne',
-    projectCount: 7,
-    status: 'Active',
-    createdAt: '2022-05-12',
-    notes: 'Büyük konser organizasyonları yapıyorlar.'
-  },
-  {
-    id: '5',
-    name: 'Mega Holding',
-    contactPerson: 'Ali Yıldız',
-    email: 'ali.yildiz@megaholding.com',
-    phone: '+90 534 567 89 01',
-    address: 'Şişli Mah. Abide-i Hürriyet Cad. No:34, İstanbul',
-    industry: 'Kurumsal',
-    projectCount: 2,
-    status: 'Active',
-    createdAt: '2023-02-18'
-  },
-  {
-    id: '6',
-    name: 'Eğitim Kurumu',
-    contactPerson: 'Selin Şahin',
-    email: 'selin.sahin@egitimkurumu.edu.tr',
-    phone: '+90 536 678 90 12',
-    address: 'Kadıköy Mah. Bağdat Cad. No:23, İstanbul',
-    industry: 'Eğitim',
-    projectCount: 1,
-    status: 'Inactive',
-    createdAt: '2022-11-30'
-  },
-  {
-    id: '7',
-    name: 'Modern Müze',
-    contactPerson: 'Burak Avcı',
-    email: 'burak.avci@modernmuze.com',
-    phone: '+90 537 789 01 23',
-    address: 'Beyoğlu Mah. İstiklal Cad. No:56, İstanbul',
-    industry: 'Müze & Sergi',
-    projectCount: 2,
-    status: 'Active',
-    createdAt: '2023-03-10'
-  }
-];
 
 // Endüstri seçenekleri
 const industryOptions = [
@@ -126,7 +35,6 @@ const industryOptions = [
 ];
 
 export default function ClientList() {
-  const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('Tümü');
@@ -140,18 +48,26 @@ export default function ClientList() {
     const fetchClients = async () => {
       setLoading(true);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch('/api/admin/clients');
-        // if (!response.ok) throw new Error('Müşteri verileri alınamadı');
-        // const data = await response.json();
-        // setClients(data);
-        
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          setClients(sampleClients);
-          setLoading(false);
-        }, 500);
-        
+        const { getAllCustomers } = await import('@/services/customerService');
+        const response = await getAllCustomers();
+        // Backend'den gelen response formatına göre düzenle
+        const clientsList = response.clients || response;
+        // Backend formatını frontend formatına dönüştür
+        const formattedClients = Array.isArray(clientsList) ? clientsList.map((item: any) => ({
+          id: item._id || item.id,
+          name: item.name,
+          contactPerson: item.name, // Backend'de contactPerson yok, name kullanıyoruz
+          email: item.email || '',
+          phone: item.phone || '',
+          address: item.address || '',
+          industry: 'Diğer', // Backend'de industry yok
+          projectCount: 0, // Backend'den gelecek
+          status: 'Active' as 'Active' | 'Inactive',
+          createdAt: item.createdAt || new Date().toISOString(),
+          notes: item.notes || ''
+        })) : [];
+        setClients(formattedClients);
+        setLoading(false);
       } catch (error) {
         console.error('Veri yükleme hatası:', error);
         setLoading(false);
@@ -217,14 +133,21 @@ export default function ClientList() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Müşteri Yönetimi</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-300">Tüm müşterilerinizi yönetin ve takip edin</p>
         </div>
-        <Link href="/admin/clients/add">
-          <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-            Yeni Müşteri Ekle
-          </button>
-        </Link>
+        <div className="flex gap-2">
+          <ExportButton
+            endpoint="/export/clients"
+            filename="clients-export.csv"
+            label="Dışa Aktar"
+          />
+          <Link href="/admin/clients/add">
+            <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Yeni Müşteri Ekle
+            </button>
+          </Link>
+        </div>
       </div>
       
       {/* Filtreler */}

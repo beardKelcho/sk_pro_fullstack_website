@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çevrimdışı - SK Production</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            color: #666;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .sync-status {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .sync-status.visible {
+            display: block;
+        }
+
+        .sync-status.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/images/logo.png" alt="SK Production Logo" class="icon">
+        <h1>Çevrimdışı Mod</h1>
+        <p>Şu anda internet bağlantınız yok. Lütfen bağlantınızı kontrol edip tekrar deneyin.</p>
+        <a href="/" class="button">Ana Sayfaya Dön</a>
+        <div class="status">Durum: Çevrimdışı</div>
+        <div class="sync-status hidden">
+            <p>Bekleyen senkronizasyonlar:</p>
+            <ul id="sync-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        // Çevrimiçi/çevrimdışı durumunu kontrol et
+        function updateOnlineStatus() {
+            const status = document.querySelector('.status');
+            const syncStatus = document.querySelector('.sync-status');
+            
+            if (navigator.onLine) {
+                status.textContent = 'Durum: Çevrimiçi';
+                status.style.color = '#28a745';
+                syncStatus.classList.add('visible');
+                syncStatus.classList.remove('hidden');
+                
+                // Senkronizasyon durumunu kontrol et
+                checkSyncStatus();
+            } else {
+                status.textContent = 'Durum: Çevrimdışı';
+                status.style.color = '#dc3545';
+                syncStatus.classList.add('hidden');
+                syncStatus.classList.remove('visible');
+            }
+        }
+
+        // Senkronizasyon durumunu kontrol et
+        async function checkSyncStatus() {
+            try {
+                const response = await fetch('/api/sync/status');
+                const data = await response.json();
+                
+                const syncList = document.getElementById('sync-list');
+                syncList.innerHTML = '';
+                
+                if (data.pending > 0) {
+                    syncList.innerHTML += `<li>${data.pending} form bekliyor</li>`;
+                }
+                if (data.failed > 0) {
+                    syncList.innerHTML += `<li>${data.failed} form başarısız</li>`;
+                }
+            } catch (error) {
+                console.error('Senkronizasyon durumu alınamadı:', error);
+            }
+        }
+
+        // Event listener'ları ekle
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        // Sayfa yüklendiğinde durumu kontrol et
+        updateOnlineStatus();
+    </script>
+</body>
+</html> 

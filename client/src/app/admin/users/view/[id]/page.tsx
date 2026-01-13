@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
+import { mapBackendRoleToFrontend } from '@/services/userService';
 
 // Kullanıcı türü tanımlama
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Proje Yöneticisi' | 'Teknik Direktör' | 'Teknisyen' | 'Medya Server Uzmanı' | 'Görüntü Yönetmeni';
+  role: 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen';
   department?: string;
   status: 'Aktif' | 'Pasif';
   avatar?: string;
@@ -26,11 +28,10 @@ interface User {
 // Örnek rol renkleri
 const roleColors = {
   'Admin': 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400',
+  'Firma Sahibi': 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400',
   'Proje Yöneticisi': 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
-  'Teknik Direktör': 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
-  'Teknisyen': 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400',
-  'Medya Server Uzmanı': 'bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-400',
-  'Görüntü Yönetmeni': 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-400'
+  'Depo Sorumlusu': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
+  'Teknisyen': 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400'
 };
 
 // Örnek kullanıcı verileri
@@ -175,24 +176,31 @@ export default function ViewUser() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<'profile' | 'projects' | 'activity'>('profile');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   
   // Kullanıcı verilerini yükleme
   useEffect(() => {
     const fetchUser = async () => {
       setLoading(true);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch(`/api/admin/users/${userId}`);
-        // if (!response.ok) throw new Error('Kullanıcı verileri alınamadı');
-        // const data = await response.json();
-        // setUser(data);
+        const { getUserById } = await import('@/services/userService');
+        const userData = await getUserById(userId);
         
-        // Şimdilik örnek veriyi kullanıyoruz
-        setTimeout(() => {
-          const foundUser = sampleUsers.find(u => u.id === userId);
-          setUser(foundUser || null);
-          setLoading(false);
-        }, 500);
+        // Backend formatını frontend formatına dönüştür
+        const formattedUser = {
+          id: userData._id || userData.id || '',
+          name: userData.name,
+          email: userData.email,
+          role: mapBackendRoleToFrontend(userData.role) as 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen',
+          department: '',
+          status: (userData.isActive ? 'Aktif' : 'Pasif') as 'Aktif' | 'Pasif',
+          avatar: userData.name?.substring(0, 2).toUpperCase() || '',
+          phone: '',
+          lastActive: userData.updatedAt || new Date().toISOString()
+        };
+        
+        setUser(formattedUser);
+        setLoading(false);
         
       } catch (error) {
         console.error('Veri yükleme hatası:', error);
@@ -260,6 +268,12 @@ export default function ViewUser() {
                   Kullanıcı Listesine Dön
                 </button>
               </Link>
+              <button 
+                onClick={() => setShowPasswordModal(true)}
+                className="px-3 py-1.5 bg-yellow-600 dark:bg-yellow-700 text-white rounded-md text-sm hover:bg-yellow-700 dark:hover:bg-yellow-800 transition-colors"
+              >
+                Şifre Değiştir
+              </button>
               <Link href={`/admin/users/edit/${user.id}`}>
                 <button className="px-3 py-1.5 bg-[#0066CC] dark:bg-primary-light text-white rounded-md text-sm hover:bg-[#0055AA] dark:hover:bg-primary transition-colors">
                   Düzenle
@@ -321,6 +335,20 @@ export default function ViewUser() {
                         <div>
                           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">E-posta</h3>
                           <p className="mt-1 text-sm text-gray-900 dark:text-white">{user.email}</p>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Şifre</h3>
+                          <div className="mt-1 flex items-center gap-2">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                              Şifreler güvenlik nedeniyle hash'lenmiş olarak saklanır
+                            </p>
+                            <button
+                              onClick={() => setShowPasswordModal(true)}
+                              className="text-sm text-[#0066CC] dark:text-primary-light hover:underline"
+                            >
+                              Şifreyi Değiştir
+                            </button>
+                          </div>
                         </div>
                         <div>
                           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Telefon</h3>
@@ -569,6 +597,19 @@ export default function ViewUser() {
             )}
           </div>
         </>
+      )}
+      
+      {/* Şifre Değiştirme Modal */}
+      {user && (
+        <ChangePasswordModal
+          isOpen={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+          userId={user.id}
+          userName={user.name}
+          onSuccess={() => {
+            // Şifre değiştirildikten sonra yapılacak işlemler
+          }}
+        />
       )}
     </div>
   );

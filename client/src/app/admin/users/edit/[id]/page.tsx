@@ -3,12 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { updateUser, mapBackendRoleToFrontend, mapFrontendRoleToBackend } from '@/services/userService';
+import PhoneInput from '@/components/ui/PhoneInput';
+import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
 
 // Kullanıcı form tipi
 interface UserForm {
   name: string;
   email: string;
-  role: 'Admin' | 'Proje Yöneticisi' | 'Teknik Direktör' | 'Teknisyen' | 'Medya Server Uzmanı' | 'Görüntü Yönetmeni';
+  password?: string;
+  role: 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen';
   department?: string;
   status: 'Aktif' | 'Pasif';
   phone?: string;
@@ -28,7 +32,7 @@ interface User extends UserForm {
 }
 
 // Rol ve departman seçenekleri
-const roles = ['Admin', 'Proje Yöneticisi', 'Teknik Direktör', 'Teknisyen', 'Medya Server Uzmanı', 'Görüntü Yönetmeni'];
+const roles = ['Admin', 'Firma Sahibi', 'Proje Yöneticisi', 'Depo Sorumlusu', 'Teknisyen'];
 const departments = ['Yönetim', 'Teknik', 'Medya', 'Görüntü'];
 
 // Örnek kullanıcı verileri
@@ -172,6 +176,10 @@ export default function EditUser() {
   // Yetenek girişi
   const [skillInput, setSkillInput] = useState('');
   
+  // İl/İlçe state
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
+  
   // Yükleme ve hata durumları
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -183,50 +191,35 @@ export default function EditUser() {
     const fetchUser = async () => {
       setLoading(true);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch(`/api/admin/users/${userId}`);
-        // if (!response.ok) throw new Error('Kullanıcı verileri alınamadı');
-        // const data = await response.json();
-        // setFormData({
-        //   name: data.name,
-        //   email: data.email,
-        //   role: data.role,
-        //   department: data.department || '',
-        //   status: data.status,
-        //   phone: data.phone || '',
-        //   address: data.address || '',
-        //   bio: data.bio || '',
-        //   skills: data.skills || [],
-        //   emergencyContact: data.emergencyContact || ''
-        // });
+        const { getUserById } = await import('@/services/userService');
+        const user = await getUserById(userId);
         
-        // Şimdilik örnek veriyi kullanıyoruz
-        setTimeout(() => {
-          const foundUser = sampleUsers.find(u => u.id === userId);
+        if (user) {
+          // Backend formatını frontend formatına dönüştür
+          const role = mapBackendRoleToFrontend(user.role);
+          const status = user.isActive ? 'Aktif' : 'Pasif';
           
-          if (foundUser) {
-            setFormData({
-              name: foundUser.name,
-              email: foundUser.email,
-              role: foundUser.role,
-              department: foundUser.department || '',
-              status: foundUser.status,
-              phone: foundUser.phone || '',
-              address: foundUser.address || '',
-              bio: foundUser.bio || '',
-              skills: foundUser.skills || [],
-              emergencyContact: foundUser.emergencyContact || ''
-            });
-          } else {
-            // Kullanıcı bulunamadığında hata durumunu ekleyebiliriz
-            setErrors({
-              general: 'Kullanıcı bulunamadı'
-            });
-          }
-          
-          setLoading(false);
-        }, 500);
+          setFormData({
+            name: user.name || '',
+            email: user.email || '',
+            role: role,
+            department: (user as any).department || '',
+            status: status,
+            phone: (user as any).phone || '',
+            address: (user as any).address || '',
+            bio: (user as any).bio || '',
+            skills: (user as any).skills || [],
+            emergencyContact: (user as any).emergencyContact || '',
+            password: '' // Şifre alanını boş bırak
+          });
+        } else {
+          // Kullanıcı bulunamadığında hata durumunu ekleyebiliriz
+          setErrors({
+            general: 'Kullanıcı bulunamadı'
+          });
+        }
         
+        setLoading(false);
       } catch (error) {
         console.error('Veri yükleme hatası:', error);
         setErrors({
@@ -291,8 +284,8 @@ export default function EditUser() {
       newErrors.role = 'Rol seçimi zorunludur';
     }
     
-    if (formData.phone && !/^(\+90|0)?\s*([0-9]{3})\s*([0-9]{3})\s*([0-9]{2})\s*([0-9]{2})$/.test(formData.phone)) {
-      newErrors.phone = 'Geçerli bir telefon numarası giriniz';
+    if (formData.phone && !/^\+90\s*([0-9]{3})\s*([0-9]{3})\s*([0-9]{2})\s*([0-9]{2})$/.test(formData.phone)) {
+      newErrors.phone = 'Geçerli bir telefon numarası giriniz (10 haneli)';
     }
     
     setErrors(newErrors);
@@ -311,34 +304,49 @@ export default function EditUser() {
     setSuccessMessage('');
     
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch(`/api/admin/users/${userId}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Kullanıcı güncellenirken bir hata oluştu');
-      // }
+      // API'ye gönderilecek veri - Backend formatına uygun
+      // Adresi il ve ilçe ile birleştir
+      const fullAddress = city && district 
+        ? `${formData.address ? formData.address + ', ' : ''}${district}, ${city}`
+        : formData.address;
+      const userData: any = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        address: fullAddress || undefined,
+        role: mapFrontendRoleToBackend(formData.role) as 'ADMIN' | 'FIRMA_SAHIBI' | 'PROJE_YONETICISI' | 'DEPO_SORUMLUSU' | 'TEKNISYEN',
+        isActive: formData.status === 'Aktif',
+      };
       
-      // Şimdilik fake bir bekleme süresi ekliyoruz
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Şifre sadece doldurulmuşsa ekle
+      if (formData.password && formData.password.trim().length > 0) {
+        if (formData.password.length < 6) {
+          setErrors(prev => ({
+            ...prev,
+            password: 'Şifre en az 6 karakter olmalıdır'
+          }));
+          setSubmitting(false);
+          return;
+        }
+        userData.password = formData.password;
+      }
       
-      setSuccessMessage('Kullanıcı başarıyla güncellendi! Kullanıcı detay sayfasına yönlendiriliyorsunuz...');
+      await updateUser(userId, userData);
+      setSuccessMessage('Kullanıcı başarıyla güncellendi! Kullanıcı listesine yönlendiriliyorsunuz...');
       
-      // Başarılı mesajını gösterdikten sonra kullanıcı detay sayfasına yönlendir
+      // Başarılı mesajını gösterdikten sonra kullanıcı listesine yönlendir
       setTimeout(() => {
-        router.push(`/admin/users/view/${userId}`);
+        router.push('/admin/users');
       }, 2000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Güncelleme hatası:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Kullanıcı güncellenirken bir hata oluştu. Lütfen tekrar deneyin.';
       setErrors(prev => ({
         ...prev,
-        submit: 'Kullanıcı güncellenirken bir hata oluştu. Lütfen tekrar deneyin.'
+        submit: errorMessage
       }));
     } finally {
       setSubmitting(false);
@@ -434,25 +442,52 @@ export default function EditUser() {
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Telefon
                 </label>
-                <input
-                  type="tel"
+                <PhoneInput
                   id="phone"
                   name="phone"
                   value={formData.phone}
-                  onChange={handleChange}
-                  className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.phone ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5`}
-                  placeholder="+90 555 123 4567"
+                  onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
+                  error={errors.phone}
+                  className="bg-gray-50 dark:bg-gray-900/50"
                 />
-                {errors.phone && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.phone}</p>}
               </div>
+            </div>
+          </div>
+          
+          {/* Adres Bilgileri */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Adres Bilgileri</h2>
+            <div className="space-y-6">
+              {/* İl/İlçe */}
+              <CityDistrictSelect
+                cityValue={city}
+                districtValue={district}
+                onCityChange={(value) => {
+                  setCity(value);
+                  // İl değiştiğinde adresi güncelle
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    address: prev.address || '' 
+                  }));
+                }}
+                onDistrictChange={(value) => {
+                  setDistrict(value);
+                  // İlçe değiştiğinde adresi güncelle
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    address: prev.address || '' 
+                  }));
+                }}
+                cityLabel="İl"
+                districtLabel="İlçe"
+              />
               
-              {/* Adres */}
+              {/* Detaylı Adres */}
               <div>
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Adres
+                  Detaylı Adres
                 </label>
-                <input
-                  type="text"
+                <textarea
                   id="address"
                   name="address"
                   value={formData.address}

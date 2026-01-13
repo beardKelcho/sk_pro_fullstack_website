@@ -33,20 +33,18 @@ interface Project {
 
 // Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  'active': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  'planned': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  'completed': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
-  'cancelled': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  'pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+  'PLANNING': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  'ACTIVE': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  'COMPLETED': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
+  'CANCELLED': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
 };
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'active': 'Aktif',
-  'planned': 'Planlandı',
-  'completed': 'Tamamlandı',
-  'cancelled': 'İptal Edildi',
-  'pending': 'Beklemede'
+  'PLANNING': 'Planlama',
+  'ACTIVE': 'Devam Ediyor',
+  'COMPLETED': 'Tamamlandı',
+  'CANCELLED': 'İptal Edildi'
 };
 
 // Örnek müşteri verileri
@@ -209,24 +207,57 @@ export default function ViewClient() {
     const fetchClientData = async () => {
       setLoading(true);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch(`/api/admin/clients/${clientId}`);
-        // if (!response.ok) throw new Error('Müşteri verileri alınamadı');
-        // const data = await response.json();
-        // setClient(data);
+        const { getCustomerById } = await import('@/services/customerService');
+        const { projectApi } = await import('@/services/api/project');
         
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          const foundClient = sampleClients.find(c => c.id === clientId);
-          setClient(foundClient || null);
-          
-          // Müşterinin projelerini filtrele
-          const projects = sampleProjects.filter(p => p.clientId === clientId);
-          setClientProjects(projects);
-          
-          setLoading(false);
-        }, 500);
+        // Müşteri bilgilerini çek
+        const clientData = await getCustomerById(clientId);
         
+        // Backend formatını frontend formatına dönüştür
+        const formattedClient = {
+          id: clientData._id || clientData.id || '',
+          name: clientData.name,
+          contactPerson: clientData.name,
+          email: clientData.email || '',
+          phone: clientData.phone || '',
+          address: clientData.address || '',
+          industry: 'Diğer',
+          projectCount: 0,
+          status: 'Active' as 'Active' | 'Inactive',
+          createdAt: clientData.createdAt || new Date().toISOString(),
+          notes: clientData.notes || ''
+        };
+        
+        setClient(formattedClient);
+        
+        // Müşterinin projelerini çek
+        try {
+          const projectsResponse = await projectApi.getAll();
+          const projectsList = projectsResponse.data.projects || projectsResponse.data;
+          const clientProjectsList = Array.isArray(projectsList) ? projectsList
+            .filter((p: any) => {
+              const pClientId = typeof p.client === 'string' ? p.client : p.client?._id || p.client?.id;
+              return pClientId === clientId;
+            })
+            .map((p: any) => ({
+              id: p._id || p.id || '',
+              name: p.name || '',
+              clientId: typeof p.client === 'string' ? p.client : p.client?._id || p.client?.id || '',
+              status: (p.status === 'PLANNING' ? 'Planlanıyor' :
+                      p.status === 'ACTIVE' ? 'Devam Ediyor' :
+                      p.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Planlanıyor' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
+              startDate: p.startDate || '',
+              endDate: p.endDate || '',
+              budget: p.budget || 0,
+              location: p.location || ''
+            })) : [];
+          setClientProjects(clientProjectsList);
+        } catch (err) {
+          console.error('Projeler yüklenirken hata:', err);
+          setClientProjects([]);
+        }
+        
+        setLoading(false);
       } catch (error) {
         console.error('Veri yükleme hatası:', error);
         setLoading(false);

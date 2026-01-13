@@ -3,12 +3,17 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createUser, mapFrontendRoleToBackend } from '@/services/userService';
+import PhoneInput from '@/components/ui/PhoneInput';
+import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
+import PasswordInput from '@/components/ui/PasswordInput';
 
 // Kullanıcı form tipi
 interface UserForm {
   name: string;
   email: string;
-  role: 'Admin' | 'Proje Yöneticisi' | 'Teknik Direktör' | 'Teknisyen' | 'Medya Server Uzmanı' | 'Görüntü Yönetmeni';
+  password: string;
+  role: 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen';
   department?: string;
   status: 'Aktif' | 'Pasif';
   phone?: string;
@@ -16,10 +21,11 @@ interface UserForm {
   bio?: string;
   skills?: string[];
   emergencyContact?: string;
+  avatar?: string;
 }
 
 // Rol ve departman seçenekleri
-const roles = ['Admin', 'Proje Yöneticisi', 'Teknik Direktör', 'Teknisyen', 'Medya Server Uzmanı', 'Görüntü Yönetmeni'];
+const roles = ['Admin', 'Firma Sahibi', 'Proje Yöneticisi', 'Depo Sorumlusu', 'Teknisyen'];
 const departments = ['Yönetim', 'Teknik', 'Medya', 'Görüntü'];
 
 export default function AddUser() {
@@ -29,6 +35,7 @@ export default function AddUser() {
   const [formData, setFormData] = useState<UserForm>({
     name: '',
     email: '',
+    password: '',
     role: 'Teknisyen',
     department: 'Teknik',
     status: 'Aktif',
@@ -36,11 +43,16 @@ export default function AddUser() {
     address: '',
     bio: '',
     skills: [],
-    emergencyContact: ''
+    emergencyContact: '',
+    avatar: ''
   });
   
   // Yetenek girişi
   const [skillInput, setSkillInput] = useState('');
+  
+  // İl/İlçe state
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
   
   // Yükleme ve hata durumları
   const [loading, setLoading] = useState(false);
@@ -99,8 +111,14 @@ export default function AddUser() {
       newErrors.role = 'Rol seçimi zorunludur';
     }
     
-    if (formData.phone && !/^(\+90|0)?\s*([0-9]{3})\s*([0-9]{3})\s*([0-9]{2})\s*([0-9]{2})$/.test(formData.phone)) {
-      newErrors.phone = 'Geçerli bir telefon numarası giriniz';
+    if (!formData.password || formData.password.trim().length === 0) {
+      newErrors.password = 'Şifre alanı zorunludur';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Şifre en az 6 karakter olmalıdır';
+    }
+    
+    if (formData.phone && !/^\+90\s*([0-9]{3})\s*([0-9]{3})\s*([0-9]{2})\s*([0-9]{2})$/.test(formData.phone)) {
+      newErrors.phone = 'Geçerli bir telefon numarası giriniz (10 haneli)';
     }
     
     setErrors(newErrors);
@@ -119,22 +137,21 @@ export default function AddUser() {
     setSuccessMessage('');
     
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch('/api/admin/users', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Kullanıcı eklenirken bir hata oluştu');
-      // }
-      
-      // Şimdilik fake bir bekleme süresi ekliyoruz
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // API'ye gönderilecek veri - Backend formatına uygun
+      // Adresi il ve ilçe ile birleştir
+      const fullAddress = city && district 
+        ? `${formData.address ? formData.address + ', ' : ''}${district}, ${city}`
+        : formData.address;
+      const userData: any = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone || undefined,
+        address: fullAddress || undefined,
+        role: mapFrontendRoleToBackend(formData.role) as 'ADMIN' | 'FIRMA_SAHIBI' | 'PROJE_YONETICISI' | 'DEPO_SORUMLUSU' | 'TEKNISYEN',
+        isActive: true
+      };
+      await createUser(userData);
       setSuccessMessage('Kullanıcı başarıyla eklendi! Kullanıcı listesine yönlendiriliyorsunuz...');
       
       // Başarılı mesajını gösterdikten sonra kullanıcı listesine yönlendir
@@ -142,12 +159,31 @@ export default function AddUser() {
         router.push('/admin/users');
       }, 2000);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ekleme hatası:', error);
-      setErrors(prev => ({
-        ...prev,
-        submit: 'Kullanıcı eklenirken bir hata oluştu. Lütfen tekrar deneyin.'
-      }));
+      
+      // Backend'den gelen validation hatalarını göster
+      if (error.response?.data?.errors) {
+        const validationErrors = error.response.data.errors;
+        const newErrors: Record<string, string> = {};
+        
+        validationErrors.forEach((err: any) => {
+          const field = err.param || err.path || err.field;
+          if (field) {
+            newErrors[field] = err.msg || err.message || 'Geçersiz değer';
+          }
+        });
+        
+        setErrors(newErrors);
+      } else if (error.response?.data?.message) {
+        setErrors({
+          submit: error.response.data.message
+        });
+      } else {
+        setErrors({
+          submit: 'Kullanıcı eklenirken bir hata oluştu. Lütfen tekrar deneyin.'
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -214,36 +250,77 @@ export default function AddUser() {
               {errors.email && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.email}</p>}
             </div>
             
+            {/* Şifre */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Şifre <span className="text-red-500">*</span>
+              </label>
+              <PasswordInput
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                error={errors.password}
+                placeholder="En az 6 karakter"
+                className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.password ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5`}
+              />
+            </div>
+            
             {/* Telefon */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Telefon
               </label>
-              <input
-                type="tel"
+              <PhoneInput
                 id="phone"
                 name="phone"
                 value={formData.phone}
-                onChange={handleChange}
-                className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.phone ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5`}
-                placeholder="+90 555 123 4567"
+                onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
+                error={errors.phone}
+                className="bg-gray-50 dark:bg-gray-900/50"
               />
-              {errors.phone && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.phone}</p>}
             </div>
             
-            {/* Adres */}
-            <div>
+            {/* İl/İlçe */}
+            <div className="col-span-2">
+              <CityDistrictSelect
+                cityValue={city}
+                districtValue={district}
+                onCityChange={(value) => {
+                  setCity(value);
+                  // İl değiştiğinde adresi güncelle
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    address: value && district ? `${district}, ${value}` : value || prev.address 
+                  }));
+                }}
+                onDistrictChange={(value) => {
+                  setDistrict(value);
+                  // İlçe değiştiğinde adresi güncelle
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    address: city && value ? `${value}, ${city}` : prev.address 
+                  }));
+                }}
+                cityLabel="İl"
+                districtLabel="İlçe"
+              />
+            </div>
+            
+            {/* Detaylı Adres */}
+            <div className="col-span-2">
               <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Adres
+                Detaylı Adres
               </label>
-              <input
-                type="text"
+              <textarea
                 id="address"
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
+                rows={2}
                 className="bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5"
-                placeholder="İlçe, Şehir"
+                placeholder="Mahalle, Sokak, Bina No vb."
               />
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ProjectStatus, Project, TeamMember, Equipment } from '@/types/project';
+import { updateProject } from '@/services/projectService';
 
 // Form verileri için arayüz
 interface FormData {
@@ -24,11 +25,10 @@ interface FormData {
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'active': 'Aktif',
-  'planned': 'Planlandı',
-  'completed': 'Tamamlandı',
-  'cancelled': 'İptal Edildi',
-  'pending': 'Beklemede'
+  'PLANNING': 'Planlama',
+  'ACTIVE': 'Devam Ediyor',
+  'COMPLETED': 'Tamamlandı',
+  'CANCELLED': 'İptal Edildi'
 };
 
 // Örnek takım üyeleri
@@ -70,31 +70,6 @@ const sampleClients = [
   { id: '6', name: 'Eğitim Kurumu' },
 ];
 
-// Örnek projeler (gerçek uygulamada API'den gelecek)
-const sampleProjects: Project[] = [
-  {
-    id: '1',
-    name: 'Teknoloji Konferansı 2024',
-    description: 'Yıllık teknoloji konferansı için görsel-işitsel prodüksiyon hizmetleri',
-    customer: {
-      id: '101',
-      name: 'Ahmet Yılmaz',
-      companyName: 'TechCorp',
-      email: 'ahmet.yilmaz@techcorp.com',
-      phone: '+90 532 123 4567'
-    },
-    startDate: '2024-03-15',
-    endDate: '2024-03-17',
-    status: 'active',
-    budget: 150000,
-    location: 'İstanbul Kongre Merkezi',
-    team: sampleTeamMembers.filter(member => ['2', '4', '6'].includes(member.id)),
-    equipment: sampleEquipment.filter(eq => ['3', '5', '8'].includes(eq.id)),
-    notes: 'Ana salon ve 3 yan salon için teknik destek sağlanacak',
-    createdAt: '2024-02-01',
-    updatedAt: '2024-02-15'
-  }
-];
 
 export default function EditProject() {
   const router = useRouter();
@@ -110,7 +85,7 @@ export default function EditProject() {
     startDate: '',
     endDate: '',
     location: '',
-    status: 'planned' as ProjectStatus,
+    status: 'PLANNING' as ProjectStatus,
     budget: 0,
     team: [],
     equipment: [],
@@ -132,68 +107,41 @@ export default function EditProject() {
     const fetchProject = async () => {
       setLoading(true);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch(`/api/admin/projects/${projectId}`);
-        // if (!response.ok) throw new Error('Proje bilgileri alınamadı');
-        // const data = await response.json();
+        const { getProjectById } = await import('@/services/projectService');
+        const project = await getProjectById(projectId);
         
-        // Şimdilik örnek verileri kullanıyoruz
-        const foundProject = sampleProjects.find(p => p.id === projectId) || {
-          id: '',
-          name: '',
-          description: '',
-          customer: {
-            id: '',
-            name: '',
-            companyName: '',
-            email: '',
-            phone: ''
-          },
-          startDate: '',
-          endDate: '',
-          status: 'planned' as ProjectStatus,
-          budget: 0,
-          location: '',
-          team: [],
-          equipment: [],
-          notes: '',
-          createdAt: '',
-          updatedAt: ''
-        };
-        
-        // Proje bulunamazsa 404 sayfasına yönlendir
-        if (!foundProject) {
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
+        // Backend formatını frontend formatına dönüştür
+        const clientId = typeof project.client === 'string' ? project.client : (project.client as any)?._id || (project.client as any)?.id || '';
+        const status = project.status as ProjectStatus;
+        const teamIds = Array.isArray(project.team) ? project.team.map((t: any) => typeof t === 'string' ? t : t._id || t.id) : [];
+        const equipmentIds = Array.isArray(project.equipment) ? project.equipment.map((e: any) => typeof e === 'string' ? e : e._id || e.id) : [];
         
         // Form verilerini ayarla
         setFormData({
-          id: foundProject.id,
-          name: foundProject.name,
-          description: foundProject.description,
-          customer: foundProject.customer.id,
-          startDate: foundProject.startDate,
-          endDate: foundProject.endDate,
-          location: foundProject.location,
-          status: foundProject.status as ProjectStatus,
-          budget: foundProject.budget,
-          team: foundProject.team.map(t => t.id),
-          equipment: foundProject.equipment.map(e => e.id),
-          notes: foundProject.notes || ''
+          id: project._id || project.id || '',
+          name: project.name,
+          description: project.description || '',
+          customer: clientId,
+          startDate: project.startDate,
+          endDate: project.endDate || '',
+          location: project.location || '',
+          status: status as ProjectStatus,
+          budget: project.budget?.toString() || '0',
+          team: teamIds,
+          equipment: equipmentIds,
+          notes: project.notes || ''
         });
         
         // Ekip ve ekipman checkbox'larını mevcut verilerle doldur
         const teamStates: { [key: string]: boolean } = {};
         sampleTeamMembers.forEach(member => {
-          teamStates[member.id] = foundProject.team.some(t => t.id === member.id);
+          teamStates[member.id] = teamIds.includes(member.id);
         });
         setTeamCheckboxes(teamStates);
         
         const equipmentStates: { [key: string]: boolean } = {};
         sampleEquipment.forEach(equipment => {
-          equipmentStates[equipment.id] = foundProject.equipment.some(e => e.id === equipment.id);
+          equipmentStates[equipment.id] = equipmentIds.includes(equipment.id);
         });
         setEquipmentCheckboxes(equipmentStates);
         
@@ -304,38 +252,32 @@ export default function EditProject() {
   // Form gönderimi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     // Form doğrulama
     if (!validateForm()) return;
-    
-    setSubmitting(true);
-    setError('');
-    
+    setLoading(true);
     try {
-      // API entegrasyonu olduğunda burada backend'e veri gönderilecek
-      // const response = await fetch(`/api/admin/projects/${projectId}`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
-      
-      // if (!response.ok) throw new Error('Proje güncellenirken bir hata oluştu');
-      
-      // Başarılı güncelleme için simülasyon
+      // API'ye gönderilecek veri - Backend formatına uygun
+      const projectData = {
+        name: formData.name,
+        description: formData.description,
+        client: formData.customer, // Backend'de client olarak geçiyor
+        startDate: formData.startDate,
+        endDate: formData.endDate || undefined,
+        location: formData.location,
+        status: formData.status,
+        team: formData.team || [],
+        equipment: formData.equipment || [],
+        notes: formData.notes
+      };
+      await updateProject(projectId, projectData as any);
+      setSuccess(true);
       setTimeout(() => {
-        setSuccess(true);
-        setSubmitting(false);
-        
-        // 2 saniye sonra proje detay sayfasına yönlendir
-        setTimeout(() => {
-          router.push(`/admin/projects/view/${projectId}`);
-        }, 2000);
-      }, 1000);
-      
+        router.push('/admin/projects');
+      }, 2000);
     } catch (error) {
-      console.error('Form gönderme hatası:', error);
-      setError('Proje güncellenirken bir hata oluştu');
-      setSubmitting(false);
+      setError('Proje güncellenirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setLoading(false);
     }
   };
 

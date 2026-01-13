@@ -51,52 +51,6 @@ const statusLabels = {
   'Broken': 'Arızalı'
 };
 
-// Örnek ekipman verisi - gerçek uygulamada API'den gelecek
-const sampleEquipment: Equipment[] = [
-  {
-    id: '1',
-    name: 'Analog Way Aquilon RS4',
-    model: 'Aquilon RS4',
-    serialNumber: 'AWRS4-2023-001',
-    category: 'VideoSwitcher',
-    status: 'Available',
-    purchaseDate: '2022-06-15',
-    lastMaintenanceDate: '2023-08-10',
-    nextMaintenanceDate: '2024-02-10',
-    location: 'Ana Depo',
-    specs: {
-      inputs: '16x 4K60p',
-      outputs: '8x 4K60p',
-      layers: '16 mixable 4K layers',
-      processor: 'Uncompressed 4K',
-      memory: '250 still images'
-    },
-    notes: 'Premium video switcher, kullanım için teknik yönetici onayı gerekir.'
-  },
-  {
-    id: '2',
-    name: 'Dataton Watchpax 60',
-    model: 'Watchpax 60',
-    serialNumber: 'DWP60-2022-102',
-    category: 'MediaServer',
-    status: 'InUse',
-    purchaseDate: '2022-03-20',
-    lastMaintenanceDate: '2023-06-15',
-    nextMaintenanceDate: '2023-12-15',
-    currentProject: 'Vodafone Kurumsal Etkinlik',
-    assignedTo: 'Zeynep Kaya',
-    location: 'Saha - İstanbul',
-    specs: {
-      performance: '8K playback',
-      outputs: '4x DisplayPort 1.2',
-      inputs: '2x DisplayPort 1.2',
-      storage: '2TB SSD RAID',
-      network: '10GbE x2'
-    },
-    notes: 'Vodafone etkinliği için 12 Aralık\'a kadar rezerve edildi.'
-  },
-  // Diğer örnek veriler burada yer alacak
-];
 
 // Ana bileşen
 export default function ViewEquipment() {
@@ -118,23 +72,29 @@ export default function ViewEquipment() {
     const fetchEquipment = async () => {
       setLoading(true);
       try {
-        // Gerçek uygulamada API çağrısı yapılacak
-        // const response = await fetch(`/api/admin/equipment/${equipmentId}`);
-        // if (!response.ok) throw new Error('Ekipman verisi alınamadı');
-        // const data = await response.json();
+        const { getEquipmentById } = await import('@/services/equipmentService');
+        const equipmentData = await getEquipmentById(equipmentId);
         
-        // Şimdilik örnek veriyi kullan
-        setTimeout(() => {
-          const foundEquipment = sampleEquipment.find(item => item.id === equipmentId);
-          if (foundEquipment) {
-            setEquipment(foundEquipment);
-            setLoading(false);
-          } else {
-            setError('Ekipman bulunamadı');
-            setLoading(false);
-          }
-        }, 500);
+        // Backend formatını frontend formatına dönüştür
+        const formattedEquipment: Equipment = {
+          id: equipmentData._id || equipmentData.id || equipmentId,
+          name: equipmentData.name,
+          model: equipmentData.model || '',
+          serialNumber: equipmentData.serialNumber || '',
+          category: (equipmentData.type || equipmentData.category) as Equipment['category'],
+          status: (equipmentData.status === 'AVAILABLE' ? 'Available' :
+                  equipmentData.status === 'IN_USE' ? 'InUse' :
+                  equipmentData.status === 'MAINTENANCE' ? 'Maintenance' : 'Broken') as Equipment['status'],
+          purchaseDate: equipmentData.purchaseDate,
+          lastMaintenanceDate: equipmentData.lastMaintenanceDate,
+          nextMaintenanceDate: equipmentData.nextMaintenanceDate,
+          location: equipmentData.location || '',
+          specs: equipmentData.specs || {},
+          notes: equipmentData.notes || ''
+        };
         
+        setEquipment(formattedEquipment);
+        setLoading(false);
       } catch (error) {
         console.error('Veri yükleme hatası:', error);
         setError('Ekipman verisi yüklenirken bir hata oluştu');
@@ -249,30 +209,6 @@ export default function ViewEquipment() {
       </div>
     );
   }
-  
-  // Durum bilgisi için sınıf ve simgeler
-  const statusInfo = {
-    Available: { 
-      bg: 'bg-green-100 dark:bg-green-900/30', 
-      text: 'text-green-800 dark:text-green-400',
-      icon: 'M5 13l4 4L19 7'
-    },
-    InUse: { 
-      bg: 'bg-blue-100 dark:bg-blue-900/30', 
-      text: 'text-blue-800 dark:text-blue-400',
-      icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-    },
-    Maintenance: { 
-      bg: 'bg-yellow-100 dark:bg-yellow-900/30', 
-      text: 'text-yellow-800 dark:text-yellow-400',
-      icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
-    },
-    Broken: { 
-      bg: 'bg-red-100 dark:bg-red-900/30', 
-      text: 'text-red-800 dark:text-red-400',
-      icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
-    }
-  }[equipment.status];
   
   return (
     <div className="space-y-6">

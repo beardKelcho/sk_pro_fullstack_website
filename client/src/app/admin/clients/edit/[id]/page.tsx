@@ -5,21 +5,6 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { FormError } from '@/types/form';
 
-// Müşteri statüsü için tip tanımı
-type ClientStatus = 'Active' | 'Inactive';
-
-// Form veri tipi
-interface FormData {
-  name: string;
-  contactPerson: string;
-  email: string;
-  phone: string;
-  address: string;
-  industry: string;
-  status: ClientStatus;
-  notes?: string;
-}
-
 // Müşteri türü
 interface Client {
   id: string;
@@ -35,22 +20,9 @@ interface Client {
   notes?: string;
 }
 
-// Endüstri seçenekleri
-const industryOptions = [
-  'Etkinlik Organizasyonu',
-  'Kurumsal',
-  'Televizyon',
-  'Konser & Sahne',
-  'Müze & Sergi',
-  'Eğitim',
-  'Spor Etkinlikleri',
-  'Festival',
-  'Fuar & Kongre',
-  'Diğer'
-];
 
 // Örnek müşteri verileri
-const sampleClients: Client[] = [
+const _sampleClients: Client[] = [
   {
     id: '1',
     name: 'TechCon Group',
@@ -172,9 +144,7 @@ export default function EditClient() {
   // Diğer durumlar
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState<FormError<ClientForm>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [_errors, setErrors] = useState<FormError<ClientForm>>({});
   
   // Veri yükleme
   useEffect(() => {
@@ -199,7 +169,7 @@ export default function EditClient() {
         
         // Şimdilik örnek verileri kullanıyoruz
         setTimeout(() => {
-          const foundClient = sampleClients.find(c => c.id === clientId);
+          const foundClient = _sampleClients.find(c => c.id === clientId);
           
           if (foundClient) {
             setClient(foundClient);
@@ -226,23 +196,6 @@ export default function EditClient() {
     
     fetchClientData();
   }, [clientId]);
-  
-  // Form değişikliği işleyici
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // O alan için hatayı temizle
-    if (errors[name as keyof ClientForm]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: undefined
-      }));
-    }
-  };
   
   // Form doğrulama
   const validateForm = (): boolean => {
@@ -283,29 +236,15 @@ export default function EditClient() {
       return;
     }
     
-    setIsSubmitting(true);
-    
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch(`/api/admin/clients/${clientId}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Müşteri güncellenirken bir hata oluştu');
-      // }
-      // 
-      // const data = await response.json();
-      
-      // Şimdilik API çağrısı simülasyonu
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Başarı durumu göster
-      setShowSuccessNotification(true);
+      const { updateCustomer } = await import('@/services/customerService');
+      await updateCustomer(clientId, {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        notes: formData.notes
+      });
       
       // 2 saniye sonra müşteri detay sayfasına yönlendir
       setTimeout(() => {
@@ -317,7 +256,6 @@ export default function EditClient() {
       setErrors({
         form: 'Müşteri güncellenirken bir hata oluştu. Lütfen tekrar deneyin.'
       });
-      setIsSubmitting(false);
     }
   };
   

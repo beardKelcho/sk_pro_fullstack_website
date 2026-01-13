@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormError } from '@/types/form';
+import PhoneInput from '@/components/ui/PhoneInput';
+import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
 
 // Müşteri statüsü için tip tanımı
 type ClientStatus = 'Active' | 'Inactive';
@@ -50,6 +52,10 @@ export default function AddClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   
+  // İl/İlçe state
+  const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
+  
   // Form alanlarını değiştirme işleyicisi
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -88,10 +94,15 @@ export default function AddClient() {
     
     if (!formData.phone.trim()) {
       newErrors.phone = 'Telefon numarası gereklidir';
+    } else if (!/^\+90\s*([0-9]{3})\s*([0-9]{3})\s*([0-9]{2})\s*([0-9]{2})$/.test(formData.phone)) {
+      newErrors.phone = 'Geçerli bir telefon numarası giriniz (10 haneli)';
     }
     
+    if (!city || !district) {
+      newErrors.address = 'İl ve İlçe seçimi gereklidir';
+    }
     if (!formData.address.trim()) {
-      newErrors.address = 'Adres gereklidir';
+      newErrors.address = 'Detaylı adres gereklidir';
     }
     
     setErrors(newErrors);
@@ -109,23 +120,18 @@ export default function AddClient() {
     setIsSubmitting(true);
     
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch('/api/admin/clients', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Müşteri eklenirken bir hata oluştu');
-      // }
-      // 
-      // const data = await response.json();
-      
-      // Şimdilik API çağrısı simülasyonu
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { createCustomer } = await import('@/services/customerService');
+      // Adresi il ve ilçe ile birleştir
+      const fullAddress = city && district 
+        ? `${formData.address ? formData.address + ', ' : ''}${district}, ${city}`
+        : formData.address;
+      await createCustomer({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: fullAddress,
+        notes: formData.notes
+      });
       
       // Başarı durumu göster
       setShowSuccessNotification(true);
@@ -179,13 +185,13 @@ export default function AddClient() {
             </div>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Sol kolon - Temel Bilgiler */}
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Temel Bilgiler</h2>
-              
-              {/* Müşteri Adı */}
-              <div>
+          <div className="space-y-6">
+            {/* Temel Bilgiler */}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Temel Bilgiler</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Müşteri Adı */}
+                <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Müşteri Adı <span className="text-red-500">*</span>
                 </label>
@@ -252,31 +258,57 @@ export default function AddClient() {
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Telefon <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <PhoneInput
                   id="phone"
                   name="phone"
                   value={formData.phone}
-                  onChange={handleChange}
-                  className={`bg-gray-50 dark:bg-gray-900/50 border ${
-                    errors.phone 
-                      ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500' 
-                      : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
-                  } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
-                  placeholder="+90 5XX XXX XX XX"
+                  onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
+                  required
+                  error={errors.phone}
+                  className="bg-gray-50 dark:bg-gray-900/50"
                 />
-                {errors.phone && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.phone}</p>}
+              </div>
               </div>
             </div>
             
-            {/* Sağ kolon - Ek Bilgiler ve Durum */}
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Ek Bilgiler</h2>
-              
-              {/* Adres */}
-              <div>
+            {/* Ek Bilgiler */}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Ek Bilgiler</h2>
+              <div className="space-y-6">
+                {/* İl/İlçe */}
+                <div>
+                <CityDistrictSelect
+                  cityValue={city}
+                  districtValue={district}
+                  onCityChange={(value) => {
+                    setCity(value);
+                    // İl değiştiğinde adresi güncelle
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      address: value && district ? `${prev.address ? prev.address + ', ' : ''}${district}, ${value}` : prev.address 
+                    }));
+                  }}
+                  onDistrictChange={(value) => {
+                    setDistrict(value);
+                    // İlçe değiştiğinde adresi güncelle
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      address: city && value ? `${prev.address ? prev.address + ', ' : ''}${value}, ${city}` : prev.address 
+                    }));
+                  }}
+                  cityLabel="İl"
+                  districtLabel="İlçe"
+                  cityRequired
+                  districtRequired
+                  cityError={errors.address}
+                  districtError={errors.address}
+                />
+                </div>
+                
+                {/* Detaylı Adres */}
+                <div>
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Adres <span className="text-red-500">*</span>
+                  Detaylı Adres <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="address"
@@ -289,13 +321,13 @@ export default function AddClient() {
                       ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500' 
                       : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
                   } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
-                  placeholder="Tam adres"
+                  placeholder="Mahalle, Sokak, Bina No vb."
                 />
                 {errors.address && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.address}</p>}
-              </div>
-              
-              {/* Endüstri */}
-              <div>
+                </div>
+                
+                {/* Endüstri */}
+                <div>
                 <label htmlFor="industry" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Endüstri
                 </label>
@@ -343,6 +375,7 @@ export default function AddClient() {
                   className="bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5"
                   placeholder="Müşteri hakkında önemli notlar ve hatırlatmalar"
                 />
+                </div>
               </div>
             </div>
           </div>

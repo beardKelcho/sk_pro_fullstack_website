@@ -1,8 +1,12 @@
-// Proje durumu için tip tanımı
-export type ProjectStatus = 'active' | 'planned' | 'completed' | 'cancelled' | 'pending';
+// Proje durumu için tip tanımı (Backend enum'ları ile uyumlu)
+export type ProjectStatus = 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+
+// Türkçe görüntüleme için yardımcı tip
+export type ProjectStatusDisplay = 'Planlama' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi';
 
 // Ekip üyesi tipi
 export interface TeamMember {
+  _id?: string;
   id: string;
   name: string;
   role: string;
@@ -14,34 +18,60 @@ export interface TeamMember {
 
 // Ekipman tipi
 export interface Equipment {
+  _id?: string;
   id: string;
   name: string;
   model: string;
   serialNumber: string;
   category: string;
   status: string;
+  specs?: Record<string, string>;
+}
+
+// Müşteri tipi
+export interface Client {
+  _id?: string;
+  id: string;
+  name: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  address?: string;
+  industry?: string;
+  city?: string;
+  status?: string;
 }
 
 // Proje tipi
 export interface Project {
+  _id?: string;
   id: string;
   name: string;
   description: string;
-  customer: {
-    id: string;
-    name: string;
-    companyName: string;
-    email: string;
-    phone: string;
-  };
+  client: string | Client; // Backend'de 'client' field'ı var, 'customer' değil
   startDate: string;
   endDate: string;
   status: ProjectStatus;
-  budget: number;
+  budget?: number;
   location: string;
-  team: TeamMember[];
-  equipment: Equipment[];
+  team: string[] | TeamMember[]; // Backend'de ObjectId[] veya populated array
+  equipment: string[] | Equipment[]; // Backend'de ObjectId[] veya populated array
   notes?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// Proje form tipi
+export interface ProjectForm {
+  name: string;
+  description: string;
+  client: string;
+  startDate: string;
+  endDate: string;
+  status: ProjectStatus;
+  budget?: number;
+  location: string;
+  team: string[];
+  equipment: string[];
+  notes?: string;
 } 

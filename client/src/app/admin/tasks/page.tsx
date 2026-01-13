@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getAllTasks, deleteTask } from '@/services/taskService';
+import ExportButton from '@/components/admin/ExportButton';
 
 // Görev türü tanımlama
 interface Task {
@@ -158,37 +160,50 @@ const statusColors = {
 export default function TaskList() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<string>('Tümü');
   const [selectedStatus, setSelectedStatus] = useState<string>('Tümü');
   const [selectedAssignee, setSelectedAssignee] = useState<string>('Tümü');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
-  // Veri yükleme
+  // Görev verilerini getirme
   useEffect(() => {
     const fetchTasks = async () => {
       setLoading(true);
+      setError(null);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch('/api/admin/tasks');
-        // if (!response.ok) throw new Error('Görev verileri alınamadı');
-        // const data = await response.json();
-        // setTasks(data);
-        
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          setTasks(sampleTasks);
-          setLoading(false);
-        }, 500);
-        
-      } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        const response = await getAllTasks();
+        // Backend'den gelen response formatına göre düzenle
+        const tasksList = response.tasks || response;
+        // Backend formatını frontend formatına dönüştür
+        const formattedTasks = Array.isArray(tasksList) ? tasksList.map((item: any) => ({
+          id: item._id || item.id,
+          title: item.title,
+          description: item.description || '',
+          priority: (item.priority === 'LOW' ? 'Düşük' :
+                   item.priority === 'MEDIUM' ? 'Orta' :
+                   item.priority === 'HIGH' ? 'Yüksek' : 'Acil') as 'Düşük' | 'Orta' | 'Yüksek' | 'Acil',
+          status: (item.status === 'TODO' ? 'Atandı' :
+                 item.status === 'IN_PROGRESS' ? 'Devam Ediyor' :
+                 item.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
+          dueDate: item.dueDate || '',
+          assignedTo: typeof item.assignedTo === 'string' ? item.assignedTo : item.assignedTo?._id || item.assignedTo?.id || '',
+          relatedProject: typeof item.project === 'string' ? item.project : item.project?._id || item.project?.id || '',
+          createdAt: item.createdAt || new Date().toISOString(),
+          updatedAt: item.updatedAt || new Date().toISOString()
+        })) : [];
+        setTasks(formattedTasks);
+      } catch (err) {
+        console.error('Görev yükleme hatası:', err);
+        setError('Görevler alınamadı.');
+      } finally {
         setLoading(false);
       }
     };
-    
     fetchTasks();
   }, []);
   
@@ -228,24 +243,16 @@ export default function TaskList() {
   // Görev silme işlevi
   const handleDeleteTask = async () => {
     if (!taskToDelete) return;
-    
+    setIsDeleting(true);
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch(`/api/admin/tasks/${taskToDelete}`, {
-      //   method: 'DELETE',
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Görev silinirken bir hata oluştu');
-      // }
-      
-      // Şimdilik örnek veriyi güncelliyoruz
-      setTasks(tasks.filter(task => task.id !== taskToDelete));
+      await deleteTask(taskToDelete);
+      setTasks(prevTasks => prevTasks.filter(t => t.id !== taskToDelete));
       setShowDeleteModal(false);
       setTaskToDelete(null);
-      
     } catch (error) {
-      console.error('Silme hatası:', error);
+      setError('Görev silinirken bir hata oluştu.');
+    } finally {
+      setIsDeleting(false);
     }
   };
   
@@ -283,14 +290,21 @@ export default function TaskList() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Görev Yönetimi</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-300">Ekip görevlerini takip edin ve atayın</p>
         </div>
-        <Link href="/admin/tasks/add">
-          <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-            Yeni Görev Ekle
-          </button>
-        </Link>
+        <div className="flex gap-2">
+          <ExportButton
+            endpoint="/export/tasks"
+            filename="tasks-export.csv"
+            label="Dışa Aktar"
+          />
+          <Link href="/admin/tasks/add">
+            <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Yeni Görev Ekle
+            </button>
+          </Link>
+        </div>
       </div>
       
       {/* Filtreler */}

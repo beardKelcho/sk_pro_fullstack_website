@@ -5,28 +5,20 @@ const createJestConfig = nextJest({
 });
 
 const customJestConfig = {
+  testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@components/(.*)$': '<rootDir>/src/components/$1',
-    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
-    '^@hooks/(.*)$': '<rootDir>/src/hooks/$1',
-    '^@services/(.*)$': '<rootDir>/src/services/$1',
-    '^@types/(.*)$': '<rootDir>/src/types/$1',
-    '^@styles/(.*)$': '<rootDir>/src/styles/$1',
-    '^@context/(.*)$': '<rootDir>/src/context/$1',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
-  testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
-    '<rootDir>/src/**/*.{spec,test}.{js,jsx,ts,tsx}',
-  ],
+  transform: {
+    '^.+\\.(ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+  },
+  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/**/index.{js,ts}',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
-    '!src/types/**/*',
   ],
   coverageThreshold: {
     global: {
@@ -36,10 +28,6 @@ const customJestConfig = {
       statements: 80,
     },
   },
-  watchPlugins: [
-    'jest-watch-typeahead/filename',
-    'jest-watch-typeahead/testname',
-  ],
 };
 
 module.exports = createJestConfig(customJestConfig); 

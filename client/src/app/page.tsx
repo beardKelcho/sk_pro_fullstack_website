@@ -3,33 +3,60 @@
 import MainLayout from '@/components/layout/MainLayout';
 import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Carousel from '@/components/common/Carousel';
+import ServiceCard from '@/components/common/ServiceCard';
+import EquipmentList from '@/components/common/EquipmentList';
+import Icon from '@/components/common/Icon';
+import ContactForm from '@/components/common/ContactForm';
+import Map from '@/components/common/Map';
+import { getAllImages, SiteImage } from '@/services/siteImageService';
+import { 
+  getAllContents, 
+  getContentBySection,
+  HeroContent,
+  ServiceItem,
+  EquipmentCategory,
+  AboutContent,
+  ContactInfo
+} from '@/services/siteContentService';
 
 export default function Home() {
+  // Site içeriği state'leri
+  const [heroContent, setHeroContent] = useState<HeroContent | null>(null);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [equipment, setEquipment] = useState<EquipmentCategory[]>([]);
+  const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
+  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  
   // Hero bölümündeki değişen metinler için state
   const [textIndex, setTextIndex] = useState(0);
-  const heroTexts = [
-    "Etkinliklerinize Görsel Mükemmellik",
-    "Profesyonel Görüntü Rejisi Çözümleri",
-    "Son Teknoloji Medya Server Sistemleri"
-  ];
   
   // Carousel için resim dizileri
-  const [topImages, setTopImages] = useState<number[]>([]);
-  const [bottomImages, setBottomImages] = useState<number[]>([]);
+  const [topImages, setTopImages] = useState<SiteImage[]>([]);
+  const [bottomImages, setBottomImages] = useState<SiteImage[]>([]);
+  const [allProjectImages, setAllProjectImages] = useState<SiteImage[]>([]);
   
   // Modal/Lightbox için state'ler
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [selectedImage, setSelectedImage] = useState<SiteImage | null>(null);
   const [isTopCarousel, setIsTopCarousel] = useState(true);
-  const [carouselPaused, setCarouselPaused] = useState(false);
+  // Carousel artık sürekli akacak, pause özelliği kaldırıldı
+  const carouselPaused = false;
   const modalRef = useRef<HTMLDivElement>(null);
   
-  // Konum bilgileri
-  const location = {
+  // Konum bilgileri (fallback)
+  const defaultLocation = {
     address: "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
-    lat: 41.0987654,
-    lng: 29.0123456
+    lat: 41.057984,
+    lng: 28.987117
   };
+  
+  const location = contactInfo ? {
+    address: contactInfo.address,
+    lat: contactInfo.latitude || defaultLocation.lat,
+    lng: contactInfo.longitude || defaultLocation.lng
+  } : defaultLocation;
 
   // Navigasyon fonksiyonu
   const openMobileNavigation = () => {
@@ -65,41 +92,224 @@ export default function Home() {
     }
   };
 
-  // Sayfa yüklendiğinde rastgele resim setleri oluştur
+  // Sayfa yüklendiğinde veritabanından resimleri çek
   useEffect(() => {
-    // 1-12 arası tüm indeksleri içeren bir dizi oluştur
-    const allImages = Array.from({ length: 12 }, (_, i) => i + 1);
+    const fetchImages = async () => {
+      try {
+        // Public endpoint'ten aktif proje resimlerini çek
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+        // Cache-busting için timestamp ekle - CORS sorununu önlemek için header'ları kaldırdık
+        const response = await fetch(`${API_URL}/site-images/public?category=project&isActive=true&_t=${Date.now()}`, {
+          cache: 'no-store',
+          // CORS sorununu önlemek için custom header'ları kaldırdık
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          // API response formatını kontrol et - hem data.images hem de data olabilir
+          const images = data.images || data || [];
+          
+          console.log('API Response:', data);
+          console.log('API\'den gelen resimler:', images.length, images);
+          
+          // Aktif proje resimlerini al ve geçerli URL'ye sahip olanları filtrele
+          const activeImages = images.filter((img: SiteImage) => {
+            // Temel kontroller
+            if (!img.isActive) {
+              console.log('Resim aktif değil:', img);
+              return false;
+            }
+            
+            if (img.category !== 'project') {
+              console.log('Resim kategori uyumsuz:', img.category, img);
+              return false;
+            }
+            
+            // URL veya path kontrolü - en az birisi olmalı
+            if (!img.url && !img.path && !img.filename) {
+              console.warn('Resim URL/path/filename eksik:', img);
+              return false;
+            }
+            
+            // URL formatını kontrol et - daha esnek
+            let imageUrl = img.url || '';
+            if (!imageUrl && img.path) {
+              imageUrl = img.path;
+            }
+            if (!imageUrl && img.filename) {
+              imageUrl = `/uploads/site-images/${img.filename}`;
+            }
+            
+            // Boş veya geçersiz URL kontrolü - daha esnek
+            // Eğer filename varsa, URL oluşturulabilir, bu yüzden sadece tamamen boş olanları filtrele
+            if (!imageUrl || imageUrl.trim() === '') {
+              // Eğer filename varsa, URL oluşturulabilir, bu yüzden geçerli say
+              if (img.filename) {
+                imageUrl = `/uploads/site-images/${img.filename}`;
+                console.log('Filename\'den URL oluşturuldu:', imageUrl);
+              } else {
+                console.warn('Resim URL geçersiz ve filename yok:', imageUrl, img);
+                return false;
+              }
+            }
+            
+            console.log('Resim geçerli:', img.originalName || img.filename, 'URL:', imageUrl);
+            return true;
+          });
+          
+          console.log('Filtrelenmiş aktif resimler:', activeImages.length, activeImages);
+          
+          setAllProjectImages(activeImages);
+          
+          // Veritabanından gelen resimleri kullan (fallback yok)
+          if (activeImages.length > 0) {
+            // Resimleri order'a göre sırala (sabit sıra)
+            const sortedImages = [...activeImages].sort((a, b) => a.order - b.order);
+            
+            // Tüm aktif resimleri her iki carousel'de de göster
+            // Aynı anda aynı resim görünmemesi için alt carousel'i yarı kadar kaydır
+            const offset = Math.ceil(sortedImages.length / 2);
+            
+            // Üst carousel: tüm resimler
+            const topImagesArray = [...sortedImages];
+            
+            // Alt carousel: tüm resimler ama yarı kadar kaydırılmış (offset ile başla)
+            const bottomImagesArray = sortedImages.length > 1
+              ? [...sortedImages.slice(offset), ...sortedImages.slice(0, offset)]
+              : [];
+            
+            // Eğer tek resim varsa, sadece üst carousel'de göster
+            if (sortedImages.length === 1) {
+              setTopImages(topImagesArray);
+              setBottomImages([]);
+            } else {
+              setTopImages(topImagesArray);
+              setBottomImages(bottomImagesArray);
+            }
+            
+            // Debug: Resim sayılarını konsola yazdır
+            console.log(`Top images: ${topImagesArray.length}, Bottom images: ${bottomImagesArray.length}, Total active: ${sortedImages.length}`);
+          } else {
+            // Veritabanında resim yoksa boş bırak
+            console.warn('Veritabanında aktif proje resmi bulunamadı. Lütfen resimleri yükleyin.');
+            setTopImages([]);
+            setBottomImages([]);
+          }
+        } else {
+          // API hatası durumunda boş bırak
+          console.error('Resimler yüklenirken bir hata oluştu. Status:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('Hata detayı:', errorText);
+          setTopImages([]);
+          setBottomImages([]);
+        }
+      } catch (error) {
+        console.error('Resim yükleme hatası:', error);
+        // Hata durumunda boş bırak
+        setTopImages([]);
+        setBottomImages([]);
+      }
+    };
     
-    // Diziyi rastgele karıştır
-    const shuffled = [...allImages].sort(() => Math.random() - 0.5);
+    fetchImages();
     
-    // İlk yarısını üst carousel için, ikinci yarısını alt carousel için ayır
-    setTopImages(shuffled.slice(0, 6));
-    setBottomImages(shuffled.slice(6, 12));
-  }, []);
-
-  // Metinlerin değişimini sağlayan effect
-  useEffect(() => {
+    // Her 10 saniyede bir resimleri yeniden yükle (yeni eklenen resimler için)
     const interval = setInterval(() => {
-      setTextIndex((prevIndex) => (prevIndex + 1) % heroTexts.length);
-    }, 5000); // Her 5 saniyede bir metin değişimi
-
+      fetchImages();
+    }, 10000);
+    
     return () => clearInterval(interval);
   }, []);
+
+  // Site içeriklerini yükle
+  useEffect(() => {
+    const fetchSiteContent = async () => {
+      try {
+        setLoading(true);
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+        
+        // Tüm içerikleri paralel olarak çek
+        const [heroRes, servicesRes, equipmentRes, aboutRes, contactRes] = await Promise.allSettled([
+          fetch(`${API_URL}/site-content/public/hero`),
+          fetch(`${API_URL}/site-content/public/services`),
+          fetch(`${API_URL}/site-content/public/equipment`),
+          fetch(`${API_URL}/site-content/public/about`),
+          fetch(`${API_URL}/site-content/public/contact`),
+        ]);
+
+        // Hero içeriği
+        if (heroRes.status === 'fulfilled' && heroRes.value.ok) {
+          const heroData = await heroRes.value.json();
+          if (heroData.content) {
+            setHeroContent(heroData.content.content as HeroContent);
+          }
+        }
+
+        // Hizmetler
+        if (servicesRes.status === 'fulfilled' && servicesRes.value.ok) {
+          const servicesData = await servicesRes.value.json();
+          if (servicesData.content) {
+            setServices(servicesData.content.content as ServiceItem[]);
+          }
+        }
+
+        // Ekipmanlar
+        if (equipmentRes.status === 'fulfilled' && equipmentRes.value.ok) {
+          const equipmentData = await equipmentRes.value.json();
+          if (equipmentData.content) {
+            setEquipment(equipmentData.content.content as EquipmentCategory[]);
+          }
+        }
+
+        // Hakkımızda
+        if (aboutRes.status === 'fulfilled' && aboutRes.value.ok) {
+          const aboutData = await aboutRes.value.json();
+          if (aboutData.content) {
+            setAboutContent(aboutData.content.content as AboutContent);
+          }
+        }
+
+        // İletişim
+        if (contactRes.status === 'fulfilled' && contactRes.value.ok) {
+          const contactData = await contactRes.value.json();
+          if (contactData.content) {
+            setContactInfo(contactData.content.content as ContactInfo);
+          }
+        }
+      } catch (error) {
+        console.error('Site içerik yükleme hatası:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSiteContent();
+  }, []);
+
+  // Hero rotating texts için effect
+  useEffect(() => {
+    if (!heroContent?.rotatingTexts || heroContent.rotatingTexts.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setTextIndex((prevIndex) => (prevIndex + 1) % heroContent.rotatingTexts!.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [heroContent]);
   
   // Resme tıklama işleyicisi
-  const handleImageClick = (imageIndex: number, isTop: boolean) => {
-    setSelectedImage(imageIndex);
+  const handleImageClick = (image: SiteImage, isTop: boolean) => {
+    setSelectedImage(image);
     setIsTopCarousel(isTop);
     setIsModalOpen(true);
-    setCarouselPaused(true);
+    // Carousel artık durmuyor, sürekli akıyor
   };
   
   // Modal kapatma işleyicisi
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedImage(null);
-    setCarouselPaused(false);
+    // Carousel artık durmuyor, sürekli akıyor
   };
   
   // Modal dışına tıklandığında kapatma
@@ -112,10 +322,12 @@ export default function Home() {
   // Klavye ile gezinme
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isModalOpen) return;
+      if (!isModalOpen || !selectedImage) return;
       
       const currentImages = isTopCarousel ? topImages : bottomImages;
-      const currentIndex = currentImages.indexOf(selectedImage as number);
+      const currentIndex = currentImages.findIndex(img => 
+        (img._id || img.id) === (selectedImage._id || selectedImage.id)
+      );
       
       if (e.key === 'ArrowRight') {
         // Sonraki resim
@@ -137,12 +349,43 @@ export default function Home() {
 
   return (
     <MainLayout>
-      {/* Hero Bölümü - Daha modern ve etkileyici */}
-      <section className="relative h-screen flex items-center justify-center bg-gradient-to-r from-[#0A1128] to-[#001F54] dark:from-[#050914] dark:to-[#0A1128]">
-        {/* Video Arkaplan */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
+      {/* Video Arkaplan - Tüm sayfa boyunca */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
+        {heroContent?.backgroundVideo ? (
           <video 
+            ref={(video) => {
+              if (video) {
+                // Perfect loop için video sonuna geldiğinde başa dön
+                video.addEventListener('ended', () => {
+                  video.currentTime = 0;
+                  video.play();
+                });
+              }
+            }}
+            className="absolute w-full h-full object-cover" 
+            autoPlay 
+            loop 
+            muted 
+            playsInline
+            preload="auto"
+            poster={heroContent.backgroundImage || "/images/hero-bg.jpg"}
+          >
+            <source src={heroContent.backgroundVideo} type="video/mp4" />
+            {heroContent.backgroundImage && (
+              <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center"></div>
+            )}
+          </video>
+        ) : (
+          <video 
+            ref={(video) => {
+              if (video) {
+                video.addEventListener('ended', () => {
+                  video.currentTime = 0;
+                  video.play();
+                });
+              }
+            }}
             className="absolute w-full h-full object-cover" 
             autoPlay 
             loop 
@@ -153,35 +396,51 @@ export default function Home() {
           >
             <source src="/videos/hero-background.mp4" type="video/mp4" />
             <source src="/videos/hero-background.webm" type="video/webm" />
-            {/* Video yüklenemezse yedek arkaplan göster */}
             <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center"></div>
           </video>
-        </div>
+        )}
+      </div>
+      
+      {/* Hero Bölümü - Daha modern ve etkileyici */}
+      <section className="relative h-screen flex items-center justify-center z-10">
         
         <div className="container mx-auto px-4 relative z-20 text-center">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight h-28 flex items-center justify-center">
-              <span key={textIndex} className="animate-fade-in-slide-up">
-                {textIndex === 0 ? (
-                  <>Görsel <span className="text-[#0066CC] dark:text-primary-light">Mükemmellikte</span> Uzman Ekip</>
-                ) : textIndex === 1 ? (
-                  <>Etkinliklerinizde <span className="text-[#0066CC] dark:text-primary-light">Profesyonel</span> Çözümler</>
-                ) : (
-                  <>Medya Server ve <span className="text-[#0066CC] dark:text-primary-light">Görüntü Rejisi</span> Çözümleri</>
-                )}
-              </span>
+              {heroContent?.rotatingTexts && heroContent.rotatingTexts.length > 0 ? (
+                <span key={textIndex} className="animate-fade-in-slide-up">
+                  {heroContent.rotatingTexts[textIndex]}
+                </span>
+              ) : heroContent?.title ? (
+                <span className="animate-fade-in-slide-up">
+                  {heroContent.title}
+                </span>
+              ) : (
+                <span key={textIndex} className="animate-fade-in-slide-up">
+                  {textIndex === 0 ? (
+                    <>Görsel <span className="text-[#0066CC] dark:text-primary-light">Mükemmellikte</span> Uzman Ekip</>
+                  ) : textIndex === 1 ? (
+                    <>Etkinliklerinizde <span className="text-[#0066CC] dark:text-primary-light">Profesyonel</span> Çözümler</>
+                  ) : (
+                    <>Medya Server ve <span className="text-[#0066CC] dark:text-primary-light">Görüntü Rejisi</span> Çözümleri</>
+                  )}
+                </span>
+              )}
             </h1>
+            {heroContent?.subtitle && (
+              <p className="text-xl md:text-2xl text-gray-200 mb-4 max-w-3xl mx-auto">
+                {heroContent.subtitle}
+              </p>
+            )}
             <p className="text-xl md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto">
-              SK Production olarak, kurumsal etkinlikleriniz için profesyonel görüntü rejisi 
-              ve medya server çözümleri sunuyoruz. 10 yılı aşkın deneyimimizle etkinliklerinize 
-              değer katıyoruz.
+              {heroContent?.description || 'SK Production olarak, kurumsal etkinlikleriniz için profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz. 10 yılı aşkın deneyimimizle etkinliklerinize değer katıyoruz.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <a 
-                href="#contact" 
+                href={heroContent?.buttonLink || '#contact'} 
                 className="bg-[#0066CC] dark:bg-primary-light text-white px-8 py-4 rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-all duration-300 text-lg font-medium shadow-lg"
               >
-                İletişime Geçin
+                {heroContent?.buttonText || 'İletişime Geçin'}
               </a>
             </div>
           </div>
@@ -204,7 +463,7 @@ export default function Home() {
       </section>
 
       {/* Projeler Bölümü */}
-      <section id="projects" className="py-20 bg-gray-50 dark:bg-dark-surface overflow-hidden">
+      <section id="projects" className="relative py-20 bg-gray-50/10 dark:bg-dark-surface/10 backdrop-blur-[2px] overflow-hidden z-10">
         <div className="container mx-auto px-6 mb-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-[#0A1128] dark:text-white mb-4">Projelerimiz</h2>
@@ -214,125 +473,25 @@ export default function Home() {
           </div>
           
           {/* Üst Sıra Carousel - Sağdan Sola */}
-          <div className="relative mb-8 w-full overflow-hidden">
-            <div className={`flex ${carouselPaused ? 'animate-none' : 'animate-scroll-right-to-left'}`}>
-              <div className="flex flex-nowrap whitespace-nowrap">
-                {topImages.map((index) => (
-                  <div 
-                    key={`top-${index}`} 
-                    className="w-80 flex-shrink-0 mx-4 cursor-pointer"
-                    onClick={() => handleImageClick(index, true)}
-                  >
-                    <div className="group relative overflow-hidden rounded-xl shadow-lg dark:shadow-dark-card h-72">
-                      <Image 
-                        src={`/images/slide${index}.jpg`} 
-                        alt={`Proje ${index}`} 
-                        width={600} 
-                        height={400}
-                        loading="lazy"
-                        placeholder="blur"
-                        blurDataURL={`/images/slide${index}.jpg`}
-                        className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        quality={85}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                        <h3 className="text-white text-xl font-semibold mb-2">Kurumsal Etkinlik {index}</h3>
-                        <p className="text-gray-200">Analog Way Aquilon ve Dataton Watchpax sistemleri ile profesyonel görüntü rejisi hizmeti</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {/* Kopyalanan elemanlar (sonsuz döngü etkisi için) */}
-                {topImages.map((index) => (
-                  <div 
-                    key={`top-dup-${index}`} 
-                    className="w-80 flex-shrink-0 mx-4 cursor-pointer"
-                    onClick={() => handleImageClick(index, true)}
-                  >
-                    <div className="group relative overflow-hidden rounded-xl shadow-lg dark:shadow-dark-card h-72">
-                      <Image 
-                        src={`/images/slide${index}.jpg`} 
-                        alt={`Proje ${index}`} 
-                        width={600} 
-                        height={400}
-                        loading="lazy"
-                        placeholder="blur"
-                        blurDataURL={`/images/slide${index}.jpg`}
-                        className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        quality={85}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                        <h3 className="text-white text-xl font-semibold mb-2">Kurumsal Etkinlik {index}</h3>
-                        <p className="text-gray-200">Analog Way Aquilon ve Dataton Watchpax sistemleri ile profesyonel görüntü rejisi hizmeti</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="mb-8">
+            <Carousel
+              images={topImages}
+              direction="right"
+              isPaused={carouselPaused}
+              onImageClick={handleImageClick}
+              isTop={true}
+            />
           </div>
           
           {/* Alt Sıra Carousel - Soldan Sağa */}
-          <div className="relative w-full overflow-hidden">
-            <div className={`flex ${carouselPaused ? 'animate-none' : 'animate-scroll-left-to-right'}`}>
-              <div className="flex flex-nowrap whitespace-nowrap">
-                {bottomImages.map((index) => (
-                  <div 
-                    key={`bottom-${index}`} 
-                    className="w-80 flex-shrink-0 mx-4 cursor-pointer"
-                    onClick={() => handleImageClick(index, false)}
-                  >
-                    <div className="group relative overflow-hidden rounded-xl shadow-lg dark:shadow-dark-card h-72">
-                      <Image 
-                        src={`/images/slide${index}.jpg`} 
-                        alt={`Proje ${index}`} 
-                        width={600} 
-                        height={400}
-                        loading="lazy"
-                        placeholder="blur"
-                        blurDataURL={`/images/slide${index}.jpg`}
-                        className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        quality={85}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                        <h3 className="text-white text-xl font-semibold mb-2">Konser Görüntü Rejisi {index}</h3>
-                        <p className="text-gray-200">Resolume Arena 7 ile canlı performans görüntü rejisi ve LED ekran yönetimi</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {/* Kopyalanan elemanlar (sonsuz döngü etkisi için) */}
-                {bottomImages.map((index) => (
-                  <div 
-                    key={`bottom-dup-${index}`} 
-                    className="w-80 flex-shrink-0 mx-4 cursor-pointer"
-                    onClick={() => handleImageClick(index, false)}
-                  >
-                    <div className="group relative overflow-hidden rounded-xl shadow-lg dark:shadow-dark-card h-72">
-                      <Image 
-                        src={`/images/slide${index}.jpg`} 
-                        alt={`Proje ${index}`} 
-                        width={600} 
-                        height={400}
-                        loading="lazy"
-                        placeholder="blur"
-                        blurDataURL={`/images/slide${index}.jpg`}
-                        className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        quality={85}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                        <h3 className="text-white text-xl font-semibold mb-2">Konser Görüntü Rejisi {index}</h3>
-                        <p className="text-gray-200">Resolume Arena 7 ile canlı performans görüntü rejisi ve LED ekran yönetimi</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div>
+            <Carousel
+              images={bottomImages}
+              direction="left"
+              isPaused={carouselPaused}
+              onImageClick={handleImageClick}
+              isTop={false}
+            />
           </div>
         </div>
       </section>
@@ -352,9 +511,7 @@ export default function Home() {
               onClick={closeModal}
               className="absolute top-6 right-6 z-10 text-white bg-black/50 rounded-full p-3 hover:bg-primary hover:rotate-90 transition-all duration-300"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <Icon name="close" className="h-7 w-7" />
             </button>
 
             {/* Sol Yön Tuşu */}
@@ -363,14 +520,14 @@ export default function Home() {
               onClick={(e) => {
                 e.stopPropagation();
                 const currentImages = isTopCarousel ? topImages : bottomImages;
-                const currentIndex = currentImages.indexOf(selectedImage);
+                const currentIndex = currentImages.findIndex(img => 
+                  (img._id || img.id) === (selectedImage._id || selectedImage.id)
+                );
                 const prevIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
                 setSelectedImage(currentImages[prevIndex]);
               }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <Icon name="arrow-left" className="h-8 w-8" />
             </button>
 
             {/* Sağ Yön Tuşu */}
@@ -379,32 +536,74 @@ export default function Home() {
               onClick={(e) => {
                 e.stopPropagation();
                 const currentImages = isTopCarousel ? topImages : bottomImages;
-                const currentIndex = currentImages.indexOf(selectedImage);
+                const currentIndex = currentImages.findIndex(img => 
+                  (img._id || img.id) === (selectedImage._id || selectedImage.id)
+                );
                 const nextIndex = (currentIndex + 1) % currentImages.length;
                 setSelectedImage(currentImages[nextIndex]);
               }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <Icon name="arrow-right" className="h-8 w-8" />
             </button>
 
             {/* Görüntü */}
             <div className="p-6 max-h-[90vh] w-full h-full flex items-center justify-center">
-              <Image 
-                src={`/images/slide${selectedImage}.jpg`}
-                alt={`Proje ${selectedImage}`}
-                width={1920}
-                height={1080}
-                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-              />
+              {(() => {
+                // Resmi ID ile serve et - veritabanı ID'si kullan
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+                // API_URL zaten /api içeriyor mu kontrol et
+                const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
+                let imageUrl = '';
+                
+                // Önce ID'yi kontrol et
+                if (selectedImage._id || selectedImage.id) {
+                  const dbId = selectedImage._id || selectedImage.id;
+                  // ID ile resmi serve eden endpoint'i kullan - çift /api/ olmaması için
+                  imageUrl = `${baseUrl}/api/site-images/public/${dbId}/image`;
+                } else {
+                  // Fallback: Eski yöntem (filename/path ile)
+                  imageUrl = selectedImage.url || '';
+                  if (!imageUrl && selectedImage.path) {
+                    imageUrl = selectedImage.path;
+                  }
+                  if (!imageUrl && selectedImage.filename) {
+                    imageUrl = `/uploads/site-images/${selectedImage.filename}`;
+                  }
+                  
+                  if (!imageUrl || imageUrl.trim() === '') {
+                    console.warn('Modal resim URL ve ID yok:', selectedImage);
+                    return <div className="text-white">Resim yüklenemedi</div>;
+                  }
+                  
+                  // Eğer /uploads/ ile başlıyorsa, backend URL'ine çevir
+                  if (imageUrl.startsWith('/uploads/')) {
+                    imageUrl = `${baseUrl}${imageUrl}`;
+                  } else if (!imageUrl.startsWith('http')) {
+                    if (!imageUrl.startsWith('/')) {
+                      imageUrl = `/${imageUrl}`;
+                    }
+                    imageUrl = `${baseUrl}${imageUrl}`;
+                  }
+                }
+                
+                return (
+                  <img 
+                    src={imageUrl}
+                    alt={selectedImage.originalName || 'Proje görseli'}
+                    className="max-w-full max-h-[85vh] object-cover rounded-lg shadow-2xl"
+                    onError={(e) => {
+                      console.error('Modal resim yüklenemedi:', imageUrl, selectedImage);
+                    }}
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>
       )}
 
       {/* Hizmetler ve Ekipmanlar Bölümü */}
-      <section className="py-20 bg-white dark:bg-dark-background">
+      <section className="relative py-20 bg-white/10 dark:bg-dark-background/10 backdrop-blur-[2px] z-10">
         <div className="container mx-auto px-6">
           <div className="flex flex-col lg:flex-row gap-12">
             {/* Hizmetler Kısmı */}
@@ -417,56 +616,36 @@ export default function Home() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Hizmet 1 */}
-                <div className="bg-white dark:bg-dark-surface rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-2 h-full">
-                  <div className="h-40 bg-[#0A1128] relative">
-                    <div className="absolute inset-0 flex items-center justify-center text-white">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-3 text-[#0A1128] dark:text-white">Görüntü Rejisi</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
-                      Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz.
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Hizmet 2 */}
-                <div className="bg-white dark:bg-dark-surface rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-2 h-full">
-                  <div className="h-40 bg-[#0A1128] relative">
-                    <div className="absolute inset-0 flex items-center justify-center text-white">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-3 text-[#0A1128] dark:text-white">Medya Server Sistemleri</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
-                      Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını.
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Hizmet 3 */}
-                <div className="bg-white dark:bg-dark-surface rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-2 h-full">
-                  <div className="h-40 bg-[#0A1128] relative">
-                    <div className="absolute inset-0 flex items-center justify-center text-white">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-3 text-[#0A1128] dark:text-white">LED Ekran Yönetimi</h3>
-                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
-                      Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri.
-                    </p>
-                  </div>
-                </div>
+                {services.length > 0 ? (
+                  services
+                    .sort((a, b) => a.order - b.order)
+                    .map((service, index) => (
+                      <ServiceCard
+                        key={index}
+                        title={service.title}
+                        description={service.description}
+                        icon={service.icon}
+                      />
+                    ))
+                ) : (
+                  <>
+                    <ServiceCard
+                      title="Görüntü Rejisi"
+                      description="Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz."
+                      icon="video"
+                    />
+                    <ServiceCard
+                      title="Medya Server Sistemleri"
+                      description="Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını."
+                      icon="screen"
+                    />
+                    <ServiceCard
+                      title="LED Ekran Yönetimi"
+                      description="Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri."
+                      icon="led"
+                    />
+                  </>
+                )}
               </div>
             </div>
             
@@ -480,72 +659,54 @@ export default function Home() {
               </div>
               
               <div className="space-y-6">
-                {/* Ekipman Listesi */}
-                <div className="bg-gray-50 dark:bg-dark-card p-6 rounded-xl border border-gray-200 dark:border-dark-border">
-                  <h3 className="text-xl font-semibold text-[#0A1128] dark:text-white mb-4">Görüntü Rejisi Sistemleri</h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#0066CC] dark:text-primary-light mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <span className="font-medium block dark:text-white">Analog Way Aquilon RS4</span>
-                        <span className="text-gray-600 dark:text-gray-300 text-xs">4K/8K çözünürlük desteği ile görüntü işleme</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#0066CC] dark:text-primary-light mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <span className="font-medium block dark:text-white">Barco E2 Gen 2</span>
-                        <span className="text-gray-600 dark:text-gray-300 text-xs">Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#0066CC] dark:text-primary-light mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <span className="font-medium block dark:text-white">Blackmagic ATEM 4 M/E Constellation HD</span>
-                        <span className="text-gray-600 dark:text-gray-300 text-xs">40 giriş, 24 çıkış, gelişmiş geçiş efektleri</span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-                
-                <div className="bg-gray-50 dark:bg-dark-card p-6 rounded-xl border border-gray-200 dark:border-dark-border">
-                  <h3 className="text-xl font-semibold text-[#0A1128] dark:text-white mb-4">Medya Server Sistemleri</h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#0066CC] dark:text-primary-light mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <span className="font-medium block dark:text-white">Dataton WATCHPAX 60</span>
-                        <span className="text-gray-600 dark:text-gray-300 text-xs">6 çıkışlı, yüksek performanslı</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#0066CC] dark:text-primary-light mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <span className="font-medium block dark:text-white">Disguise 4x4pro</span>
-                        <span className="text-gray-600 dark:text-gray-300 text-xs">Gerçek zamanlı render, AR/VR desteği</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#0066CC] dark:text-primary-light mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <div>
-                        <span className="font-medium block dark:text-white">Resolume Arena 7</span>
-                        <span className="text-gray-600 dark:text-gray-300 text-xs">Canlı performans için video loop ve efektler</span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
+                {equipment.length > 0 ? (
+                  equipment
+                    .sort((a, b) => a.order - b.order)
+                    .map((category, index) => (
+                      <EquipmentList
+                        key={index}
+                        title={category.title}
+                        items={category.items}
+                      />
+                    ))
+                ) : (
+                  <>
+                    <EquipmentList
+                      title="Görüntü Rejisi Sistemleri"
+                      items={[
+                        {
+                          name: "Analog Way Aquilon RS4",
+                          description: "4K/8K çözünürlük desteği ile görüntü işleme"
+                        },
+                        {
+                          name: "Barco E2 Gen 2",
+                          description: "Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış"
+                        },
+                        {
+                          name: "Blackmagic ATEM 4 M/E Constellation HD",
+                          description: "40 giriş, 24 çıkış, gelişmiş geçiş efektleri"
+                        }
+                      ]}
+                    />
+                    <EquipmentList
+                      title="Medya Server Sistemleri"
+                      items={[
+                        {
+                          name: "Dataton WATCHPAX 60",
+                          description: "6 çıkışlı, yüksek performanslı"
+                        },
+                        {
+                          name: "Disguise 4x4pro",
+                          description: "Gerçek zamanlı render, AR/VR desteği"
+                        },
+                        {
+                          name: "Resolume Arena 7",
+                          description: "Canlı performans için video loop ve efektler"
+                        }
+                      ]}
+                    />
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -553,49 +714,92 @@ export default function Home() {
       </section>
 
       {/* Hakkımızda Bölümü */}
-      <section id="about" className="py-20 bg-gray-50 dark:bg-dark-surface">
+      <section id="about" className="relative py-20 bg-gray-50/10 dark:bg-dark-surface/10 backdrop-blur-[2px] z-10">
         <div className="container mx-auto px-6">
           <div className="flex flex-col lg:flex-row items-center gap-12">
             <div className="lg:w-1/2">
-              <h2 className="text-4xl font-bold text-[#0A1128] dark:text-white mb-6">SK Production Hakkında</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4 text-lg">
-                SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.
-                Analog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.
-              </p>
-              <p className="text-gray-600 dark:text-gray-300 mb-4 text-lg">
-                10 yılı aşkın deneyime sahip ekibimiz, kurumsal etkinlikler, konserler, ürün lansmanları, 
-                sahne gösterileri ve daha birçok alanda yüzlerce projeye imza atmıştır.
-              </p>
-              <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
-                En son teknoloji ekipmanlarımız ve yaratıcı çözümlerimiz ile etkinliklerinize 
-                görsel mükemmellik katmayı hedefliyoruz. Her projede mükemmellik ve profesyonellik 
-                görsel mükemmellik katmayı hedefliyoruz.
-              </p>
+              <h2 className="text-4xl font-bold text-[#0A1128] dark:text-white mb-6">
+                {aboutContent?.title || 'SK Production Hakkında'}
+              </h2>
+              {aboutContent?.description ? (
+                <div className="text-gray-600 dark:text-gray-300 mb-6 text-lg whitespace-pre-line">
+                  {aboutContent.description}
+                </div>
+              ) : (
+                <>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4 text-lg">
+                    SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.
+                    Analog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4 text-lg">
+                    10 yılı aşkın deneyime sahip ekibimiz, kurumsal etkinlikler, konserler, ürün lansmanları, 
+                    sahne gösterileri ve daha birçok alanda yüzlerce projeye imza atmıştır.
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
+                    En son teknoloji ekipmanlarımız ve yaratıcı çözümlerimiz ile etkinliklerinize 
+                    görsel mükemmellik katmayı hedefliyoruz. Her projede mükemmellik ve profesyonellik 
+                    görsel mükemmellik katmayı hedefliyoruz.
+                  </p>
+                </>
+              )}
               <div className="flex gap-4">
-                <div className="text-center">
-                  <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">250+</span>
-                  <span className="text-gray-600 dark:text-gray-300">Tamamlanan Proje</span>
-                </div>
-                <div className="text-center">
-                  <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">12+</span>
-                  <span className="text-gray-600 dark:text-gray-300">Yıllık Deneyim</span>
-                </div>
-                <div className="text-center">
-                  <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">50+</span>
-                  <span className="text-gray-600 dark:text-gray-300">Profesyonel Ekipman</span>
-                </div>
+                {(aboutContent?.stats && aboutContent.stats.length > 0) ? (
+                  aboutContent.stats.map((stat, index) => (
+                    <div key={index} className="text-center">
+                      <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">{stat.value}</span>
+                      <span className="text-gray-600 dark:text-gray-300">{stat.label}</span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">250+</span>
+                      <span className="text-gray-600 dark:text-gray-300">Tamamlanan Proje</span>
+                    </div>
+                    <div className="text-center">
+                      <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">12+</span>
+                      <span className="text-gray-600 dark:text-gray-300">Yıllık Deneyim</span>
+                    </div>
+                    <div className="text-center">
+                      <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">50+</span>
+                      <span className="text-gray-600 dark:text-gray-300">Profesyonel Ekipman</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             <div className="lg:w-1/2">
               <div className="relative">
                 <div className="absolute -top-4 -right-4 w-full h-full bg-[#0066CC] dark:bg-primary-light rounded-xl"></div>
-                <Image
-                  src="/images/slide1.jpg"
-                  alt="SK Production Ekibi"
-                  width={600}
-                  height={400}
-                  className="relative rounded-xl w-full h-[400px] object-cover z-10"
-                />
+                {(() => {
+                  // Eğer aboutContent.image bir ID ise (MongoDB ObjectId formatında), SiteImage'dan çek
+                  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+                  const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
+                  
+                  if (aboutContent?.image && aboutContent.image.length === 24 && /^[a-fA-F0-9]{24}$/.test(aboutContent.image)) {
+                    // Bu bir MongoDB ObjectId, SiteImage'dan çek
+                    return (
+                      <img
+                        src={`${baseUrl}/api/site-images/public/${aboutContent.image}/image`}
+                        alt="SK Production Ekibi"
+                        className="relative rounded-xl w-full aspect-[4/3] object-cover z-10"
+                      />
+                    );
+                  } else {
+                    // Eski format (URL string) veya fallback
+                    return (
+                      <Image
+                        src={aboutContent?.image || '/images/slide1.jpg'}
+                        alt="SK Production Ekibi"
+                        width={800}
+                        height={600}
+                        className="relative rounded-xl w-full aspect-[4/3] object-cover z-10"
+                        priority
+                        quality={90}
+                      />
+                    );
+                  }
+                })()}
               </div>
             </div>
           </div>
@@ -603,108 +807,45 @@ export default function Home() {
       </section>
 
       {/* İletişim Bölümü */}
-      <section id="contact" className="py-16 bg-gray-50 dark:bg-dark-surface">
+      <section id="contact" className="relative py-16 bg-gray-50/10 dark:bg-dark-surface/10 backdrop-blur-[2px] z-10">
         <div className="container mx-auto px-6">
           <h2 className="text-4xl font-bold text-center text-[#0A1128] dark:text-white mb-12">İletişim</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* İletişim Bilgileri */}
             <div className="space-y-6">
               <div className="flex items-start">
-                <svg className="h-6 w-6 mr-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <Icon name="location" className="h-6 w-6 mr-3 text-primary" />
                 <div>
                   <h3 className="text-lg font-semibold text-[#0A1128] dark:text-white mb-1">Adres</h3>
-                  <p className="text-gray-600 dark:text-gray-300">Zincirlidere Caddesi No:52/C Şişli/İstanbul</p>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {contactInfo?.address || 'Zincirlidere Caddesi No:52/C Şişli/İstanbul'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start">
-                <svg className="h-6 w-6 mr-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
+                <Icon name="phone" className="h-6 w-6 mr-3 text-primary" />
                 <div>
                   <h3 className="text-lg font-semibold text-[#0A1128] dark:text-white mb-1">Telefon</h3>
-                  <p className="text-gray-600 dark:text-gray-300">+90 532 123 4567</p>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {contactInfo?.phone || '+90 532 123 4567'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start">
-                <svg className="h-6 w-6 mr-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+                <Icon name="email" className="h-6 w-6 mr-3 text-primary" />
                 <div>
                   <h3 className="text-lg font-semibold text-[#0A1128] dark:text-white mb-1">E-posta</h3>
-                  <p className="text-gray-600 dark:text-gray-300">info@skpro.com.tr</p>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {contactInfo?.email || 'info@skpro.com.tr'}
+                  </p>
                 </div>
               </div>
               {/* Harita */}
-              <div className="mt-8 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <div className="relative group">
-                  <iframe
-                    src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3008.4437891234567!2d${location.lng}!3d${location.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14cab7a2a2c3b963%3A0x7671d1713a3c0f8f!2s${encodeURIComponent(location.address)}!5e0!3m2!1str!2str!4v1234567890!5m2!1str!2str`}
-                    width="100%"
-                    height="300"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="rounded-lg"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <div className="bg-white/90 dark:bg-dark-surface/90 px-4 py-2 rounded-lg shadow-lg">
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <button
-                          onClick={openMobileNavigation}
-                          className="text-gray-800 dark:text-white text-sm font-medium flex items-center hover:text-[#0066CC] dark:hover:text-primary-light transition-colors duration-300"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 0C8.21 0 4.831 1.757 1.112 5.112l4.755 7.888c.187.31.187.69 0 1L1.112 18.888C4.831 22.243 8.21 24 12 24c3.79 0 7.169-1.757 10.888-5.112l-4.755-7.888c-.187-.31-.187-.69 0-1l4.755-7.888C19.169 1.757 15.79 0 12 0zm0 14c-1.105 0-2-.895-2-2s.895-2 2-2 2 .895 2 2-.895 2-2 2z"/>
-                          </svg>
-                          Yol Tarifi Al
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <Map location={location} onOpenMobileNavigation={openMobileNavigation} />
             </div>
             {/* İletişim Formu */}
             <div>
-              <form className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-gray-700 dark:text-gray-300 mb-1">İsim Soyisim</label>
-                  <input 
-                    type="text" 
-                    id="name"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-                    placeholder="İsim Soyisim"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-gray-700 dark:text-gray-300 mb-1">E-posta</label>
-                  <input 
-                    type="email" 
-                    id="email"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-                    placeholder="E-posta adresiniz"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="message" className="block text-gray-700 dark:text-gray-300 mb-1">Mesajınız</label>
-                  <textarea 
-                    id="message"
-                    rows={5}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-                    placeholder="Mesajınızı buraya yazın..."
-                  ></textarea>
-                </div>
-                <button 
-                  type="submit"
-                  className="w-full bg-[#0066CC] dark:bg-primary-light text-white py-3 rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-colors duration-300 font-medium"
-                >
-                  Gönder
-                </button>
-              </form>
+              <ContactForm />
             </div>
           </div>
         </div>

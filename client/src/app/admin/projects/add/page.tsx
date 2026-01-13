@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createProject } from '@/services/projectService';
+import { getAllCustomers } from '@/services/customerService';
+import { getAllEquipment } from '@/services/equipmentService';
+// TODO: getAllTeamMembers fonksiyonu eklenmeli ve import edilmeli
 
 // Proje durumları için tip tanımlaması
 type ProjectStatus = 'Planlama' | 'Devam Ediyor' | 'Tamamlandı' | 'Ertelendi' | 'İptal Edildi';
@@ -50,38 +54,15 @@ interface ProjectFormData {
   notes: string;
 }
 
-// Örnek ekip üyeleri
-const sampleTeamMembers: TeamMember[] = [
-  { id: '1', name: 'Mehmet Kaya', role: 'Görüntü Yönetmeni', email: 'm.kaya@skproduction.com', phone: '+90 533 765 43 21' },
-  { id: '2', name: 'Zeynep Demir', role: 'Media Server Operatörü', email: 'z.demir@skproduction.com', phone: '+90 535 987 65 43' },
-  { id: '3', name: 'Ali Yıldız', role: 'Teknik Direktör', email: 'a.yildiz@skproduction.com', phone: '+90 536 234 56 78' },
-  { id: '4', name: 'Ayşe Şahin', role: 'Işık Tasarımcısı', email: 'a.sahin@skproduction.com', phone: '+90 537 345 67 89' },
-  { id: '5', name: 'Burak Demir', role: 'Ses Mühendisi', email: 'b.demir@skproduction.com', phone: '+90 538 456 78 90' },
-  { id: '6', name: 'Selin Kara', role: 'Proje Koordinatörü', email: 's.kara@skproduction.com', phone: '+90 539 567 89 01' }
-];
-
-// Örnek ekipmanlar
-const sampleEquipments: Equipment[] = [
-  { id: '1', name: 'Analog Way Aquilon RS4', model: 'RS4', serialNumber: 'AW2023456', category: 'VideoSwitcher' },
-  { id: '2', name: 'Analog Way Pulse 4K', model: 'Pulse 4K', serialNumber: 'AW2023789', category: 'VideoSwitcher' },
-  { id: '3', name: 'Dataton Watchpax 60', model: 'Watchpax 60', serialNumber: 'DT789012', category: 'MediaServer' },
-  { id: '4', name: 'Barco UDX-4K32', model: 'UDX-4K32', serialNumber: 'BC456789', category: 'Projeksiyon' },
-  { id: '5', name: 'Samsung LED Wall', model: 'The Wall', serialNumber: 'SM123456', category: 'LED' },
-  { id: '6', name: 'Shure ULXD4', model: 'ULXD4', serialNumber: 'SH345678', category: 'AudioEquipment' }
-];
-
-// Örnek müşteriler
-const sampleCustomers: Customer[] = [
-  { id: '1', companyName: 'TechEvents A.Ş.', name: 'Ahmet Yılmaz', email: 'ahmet@techevents.com', phone: '+90 532 123 45 67' },
-  { id: '2', companyName: 'Mega Organizasyon', name: 'Ebru Kaya', email: 'ebru@megaorg.com', phone: '+90 533 234 56 78' },
-  { id: '3', companyName: 'İstanbul Etkinlik', name: 'Murat Demir', email: 'murat@istanbuletkinlik.com', phone: '+90 534 345 67 89' },
-  { id: '4', companyName: 'Kongre A.Ş.', name: 'Canan Öztürk', email: 'canan@kongre.com', phone: '+90 535 456 78 90' }
-];
-
 export default function AddProject() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  
+  // Dinamik veri state'leri
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]); // getAllTeamMembers ile doldurulacak
   
   // Form verileri
   const [formData, setFormData] = useState<ProjectFormData>({
@@ -113,27 +94,35 @@ export default function AddProject() {
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerList, setShowCustomerList] = useState(false);
   
+  // Dinamik verileri çek
+  useEffect(() => {
+    getAllCustomers().then(data => setCustomers((data.clients || []) as any));
+    getAllEquipment().then(data => setEquipmentList((data.equipment || []) as any));
+    // TODO: getAllTeamMembers fonksiyonu ile ekip üyeleri çekilecek
+    // getAllTeamMembers().then(setTeamMembers);
+  }, []);
+  
   // Filtrelenmiş listeler
   const filteredTeamMembers = teamSearchTerm
-    ? sampleTeamMembers.filter(member => 
+    ? teamMembers.filter(member => 
         member.name.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
         member.role.toLowerCase().includes(teamSearchTerm.toLowerCase())
       )
-    : sampleTeamMembers;
+    : teamMembers;
     
   const filteredEquipments = equipmentSearchTerm
-    ? sampleEquipments.filter(equipment => 
+    ? equipmentList.filter(equipment => 
         equipment.name.toLowerCase().includes(equipmentSearchTerm.toLowerCase()) ||
         equipment.category.toLowerCase().includes(equipmentSearchTerm.toLowerCase())
       )
-    : sampleEquipments;
+    : equipmentList;
     
   const filteredCustomers = customerSearchTerm
-    ? sampleCustomers.filter(customer => 
+    ? customers.filter(customer => 
         customer.companyName.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
         customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase())
       )
-    : sampleCustomers;
+    : customers;
   
   // Form alanı değişikliklerini işle
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -275,24 +264,31 @@ export default function AddProject() {
   // Form gönderimi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     // Form doğrulama
     if (!validateForm()) return;
-    
     setLoading(true);
-    
     try {
-      // API isteği simülasyonu
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // API'ye gönderilecek veri - Backend formatına uygun
+      const projectData = {
+        name: formData.name,
+        description: formData.description,
+        client: formData.customer, // Backend'de client olarak geçiyor
+        startDate: formData.startDate,
+        endDate: formData.endDate || undefined,
+        location: formData.location,
+        status: (formData.status === 'Planlama' ? 'PLANNING' :
+                formData.status === 'Devam Ediyor' ? 'ACTIVE' :
+                formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED',
+        team: formData.team || [],
+        equipment: formData.equipment || [],
+        notes: formData.notes
+      };
+      await createProject(projectData as any);
       setSuccess(true);
-      
-      // Başarılı sonuç sonrası yönlendirme
       setTimeout(() => {
         router.push('/admin/projects');
       }, 2000);
     } catch (error) {
-      console.error('Proje eklenirken hata oluştu:', error);
       setErrors({ submit: 'Proje eklenirken bir hata oluştu. Lütfen tekrar deneyin.' });
     } finally {
       setLoading(false);
@@ -579,7 +575,7 @@ export default function AddProject() {
                 {formData.team.length > 0 && (
                   <div className="mb-4 flex flex-wrap gap-2">
                     {formData.team.map(memberId => {
-                      const member = sampleTeamMembers.find(m => m.id === memberId);
+                      const member = teamMembers.find(m => m.id === memberId);
                       return member ? (
                         <span 
                           key={member.id}
@@ -669,7 +665,7 @@ export default function AddProject() {
                 {formData.equipment.length > 0 && (
                   <div className="mb-4 flex flex-wrap gap-2">
                     {formData.equipment.map(equipmentId => {
-                      const equipment = sampleEquipments.find(e => e.id === equipmentId);
+                      const equipment = equipmentList.find(e => e.id === equipmentId);
                       return equipment ? (
                         <span 
                           key={equipment.id}

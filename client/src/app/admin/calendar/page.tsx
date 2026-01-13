@@ -17,27 +17,6 @@ interface Project {
   equipment: string[];
 }
 
-// Ekipman için tip tanımı
-type EquipmentStatus = 'Available' | 'InUse' | 'Maintenance' | 'Faulty';
-
-// Ekipman arayüzü
-interface Equipment {
-  id: string;
-  name: string;
-  category: string;
-  status: EquipmentStatus;
-  lastMaintenanceDate?: string;
-  nextMaintenanceDate?: string;
-}
-
-// Ekipman rezervasyonu için arayüz
-interface EquipmentReservation {
-  id: string;
-  equipmentId: string;
-  projectId: string;
-  startDate: string;
-  endDate: string;
-}
 
 // Takvim hücresi tipi
 type CalendarCell = {
@@ -52,20 +31,18 @@ type CalendarRow = CalendarCell[];
 
 // Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  'active': 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200',
-  'planned': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
-  'completed': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
-  'cancelled': 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200',
-  'pending': 'bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'
+  'PLANNING': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+  'ACTIVE': 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200',
+  'COMPLETED': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
+  'CANCELLED': 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200'
 };
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'active': 'Tamamlandı',
-  'planned': 'Planlama',
-  'completed': 'Tamamlandı',
-  'cancelled': 'İptal Edildi',
-  'pending': 'Devam Ediyor'
+  'PLANNING': 'Planlama',
+  'ACTIVE': 'Devam Ediyor',
+  'COMPLETED': 'Tamamlandı',
+  'CANCELLED': 'İptal Edildi'
 };
 
 // Örnek proje verileri
@@ -77,7 +54,7 @@ const sampleProjects: Project[] = [
     startDate: '2023-11-10',
     endDate: '2023-11-12',
     location: 'İstanbul Kongre Merkezi',
-    status: 'completed',
+    status: 'COMPLETED',
     team: ['1', '2', '3', '4'],
     equipment: ['1', '2', '3', '4', '5'],
   },
@@ -88,7 +65,7 @@ const sampleProjects: Project[] = [
     startDate: '2023-12-05',
     endDate: '2023-12-07',
     location: 'Lütfi Kırdar Kongre Merkezi',
-    status: 'completed',
+    status: 'COMPLETED',
     team: ['2', '3', '5', '6'],
     equipment: ['2', '3', '6'],
   },
@@ -99,7 +76,7 @@ const sampleProjects: Project[] = [
     startDate: '2024-02-15',
     endDate: '2024-02-16',
     location: 'Hilton Convention Center',
-    status: 'pending',
+    status: 'PLANNING',
     team: ['1', '4', '7', '8'],
     equipment: ['1', '3', '4', '7'],
   },
@@ -110,7 +87,7 @@ const sampleProjects: Project[] = [
     startDate: '2024-03-20',
     endDate: '2024-03-20',
     location: 'Volkswagen Arena',
-    status: 'planned',
+    status: 'PLANNING',
     team: ['1', '2', '5', '6', '7', '9'],
     equipment: ['1', '2', '3', '4', '5', '7', '8', '9'],
   },
@@ -121,7 +98,7 @@ const sampleProjects: Project[] = [
     startDate: '2024-04-10',
     endDate: '2024-04-10',
     location: 'Four Seasons Hotel',
-    status: 'planned',
+    status: 'PLANNING',
     team: ['3', '4', '8'],
     equipment: ['2', '3', '5'],
   },
@@ -132,34 +109,12 @@ const sampleProjects: Project[] = [
     startDate: '2023-10-05',
     endDate: '2023-10-07',
     location: 'Üniversite Kampüsü',
-    status: 'cancelled',
+    status: 'CANCELLED',
     team: ['2', '4'],
     equipment: ['3', '6'],
   },
 ];
 
-// Ekipman örnek verileri
-const sampleEquipments: Equipment[] = [
-  { id: '1', name: 'Analog Way Aquilon RS4', category: 'VideoSwitcher', status: 'Available' },
-  { id: '2', name: 'Dataton Watchpax 60', category: 'MediaServer', status: 'InUse' },
-  { id: '3', name: 'Blackmagic ATEM 4 M/E', category: 'VideoSwitcher', status: 'Available' },
-  { id: '4', name: 'Barco UDX-4K32', category: 'Projector', status: 'InUse' },
-  { id: '5', name: 'Sony PVM-X2400', category: 'Monitor', status: 'Available' },
-  { id: '6', name: 'Dell Precision 7920', category: 'Workstation', status: 'Available' },
-  { id: '7', name: 'DiGiCo S31', category: 'AudioMixer', status: 'Maintenance', nextMaintenanceDate: '2024-04-05' },
-  { id: '8', name: 'GrandMA3 Light', category: 'LightingConsole', status: 'InUse' },
-  { id: '9', name: 'Shure ULXD4', category: 'WirelessMicrophone', status: 'Faulty' },
-];
-
-// Ekipman rezervasyonları örnek verileri
-const sampleReservations: EquipmentReservation[] = [
-  { id: '1', equipmentId: '1', projectId: '3', startDate: '2024-02-15', endDate: '2024-02-16' },
-  { id: '2', equipmentId: '2', projectId: '3', startDate: '2024-02-15', endDate: '2024-02-16' },
-  { id: '3', equipmentId: '4', projectId: '3', startDate: '2024-02-15', endDate: '2024-02-16' },
-  { id: '4', equipmentId: '1', projectId: '4', startDate: '2024-03-20', endDate: '2024-03-20' },
-  { id: '5', equipmentId: '2', projectId: '4', startDate: '2024-03-20', endDate: '2024-03-20' },
-  { id: '6', equipmentId: '2', projectId: '5', startDate: '2024-04-10', endDate: '2024-04-10' },
-];
 
 interface Event {
   id: string;
@@ -175,52 +130,26 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true);
   const [showProjects, setShowProjects] = useState(true);
   const [showEquipment, setShowEquipment] = useState(true);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
-  const [selectedProjectStatuses, setSelectedProjectStatuses] = useState<ProjectStatus[]>(['planned', 'pending']);
+  const [selectedProjectStatuses, setSelectedProjectStatuses] = useState<ProjectStatus[]>(['PLANNING', 'ACTIVE']);
   
-  // Tarihi formatlama
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-    return new Date(dateString).toLocaleDateString('tr-TR', options);
-  };
   
   // Tarih filtrelemesi ve veri yükleme
   useEffect(() => {
-    setLoading(true);
-    
-    // API entegrasyonu olduğunda burada backend'den veri çekilecek
-    // const fetchData = async () => {
-    //   try {
-    //     const projectResponse = await fetch('/api/admin/projects');
-    //     const equipmentResponse = await fetch('/api/admin/equipment');
-    //     const reservationsResponse = await fetch('/api/admin/reservations');
-    //     
-    //     if (!projectResponse.ok || !equipmentResponse.ok || !reservationsResponse.ok) 
-    //       throw new Error('Veri çekme hatası');
-    //     
-    //     const projectsData = await projectResponse.json();
-    //     const equipmentData = await equipmentResponse.json();
-    //     const reservationsData = await reservationsResponse.json();
-    //     
-    //     setProjects(projectsData);
-    //     setEquipments(equipmentData);
-    //     setReservations(reservationsData);
-    //   } catch (error) {
-    //     console.error('Veri yükleme hatası:', error);
-    //   }
-    // };
-    
-    // Şimdilik örnek verileri kullanarak simüle ediyoruz
-    setTimeout(() => {
-      // Projeleri filtreleme - sadece seçili durumları göster
-      const filtered = sampleProjects.filter(project => 
-        selectedProjectStatuses.includes(project.status)
-      );
+    const fetchData = async () => {
+      setLoading(true);
       
-      setFilteredProjects(filtered);
-      setLoading(false);
-    }, 500);
+      try {
+        // Veri yüklendi, loading'i false yap
+        // Not: sampleProjects const olduğu için API'den gelen veri şimdilik kullanılmıyor
+        // TODO: sampleProjects'i state'e çevir ve API'den gelen veriyi kullan
+        setLoading(false);
+      } catch (error) {
+        console.error('Veri yükleme hatası:', error);
+        setLoading(false);
+      }
+    };
     
+    fetchData();
   }, [selectedProjectStatuses]);
   
   // Sonraki aya geç
@@ -276,7 +205,6 @@ export default function Calendar() {
   // Belirli bir gün için etkinlikleri getir
   function getEventsForDay(day: number, year: number, month: number): Event[] {
     const date = new Date(year, month, day);
-    const formattedDate = date.toISOString().split('T')[0];
     
     return sampleProjects
       .filter(project => {

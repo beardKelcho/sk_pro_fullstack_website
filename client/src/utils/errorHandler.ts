@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 
 export class ApiError extends Error {
   constructor(

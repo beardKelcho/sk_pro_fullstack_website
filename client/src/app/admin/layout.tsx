@@ -5,10 +5,9 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
-
-// Layout bileşenleri daha sonra oluşturulacak
-// import AdminSidebar from '@/components/admin/AdminSidebar';
-// import AdminHeader from '@/components/admin/AdminHeader';
+import ProtectedRoute from '@/components/admin/ProtectedRoute';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
+import OfflineIndicator from '@/components/common/OfflineIndicator';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -35,22 +34,29 @@ export default function AdminLayout({
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${inter.className}`}>
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
-        <AdminSidebar collapsed={!sidebarOpen} onToggleCollapse={toggleSidebar} />
+    <ProtectedRoute>
+      <ErrorBoundary>
+        <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${inter.className}`}>
+          <OfflineIndicator />
+          <div className="flex h-screen overflow-hidden">
+            {/* Sidebar */}
+            <AdminSidebar collapsed={!sidebarOpen} onToggleCollapse={toggleSidebar} />
 
-        {/* Main content */}
-        <div className="flex-1 overflow-auto">
-          {/* Header */}
-          <AdminHeader onToggleSidebar={toggleSidebar} />
-          
-          {/* Page content */}
-          <div className="p-6">
-            {children}
+            {/* Main content */}
+            <div className="flex-1 overflow-auto">
+              {/* Header */}
+              <AdminHeader onToggleSidebar={toggleSidebar} />
+              
+              {/* Page content */}
+              <div className="p-6">
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </ErrorBoundary>
+    </ProtectedRoute>
   );
 } 

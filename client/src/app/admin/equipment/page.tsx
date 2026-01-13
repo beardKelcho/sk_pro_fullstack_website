@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getAllEquipment, deleteEquipment } from '@/services/equipmentService';
+import ExportButton from '@/components/admin/ExportButton';
 
 // Ekipman türü tanımlama
 interface Equipment {
@@ -239,6 +241,7 @@ export default function EquipmentList() {
   const router = useRouter();
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
@@ -252,25 +255,33 @@ export default function EquipmentList() {
   useEffect(() => {
     const fetchEquipment = async () => {
       setLoading(true);
+      setError(null);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch('/api/admin/equipment');
-        // if (!response.ok) throw new Error('Ekipman verileri alınamadı');
-        // const data = await response.json();
-        // setEquipment(data);
-        
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          setEquipment(sampleEquipment);
-          setLoading(false);
-        }, 500);
-        
-      } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        const response = await getAllEquipment();
+        // Backend'den gelen response formatına göre düzenle
+        const equipmentList = response.equipment || response;
+        // Backend formatını frontend formatına dönüştür
+        const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: any) => ({
+          id: item._id || item.id,
+          name: item.name,
+          model: item.model || '',
+          serialNumber: item.serialNumber || '',
+          category: item.type || item.category,
+          status: item.status,
+          purchaseDate: item.purchaseDate,
+          lastMaintenanceDate: item.lastMaintenanceDate,
+          nextMaintenanceDate: item.nextMaintenanceDate,
+          location: item.location || '',
+          notes: item.notes || ''
+        })) : [];
+        setEquipment(formattedEquipment);
+      } catch (err) {
+        console.error('Ekipman yükleme hatası:', err);
+        setError('Ekipman verileri alınamadı.');
+      } finally {
         setLoading(false);
       }
     };
-    
     fetchEquipment();
   }, []);
   
@@ -314,24 +325,15 @@ export default function EquipmentList() {
   // Ekipman silme işlevi
   const handleDeleteEquipment = async () => {
     if (!equipmentToDelete) return;
-    
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch(`/api/admin/equipment/${equipmentToDelete}`, {
-      //   method: 'DELETE',
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Ekipman silinirken bir hata oluştu');
-      // }
-      
-      // Şimdilik örnek veriyi güncelliyoruz
+      await deleteEquipment(equipmentToDelete);
       setEquipment(equipment.filter(item => item.id !== equipmentToDelete));
       setShowDeleteModal(false);
       setEquipmentToDelete(null);
-      
     } catch (error) {
-      console.error('Silme hatası:', error);
+      setError('Ekipman silinirken bir hata oluştu.');
+      setShowDeleteModal(false);
+      setEquipmentToDelete(null);
     }
   };
   

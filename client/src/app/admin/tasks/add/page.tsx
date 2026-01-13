@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FormError } from '@/types/form';
+import { createTask } from '@/services/taskService';
 
 // Kullanıcı arayüzü
 interface User {
@@ -187,37 +188,32 @@ export default function AddTask() {
     setIsSubmitting(true);
     
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch('/api/admin/tasks', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Görev eklenirken bir hata oluştu');
-      // }
-      // 
-      // const data = await response.json();
-      
-      // Şimdilik API çağrısı simülasyonu
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Başarı durumu göster
+      // API'ye gönderilecek veri - Backend formatına uygun
+      const taskData = {
+        title: formData.title,
+        description: formData.description,
+        status: (formData.status === 'Atandı' ? 'TODO' :
+                formData.status === 'Devam Ediyor' ? 'IN_PROGRESS' :
+                formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+        priority: (formData.priority === 'Düşük' ? 'LOW' :
+                 formData.priority === 'Orta' ? 'MEDIUM' :
+                 formData.priority === 'Yüksek' ? 'HIGH' : 'URGENT') as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
+        dueDate: formData.dueDate,
+        assignedTo: formData.assignedTo,
+        project: formData.relatedProject || undefined
+      };
+      await createTask(taskData);
       setShowSuccessNotification(true);
-      
-      // 2 saniye sonra görev listesine yönlendir
       setTimeout(() => {
         router.push('/admin/tasks');
       }, 2000);
-      
     } catch (error) {
       console.error('Görev ekleme hatası:', error);
       setErrors({
+        ...errors,
         form: 'Görev eklenirken bir hata oluştu. Lütfen tekrar deneyin.'
       });
+    } finally {
       setIsSubmitting(false);
     }
   };

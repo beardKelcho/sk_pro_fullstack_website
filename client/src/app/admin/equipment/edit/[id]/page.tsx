@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { updateEquipment } from '@/services/equipmentService';
 
 // Ekipman türü tanımlama
 interface Equipment {
@@ -309,75 +310,41 @@ export default function EditEquipment() {
   // Form gönderme
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       return;
     }
-    
     setSubmitting(true);
-    
     try {
       // Specs array'ini object'e dönüştür
       const specsObject: Record<string, string> = {};
-      
       formData.specs.forEach(spec => {
         if (spec.key.trim() && spec.value.trim()) {
           specsObject[spec.key] = spec.value;
         }
       });
-      
-      // API isteği için ekipman verilerini hazırla
-      const equipmentData: Equipment = {
-        id: equipmentId,
+      // API isteği için ekipman verilerini hazırla - Backend formatına uygun
+      const equipmentData: any = {
         name: formData.name,
+        type: formData.category || undefined, // Backend'de type olarak geçiyor
         model: formData.model,
         serialNumber: formData.serialNumber,
-        category: formData.category as Equipment['category'],
-        status: formData.status as Equipment['status'],
+        status: (formData.status === 'Available' ? 'AVAILABLE' :
+                formData.status === 'InUse' ? 'IN_USE' :
+                formData.status === 'Maintenance' ? 'MAINTENANCE' : 'DAMAGED') as 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DAMAGED',
         location: formData.location,
-        specs: specsObject,
-        notes: formData.notes.trim() || undefined
+        notes: formData.notes.trim() || undefined,
+        purchaseDate: formData.purchaseDate || undefined,
+        responsibleUser: formData.assignedTo || undefined
       };
-      
-      // İsteğe bağlı alanları ekle
-      if (formData.purchaseDate) equipmentData.purchaseDate = formData.purchaseDate;
-      if (formData.lastMaintenanceDate) equipmentData.lastMaintenanceDate = formData.lastMaintenanceDate;
-      if (formData.nextMaintenanceDate) equipmentData.nextMaintenanceDate = formData.nextMaintenanceDate;
-      if (formData.currentProject) equipmentData.currentProject = formData.currentProject;
-      if (formData.assignedTo) equipmentData.assignedTo = formData.assignedTo;
-      
-      // Gerçek API entegrasyonu burada yapılacak
-      // const response = await fetch(`/api/admin/equipment/${equipmentId}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(equipmentData),
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Ekipman güncellenirken bir hata oluştu');
-      // }
-      
-      // Başarılı işlem sonrası
-      console.log('Ekipman güncelleme isteği:', equipmentData);
-      
-      // API çağrısını simüle et
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Gerçek API çağrısı
+      await updateEquipment(equipmentId, equipmentData as any);
       setSuccess(true);
       setSubmitting(false);
-      
-      // 2 saniye sonra ekipman detay sayfasına yönlendir
       setTimeout(() => {
         router.push(`/admin/equipment/view/${equipmentId}`);
       }, 2000);
-      
     } catch (error) {
-      console.error('Ekipman güncelleme hatası:', error);
       setSubmitting(false);
-      
-      // Genel hata mesajı göster
       setErrors(prev => ({
         ...prev,
         general: 'Ekipman güncellenirken bir hata oluştu. Lütfen tekrar deneyiniz.'

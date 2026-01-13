@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getDashboardStats } from '@/services/dashboardService';
 
 // Dashboard kartı bileşeni
 const DashboardCard = ({ 
@@ -88,36 +89,38 @@ const ClientIcon = () => (
   </svg>
 );
 
-// Yaklaşan etkinlikler
-interface Event {
-  id: string;
-  name: string;
-  date: string;
-  type: 'concert' | 'corporate' | 'other';
-  location: string;
-}
-
-const upcomingEvents: Event[] = [
-  { id: '1', name: 'Şirket Konferansı 2023', date: '22 Mart 2023', type: 'corporate', location: 'İstanbul Kongre Merkezi' },
-  { id: '2', name: 'Yeni Ürün Lansmanı', date: '29 Mart 2023', type: 'corporate', location: 'Raffles Hotel, İstanbul' },
-  { id: '3', name: 'Bahar Konseri', date: '5 Nisan 2023', type: 'concert', location: 'Beşiktaş Kültür Merkezi' },
-];
-
-// Yaklaşan bakımlar
-interface Maintenance {
-  id: string;
-  equipment: string;
-  dueDate: string;
-  priority: 'low' | 'medium' | 'high';
-}
-
-const upcomingMaintenance: Maintenance[] = [
-  { id: '1', equipment: 'Analog Way Aquilon RS4', dueDate: '25 Mart 2023', priority: 'high' },
-  { id: '2', equipment: 'Dataton Watchpax 60', dueDate: '2 Nisan 2023', priority: 'medium' },
-  { id: '3', equipment: 'Blackmagic ATEM 4 M/E', dueDate: '10 Nisan 2023', priority: 'low' },
-];
-
 export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    equipment: { total: 0, available: 0, inUse: 0, maintenance: 0 },
+    projects: { total: 0, active: 0, completed: 0 },
+    tasks: { total: 0, open: 0, completed: 0 },
+    clients: { total: 0, active: 0 }
+  });
+  const [upcomingProjects, setUpcomingProjects] = useState<any[]>([]);
+  const [upcomingMaintenances, setUpcomingMaintenances] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const data = await getDashboardStats();
+        setStats(data.stats);
+        setUpcomingProjects(data.upcomingProjects || []);
+        setUpcomingMaintenances(data.upcomingMaintenances || []);
+      } catch (error) {
+        console.error('Dashboard verileri yüklenirken hata:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
   return (
     <div>
       <div className="mb-6">
@@ -127,36 +130,39 @@ export default function Dashboard() {
         </p>
       </div>
       
-      {/* İstatistik Kartları */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <DashboardCard 
-          title="Toplam Ekipman" 
-          value={128} 
-          icon={<EquipmentIcon />}
-          trend={{ value: 5, isUp: true }}
-          link={{ text: "Tüm ekipmanları görüntüle", url: "/admin/equipment" }}
-        />
-        <DashboardCard 
-          title="Aktif Projeler" 
-          value={12} 
-          icon={<ProjectIcon />}
-          trend={{ value: 8, isUp: true }}
-          link={{ text: "Tüm projeleri görüntüle", url: "/admin/projects" }}
-        />
-        <DashboardCard 
-          title="Açık Görevler" 
-          value={24} 
-          icon={<TaskIcon />}
-          trend={{ value: 2, isUp: false }}
-          link={{ text: "Tüm görevleri görüntüle", url: "/admin/tasks" }}
-        />
-        <DashboardCard 
-          title="Müşteriler" 
-          value={34} 
-          icon={<ClientIcon />}
-          link={{ text: "Tüm müşterileri görüntüle", url: "/admin/clients" }}
-        />
-      </div>
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066CC]"></div>
+        </div>
+      ) : (
+        <>
+          {/* İstatistik Kartları */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <DashboardCard 
+              title="Toplam Ekipman" 
+              value={stats.equipment.total} 
+              icon={<EquipmentIcon />}
+              link={{ text: "Tüm ekipmanları görüntüle", url: "/admin/equipment" }}
+            />
+            <DashboardCard 
+              title="Aktif Projeler" 
+              value={stats.projects.active} 
+              icon={<ProjectIcon />}
+              link={{ text: "Tüm projeleri görüntüle", url: "/admin/projects" }}
+            />
+            <DashboardCard 
+              title="Açık Görevler" 
+              value={stats.tasks.open} 
+              icon={<TaskIcon />}
+              link={{ text: "Tüm görevleri görüntüle", url: "/admin/tasks" }}
+            />
+            <DashboardCard 
+              title="Müşteriler" 
+              value={stats.clients.total} 
+              icon={<ClientIcon />}
+              link={{ text: "Tüm müşterileri görüntüle", url: "/admin/clients" }}
+            />
+          </div>
       
       {/* Durum ve Bilgi Kartları */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -171,20 +177,17 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="p-4">
-            {upcomingEvents.length > 0 ? (
+            {upcomingProjects.length > 0 ? (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {upcomingEvents.map((event) => (
-                  <div key={event.id} className="py-3 flex items-start">
-                    <div className={`flex-shrink-0 w-3 h-3 rounded-full mt-2 ${
-                      event.type === 'concert' ? 'bg-purple-500' : 
-                      event.type === 'corporate' ? 'bg-blue-500' : 'bg-gray-500'
-                    }`}></div>
+                {upcomingProjects.map((project) => (
+                  <div key={project._id || project.id} className="py-3 flex items-start">
+                    <div className="flex-shrink-0 w-3 h-3 rounded-full mt-2 bg-blue-500"></div>
                     <div className="ml-4">
-                      <h3 className="text-sm font-medium text-gray-800 dark:text-white">{event.name}</h3>
+                      <h3 className="text-sm font-medium text-gray-800 dark:text-white">{project.name}</h3>
                       <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
-                        <span className="mr-2">{event.date}</span>
+                        <span className="mr-2">{formatDate(project.startDate)}</span>
                         <span>•</span>
-                        <span className="ml-2">{event.location}</span>
+                        <span className="ml-2">{project.location || 'Konum belirtilmemiş'}</span>
                       </div>
                     </div>
                   </div>
@@ -192,7 +195,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <p className="text-gray-500 dark:text-gray-400 text-sm py-4 text-center">
-                Yaklaşan etkinlik bulunmuyor
+                Yaklaşan proje bulunmuyor
               </p>
             )}
           </div>
@@ -209,24 +212,18 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="p-4">
-            {upcomingMaintenance.length > 0 ? (
+            {upcomingMaintenances.length > 0 ? (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {upcomingMaintenance.map((item) => (
-                  <div key={item.id} className="py-3 flex items-start">
-                    <div className={`flex-shrink-0 w-3 h-3 rounded-full mt-2 ${
-                      item.priority === 'high' ? 'bg-red-500' : 
-                      item.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}></div>
-                    <div className="ml-4">
-                      <h3 className="text-sm font-medium text-gray-800 dark:text-white">{item.equipment}</h3>
+                {upcomingMaintenances.map((item) => (
+                  <div key={item._id || item.id} className="py-3 flex items-start">
+                    <div className="flex-shrink-0 w-3 h-3 rounded-full mt-2 bg-yellow-500"></div>
+                    <div className="ml-4 flex-1">
+                      <h3 className="text-sm font-medium text-gray-800 dark:text-white">
+                        {item.equipment?.name || 'Ekipman bilgisi yok'}
+                      </h3>
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Son Bakım Tarihi: {item.dueDate}
+                        Bakım Tarihi: {formatDate(item.scheduledDate)}
                       </p>
-                    </div>
-                    <div className="ml-auto">
-                      <button className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors">
-                        Tamamla
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -239,6 +236,8 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 } 

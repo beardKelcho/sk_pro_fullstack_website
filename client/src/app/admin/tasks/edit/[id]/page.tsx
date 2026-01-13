@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { FormError } from '@/types/form';
+import { updateTask } from '@/services/taskService';
 
 // Kullanıcı arayüzü
 interface User {
@@ -172,34 +173,31 @@ export default function EditTask() {
     const fetchTaskData = async () => {
       setLoading(true);
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const response = await fetch(`/api/admin/tasks/${taskId}`);
-        // if (!response.ok) throw new Error('Görev verisi alınamadı');
-        // const data = await response.json();
+        const { getTaskById } = await import('@/services/taskService');
+        const task = await getTaskById(taskId);
         
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          const foundTask = sampleTasks.find(t => t.id === taskId);
-          
-          if (foundTask) {
-            setFormData({
-              title: foundTask.title,
-              description: foundTask.description,
-              priority: foundTask.priority,
-              status: foundTask.status,
-              dueDate: foundTask.dueDate,
-              assignedTo: foundTask.assignedTo,
-              relatedProject: foundTask.relatedProject,
-              notes: foundTask.notes || ''
-            });
-          } else {
-            // Görev bulunamazsa listesine yönlendir
-            router.push('/admin/tasks');
-          }
-          
-          setLoading(false);
-        }, 500);
+        // Backend formatını frontend formatına dönüştür
+        const priority = task.priority === 'LOW' ? 'Düşük' :
+                        task.priority === 'MEDIUM' ? 'Orta' :
+                        task.priority === 'HIGH' ? 'Yüksek' : 'Acil';
+        const status = task.status === 'TODO' ? 'Atandı' :
+                       task.status === 'IN_PROGRESS' ? 'Devam Ediyor' :
+                       task.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi';
+        const assignedTo = typeof task.assignedTo === 'string' ? task.assignedTo : (task.assignedTo as any)?._id || (task.assignedTo as any)?.id || '';
+        const relatedProject = typeof task.project === 'string' ? task.project : (task.project as any)?._id || (task.project as any)?.id || '';
         
+        setFormData({
+          title: task.title,
+          description: task.description || '',
+          priority,
+          status,
+          dueDate: task.dueDate || '',
+          assignedTo,
+          relatedProject,
+          notes: ''
+        });
+        
+        setLoading(false);
       } catch (error) {
         console.error('Veri yükleme hatası:', error);
         setLoading(false);
@@ -299,37 +297,28 @@ export default function EditTask() {
     setIsSubmitting(true);
     
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch(`/api/admin/tasks/${taskId}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Görev güncellenirken bir hata oluştu');
-      // }
-      // 
-      // const data = await response.json();
-      
-      // Şimdilik API çağrısı simülasyonu
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Başarı durumu göster
+      // API'ye gönderilecek veri - Backend formatına uygun
+      const taskData = {
+        title: formData.title,
+        description: formData.description,
+        status: (formData.status === 'Atandı' ? 'TODO' :
+                formData.status === 'Devam Ediyor' ? 'IN_PROGRESS' :
+                formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+        priority: (formData.priority === 'Düşük' ? 'LOW' :
+                 formData.priority === 'Orta' ? 'MEDIUM' :
+                 formData.priority === 'Yüksek' ? 'HIGH' : 'URGENT') as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
+        dueDate: formData.dueDate,
+        assignedTo: formData.assignedTo,
+        project: formData.relatedProject || undefined
+      };
+      await updateTask(taskId, taskData);
       setShowSuccessNotification(true);
-      
-      // 2 saniye sonra görev detay sayfasına yönlendir
       setTimeout(() => {
-        router.push(`/admin/tasks/view/${taskId}`);
+        router.push('/admin/tasks');
       }, 2000);
-      
     } catch (error) {
-      console.error('Görev güncelleme hatası:', error);
-      setErrors({
-        form: 'Görev güncellenirken bir hata oluştu. Lütfen tekrar deneyin.'
-      });
+      setErrors({ form: 'Görev güncellenirken bir hata oluştu. Lütfen tekrar deneyin.' });
+    } finally {
       setIsSubmitting(false);
     }
   };

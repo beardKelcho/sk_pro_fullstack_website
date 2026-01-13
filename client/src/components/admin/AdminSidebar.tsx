@@ -167,6 +167,33 @@ const menuItems: MenuItem[] = [
         path: '/admin/users/add',
         icon: <></>,
       },
+      {
+        title: 'Yetki Yönetimi',
+        path: '/admin/permissions',
+        icon: <></>,
+      },
+    ],
+  },
+  {
+    title: 'Site Yönetimi',
+    path: '/admin/site-content',
+    icon: <SettingsIcon />,
+    submenu: [
+      {
+        title: 'Site İçeriği',
+        path: '/admin/site-content',
+        icon: <></>,
+      },
+      {
+        title: 'Tüm Resimler',
+        path: '/admin/site-images',
+        icon: <></>,
+      },
+      {
+        title: 'Proje Görselleri',
+        path: '/admin/project-gallery',
+        icon: <></>,
+      },
     ],
   },
   {

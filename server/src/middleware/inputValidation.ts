@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
-import sanitizeHtml from 'sanitize-html';
+// import sanitizeHtml from 'sanitize-html'; // Şimdilik kullanılmıyor
 import { FilterXSS } from 'xss';
 
 // XSS koruması için özel filtre
@@ -180,7 +180,8 @@ export const validateUser = [
     .normalizeEmail()
     .withMessage('Geçerli bir e-posta adresi giriniz'),
   body('role')
-    .isIn(['ADMIN', 'TECHNICIAN', 'INVENTORY_MANAGER', 'USER'])
+    .optional()
+    .isIn(['ADMIN', 'FIRMA_SAHIBI', 'PROJE_YONETICISI', 'DEPO_SORUMLUSU', 'TEKNISYEN'])
     .withMessage('Geçersiz kullanıcı rolü'),
   body('password')
     .optional()
@@ -189,7 +190,41 @@ export const validateUser = [
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Validasyon hatası',
+        errors: errors.array() 
+      });
+    }
+    next();
+  }
+];
+
+// Kullanıcı oluşturma validasyonu (password zorunlu)
+export const validateCreateUser = [
+  body('name')
+    .trim()
+    .isLength({ min: 2 })
+    .withMessage('İsim en az 2 karakter olmalıdır'),
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Geçerli bir e-posta adresi giriniz'),
+  body('role')
+    .optional()
+    .isIn(['ADMIN', 'FIRMA_SAHIBI', 'PROJE_YONETICISI', 'DEPO_SORUMLUSU', 'TEKNISYEN'])
+    .withMessage('Geçersiz kullanıcı rolü'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Şifre en az 6 karakter olmalıdır'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Validasyon hatası',
+        errors: errors.array() 
+      });
     }
     next();
   }

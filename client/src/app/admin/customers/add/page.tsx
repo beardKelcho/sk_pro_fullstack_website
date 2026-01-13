@@ -5,12 +5,23 @@ import { useRouter } from 'next/navigation';
 import { createCustomer } from '@/services/customerService';
 import type { Customer } from '@/services/customerService';
 import { industries, cities } from '@/services/customerService';
+import PhoneInput from '@/components/ui/PhoneInput';
+import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 const AddCustomerPage: React.FC = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState<Partial<Customer>>({
+  const [formData, setFormData] = useState<Partial<Customer> & {
+    city?: string;
+    country?: string;
+    taxOffice?: string;
+    website?: string;
+    industry?: string;
+    status?: string;
+  }>({
     companyName: '',
-    contactName: '',
+    name: '',
     email: '',
     phone: '',
     address: '',
@@ -48,8 +59,8 @@ const AddCustomerPage: React.FC = () => {
       newErrors.companyName = 'Firma adı zorunludur';
     }
     
-    if (!formData.contactName?.trim()) {
-      newErrors.contactName = 'İletişim kişisi zorunludur';
+    if (!formData.name?.trim()) {
+      newErrors.name = 'İletişim kişisi zorunludur';
     }
     
     if (!formData.email?.trim()) {
@@ -78,17 +89,28 @@ const AddCustomerPage: React.FC = () => {
       const fullAddress = city && district 
         ? `${formData.address ? formData.address + ', ' : ''}${district}, ${city}`
         : formData.address || '';
-      await createCustomer({
-        ...formData,
-        address: fullAddress,
-        city: city || formData.city || '',
-      } as Customer);
+      // Backend model'de sadece name var, companyName yok
+      // Eğer companyName varsa name olarak kullan
+      const customerData: Partial<Customer> = {
+        name: formData.companyName || formData.name || '',
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
+        address: fullAddress || undefined,
+        notes: formData.notes || undefined,
+        taxNumber: formData.taxNumber || undefined,
+      };
+      
+      await createCustomer(customerData);
+      toast.success('Müşteri başarıyla eklendi!');
       setSuccess(true);
       setTimeout(() => {
         router.push('/admin/customers');
       }, 2000);
-    } catch (error) {
-      setErrors({ submit: 'Müşteri eklenirken bir hata oluştu. Lütfen tekrar deneyin.' });
+    } catch (error: any) {
+      logger.error('Müşteri ekleme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Müşteri eklenirken bir hata oluştu. Lütfen tekrar deneyin.';
+      setErrors({ submit: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -149,20 +171,20 @@ const AddCustomerPage: React.FC = () => {
           <h2 className="text-lg font-medium text-gray-800 dark:text-white mb-4">İletişim Bilgileri</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="contactName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 İletişim Kişisi <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="contactName"
-                name="contactName"
-                value={formData.contactName}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                className={`block w-full px-3 py-2 border ${errors.contactName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white`}
+                className={`block w-full px-3 py-2 border ${errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white`}
                 required
               />
-              {errors.contactName && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.contactName}</p>
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
               )}
             </div>
 

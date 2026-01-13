@@ -10,6 +10,12 @@ import * as dashboardController from './dashboard.controller';
 import * as exportController from './export.controller';
 import * as siteImageController from './siteImage.controller';
 import * as siteContentController from './siteContent.controller';
+import * as qrCodeController from './qrCode.controller';
+import * as auditLogController from './auditLog.controller';
+import * as pushSubscriptionController from './pushSubscription.controller';
+import * as pushNotificationController from './pushNotification.controller';
+import * as notificationSettingsController from './notificationSettings.controller';
+import * as twoFactorController from './twoFactor.controller';
 
 export {
   authController,
@@ -22,5 +28,11 @@ export {
   dashboardController,
   exportController,
   siteImageController,
-  siteContentController
+  siteContentController,
+  qrCodeController,
+  auditLogController,
+  pushSubscriptionController,
+  pushNotificationController,
+  notificationSettingsController,
+  twoFactorController
 }; 

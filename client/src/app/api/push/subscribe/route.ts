@@ -1,32 +1,26 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import apiClient from '@/services/api/axios';
 
+/**
+ * Push subscription kaydet
+ * Backend API'ye proxy eder
+ */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
     const subscription = await request.json();
 
-    // Subscription'ı veritabanına kaydet
-    await db.pushSubscription.create({
-      data: {
-        userId: (session.user as any)?.id || session.user?.email || '',
-        endpoint: subscription.endpoint,
-        p256dh: subscription.keys.p256dh,
-        auth: subscription.keys.auth,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+    // Backend API'ye gönder
+    const response = await apiClient.post('/push-subscriptions/subscribe', {
+      endpoint: subscription.endpoint,
+      keys: subscription.keys,
+      userAgent: request.headers.get('user-agent'),
     });
 
-    return new NextResponse('Subscription saved', { status: 200 });
-  } catch (error) {
-    console.error('Push subscription error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return NextResponse.json(response.data, { status: 200 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.response?.data?.message || 'Push subscription kaydedilemedi' },
+      { status: error.response?.status || 500 }
+    );
   }
 } 

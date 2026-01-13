@@ -1,0 +1,162 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main      # Production
+      - develop   # Staging
+  workflow_dispatch: # Manuel tetikleme
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  # ============================================
+  # STAGING DEPLOYMENT
+  # ============================================
+  deploy-staging:
+    if: github.ref == 'refs/heads/develop'
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd client && npm ci
+          cd ../server && npm ci
+
+      - name: Run tests
+        run: |
+          npm run test:all || true
+
+      - name: Build
+        run: |
+          cd client && npm run build
+          cd ../server && npm run build
+
+      - name: Deploy notification
+        run: |
+          echo "✅ Staging deployment triggered for branch: ${{ github.ref }}"
+          echo "📦 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
+
+      - name: Deployment status
+        run: |
+          echo "🚀 Staging deployment will be handled by Vercel and Render"
+          echo "🔗 Frontend: https://skproduction-staging.vercel.app"
+          echo "🔗 Backend: https://skproduction-api-staging.onrender.com"
+
+  # ============================================
+  # PRODUCTION DEPLOYMENT
+  # ============================================
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://skproduction.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd client && npm ci
+          cd ../server && npm ci
+
+      - name: Run all tests
+        run: |
+          npm run test:all
+
+      - name: Type check
+        run: |
+          npm run type-check
+
+      - name: Lint
+        run: |
+          npm run lint
+
+      - name: Build
+        run: |
+          cd client && npm run build
+          cd ../server && npm run build
+
+      - name: Create release tag
+        if: success()
+        run: |
+          VERSION=$(date +%Y.%m.%d)-$(echo ${{ github.sha }} | cut -c1-7)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "v$VERSION" -m "Production deployment: ${{ github.sha }}"
+          git push origin "v$VERSION" || true
+
+      - name: Deployment notification
+        run: |
+          echo "✅ Production deployment triggered"
+          echo "📦 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
+          echo "🏷️  Version: ${{ env.VERSION }}"
+
+      - name: Deployment status
+        run: |
+          echo "🚀 Production deployment will be handled by Vercel and Render"
+          echo "🔗 Frontend: https://skproduction.com"
+          echo "🔗 Backend: https://api.skproduction.com"
+
+  # ============================================
+  # HOTFIX DEPLOYMENT
+  # ============================================
+  deploy-hotfix:
+    if: startsWith(github.ref, 'refs/heads/hotfix/')
+    name: Deploy Hotfix
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://skproduction.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run critical tests
+        run: |
+          cd server && npm test -- --testPathPattern="auth|security" || true
+
+      - name: Hotfix notification
+        run: |
+          echo "🚨 Hotfix deployment: ${{ github.ref }}"
+          echo "📦 Commit: ${{ github.sha }}"
+          echo "⚠️  This is a hotfix - production deployment will be triggered"

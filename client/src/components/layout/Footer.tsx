@@ -1,12 +1,45 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/common/Icon';
+import { getContentBySection, SocialMedia } from '@/services/siteContentService';
+import logger from '@/utils/logger';
 
 const Footer: React.FC = () => {
+  const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
+
+  useEffect(() => {
+    const fetchSocialMedia = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+        const response = await fetch(`${API_URL}/site-content/public/social?_t=${Date.now()}`, { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.content) {
+            setSocialMedia(data.content.content as SocialMedia[]);
+          }
+        }
+      } catch (error) {
+        logger.error('Sosyal medya verileri yüklenirken hata:', error);
+      }
+    };
+
+    fetchSocialMedia();
+  }, []);
+
+  const getIconName = (platform: string): string => {
+    const platformLower = platform.toLowerCase();
+    if (platformLower.includes('facebook')) return 'facebook';
+    if (platformLower.includes('instagram')) return 'instagram';
+    if (platformLower.includes('linkedin')) return 'linkedin';
+    if (platformLower.includes('twitter') || platformLower.includes('x')) return 'twitter';
+    if (platformLower.includes('youtube')) return 'youtube';
+    return 'link';
+  };
+
   return (
-    <footer className="bg-[#0A1128] dark:bg-dark-background text-white py-12">
+    <footer className="relative z-20 bg-[#0A1128] dark:bg-dark-background text-white py-12">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Şirket Bilgileri */}
@@ -16,15 +49,36 @@ const Footer: React.FC = () => {
               Profesyonel görüntü rejisi ve medya server çözümleri ile etkinliklerinize değer katıyoruz.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <Icon name="facebook" className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <Icon name="instagram" className="h-6 w-6" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <Icon name="linkedin" className="h-6 w-6" />
-              </a>
+              {socialMedia.length > 0 ? (
+                socialMedia.map((social, index) => (
+                  <a
+                    key={index}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-white transition-colors"
+                    onClick={(e) => {
+                      if (!social.url || social.url === '#' || social.url.trim() === '') {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <Icon name={getIconName(social.platform)} className="h-6 w-6" />
+                  </a>
+                ))
+              ) : (
+                <>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                    <Icon name="facebook" className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                    <Icon name="instagram" className="h-6 w-6" />
+                  </a>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                    <Icon name="linkedin" className="h-6 w-6" />
+                  </a>
+                </>
+              )}
             </div>
           </div>
 
@@ -39,12 +93,7 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <Link href="#services" className="text-gray-400 hover:text-white transition-colors">
-                  Hizmetler
-                </Link>
-              </li>
-              <li>
-                <Link href="#equipment" className="text-gray-400 hover:text-white transition-colors">
-                  Ekipmanlar
+                  Hizmetler & Ekipmanlar
                 </Link>
               </li>
               <li>

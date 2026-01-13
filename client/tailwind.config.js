@@ -30,6 +30,7 @@ module.exports = {
         'scroll-left-to-right': 'scrollLeftToRight 60s linear infinite',
         'fade-in': 'fadeIn 0.3s ease-out forwards',
         'scale-in': 'scaleIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards',
+        'shimmer': 'shimmer 2s linear infinite',
       },
       keyframes: {
         fadeInSlideUp: {
@@ -51,6 +52,10 @@ module.exports = {
         scaleIn: {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-1000px 0' },
+          '100%': { backgroundPosition: '1000px 0' },
         },
       },
     },

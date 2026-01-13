@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { Equipment } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
+import { logAction, extractChanges } from '../utils/auditLogger';
+import { invalidateEquipmentCache } from '../middleware/cache.middleware';
+import { createVersionHistory } from '../utils/versionHistory';
 
 // Tüm ekipmanları listele
 export const getAllEquipment = async (req: Request, res: Response) => {
@@ -135,6 +138,9 @@ export const createEquipment = async (req: Request, res: Response) => {
       responsibleUser,
     });
     
+    // Cache'i invalidate et
+    await invalidateEquipmentCache();
+    
     res.status(201).json({
       success: true,
       equipment,
@@ -161,6 +167,16 @@ export const updateEquipment = async (req: Request, res: Response) => {
       });
     }
     
+    // Mevcut ekipmanı al (versiyon geçmişi için)
+    const oldEquipment = await Equipment.findById(id).lean();
+    
+    if (!oldEquipment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ekipman bulunamadı',
+      });
+    }
+
     // Ekipmanı güncelle
     const updatedEquipment = await Equipment.findByIdAndUpdate(
       id,
@@ -184,6 +200,21 @@ export const updateEquipment = async (req: Request, res: Response) => {
         message: 'Ekipman bulunamadı',
       });
     }
+    
+    // Versiyon geçmişi oluştur
+    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    if (userId && oldEquipment) {
+      await createVersionHistory(
+        'Equipment',
+        updatedEquipment._id,
+        oldEquipment,
+        updatedEquipment.toObject(),
+        new mongoose.Types.ObjectId(userId)
+      ).catch((err: any) => logger.error('Versiyon geçmişi oluşturma hatası:', err));
+    }
+    
+    // Cache'i invalidate et
+    await invalidateEquipmentCache();
     
     res.status(200).json({
       success: true,
@@ -228,6 +259,12 @@ export const deleteEquipment = async (req: Request, res: Response) => {
     }
     
     await equipment.deleteOne();
+    
+    // Cache'i invalidate et
+    await invalidateEquipmentCache();
+    
+    // Audit log
+    await logAction(req, 'DELETE', 'Equipment', id);
     
     res.status(200).json({
       success: true,

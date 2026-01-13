@@ -9,52 +9,15 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
+      "src": "/images/sk-logo.png",
+      "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
     }
   ],
   "shortcuts": [
@@ -63,38 +26,22 @@
       "short_name": "Hizmetler",
       "description": "SK Production hizmetlerini görüntüle",
       "url": "/hizmetler",
-      "icons": [{ "src": "/icons/services.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/images/sk-logo.png", "sizes": "any" }]
     },
     {
       "name": "Projeler",
       "short_name": "Projeler",
       "description": "Tamamlanan projeleri görüntüle",
       "url": "/projeler",
-      "icons": [{ "src": "/icons/projects.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/images/sk-logo.png", "sizes": "any" }]
     },
     {
       "name": "İletişim",
       "short_name": "İletişim",
       "description": "Bizimle iletişime geçin",
       "url": "/iletisim",
-      "icons": [{ "src": "/icons/contact.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/images/sk-logo.png", "sizes": "any" }]
     }
   ],
-  "categories": ["business", "technology", "entertainment"],
-  "screenshots": [
-    {
-      "src": "/screenshots/home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "platform": "wide",
-      "label": "Ana Sayfa"
-    },
-    {
-      "src": "/screenshots/services.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "platform": "wide",
-      "label": "Hizmetler"
-    }
-  ]
+  "categories": ["business", "technology", "entertainment"]
 } 

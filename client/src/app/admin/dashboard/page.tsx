@@ -1,96 +1,33 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { getDashboardStats } from '@/services/dashboardService';
+import dynamic from 'next/dynamic';
+import { getDashboardStats, getDashboardCharts, ChartData } from '@/services/dashboardService';
+import { getUserWidgets, createDefaultWidgets, Widget } from '@/services/widgetService';
+import { trackApiError } from '@/utils/errorTracking';
+import logger from '@/utils/logger';
+import { authApi } from '@/services/api/auth';
+import { Permission, Role, rolePermissions, hasPermission } from '@/config/permissions';
+import { User } from '@/services/userService';
 
-// Dashboard kartı bileşeni
-const DashboardCard = ({ 
-  title, 
-  value, 
-  icon, 
-  description, 
-  trend, 
-  link 
-}: { 
-  title: string; 
-  value: string | number; 
-  icon: React.ReactNode; 
-  description?: string; 
-  trend?: { value: number; isUp: boolean }; 
-  link?: { text: string; url: string } 
-}) => {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</h3>
-          <p className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{value}</p>
-        </div>
-        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-          {icon}
-        </div>
+// Lazy load WidgetContainer (react-grid-layout içerir, büyük bundle)
+const WidgetContainer = dynamic(
+  () => import('@/components/admin/widgets/WidgetContainer'),
+  {
+    loading: () => (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066CC]"></div>
       </div>
-      
-      {description && (
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{description}</p>
-      )}
-      
-      {trend && (
-        <div className={`flex items-center text-sm ${trend.isUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} mb-2`}>
-          <span className="mr-1">
-            {trend.isUp ? (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            )}
-          </span>
-          {trend.value}% {trend.isUp ? 'artış' : 'azalış'} (son 30 gün)
-        </div>
-      )}
-      
-      {link && (
-        <Link href={link.url}>
-          <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline block mt-2">
-            {link.text} &rarr;
-          </span>
-        </Link>
-      )}
-    </div>
-  );
-};
-
-// Dashboard için istatistik simgeleri
-const EquipmentIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
-  </svg>
-);
-
-const ProjectIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
-  </svg>
-);
-
-const TaskIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-  </svg>
-);
-
-const ClientIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-  </svg>
+    ),
+    ssr: false, // Client-side only (react-grid-layout SSR desteklemiyor)
+  }
 );
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
+  const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [stats, setStats] = useState({
     equipment: { total: 0, available: 0, inUse: 0, maintenance: 0 },
     projects: { total: 0, active: 0, completed: 0 },
@@ -99,16 +36,78 @@ export default function Dashboard() {
   });
   const [upcomingProjects, setUpcomingProjects] = useState<any[]>([]);
   const [upcomingMaintenances, setUpcomingMaintenances] = useState<any[]>([]);
+  const [charts, setCharts] = useState<ChartData | null>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const data = await getDashboardStats();
-        setStats(data.stats);
-        setUpcomingProjects(data.upcomingProjects || []);
-        setUpcomingMaintenances(data.upcomingMaintenances || []);
+        setLoading(true);
+        
+        // Kullanıcı profilini yükle
+        try {
+          const profileResponse = await authApi.getProfile();
+          if (profileResponse.data?.user) {
+            setCurrentUser(profileResponse.data.user);
+          }
+        } catch (error) {
+          logger.error('Kullanıcı profili yüklenirken hata:', error);
+          // localStorage'dan kullanıcı bilgilerini al (fallback)
+          try {
+            const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+            if (storedUser) {
+              const userData = JSON.parse(storedUser);
+              setCurrentUser(userData);
+            }
+          } catch (e) {
+            logger.error('Kullanıcı bilgisi parse hatası:', e);
+          }
+        }
+        
+        // Dashboard verilerini ve widget'ları paralel yükle
+        // Charts verisini lazy load yap (ilk yüklemede sadece stats ve widgets)
+        const [statsData, userWidgets] = await Promise.allSettled([
+          getDashboardStats(),
+          getUserWidgets(),
+        ]);
+        
+        // Charts verisini ayrı bir request olarak lazy load et (non-blocking)
+        getDashboardCharts(7).then((chartsData) => {
+          setCharts(chartsData);
+        }).catch((error) => {
+          logger.error('Charts verisi yüklenirken hata:', error);
+        });
+
+        if (statsData.status === 'fulfilled') {
+          setStats(statsData.value.stats);
+          setUpcomingProjects(statsData.value.upcomingProjects || []);
+          setUpcomingMaintenances(statsData.value.upcomingMaintenances || []);
+        }
+
+        if (userWidgets.status === 'fulfilled') {
+          if (userWidgets.value.length === 0) {
+            // Varsayılan widget'ları oluştur
+            try {
+              const defaultWidgets = await createDefaultWidgets();
+              setWidgets(defaultWidgets);
+            } catch (error: any) {
+              trackApiError(error, '/widgets/defaults', 'POST');
+              logger.error('Varsayılan widget oluşturma hatası:', error);
+            }
+          } else {
+            setWidgets(userWidgets.value);
+          }
+        } else {
+          // Widget yükleme hatası - varsayılan widget'ları oluşturmayı dene
+          try {
+            const defaultWidgets = await createDefaultWidgets();
+            setWidgets(defaultWidgets);
+          } catch (error: any) {
+            trackApiError(error, '/widgets/defaults', 'POST');
+            logger.error('Varsayılan widget oluşturma hatası:', error);
+          }
+        }
       } catch (error) {
-        console.error('Dashboard verileri yüklenirken hata:', error);
+        logger.error('Dashboard verileri yüklenirken hata:', error);
       } finally {
         setLoading(false);
       }
@@ -117,55 +116,134 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
+  // Widget'ları yetkilere göre filtrele - useMemo ile optimize et
+  // ÖNEMLİ: Position'ları yeniden hesaplama - Widget'ların kendi position'larını kullan
+  const filteredWidgets = React.useMemo(() => {
+    if (!currentUser) {
+      return [];
+    }
+
+    const filtered = widgets.filter(widget => {
+      // Widget görünür değilse gösterme
+      if (!widget.isVisible) return false;
+
+      // Widget'ın requiredPermission ayarı varsa kontrol et
+      const requiredPermission = widget.settings?.requiredPermission as Permission | undefined;
+      if (requiredPermission) {
+        return hasPermission(currentUser.role, requiredPermission, currentUser.permissions);
+      }
+
+      // Permission yoksa varsayılan olarak göster
+      return true;
+    });
+
+    // Widget'ları order ve position'a göre sırala - position'ları değiştirme!
+    const sorted = [...filtered].sort((a, b) => {
+      // Önce order'a göre sırala
+      if (a.order !== undefined && b.order !== undefined && a.order !== b.order) {
+        return a.order - b.order;
+      }
+      // Sonra y pozisyonuna göre
+      const aY = a.position?.y ?? 0;
+      const bY = b.position?.y ?? 0;
+      if (aY !== bY) {
+        return aY - bY;
+      }
+      // Son olarak x pozisyonuna göre
+      return (a.position?.x ?? 0) - (b.position?.x ?? 0);
+    });
+
+    // Position'ları değiştirmeden döndür - WidgetContainer kendi layout'unu yönetecek
+    return sorted;
+  }, [
+    // Stable dependencies
+    widgets.length,
+    widgets.map(w => `${w._id}-${w.isVisible}-${w.order}-${w.position?.x}-${w.position?.y}-${w.position?.w}-${w.position?.h}`).join('|'),
+    currentUser?.role || '',
+    (currentUser?.permissions || []).join(',')
+  ]);
+
+  const handleWidgetsChange = useCallback((updatedWidgets: Widget[]) => {
+    // Sadece gerçekten değiştiyse güncelle - referans karşılaştırması yap
+    setWidgets(prevWidgets => {
+      // Deep comparison - sadece gerçekten değiştiyse güncelle
+      const prevKey = prevWidgets.map(w => `${w._id}-${w.position?.x}-${w.position?.y}-${w.position?.w}-${w.position?.h}-${w.order}`).join('|');
+      const newKey = updatedWidgets.map(w => `${w._id}-${w.position?.x}-${w.position?.y}-${w.position?.w}-${w.position?.h}-${w.order}`).join('|');
+      
+      if (prevKey === newKey) {
+        return prevWidgets; // Değişiklik yok, aynı referansı döndür
+      }
+      
+      return updatedWidgets;
+    });
+  }, []);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066CC]"></div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-300 mt-1">
-          SK Production yönetim paneline hoş geldiniz
-        </p>
-      </div>
-      
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066CC]"></div>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-1">
+            SK Production yönetim paneline hoş geldiniz
+          </p>
         </div>
+      </div>
+
+      {/* Widget Container */}
+      {filteredWidgets.length > 0 ? (
+        <WidgetContainer
+          widgets={filteredWidgets}
+          onWidgetsChange={handleWidgetsChange}
+          isEditable={false}
+          dashboardStats={{
+            stats,
+            upcomingProjects,
+            upcomingMaintenances,
+          }}
+          chartData={charts ? {
+            equipmentStatus: charts.equipmentStatus || [],
+            projectStatus: charts.projectStatus || [],
+            taskCompletion: (charts as any).taskCompletion || charts.taskCompletionTrend || [],
+            monthlyActivity: (charts as any).monthlyActivity || charts.activityData || [],
+          } : undefined}
+        />
       ) : (
-        <>
-          {/* İstatistik Kartları */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <DashboardCard 
-              title="Toplam Ekipman" 
-              value={stats.equipment.total} 
-              icon={<EquipmentIcon />}
-              link={{ text: "Tüm ekipmanları görüntüle", url: "/admin/equipment" }}
-            />
-            <DashboardCard 
-              title="Aktif Projeler" 
-              value={stats.projects.active} 
-              icon={<ProjectIcon />}
-              link={{ text: "Tüm projeleri görüntüle", url: "/admin/projects" }}
-            />
-            <DashboardCard 
-              title="Açık Görevler" 
-              value={stats.tasks.open} 
-              icon={<TaskIcon />}
-              link={{ text: "Tüm görevleri görüntüle", url: "/admin/tasks" }}
-            />
-            <DashboardCard 
-              title="Müşteriler" 
-              value={stats.clients.total} 
-              icon={<ClientIcon />}
-              link={{ text: "Tüm müşterileri görüntüle", url: "/admin/clients" }}
-            />
-          </div>
-      
-      {/* Durum ve Bilgi Kartları */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            Henüz widget yapılandırılmamış
+          </p>
+          <button
+            onClick={async () => {
+              try {
+                const defaultWidgets = await createDefaultWidgets();
+                setWidgets(defaultWidgets);
+              } catch (error: any) {
+                trackApiError(error, '/widgets/defaults', 'POST');
+                logger.error('Varsayılan widget oluşturma hatası:', error);
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+          >
+            Varsayılan Widget'ları Oluştur
+          </button>
+        </div>
+      )}
+
+      {/* Yaklaşan Etkinlikler ve Bakımlar - Widget olmayan sabit bölümler */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         {/* Yaklaşan Etkinlikler */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
           <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -236,8 +314,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-        </>
-      )}
     </div>
   );
-} 
+}

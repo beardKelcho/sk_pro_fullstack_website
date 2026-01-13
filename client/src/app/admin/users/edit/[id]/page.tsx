@@ -6,6 +6,8 @@ import { useRouter, useParams } from 'next/navigation';
 import { updateUser, mapBackendRoleToFrontend, mapFrontendRoleToBackend } from '@/services/userService';
 import PhoneInput from '@/components/ui/PhoneInput';
 import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Kullanıcı form tipi
 interface UserForm {
@@ -41,7 +43,7 @@ const sampleUsers: User[] = [
     id: '1',
     name: 'Ahmet Yılmaz',
     email: 'ahmet@skproduction.com',
-    role: 'Teknik Direktör',
+    role: 'Teknisyen',
     department: 'Teknik',
     status: 'Aktif',
     avatar: 'AY',
@@ -58,7 +60,7 @@ const sampleUsers: User[] = [
     id: '2',
     name: 'Zeynep Kaya',
     email: 'zeynep@skproduction.com',
-    role: 'Medya Server Uzmanı',
+    role: 'Teknisyen',
     department: 'Medya',
     status: 'Aktif',
     avatar: 'ZK',
@@ -74,7 +76,7 @@ const sampleUsers: User[] = [
     id: '3',
     name: 'Mehmet Demir',
     email: 'mehmet@skproduction.com',
-    role: 'Görüntü Yönetmeni',
+    role: 'Teknisyen',
     department: 'Görüntü',
     status: 'Aktif',
     avatar: 'MD',
@@ -196,7 +198,7 @@ export default function EditUser() {
         
         if (user) {
           // Backend formatını frontend formatına dönüştür
-          const role = mapBackendRoleToFrontend(user.role);
+          const role = mapBackendRoleToFrontend(user.role) as 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen';
           const status = user.isActive ? 'Aktif' : 'Pasif';
           
           setFormData({
@@ -221,7 +223,7 @@ export default function EditUser() {
         
         setLoading(false);
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setErrors({
           general: 'Kullanıcı verileri yüklenirken bir hata oluştu'
         });
@@ -332,6 +334,7 @@ export default function EditUser() {
       }
       
       await updateUser(userId, userData);
+      toast.success('Kullanıcı başarıyla güncellendi');
       setSuccessMessage('Kullanıcı başarıyla güncellendi! Kullanıcı listesine yönlendiriliyorsunuz...');
       
       // Başarılı mesajını gösterdikten sonra kullanıcı listesine yönlendir
@@ -340,7 +343,7 @@ export default function EditUser() {
       }, 2000);
       
     } catch (error: any) {
-      console.error('Güncelleme hatası:', error);
+      logger.error('Güncelleme hatası:', error);
       const errorMessage = error.response?.data?.message || 
                           error.message || 
                           'Kullanıcı güncellenirken bir hata oluştu. Lütfen tekrar deneyin.';
@@ -348,6 +351,7 @@ export default function EditUser() {
         ...prev,
         submit: errorMessage
       }));
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }

@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models';
+import crypto from 'crypto';
+import { User, Session } from '../models';
 import { IUser } from '../models/User';
 import logger from '../utils/logger';
+import { logAction } from '../utils/auditLogger';
 
 // JWT token üretme fonksiyonu
 const generateToken = (user: IUser) => {
@@ -68,6 +70,16 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
+    // 2FA kontrolü - Eğer 2FA aktifse, token yerine 2FA doğrulaması gerektiğini belirt
+    if (user.is2FAEnabled) {
+      return res.status(200).json({
+        success: true,
+        requires2FA: true,
+        message: '2FA doğrulaması gerekiyor',
+        email: user.email, // Frontend'de kullanmak için
+      });
+    }
+
     // Token üret
     const { accessToken, refreshToken } = generateToken(user);
 
@@ -78,6 +90,9 @@ export const login = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
     });
 
+    // Audit log - Login
+    await logAction(req, 'LOGIN', 'System', user._id.toString());
+    
     // Başarılı yanıt
     res.status(200).json({
       success: true,
@@ -99,7 +114,12 @@ export const login = async (req: Request, res: Response) => {
 };
 
 // Kullanıcı çıkış işlemi
-export const logout = (req: Request, res: Response) => {
+export const logout = async (req: Request, res: Response) => {
+  // Audit log - Logout
+  if (req.user) {
+    await logAction(req, 'LOGOUT', 'System', (req.user as any).id || (req.user as any)._id?.toString() || 'unknown');
+  }
+  
   // Refresh token cookie'sini temizle
   res.clearCookie('refreshToken');
   

@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
+import { getImageUrl, getBaseUrl } from '@/utils/imageUrl';
+import LazyImage from './LazyImage';
 
 export interface SiteImage {
   _id?: string;
@@ -9,7 +11,7 @@ export interface SiteImage {
   originalName: string;
   path: string;
   url: string;
-  category: 'project' | 'gallery' | 'hero' | 'other';
+  category: 'project' | 'gallery' | 'hero' | 'other' | 'about' | 'video';
   order: number;
   isActive: boolean;
 }
@@ -22,77 +24,118 @@ interface CarouselProps {
   isTop: boolean;
 }
 
-const Carousel: React.FC<CarouselProps> = ({
+export interface CarouselRef {
+  saveScrollPosition: () => void;
+  restoreScrollPosition: () => void;
+}
+
+const Carousel = forwardRef<CarouselRef, CarouselProps>(({
   images,
   direction,
   isPaused,
   onImageClick,
   isTop,
-}) => {
+}, ref) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const savedScrollPositionRef = useRef<number | null>(null); // Popup açıldığında scroll pozisyonunu kaydet
+  const animationIdRef = useRef<number | null>(null); // Animation ID'yi kaydet
 
   // Perfect loop için: resimlerin genişliğini hesapla
   const imageWidth = 320 + 32; // w-80 (320px) + mx-4 (16px her iki tarafta = 32px toplam)
   const singleSetWidth = images.length > 0 ? images.length * imageWidth : 0;
 
+  // Parent component'ten scroll pozisyonunu kaydetme/geri yükleme için expose et
+  useImperativeHandle(ref, () => ({
+    saveScrollPosition: () => {
+      if (scrollRef.current) {
+        savedScrollPositionRef.current = scrollRef.current.scrollLeft;
+      }
+    },
+    restoreScrollPosition: () => {
+      if (scrollRef.current && savedScrollPositionRef.current !== null) {
+        scrollRef.current.scrollLeft = savedScrollPositionRef.current;
+        savedScrollPositionRef.current = null;
+      }
+    },
+  }));
+
   // Animasyon için - Perfect Loop (sürekli akar, durmaz)
   useEffect(() => {
-    if (!scrollRef.current || isDragging || images.length === 0) {
+    if (!scrollRef.current || isDragging || isPaused || images.length === 0 || singleSetWidth === 0) {
       return;
     }
 
     const scrollContainer = scrollRef.current;
-    let animationId: number;
     let lastTime = performance.now();
-    // Yavaşlatılmış hız: 0.3 (önceden 0.1 idi)
-    const speed = direction === 'right' ? -0.3 : 0.3; // right = sağdan sola, left = soldan sağa
+    // Hız: 1.0 (daha görünür hareket)
+    const speed = direction === 'right' ? -1.0 : 1.0; // right = sağdan sola, left = soldan sağa
 
     const animate = (currentTime: number) => {
-      // isPaused kontrolünü kaldırdık - sürekli akacak
-      if (isDragging) return;
+      if (isDragging || isPaused || !scrollContainer || singleSetWidth === 0) {
+        if (animationIdRef.current) {
+          cancelAnimationFrame(animationIdRef.current);
+          animationIdRef.current = null;
+        }
+        return;
+      }
 
       const deltaTime = currentTime - lastTime;
       lastTime = currentTime;
 
-      if (scrollContainer && singleSetWidth > 0) {
-        const currentScroll = scrollContainer.scrollLeft;
-        
-        let newScroll = currentScroll + speed * (deltaTime * 0.1);
+      const currentScroll = scrollContainer.scrollLeft;
+      let newScroll = currentScroll + speed * (deltaTime * 0.1);
 
-        // Perfect loop mantığı: İlk set tamamlandığında görünmez bir şekilde başa dön
-        // Resimler 2 kez kopyalandığı için, ilk set tamamlandığında ikinci set'in başına geçiyoruz
-        // Ama görsel olarak aynı olduğu için geçiş hissedilmez
-        if (direction === 'right') {
-          // Sağdan sola: scroll azalıyor
-          if (newScroll <= 0) {
-            // İlk set tamamlandı, ikinci set'e geç (görsel olarak aynı, görünmez geçiş)
-            newScroll = singleSetWidth;
-          }
-        } else {
-          // Soldan sağa: scroll artıyor
-          if (newScroll >= singleSetWidth) {
-            // İlk set tamamlandı, başa dön (görsel olarak aynı, görünmez geçiş)
-            newScroll = 0;
-          }
+      // Perfect loop mantığı: 3 set var (images, images, images)
+      // İlk set: 0 - singleSetWidth
+      // İkinci set: singleSetWidth - 2*singleSetWidth  
+      // Üçüncü set: 2*singleSetWidth - 3*singleSetWidth
+      // Scroll pozisyonu ikinci set'te başlar (singleSetWidth)
+      // İkinci set'in sonuna geldiğinde (2*singleSetWidth), görünmez bir şekilde ikinci set'in başına döner (singleSetWidth)
+      // Böylece kullanıcı loop'u görmez - sürekli akar
+      if (direction === 'right') {
+        // Sağdan sola: scroll azalıyor
+        if (newScroll < singleSetWidth) {
+          // İkinci set'in başına geldik, üçüncü set'in sonuna geç (görsel olarak aynı)
+          newScroll = 2 * singleSetWidth;
         }
-
-        scrollContainer.scrollLeft = newScroll;
+      } else {
+        // Soldan sağa: scroll artıyor
+        if (newScroll >= 2 * singleSetWidth) {
+          // İkinci set'in sonuna geldik, ikinci set'in başına dön (görsel olarak aynı)
+          newScroll = singleSetWidth;
+        }
       }
 
-      animationId = requestAnimationFrame(animate);
+      scrollContainer.scrollLeft = newScroll;
+      animationIdRef.current = requestAnimationFrame(animate);
     };
 
-    animationId = requestAnimationFrame(animate);
+    // İlk scroll pozisyonunu ayarla ve animasyonu başlat
+    // setTimeout ile DOM'un hazır olmasını bekle
+    const initTimeout = setTimeout(() => {
+      if (scrollContainer && singleSetWidth > 0) {
+        // Eğer kaydedilmiş pozisyon varsa onu kullan, yoksa ikinci set'in başından başla
+        const initialScroll = savedScrollPositionRef.current !== null 
+          ? savedScrollPositionRef.current 
+          : (direction === 'right' ? 2 * singleSetWidth : singleSetWidth);
+        scrollContainer.scrollLeft = initialScroll;
+        savedScrollPositionRef.current = null; // Kullanıldı, temizle
+        // Animasyonu başlat
+        animationIdRef.current = requestAnimationFrame(animate);
+      }
+    }, 100); // 100ms bekle - DOM'un tamamen hazır olması için
 
     return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
+      clearTimeout(initTimeout);
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current);
+        animationIdRef.current = null;
       }
     };
-  }, [images, direction, isDragging, singleSetWidth]);
+  }, [images, direction, isDragging, isPaused, singleSetWidth]);
 
   // Mouse drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -181,8 +224,12 @@ const Carousel: React.FC<CarouselProps> = ({
     return null;
   }
 
-  // Resimleri iki kez kopyala (smooth loop için)
-  const duplicatedImages = [...images, ...images];
+  // Perfect loop için: Resimleri 3 kez kopyala
+  // İlk set: görünmez (0 - singleSetWidth)
+  // İkinci set: görünür (singleSetWidth - 2*singleSetWidth) - bu set'te başlar
+  // Üçüncü set: görünmez buffer (2*singleSetWidth - 3*singleSetWidth)
+  // Scroll pozisyonu ikinci set'te başlar, ikinci set'in sonuna geldiğinde görünmez bir şekilde ikinci set'in başına döner
+  const duplicatedImages = [...images, ...images, ...images];
 
   return (
     <div 
@@ -194,59 +241,41 @@ const Carousel: React.FC<CarouselProps> = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none' }}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab', userSelect: 'none', position: 'relative' }}
     >
       <div 
         ref={scrollRef}
-        className="flex flex-nowrap whitespace-nowrap"
+        className="flex flex-nowrap whitespace-nowrap carousel-scroll relative"
         style={{ 
           scrollBehavior: 'auto',
-          overflowX: 'hidden', // Scroll bar gizlendi, perfect loop için
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
+          overflowX: 'scroll', // Scroll çalışması için scroll olmalı
+          overflowY: 'hidden',
+          scrollbarWidth: 'none', // Firefox için scrollbar gizle
+          msOverflowStyle: 'none', // IE için scrollbar gizle
+          WebkitOverflowScrolling: 'touch', // iOS smooth scroll
+          willChange: 'scroll-position', // Performans optimizasyonu
         }}
       >
         {duplicatedImages.map((image, index) => {
           const imageId = image._id || image.id || image.filename;
           
-          // Resmi ID ile serve et - veritabanı ID'si kullan
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-          // API_URL zaten /api içeriyor mu kontrol et
-          const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
-          let imageUrl = '';
+          // Resmi ID ile serve et - utility fonksiyonunu kullan
+          // Önce ID'yi dene, sonra image objesini
+          const imageUrl = imageId && typeof imageId === 'string' && imageId.length >= 12
+            ? getImageUrl({ imageId: imageId as string, image, fallback: image.url || image.path || '' })
+            : getImageUrl({ image, fallback: image.url || image.path || '' });
           
-          // Önce ID'yi kontrol et
-          if (image._id || image.id) {
-            const dbId = image._id || image.id;
-            // ID ile resmi serve eden endpoint'i kullan - çift /api/ olmaması için dikkatli
-            imageUrl = `${baseUrl}/api/site-images/public/${dbId}/image`;
-          } else {
-            // Fallback: Eski yöntem (filename/path ile)
-            imageUrl = image.url || '';
-            if (!imageUrl && image.path) {
-              imageUrl = image.path;
-            }
-            if (!imageUrl && image.filename) {
-              imageUrl = `/uploads/site-images/${image.filename}`;
-            }
-            
-            // Geçersiz URL kontrolü
-            if (!imageUrl || imageUrl.trim() === '' || imageUrl === '/') {
-              console.warn('Geçersiz resim URL ve ID yok, render edilmiyor:', image);
-              return null;
-            }
-            
-            // Eğer /uploads/ ile başlıyorsa, backend URL'ine çevir
-            if (imageUrl.startsWith('/uploads/')) {
-              imageUrl = `${baseUrl}${imageUrl}`;
-            } else if (!imageUrl.startsWith('http')) {
-              // Eğer relative path ise, / ekle ve backend URL'ine çevir
-              if (!imageUrl.startsWith('/')) {
-                imageUrl = `/${imageUrl}`;
-              }
-              imageUrl = `${baseUrl}${imageUrl}`;
-            }
+          // Geçersiz URL kontrolü - boş veya sadece '/' olmamalı
+          const baseUrl = getBaseUrl();
+          if (!imageUrl || imageUrl.trim() === '' || imageUrl === '/' || imageUrl === `${baseUrl}/`) {
+            // Geçersiz resim - placeholder göster veya atla
+            return null;
           }
+          
+          // İlk görünen resimler için priority (LCP için)
+          // Duplicated images olduğu için, ilk set'in ilk 8'i ve ikinci set'in ilk 8'i priority
+          // LCP için daha fazla resim priority yapıyoruz - ilk görünen resimler için
+          const isPriority = (index < 8) || (index >= images.length && index < images.length + 8);
           
           return (
             <div 
@@ -258,22 +287,18 @@ const Carousel: React.FC<CarouselProps> = ({
                 }
               }}
             >
-              <div className="group relative overflow-hidden rounded-xl shadow-lg dark:shadow-dark-card h-72">
-                {/* Backend'den gelen resimler için normal img tag kullan */}
-                <img 
-                  src={imageUrl} 
-                  alt={image.originalName || 'Proje görseli'} 
-                  loading="lazy"
-                  className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110 pointer-events-none"
-                  draggable={false}
-                  onError={(e) => {
-                    console.error('Resim yüklenemedi, gizleniyor:', imageUrl, image);
-                    // Resmi gizle
-                    const imgElement = e.currentTarget;
-                    if (imgElement.parentElement) {
-                      imgElement.parentElement.style.display = 'none';
-                    }
-                  }}
+              <div className="group relative overflow-hidden rounded-xl shadow-lg dark:shadow-dark-card" style={{ width: '320px', height: '288px' }}>
+                {/* Backend'den gelen resimler için LazyImage kullan */}
+                <LazyImage
+                  src={imageUrl}
+                  alt={image.originalName || 'Proje görseli'}
+                  className="transition-transform duration-500 group-hover:scale-110 pointer-events-none"
+                  width={320}
+                  height={288}
+                  sizes="(max-width: 768px) 100vw, 320px"
+                  priority={isPriority}
+                  objectFit="cover"
+                  quality={75}
                 />
               </div>
             </div>
@@ -282,6 +307,8 @@ const Carousel: React.FC<CarouselProps> = ({
       </div>
     </div>
   );
-};
+});
+
+Carousel.displayName = 'Carousel';
 
 export default Carousel;

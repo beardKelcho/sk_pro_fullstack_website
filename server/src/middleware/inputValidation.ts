@@ -103,8 +103,8 @@ export const validateEquipment = [
     .isLength({ min: 2 })
     .withMessage('Ekipman adı en az 2 karakter olmalıdır'),
   body('type')
-    .isIn(['VideoSwitcher', 'MediaServer', 'Monitor', 'Cable', 'AudioEquipment', 'Camera', 'Display', 'Audio', 'Lighting', 'Accessory'])
-    .withMessage('Geçersiz ekipman kategorisi'),
+    .isIn(['VIDEO_SWITCHER', 'MEDIA_SERVER', 'MONITOR', 'CABLE', 'AUDIO_EQUIPMENT', 'OTHER'])
+    .withMessage('Geçersiz ekipman tipi'),
   body('status')
     .isIn(['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'DAMAGED'])
     .withMessage('Geçersiz ekipman durumu'),
@@ -129,10 +129,14 @@ export const validateProject = [
     .isLength({ min: 3 })
     .withMessage('Proje adı en az 3 karakter olmalıdır'),
   body('description')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
-    .isLength({ min: 10 })
-    .withMessage('Proje açıklaması en az 10 karakter olmalıdır'),
+    .custom((value) => {
+      if (value && value.length > 0 && value.length < 10) {
+        throw new Error('Proje açıklaması en az 10 karakter olmalıdır');
+      }
+      return true;
+    }),
   body('startDate')
     .isISO8601()
     .withMessage('Geçerli bir başlangıç tarihi giriniz'),

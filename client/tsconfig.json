@@ -40,6 +40,6 @@
     "strictBindCallApply": true,
     "strictPropertyInitialization": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "**/*.spec.ts", "**/*.test.ts"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/types/jest-dom.d.ts"],
+  "exclude": ["node_modules"]
 }

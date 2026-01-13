@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import Link from 'next/link';
+import { errorTracker } from '@/utils/errorTracking';
 
 interface Props {
   children: ReactNode;
@@ -30,7 +31,13 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Error tracking
+    errorTracker.captureException(error, errorInfo);
+    
+    // Development'ta konsola yazdır
+    if (process.env.NODE_ENV === 'development') {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    }
   }
 
   render() {

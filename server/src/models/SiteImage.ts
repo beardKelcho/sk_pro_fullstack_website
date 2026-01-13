@@ -5,7 +5,7 @@ export interface ISiteImage extends Document {
   originalName: string;
   path: string;
   url: string;
-  category: 'project' | 'gallery' | 'hero' | 'about' | 'other';
+  category: 'project' | 'gallery' | 'hero' | 'about' | 'video' | 'other';
   order: number;
   isActive: boolean;
   createdAt: Date;
@@ -32,7 +32,7 @@ const SiteImageSchema: Schema = new Schema(
     },
     category: {
       type: String,
-      enum: ['project', 'gallery', 'hero', 'about', 'other'],
+      enum: ['project', 'gallery', 'hero', 'about', 'video', 'other'],
       default: 'gallery',
     },
     order: {

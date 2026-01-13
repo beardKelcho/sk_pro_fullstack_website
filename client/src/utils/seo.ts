@@ -15,7 +15,7 @@ export function generateMetadata({
   title,
   description,
   keywords = [],
-  image = '/images/og-image.jpg',
+  image = '/images/sk-logo.png',
   url = 'https://skproduction.com',
   type = 'website',
   publishedTime,
@@ -145,7 +145,7 @@ export function generateJsonLd({
         ...baseSchema,
         name: 'SK Production',
         url: 'https://skproduction.com',
-        logo: 'https://skproduction.com/images/logo.png',
+        logo: 'https://skproduction.com/images/sk-logo.png',
         description: 'Profesyonel görüntü rejisi ve medya server çözümleri',
         ...data,
       };

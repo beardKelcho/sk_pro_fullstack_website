@@ -6,7 +6,7 @@ import logger from '../utils/logger';
 // Tüm bakımları listele
 export const getAllMaintenances = async (req: Request, res: Response) => {
   try {
-    const { status, type, equipment, sort = '-scheduledDate', page = 1, limit = 10 } = req.query;
+    const { status, type, equipment, startDate, endDate, sort = '-scheduledDate', page = 1, limit = 10 } = req.query;
     
     const filters: any = {};
     
@@ -20,6 +20,17 @@ export const getAllMaintenances = async (req: Request, res: Response) => {
     
     if (equipment) {
       filters.equipment = equipment;
+    }
+    
+    // Tarih filtresi - scheduledDate aralığı
+    if (startDate || endDate) {
+      filters.scheduledDate = {};
+      if (startDate) {
+        filters.scheduledDate.$gte = new Date(startDate as string);
+      }
+      if (endDate) {
+        filters.scheduledDate.$lte = new Date(endDate as string);
+      }
     }
     
     const pageNumber = parseInt(page as string, 10);

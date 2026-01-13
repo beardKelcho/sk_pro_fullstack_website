@@ -43,72 +43,39 @@ SK Production için geliştirilmiş modern web sitesi ve yeniden kullanılabilir
 
 ## 📦 Kurulum
 
-### Gereksinimler
-- Node.js 18+
-- MongoDB (local veya Atlas)
-- npm veya yarn
+Detaylı kurulum rehberi için **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)** dosyasına bakın.
 
-### Adımlar
+### 🚀 Production'a Alma
 
-1. **Repository'yi klonlayın**
+Production'a almak ve yayındayken geliştirme yapmak için:
+- **[DEPLOYMENT_README.md](./DEPLOYMENT_README.md)** - Deployment ve geliştirme rehberi
+- **[PRODUCTION_DEPLOYMENT_CHECKLIST.md](./PRODUCTION_DEPLOYMENT_CHECKLIST.md)** - Production deployment checklist
+- **[PRODUCTION_GELISTIRME_REHBERI.md](./PRODUCTION_GELISTIRME_REHBERI.md)** - Production'da geliştirme rehberi
+
+### Hızlı Başlangıç
+
 ```bash
+# 1. Repository'yi klonla
 git clone <repository-url>
 cd SKpro
-```
 
-2. **Dependencies'leri yükleyin**
-```bash
+# 2. Bağımlılıkları yükle
 npm install
-```
 
-3. **Environment dosyalarını oluşturun**
+# 3. MongoDB Atlas kurulumu yap (KURULUM_REHBERI.md'ye bak)
 
-Client için:
-```bash
-cd client
-cp .env.example .env.local
-```
+# 4. Environment dosyalarını oluştur
+# server/.env ve client/.env.local (KURULUM_REHBERI.md'ye bak)
 
-Server için:
-```bash
-cd server
-cp .env.example .env
-```
+# 5. İlk admin kullanıcısını oluştur
+cd server && npm run seed && cd ..
 
-4. **Environment değişkenlerini düzenleyin**
-
-`client/.env.local`:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-NEXT_PUBLIC_GA_ID=your-google-analytics-id
-```
-
-`server/.env`:
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/skproduction
-JWT_SECRET=your-super-secret-jwt-key
-CORS_ORIGIN=http://localhost:3000
-```
-
-5. **Development server'ları başlatın**
-
-Root dizinde:
-```bash
-npm run dev
-```
-
-Bu komut hem client hem server'ı başlatır.
-
-Veya ayrı ayrı:
-```bash
-# Terminal 1 - Client
-cd client
+# 6. Projeyi başlat
 npm run dev
 
-# Terminal 2 - Server
-cd server
-npm run dev
+# 7. Tarayıcıda aç
+# http://localhost:3000 (Web Sitesi)
+# http://localhost:3000/admin/login (Admin Paneli)
 ```
 
 ## 🔐 Kullanıcı Rolleri
@@ -192,32 +159,50 @@ SKpro/
 ## 🧪 Test
 
 ```bash
+# Tüm testler
+npm run test:all
+
 # Client tests
-cd client
-npm test
+cd client && npm test
 
 # Server tests
-cd server
-npm test
+cd server && npm test
+
+# E2E tests (Cypress)
+cd client && npm run cypress:open
 ```
 
 ## 🚢 Deployment
 
-### Frontend (Vercel)
-1. Vercel'e projeyi bağlayın
-2. Environment değişkenlerini ayarlayın
-3. Build komutu: `cd client && npm run build`
+Detaylı deployment rehberi için **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)** dosyasının "Deployment" bölümüne bakın.
 
-### Backend (Render/Heroku)
-1. Repository'yi bağlayın
-2. Environment değişkenlerini ayarlayın
-3. Build komutu: `cd server && npm run build`
-4. Start komutu: `cd server && npm start`
+### Özet
 
-### MongoDB Atlas
-1. MongoDB Atlas'ta cluster oluşturun
-2. Connection string'i `.env` dosyasına ekleyin
-3. Network access ve database user ayarlarını yapın
+- **Frontend**: Vercel (Next.js için optimize)
+- **Backend**: Render veya Heroku
+- **Database**: MongoDB Atlas
+- **Environment Variables**: Production değerleriyle ayarlanmalı
+
+## 📚 Dokümantasyon
+
+### Ana Dokümanlar
+
+- **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)** - Kapsamlı kurulum, başlatma ve kullanım rehberi
+  - MongoDB kurulumu (Atlas + Local)
+  - Environment yapılandırması
+  - Proje başlatma yöntemleri
+  - Sorun giderme
+  - Deployment rehberi
+  - Production checklist
+
+- **[PROJE_GELISTIRME.md](./PROJE_GELISTIRME.md)** - Proje geliştirme, iyileştirmeler ve teknik detaylar
+  - Tamamlanan özellikler
+  - Test stratejisi (detaylı)
+  - Yetki sistemi (detaylı tablo)
+  - Dosya yükleme mimarisi
+  - Teknik mimari
+  - Yapılacaklar listesi (öncelik matrisi ile)
+  - İyileştirme önerileri
 
 ## 📝 Lisans
 

@@ -390,3 +390,37 @@ export const permissionsByCategory = permissionDetails.reduce((acc, perm) => {
   return acc;
 }, {} as Record<string, PermissionDetail[]>);
 
+/**
+ * Kullanıcının belirli bir yetkiye sahip olup olmadığını kontrol eder
+ * @param userRole - Kullanıcının rolü
+ * @param permission - Kontrol edilecek yetki
+ * @param userPermissions - Kullanıcının özel yetkileri (opsiyonel)
+ * @returns Yetkiye sahipse true, değilse false
+ */
+export const hasPermission = (
+  userRole: string,
+  permission: Permission,
+  userPermissions?: string[]
+): boolean => {
+  // Önce kullanıcının özel yetkilerine bak
+  if (userPermissions && userPermissions.includes(permission)) {
+    return true;
+  }
+  
+  // Özel yetkiler yoksa rol yetkilerine bak
+  const role = userRole as Role;
+  if (!rolePermissions[role]) {
+    return false;
+  }
+  return rolePermissions[role].includes(permission);
+};
+
+/**
+ * Kullanıcının belirli bir role sahip olup olmadığını kontrol eder
+ * @param userRole - Kullanıcının rolü
+ * @param roles - Kontrol edilecek roller
+ * @returns Rol varsa true, değilse false
+ */
+export const hasRole = (userRole: string, ...roles: Role[]): boolean => {
+  return roles.includes(userRole as Role);
+};

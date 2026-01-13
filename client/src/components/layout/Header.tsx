@@ -49,10 +49,7 @@ const Header: React.FC = () => {
               Projeler
             </Link>
             <Link href="#services" className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors">
-              Hizmetler
-            </Link>
-            <Link href="#equipment" className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors">
-              Ekipmanlar
+              Hizmetler & Ekipmanlar
             </Link>
             <Link href="#about" className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors">
               Hakkımızda
@@ -105,10 +102,7 @@ const Header: React.FC = () => {
                 Projeler
               </Link>
               <Link href="#services" className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors" onClick={closeMobileMenu}>
-                Hizmetler
-              </Link>
-              <Link href="#equipment" className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors" onClick={closeMobileMenu}>
-                Ekipmanlar
+                Hizmetler & Ekipmanlar
               </Link>
               <Link href="#about" className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors" onClick={closeMobileMenu}>
                 Hakkımızda

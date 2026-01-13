@@ -7,6 +7,18 @@ import Maintenance from './Maintenance';
 import Task from './Task';
 import SiteImage from './SiteImage';
 import SiteContent from './SiteContent';
+import QRCode from './QRCode';
+import QRScanHistory from './QRScanHistory';
+import Notification from './Notification';
+import AuditLog from './AuditLog';
+import PushSubscription from './PushSubscription';
+import NotificationSettings from './NotificationSettings';
+import Widget from './Widget';
+import { ReportSchedule } from './ReportSchedule';
+import { VersionHistory } from './VersionHistory';
+import { SavedSearch } from './SavedSearch';
+import { SearchHistory } from './SearchHistory';
+import { Session } from './Session';
 
 export {
   User,
@@ -16,5 +28,17 @@ export {
   Maintenance,
   Task,
   SiteImage,
-  SiteContent
+  SiteContent,
+  QRCode,
+  QRScanHistory,
+  Notification,
+  AuditLog,
+  PushSubscription,
+  NotificationSettings,
+  Widget,
+  ReportSchedule,
+  VersionHistory,
+  SavedSearch,
+  SearchHistory,
+  Session
 }; 

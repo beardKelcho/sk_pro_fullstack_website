@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ErrorMessage, ErrorCard, ErrorBoundary } from '../ErrorStates';
+import { ErrorMessage, ErrorCard } from '../ErrorStates';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
 
 describe('ErrorStates', () => {
   describe('ErrorMessage', () => {

@@ -7,6 +7,11 @@ interface OfflineFormData {
   retryCount: number;
 }
 
+/**
+ * Offline Storage Class
+ * IndexedDB kullanarak offline form verilerini saklar
+ * Singleton pattern kullanır
+ */
 class OfflineStorage {
   private static instance: OfflineStorage;
   private db: IDBDatabase | null = null;
@@ -14,10 +19,17 @@ class OfflineStorage {
   private readonly DB_VERSION = 1;
   private readonly STORE_NAME = 'offline-forms';
 
+  /**
+   * Private constructor (singleton pattern)
+   */
   private constructor() {
     this.initDB();
   }
 
+  /**
+   * Singleton instance getter
+   * @returns OfflineStorage instance
+   */
   static getInstance(): OfflineStorage {
     if (!OfflineStorage.instance) {
       OfflineStorage.instance = new OfflineStorage();
@@ -51,6 +63,11 @@ class OfflineStorage {
     };
   }
 
+  /**
+   * Form verisini offline storage'a kaydeder
+   * @param formData - Kaydedilecek form verisi
+   * @throws Database not initialized hatası
+   */
   async saveForm(formData: Omit<OfflineFormData, 'id' | 'timestamp' | 'status' | 'retryCount'>): Promise<void> {
     if (!this.db) {
       throw new Error('Database not initialized');
@@ -74,6 +91,11 @@ class OfflineStorage {
     });
   }
 
+  /**
+   * Bekleyen (pending) form verilerini getirir
+   * @returns Bekleyen form verileri dizisi
+   * @throws Database not initialized hatası
+   */
   async getPendingForms(): Promise<OfflineFormData[]> {
     if (!this.db) {
       throw new Error('Database not initialized');
@@ -90,6 +112,12 @@ class OfflineStorage {
     });
   }
 
+  /**
+   * Form durumunu günceller
+   * @param id - Form ID
+   * @param status - Yeni durum
+   * @throws Database not initialized hatası
+   */
   async updateFormStatus(id: string, status: OfflineFormData['status']): Promise<void> {
     if (!this.db) {
       throw new Error('Database not initialized');
@@ -114,6 +142,11 @@ class OfflineStorage {
     });
   }
 
+  /**
+   * Form verisini siler
+   * @param id - Form ID
+   * @throws Database not initialized hatası
+   */
   async deleteForm(id: string): Promise<void> {
     if (!this.db) {
       throw new Error('Database not initialized');
@@ -132,8 +165,15 @@ class OfflineStorage {
 
 export const offlineStorage = OfflineStorage.getInstance();
 
-// Offline form submission için yardımcı fonksiyonlar
+/**
+ * Offline form submission için yardımcı fonksiyonlar
+ */
 export const offlineForm = {
+  /**
+   * Form verisini offline storage'a kaydeder
+   * @param formName - Form adı
+   * @param data - Form verisi
+   */
   save: async (formName: string, data: any) => {
     await offlineStorage.saveForm({
       formName,
@@ -141,6 +181,10 @@ export const offlineForm = {
     });
   },
 
+  /**
+   * Bekleyen form verilerini işler ve API'ye gönderir
+   * Başarılı olanlar silinir, başarısız olanlar failed olarak işaretlenir
+   */
   processPending: async () => {
     const pendingForms = await offlineStorage.getPendingForms();
     

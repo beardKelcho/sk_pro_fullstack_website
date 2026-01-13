@@ -60,4 +60,10 @@ ClientSchema.virtual('activeProjects', {
 ClientSchema.set('toJSON', { virtuals: true });
 ClientSchema.set('toObject', { virtuals: true });
 
+// Performance indexes
+// Arama için text index (name, email, phone)
+ClientSchema.index({ name: 'text', email: 'text', phone: 'text' });
+// Name ile sıralama için
+ClientSchema.index({ name: 1 });
+
 export default mongoose.model<IClient>('Client', ClientSchema); 

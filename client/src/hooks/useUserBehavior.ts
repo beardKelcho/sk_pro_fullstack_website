@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/router';
+import { usePathname } from 'next/navigation';
 import { trackUserBehavior } from '@/utils/analytics';
 
 export function useUserBehavior() {
-  const router = useRouter();
+  const pathname = usePathname();
   const startTimeRef = useRef<number>(Date.now());
   const maxScrollDepthRef = useRef<number>(0);
 

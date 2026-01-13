@@ -10,6 +10,11 @@ export interface IUser extends Document {
   isActive: boolean;
   phone?: string;
   address?: string;
+  // 2FA (İki Faktörlü Kimlik Doğrulama) - Opsiyonel
+  is2FAEnabled: boolean;
+  twoFactorSecret?: string; // TOTP secret (sadece setup sırasında gösterilir, sonra hash'lenir)
+  twoFactorSecretHash?: string; // Hash'lenmiş secret
+  backupCodes?: string[]; // Backup kodlar (hash'lenmiş)
   comparePassword(candidatePassword: string): Promise<boolean>;
   createdAt: Date;
   updatedAt: Date;
@@ -56,6 +61,23 @@ const UserSchema: Schema = new Schema(
       type: String,
       trim: true,
     },
+    // 2FA (İki Faktörlü Kimlik Doğrulama) - Opsiyonel
+    is2FAEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorSecret: {
+      type: String,
+      select: false, // Varsayılan olarak query'lerde döndürülmez
+    },
+    twoFactorSecretHash: {
+      type: String,
+      select: false,
+    },
+    backupCodes: [{
+      type: String,
+      select: false,
+    }],
   },
   {
     timestamps: true,
@@ -79,5 +101,12 @@ UserSchema.pre('save', async function (next) {
 UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+// Performance indexes
+// Email zaten unique index'e sahip (unique: true)
+// Role ve isActive ile filtreleme için
+UserSchema.index({ role: 1, isActive: 1 });
+// Arama için text index (name, email)
+UserSchema.index({ name: 'text', email: 'text' });
 
 export default mongoose.model<IUser>('User', UserSchema); 

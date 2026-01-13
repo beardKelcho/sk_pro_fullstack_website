@@ -93,4 +93,18 @@ ProjectSchema.pre('findOneAndUpdate', async function (next) {
   next();
 });
 
+// Performance indexes
+// Status ile filtreleme ve sıralama için
+ProjectSchema.index({ status: 1, createdAt: -1 });
+// Client ile filtreleme için
+ProjectSchema.index({ client: 1, status: 1 });
+// Tarih aralığı sorguları için
+ProjectSchema.index({ startDate: 1, endDate: 1 });
+// Arama için text index (name, description, location)
+ProjectSchema.index({ name: 'text', description: 'text', location: 'text' });
+// Team member ile filtreleme için
+ProjectSchema.index({ team: 1 });
+// Equipment ile filtreleme için
+ProjectSchema.index({ equipment: 1 });
+
 export default mongoose.model<IProject>('Project', ProjectSchema); 

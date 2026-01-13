@@ -1,0 +1,15 @@
+{
+  "budgets": [
+    {
+      "type": "initial",
+      "maximumWarning": "200kb",
+      "maximumError": "300kb"
+    },
+    {
+      "type": "anyComponentStyle",
+      "maximumWarning": "50kb",
+      "maximumError": "100kb"
+    }
+  ]
+}
+

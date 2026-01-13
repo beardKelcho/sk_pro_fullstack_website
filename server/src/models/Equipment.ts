@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import logger from '../utils/logger';
 
 export interface IEquipment extends Omit<Document, 'model'> {
   name: string;
@@ -62,10 +63,22 @@ const EquipmentSchema: Schema = new Schema(
 // Ekipman statüsü değiştiğinde log oluşturma
 EquipmentSchema.pre('save', function (next) {
   if (this.isModified('status')) {
-    console.log(`Ekipman statüsü değişti: ${this._id}, Yeni Statü: ${this.get('status')}`);
+    logger.debug(`Ekipman statüsü değişti: ${this._id}, Yeni Statü: ${this.get('status')}`);
     // Burada bir log kaydı oluşturulabilir
   }
   next();
 });
+
+// Performance indexes
+// Status ve type ile filtreleme için
+EquipmentSchema.index({ status: 1, type: 1 });
+// Arama için text index (name, model, serialNumber)
+EquipmentSchema.index({ name: 'text', model: 'text', serialNumber: 'text' });
+// Status ile sıralama için
+EquipmentSchema.index({ status: 1, createdAt: -1 });
+// Responsible user ile filtreleme için
+EquipmentSchema.index({ responsibleUser: 1 });
+// Location ile filtreleme için
+EquipmentSchema.index({ location: 1 });
 
 export default mongoose.model<IEquipment>('Equipment', EquipmentSchema); 

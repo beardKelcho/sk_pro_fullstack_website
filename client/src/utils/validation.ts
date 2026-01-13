@@ -51,7 +51,13 @@ export const apiResponseSchema = z.object({
   }).optional(),
 });
 
-// Validasyon yardımcı fonksiyonları
+/**
+ * Zod schema ile input validasyonu yapar
+ * @param schema - Zod validation schema
+ * @param data - Validasyon yapılacak veri
+ * @returns Validasyon sonucu (success, data veya error)
+ * @template T - Validasyon sonucu tipi
+ */
 export const validateInput = async <T>(schema: z.ZodSchema<T>, data: unknown): Promise<{ success: boolean; data?: T; error?: string }> => {
   try {
     const validatedData = await schema.parseAsync(data);
@@ -67,7 +73,12 @@ export const validateInput = async <T>(schema: z.ZodSchema<T>, data: unknown): P
   }
 };
 
-// API route'ları için validasyon middleware'i
+/**
+ * API route'ları için validasyon middleware'i
+ * Request body'yi validate eder ve hata durumunda Response döner
+ * @param schema - Zod validation schema
+ * @returns Validasyon middleware fonksiyonu
+ */
 export const validateRequest = (schema: z.ZodSchema) => {
   return async (req: Request) => {
     try {
@@ -104,7 +115,12 @@ export const performanceMetricSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-// XSS koruması için HTML temizleme
+/**
+ * XSS koruması için HTML içeriğini temizler
+ * Tehlikeli karakterleri HTML entity'lere çevirir
+ * @param html - Temizlenecek HTML string
+ * @returns Temizlenmiş HTML string
+ */
 export const sanitizeHTML = (html: string): string => {
   return html
     .replace(/&/g, '&amp;')
@@ -114,7 +130,12 @@ export const sanitizeHTML = (html: string): string => {
     .replace(/'/g, '&#039;');
 };
 
-// SQL injection koruması için string temizleme
+/**
+ * SQL injection koruması için string temizleme
+ * Tehlikeli karakterleri escape eder
+ * @param str - Temizlenecek string
+ * @returns Temizlenmiş string
+ */
 export const sanitizeSQL = (str: string): string => {
   if (!str) return '';
   
@@ -127,7 +148,17 @@ export const sanitizeSQL = (str: string): string => {
     .replace(/_/g, '\\_'); // LIKE operatörü için _ kaçışı
 };
 
-// Dosya yükleme validasyonu
+/**
+ * Dosya yükleme validasyonu
+ * Dosya boyutu, tipi ve resim boyutlarını kontrol eder
+ * @param file - Validasyon yapılacak dosya
+ * @param options - Validasyon seçenekleri
+ * @param options.maxSize - Maksimum dosya boyutu (MB)
+ * @param options.allowedTypes - İzin verilen dosya tipleri
+ * @param options.maxWidth - Maksimum resim genişliği (px)
+ * @param options.maxHeight - Maksimum resim yüksekliği (px)
+ * @returns Validasyon sonucu (success, errors)
+ */
 export const validateFile = (file: File, options: {
   maxSize?: number; // MB cinsinden
   allowedTypes?: string[];
@@ -174,20 +205,34 @@ export const apiKeySchema = z.object({
   expiresAt: z.date().optional(),
 });
 
-// Email formatı doğrulama
+/**
+ * Email formatı doğrulama
+ * @param email - Kontrol edilecek email adresi
+ * @returns Email geçerli mi?
+ */
 export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 
-// Parola güvenliği kontrol
+/**
+ * Parola güvenliği kontrolü
+ * En az 8 karakter, 1 büyük harf, 1 küçük harf, 1 sayı ve 1 özel karakter kontrolü yapar
+ * @param password - Kontrol edilecek parola
+ * @returns Parola güvenli mi?
+ */
 export function isStrongPassword(password: string): boolean {
   // En az 8 karakter, 1 büyük harf, 1 küçük harf, 1 sayı ve 1 özel karakter
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return passwordRegex.test(password);
 }
 
-// Telefon numarası formatı kontrol
+/**
+ * Telefon numarası formatı kontrolü
+ * Türkiye telefon numarası formatını kontrol eder (+90 veya 0 ile başlayan 10 haneli)
+ * @param phone - Kontrol edilecek telefon numarası
+ * @returns Telefon numarası geçerli mi?
+ */
 export function isValidPhoneNumber(phone: string): boolean {
   // Türkiye telefon numarası formatı: +90 5XX XXX XX XX veya 05XX XXX XX XX
   const phoneRegex = /^(\+90|0)?5\d{9}$/;

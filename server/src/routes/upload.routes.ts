@@ -5,6 +5,8 @@ import fs from 'fs';
 import { authenticate, requirePermission } from '../middleware/auth.middleware';
 import { Permission } from '../config/permissions';
 import logger from '../utils/logger';
+import { normalizePath, pathToUrl } from '../utils/pathNormalizer';
+import { checkAndOptimizeImage } from '../utils/imageOptimizer';
 
 const router = express.Router();
 
@@ -38,21 +40,21 @@ const storage = multer.diskStorage({
 // File filter
 const fileFilter = (req: express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   // İzin verilen dosya tipleri
-  const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|zip|rar/;
+  const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|zip|rar|mp4|webm|mov|avi/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  const mimetype = allowedTypes.test(file.mimetype) || file.mimetype.startsWith('video/');
 
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error('Geçersiz dosya tipi. Sadece resim, PDF, Office dosyaları ve arşiv dosyaları yüklenebilir.'));
+    cb(new Error('Geçersiz dosya tipi. Sadece resim, video, PDF, Office dosyaları ve arşiv dosyaları yüklenebilir.'));
   }
 };
 
 const upload = multer({
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 100 * 1024 * 1024, // 100MB (video dosyaları için daha büyük)
   },
   fileFilter,
 });
@@ -72,9 +74,22 @@ router.post(
         });
       }
 
-      const fileUrl = `/uploads/${req.body.type || 'general'}/${req.file.filename}`;
+      const fileType = req.body.type || 'general';
+      const normalizedPath = normalizePath(`${fileType}/${req.file.filename}`, fileType);
+      const fileUrl = pathToUrl(normalizedPath);
 
-      logger.info(`Dosya yüklendi: ${req.file.filename} by user ${req.user?.id}`);
+      // Resim dosyası ise optimize et (async, background'da)
+      if (req.file) {
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(req.file.filename);
+        if (isImage) {
+          const fullPath = path.join(process.cwd(), 'uploads', normalizedPath);
+          checkAndOptimizeImage(fullPath).catch((error) => {
+            logger.error(`Resim optimizasyonu hatası (background): ${req.file?.filename}`, error);
+          });
+        }
+
+        logger.info(`Dosya yüklendi: ${req.file.filename} (${(req.file.size / 1024 / 1024).toFixed(2)}MB) by user ${req.user?.id}`);
+      }
 
       res.status(200).json({
         success: true,
@@ -84,6 +99,7 @@ router.post(
           mimetype: req.file.mimetype,
           size: req.file.size,
           url: fileUrl,
+          path: normalizedPath, // Normalize edilmiş path
         },
       });
     } catch (error) {
@@ -111,13 +127,29 @@ router.post(
         });
       }
 
-      const files = (req.files as Express.Multer.File[]).map((file) => ({
-        filename: file.filename,
+      const fileType = req.body.type || 'general';
+      const files = (req.files as Express.Multer.File[]).map((file) => {
+        const normalizedPath = normalizePath(`${fileType}/${file.filename}`, fileType);
+        const fileUrl = pathToUrl(normalizedPath);
+
+        // Resim dosyası ise optimize et (async, background'da)
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.filename);
+        if (isImage) {
+          const fullPath = path.join(process.cwd(), 'uploads', normalizedPath);
+          checkAndOptimizeImage(fullPath).catch((error) => {
+            logger.error(`Resim optimizasyonu hatası (background): ${file.filename}`, error);
+          });
+        }
+
+        return {
+          filename: file.filename,
         originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        url: `/uploads/${req.body.type || 'general'}/${file.filename}`,
-      }));
+          mimetype: file.mimetype,
+          size: file.size,
+          url: fileUrl,
+          path: normalizedPath, // Normalize edilmiş path
+        };
+      });
 
       logger.info(`${files.length} dosya yüklendi by user ${req.user?.id}`);
 

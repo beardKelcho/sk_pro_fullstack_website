@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import logger from '../utils/logger';
 
 export class AppError extends Error {
   statusCode: number;
@@ -70,7 +71,7 @@ export const errorHandler = (
   }
 
   // Default error
-  console.error('ERROR 💥', err);
+  logger.error('Unhandled error:', err);
   return res.status(500).json({
     status: 'error',
     message: 'Something went wrong!',

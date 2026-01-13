@@ -43,6 +43,16 @@ export enum Permission {
   // Upload/File
   FILE_UPLOAD = 'file:upload',
   FILE_DELETE = 'file:delete',
+  
+  // QR Kod yönetimi
+  QR_VIEW = 'qr:view',
+  QR_CREATE = 'qr:create',
+  QR_UPDATE = 'qr:update',
+  QR_DELETE = 'qr:delete',
+  QR_SCAN = 'qr:scan',
+  
+  // Audit Log
+  VIEW_AUDIT_LOGS = 'audit:view',
 }
 
 // Rol tanımlamaları
@@ -86,6 +96,12 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.EXPORT_DATA,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
+    Permission.QR_VIEW,
+    Permission.QR_CREATE,
+    Permission.QR_UPDATE,
+    Permission.QR_DELETE,
+    Permission.QR_SCAN,
+    Permission.VIEW_AUDIT_LOGS,
   ],
   
   [Role.FIRMA_SAHIBI]: [
@@ -118,6 +134,12 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.EXPORT_DATA,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
+    Permission.QR_VIEW,
+    Permission.QR_CREATE,
+    Permission.QR_UPDATE,
+    Permission.QR_DELETE,
+    Permission.QR_SCAN,
+    Permission.VIEW_AUDIT_LOGS,
   ],
   
   [Role.PROJE_YONETICISI]: [
@@ -138,6 +160,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.MAINTENANCE_VIEW, // Sadece görüntüleme
     Permission.USER_VIEW, // Sadece görüntüleme
     Permission.EXPORT_DATA,
+    Permission.QR_VIEW,
+    Permission.QR_SCAN,
   ],
   
   [Role.DEPO_SORUMLUSU]: [
@@ -153,6 +177,10 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.PROJECT_VIEW, // Sadece görüntüleme
     Permission.CLIENT_VIEW, // Sadece görüntüleme
     Permission.EXPORT_DATA,
+    Permission.QR_VIEW,
+    Permission.QR_CREATE,
+    Permission.QR_UPDATE,
+    Permission.QR_SCAN,
   ],
   
   [Role.TEKNISYEN]: [
@@ -163,6 +191,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.EQUIPMENT_VIEW,
     Permission.MAINTENANCE_VIEW,
     Permission.USER_VIEW,
+    Permission.QR_VIEW,
+    Permission.QR_SCAN,
   ],
 };
 

@@ -7,15 +7,25 @@ import type { Customer } from '@/services/customerService';
 import { industries, cities } from '@/services/customerService';
 import PhoneInput from '@/components/ui/PhoneInput';
 import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 const EditCustomerPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const customerId = params.id as string;
 
-  const [formData, setFormData] = useState<Partial<Customer>>({
+  const [formData, setFormData] = useState<Partial<Customer> & {
+    city?: string;
+    country?: string;
+    taxNumber?: string;
+    taxOffice?: string;
+    website?: string;
+    industry?: string;
+    status?: string;
+  }>({
     companyName: '',
-    contactName: '',
+    name: '',
     email: '',
     phone: '',
     address: '',
@@ -33,6 +43,8 @@ const EditCustomerPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [city, setCity] = useState<string>('');
+  const [district, setDistrict] = useState<string>('');
 
   // Müşteri verilerini getir
   useEffect(() => {
@@ -43,16 +55,17 @@ const EditCustomerPage: React.FC = () => {
         
         // Adresten il ve ilçeyi parse et
         const customerAddress = customer.address || '';
+        const customerAny = customer as any;
         if (customerAddress) {
           const parts = customerAddress.split(',').map((p: string) => p.trim());
           if (parts.length >= 2) {
             setCity(parts[parts.length - 1]);
             setDistrict(parts[parts.length - 2]);
-          } else if (customer.city) {
-            setCity(customer.city);
+          } else if (customerAny.city) {
+            setCity(customerAny.city);
           }
-        } else if (customer.city) {
-          setCity(customer.city);
+        } else if (customerAny.city) {
+          setCity(customerAny.city);
         }
       } catch (error) {
         setErrors({ submit: 'Müşteri bilgileri alınamadı. Lütfen tekrar deneyin.' });
@@ -80,8 +93,8 @@ const EditCustomerPage: React.FC = () => {
       newErrors.companyName = 'Firma adı zorunludur';
     }
     
-    if (!formData.contactName?.trim()) {
-      newErrors.contactName = 'İletişim kişisi zorunludur';
+    if (!formData.name?.trim()) {
+      newErrors.name = 'İletişim kişisi zorunludur';
     }
     
     if (!formData.email?.trim()) {
@@ -110,17 +123,22 @@ const EditCustomerPage: React.FC = () => {
       const fullAddress = city && district 
         ? `${formData.address ? formData.address + ', ' : ''}${district}, ${city}`
         : formData.address || '';
+      // Customer interface'inde olmayan field'ları çıkar
+      const { city: _, country: __, taxNumber: ___, taxOffice: ____, website: _____, industry: ______, status: _______, ...customerData } = formData;
       await updateCustomer(customerId, {
-        ...formData,
+        ...customerData,
         address: fullAddress,
-        city: city || formData.city || '',
       });
+      toast.success('Müşteri başarıyla güncellendi');
       setSuccess(true);
       setTimeout(() => {
         router.push('/admin/customers');
       }, 2000);
-    } catch (error) {
-      setErrors({ submit: 'Müşteri güncellenirken bir hata oluştu. Lütfen tekrar deneyin.' });
+    } catch (error: any) {
+      logger.error('Müşteri güncelleme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Müşteri güncellenirken bir hata oluştu. Lütfen tekrar deneyin.';
+      setErrors({ submit: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -192,20 +210,20 @@ const EditCustomerPage: React.FC = () => {
           <h2 className="text-lg font-medium text-gray-800 dark:text-white mb-4">İletişim Bilgileri</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="contactName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 İletişim Kişisi <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="contactName"
-                name="contactName"
-                value={formData.contactName}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                className={`block w-full px-3 py-2 border ${errors.contactName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white`}
+                className={`block w-full px-3 py-2 border ${errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white`}
                 required
               />
-              {errors.contactName && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.contactName}</p>
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
               )}
             </div>
 

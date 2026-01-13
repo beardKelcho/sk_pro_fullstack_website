@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ProjectStatus } from '@/types/project';
+import VersionHistoryModal from '@/components/admin/VersionHistoryModal';
+import logger from '@/utils/logger';
 
 // Müşteri tipi
 interface Customer {
@@ -429,7 +431,7 @@ const sampleProject: Project = {
       role: 'Görüntü Yönetmeni',
       email: 'ahmet.yilmaz@techcon.com',
       phone: '+90 532 123 4567',
-      avatar: '/avatars/1.jpg'
+      avatar: ''
     },
     {
       id: '3',
@@ -437,7 +439,7 @@ const sampleProject: Project = {
       role: 'Medya Server Operatörü',
       email: 'mehmet.demir@techcon.com',
       phone: '+90 533 765 4321',
-      avatar: '/avatars/3.jpg'
+      avatar: ''
     },
     {
       id: '5',
@@ -445,7 +447,7 @@ const sampleProject: Project = {
       role: 'Teknik Direktör',
       email: 'ayse.kaya@techcon.com',
       phone: '+90 534 333 3333',
-      avatar: '/avatars/5.jpg'
+      avatar: ''
     },
     {
       id: '8',
@@ -453,7 +455,7 @@ const sampleProject: Project = {
       role: 'LED Operatörü',
       email: 'can.ozkan@techcon.com',
       phone: '+90 535 444 4444',
-      avatar: '/avatars/8.jpg'
+      avatar: ''
     }
   ] as TeamMember[],
   equipment: [
@@ -556,6 +558,7 @@ export default function ViewProject() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
   
   // Ekip üyesi bilgilerini getir
   const getTeamMember = (id: string) => {
@@ -623,7 +626,7 @@ export default function ViewProject() {
         setProject(formattedProject);
         setLoading(false);
       } catch (err) {
-        console.error('Proje yüklenirken hata oluştu:', err);
+        logger.error('Proje yüklenirken hata oluştu:', err);
         setError('Proje yüklenirken bir sorun oluştu. Lütfen daha sonra tekrar deneyin.');
         setLoading(false);
       }
@@ -710,6 +713,15 @@ export default function ViewProject() {
           </p>
         </div>
         <div className="flex space-x-3">
+          <button
+            onClick={() => setShowVersionHistory(true)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Versiyon Geçmişi
+          </button>
           <Link href={`/admin/projects/edit/${project.id}`}>
             <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center">
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1015,11 +1027,8 @@ export default function ViewProject() {
                 {project.timeline && project.timeline.length > 0 ? (
                   <ol className="relative border-l border-gray-200 dark:border-gray-700">                  
                     {project.timeline.map((phase, index) => {
-                      // Bugünün tarihini al
                       const today = new Date();
-                      // Aşamanın tamamlanma durumunu belirle
                       const isCompleted = new Date(phase.date) < today;
-                      // Bugün işlenen aşama mı
                       const isToday = new Date(phase.date).toDateString() === today.toDateString();
                       
                       return (
@@ -1108,6 +1117,17 @@ export default function ViewProject() {
           </div>
         )}
       </div>
+
+      {/* Version History Modal */}
+      {project && (
+        <VersionHistoryModal
+          isOpen={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          resource="Project"
+          resourceId={project.id}
+          resourceName={project.name}
+        />
+      )}
     </div>
   );
 } 

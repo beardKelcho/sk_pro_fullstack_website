@@ -1,7 +1,15 @@
+/**
+ * Server-side Logger Utility
+ * Winston kullanarak structured logging sağlar
+ * Production'da dosyaya, development'ta console'a yazar
+ */
+
 import winston from 'winston';
 import path from 'path';
 
-// Log formatı
+/**
+ * Log formatı (JSON formatında structured logging)
+ */
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
@@ -9,7 +17,10 @@ const logFormat = winston.format.combine(
   winston.format.json()
 );
 
-// Console formatı (development için)
+/**
+ * Console formatı (development için)
+ * Renkli ve okunabilir format
+ */
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -22,7 +33,13 @@ const consoleFormat = winston.format.combine(
   })
 );
 
-// Logger oluştur
+/**
+ * Winston logger instance
+ * - Error logları: logs/error.log
+ * - Tüm loglar: logs/combined.log
+ * - Development: Console'a da yazar
+ * - Production: Sadece warn ve error console'a yazar
+ */
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,

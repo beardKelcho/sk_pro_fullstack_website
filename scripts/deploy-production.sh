@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# SK Production - Production Deployment Script
+# Bu script, main branch'ini production'a deploy eder
+
+set -e
+
+echo "🚀 Production Deployment Başlatılıyor..."
+
+# develop branch'inde olduğumuzdan emin ol
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "develop" ]; then
+    echo "⚠️  Uyarı: develop branch'inde değilsiniz (Mevcut: $CURRENT_BRANCH)"
+    read -p "Devam etmek istiyor musunuz? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
+# Onay iste
+echo "⚠️  PRODUCTION DEPLOYMENT"
+echo "Bu işlem production ortamına deploy edecek!"
+read -p "Emin misiniz? (yes/no): " confirmation
+if [ "$confirmation" != "yes" ]; then
+    echo "❌ Deployment iptal edildi."
+    exit 1
+fi
+
+# develop'dan son değişiklikleri çek
+echo "📥 develop branch'inden son değişiklikler çekiliyor..."
+git pull origin develop
+
+# Test'leri çalıştır
+echo "🧪 Test'ler çalıştırılıyor..."
+npm run test:all || {
+    echo "❌ Test'ler başarısız! Deployment iptal edildi."
+    exit 1
+}
+
+# Type check
+echo "🔍 Type check yapılıyor..."
+npm run type-check || {
+    echo "❌ Type check başarısız! Deployment iptal edildi."
+    exit 1
+}
+
+# Lint
+echo "🔍 Lint kontrolü yapılıyor..."
+npm run lint || {
+    echo "❌ Lint kontrolü başarısız! Deployment iptal edildi."
+    exit 1
+}
+
+# Build
+echo "🔨 Build yapılıyor..."
+npm run build || {
+    echo "❌ Build başarısız! Deployment iptal edildi."
+    exit 1
+}
+
+# main branch'ine geç
+echo "🔄 main branch'ine geçiliyor..."
+git checkout main
+git pull origin main
+
+# develop'ı main'e merge et
+echo "🔀 develop branch'i main'e merge ediliyor..."
+git merge develop --no-ff -m "Merge develop into main for production deployment"
+
+# Version tag oluştur
+VERSION=$(date +%Y.%m.%d)-$(git rev-parse --short HEAD)
+echo "🏷️  Version tag oluşturuluyor: v$VERSION"
+git tag -a "v$VERSION" -m "Production deployment: $VERSION"
+
+# Push
+echo "📤 main branch'ine push ediliyor..."
+git push origin main
+git push origin --tags
+
+echo ""
+echo "✅ Production deployment tamamlandı!"
+echo "🔗 Frontend: https://skproduction.com"
+echo "🔗 Backend: https://api.skproduction.com"
+echo "🏷️  Version: v$VERSION"
+echo ""
+echo "⏳ Deployment tamamlanması 3-7 dakika sürebilir..."

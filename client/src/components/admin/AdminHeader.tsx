@@ -6,12 +6,14 @@ import { usePathname } from 'next/navigation';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { authApi } from '@/services/api/auth';
 import { User } from '@/types/auth';
+import logger from '@/utils/logger';
 
 interface AdminHeaderProps {
   onToggleSidebar: () => void;
+  onSearchClick?: () => void;
 }
 
-export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
+export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHeaderProps) {
   const pathname = usePathname();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationPanel, setShowNotificationPanel] = useState(false);
@@ -34,7 +36,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
           const userData = JSON.parse(storedUser);
           setUser(userData);
         } catch (error) {
-          console.error('User data parse error:', error);
+          logger.error('User data parse error:', error);
         }
       }
     };
@@ -70,11 +72,12 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   ];
   
   return (
-    <header className="h-16 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 md:px-6">
+    <header className="h-16 glass dark:glass-dark shadow-lg border-b border-white/20 dark:border-white/10 flex items-center justify-between px-4 md:px-6 relative z-50 backdrop-blur-xl">
       {/* Sol bölüm */}
       <div className="flex items-center">
         <button 
-          className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+          className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
+            focus:outline-none transition-all duration-300 hover:scale-110 hover-glow"
           onClick={onToggleSidebar}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -82,7 +85,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
           </svg>
         </button>
         
-        <h1 className="ml-4 text-lg font-medium text-gray-800 dark:text-white">
+        <h1 className="ml-4 text-lg font-bold text-gradient">
           {getPageTitle()}
         </h1>
       </div>
@@ -90,16 +93,26 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
       {/* Sağ bölüm */}
       <div className="flex items-center space-x-3">
         {/* Arama butonu */}
-        <button className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <button 
+          onClick={onSearchClick}
+          className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
+            relative group transition-all duration-300 hover:scale-110 hover-glow"
+          title="Ara (Ctrl+K)"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
+          <span className="absolute -bottom-1 -right-1 text-[10px] px-1.5 py-0.5 glass dark:glass-dark rounded-md 
+            text-gray-600 dark:text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+            ⌘K
+          </span>
         </button>
         
         {/* Bildirimler */}
         <div className="relative" ref={notificationPanelRef}>
           <button 
-            className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 relative"
+            className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
+              relative transition-all duration-300 hover:scale-110 hover-glow"
             onClick={() => setShowNotificationPanel(!showNotificationPanel)}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -107,14 +120,16 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             </svg>
             
             {/* Bildirim sayısı */}
-            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full 
+              w-5 h-5 flex items-center justify-center font-bold shadow-lg pulse-glow">
               2
             </span>
           </button>
           
           {/* Bildirim paneli */}
           {showNotificationPanel && (
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg overflow-hidden z-50 border border-gray-200 dark:border-gray-700">
+            <div className="absolute right-0 mt-2 w-80 glass dark:glass-dark rounded-2xl shadow-2xl overflow-hidden z-50 
+              border border-white/20 dark:border-white/10 backdrop-blur-xl slide-in-right">
               <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h3 className="font-medium text-gray-800 dark:text-white">Bildirimler</h3>
                 <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
@@ -173,23 +188,27 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
         {/* Profil menüsü */}
         <div className="relative" ref={profileMenuRef}>
           <button 
-            className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="flex items-center space-x-2 p-1 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 
+              transition-all duration-300 hover:scale-105 hover-glow"
             onClick={() => setShowProfileMenu(!showProfileMenu)}
           >
-            <div className="w-8 h-8 bg-[#0066CC] dark:bg-primary-light rounded-full flex items-center justify-center text-white font-medium text-sm">
+            <div className="w-9 h-9 gradient-primary rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg">
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
-            <span className="hidden md:block text-sm text-gray-700 dark:text-gray-300">
+            <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">
               {user?.name || 'Kullanıcı'}
             </span>
-            <svg className="w-4 h-4 hidden md:block text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-4 h-4 hidden md:block text-gray-600 dark:text-gray-400 transition-transform" 
+              style={{ transform: showProfileMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           
           {/* Profil açılır menüsü */}
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg overflow-hidden z-50 border border-gray-200 dark:border-gray-700">
+            <div className="absolute right-0 mt-2 w-48 glass dark:glass-dark rounded-2xl shadow-2xl overflow-hidden z-50 
+              border border-white/20 dark:border-white/10 backdrop-blur-xl slide-in-right">
               <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                 <p className="text-sm font-medium text-gray-800 dark:text-white">{user?.name || 'Kullanıcı'}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{user?.email || 'email@example.com'}</p>
@@ -224,7 +243,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                     try {
                       await authApi.logout();
                     } catch (error) {
-                      console.error('Logout error:', error);
+                      logger.error('Logout error:', error);
                     } finally {
                       // Hem localStorage hem sessionStorage'dan temizle
                       localStorage.removeItem('accessToken');

@@ -4,7 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAllEquipment, deleteEquipment } from '@/services/equipmentService';
-import ExportButton from '@/components/admin/ExportButton';
+import { bulkDelete, bulkUpdateStatus } from '@/services/bulkService';
+import ExportMenu from '@/components/admin/ExportMenu';
+import ImportModal from '@/components/admin/ImportModal';
+import BulkActions, { BulkAction } from '@/components/admin/BulkActions';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Ekipman türü tanımlama
 interface Equipment {
@@ -250,6 +255,8 @@ export default function EquipmentList() {
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [equipmentForMaintenance, setEquipmentForMaintenance] = useState<string | null>(null);
   const [nextMaintenanceDate, setNextMaintenanceDate] = useState<string>('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   // Ekipman verilerini yükleme
   useEffect(() => {
@@ -276,7 +283,7 @@ export default function EquipmentList() {
         })) : [];
         setEquipment(formattedEquipment);
       } catch (err) {
-        console.error('Ekipman yükleme hatası:', err);
+        logger.error('Ekipman yükleme hatası:', err);
         setError('Ekipman verileri alınamadı.');
       } finally {
         setLoading(false);
@@ -330,8 +337,12 @@ export default function EquipmentList() {
       setEquipment(equipment.filter(item => item.id !== equipmentToDelete));
       setShowDeleteModal(false);
       setEquipmentToDelete(null);
-    } catch (error) {
-      setError('Ekipman silinirken bir hata oluştu.');
+      toast.success('Ekipman başarıyla silindi');
+    } catch (error: any) {
+      logger.error('Ekipman silme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Ekipman silinirken bir hata oluştu.';
+      setError(errorMessage);
+      toast.error(errorMessage);
       setShowDeleteModal(false);
       setEquipmentToDelete(null);
     }
@@ -367,7 +378,7 @@ export default function EquipmentList() {
       setNextMaintenanceDate('');
       
     } catch (error) {
-      console.error('Bakım güncelleme hatası:', error);
+      logger.error('Bakım güncelleme hatası:', error);
     }
   };
   
@@ -376,6 +387,120 @@ export default function EquipmentList() {
     const category = categories.find(cat => cat.value === categoryValue);
     return category ? category.label : categoryValue;
   };
+
+  // Toplu işlemler
+  const handleSelectAll = () => {
+    if (selectedIds.length === filteredEquipment.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredEquipment.map(item => item.id));
+    }
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedIds([]);
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(itemId => itemId !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) {
+      toast.error('Lütfen silmek için en az bir ekipman seçin');
+      return;
+    }
+
+    if (!confirm(`${selectedIds.length} ekipmanı silmek istediğinizden emin misiniz?`)) {
+      return;
+    }
+
+    try {
+      const result = await bulkDelete({
+        resource: 'equipment',
+        ids: selectedIds,
+      });
+      toast.success(`${result.deletedCount || selectedIds.length} ekipman başarıyla silindi`);
+      setSelectedIds([]);
+      // Verileri yeniden yükle
+      const response = await getAllEquipment();
+      const equipmentList = response.equipment || response;
+      const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: any) => ({
+        id: item._id || item.id,
+        name: item.name,
+        model: item.model || '',
+        serialNumber: item.serialNumber || '',
+        category: item.type || item.category,
+        status: item.status,
+        purchaseDate: item.purchaseDate,
+        lastMaintenanceDate: item.lastMaintenanceDate,
+        nextMaintenanceDate: item.nextMaintenanceDate,
+        location: item.location || '',
+        notes: item.notes || ''
+      })) : [];
+      setEquipment(formattedEquipment);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Ekipmanlar silinirken bir hata oluştu');
+    }
+  };
+
+  const handleBulkStatusUpdate = async (newStatus: string) => {
+    if (selectedIds.length === 0) {
+      toast.error('Lütfen durumunu değiştirmek için en az bir ekipman seçin');
+      return;
+    }
+
+    try {
+      const result = await bulkUpdateStatus({
+        resource: 'equipment',
+        ids: selectedIds,
+        status: newStatus,
+      });
+      toast.success(`${result.updatedCount || selectedIds.length} ekipmanın durumu güncellendi`);
+      setSelectedIds([]);
+      // Verileri yeniden yükle
+      const response = await getAllEquipment();
+      const equipmentList = response.equipment || response;
+      const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: any) => ({
+        id: item._id || item.id,
+        name: item.name,
+        model: item.model || '',
+        serialNumber: item.serialNumber || '',
+        category: item.type || item.category,
+        status: item.status,
+        purchaseDate: item.purchaseDate,
+        lastMaintenanceDate: item.lastMaintenanceDate,
+        nextMaintenanceDate: item.nextMaintenanceDate,
+        location: item.location || '',
+        notes: item.notes || ''
+      })) : [];
+      setEquipment(formattedEquipment);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Durum güncellenirken bir hata oluştu');
+    }
+  };
+
+  const bulkActions: BulkAction[] = [
+    {
+      label: 'Kullanılabilir Yap',
+      onClick: () => handleBulkStatusUpdate('Available'),
+      variant: 'primary',
+    },
+    {
+      label: 'Bakımda Yap',
+      onClick: () => handleBulkStatusUpdate('Maintenance'),
+      variant: 'secondary',
+    },
+    {
+      label: 'Seçili Ekipmanları Sil',
+      onClick: handleBulkDelete,
+      variant: 'danger',
+    },
+  ];
   
   return (
     <div className="space-y-6">
@@ -385,14 +510,30 @@ export default function EquipmentList() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Ekipman Yönetimi</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-300">Teknik ekipmanları yönetin ve bakım takvimini planlayın</p>
         </div>
-        <Link href="/admin/equipment/add">
-          <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setImportModalOpen(true)}
+            className="px-4 py-2 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-800 text-white rounded-md shadow-sm transition-colors flex items-center"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-            Yeni Ekipman Ekle
+            Import
           </button>
-        </Link>
+          <ExportMenu 
+            baseEndpoint="/api/export/equipment"
+            baseFilename="equipment"
+            label="Dışa Aktar"
+          />
+          <Link href="/admin/equipment/add">
+            <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Yeni Ekipman Ekle
+            </button>
+          </Link>
+        </div>
       </div>
       
       {/* Filtreler */}
@@ -452,6 +593,17 @@ export default function EquipmentList() {
         </div>
       </div>
       
+      {/* Toplu İşlemler */}
+      {filteredEquipment.length > 0 && (
+        <BulkActions
+          selectedCount={selectedIds.length}
+          totalCount={filteredEquipment.length}
+          onSelectAll={handleSelectAll}
+          onDeselectAll={handleDeselectAll}
+          actions={bulkActions}
+        />
+      )}
+
       {/* Ekipman Listesi */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         {loading ? (
@@ -492,6 +644,14 @@ export default function EquipmentList() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length === filteredEquipment.length && filteredEquipment.length > 0}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light"
+                    />
+                  </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Ekipman
                   </th>
@@ -513,8 +673,18 @@ export default function EquipmentList() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredEquipment.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                {filteredEquipment.map((item) => {
+                  const isSelected = selectedIds.includes(item.id);
+                  return (
+                  <tr key={item.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelect(item.id)}
+                        className="w-4 h-4 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-[#0066CC]/10 dark:bg-primary-light/10 rounded-full flex items-center justify-center">
@@ -590,7 +760,8 @@ export default function EquipmentList() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

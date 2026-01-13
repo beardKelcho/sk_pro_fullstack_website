@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme } from '../../context/ThemeContext';
+import { usePathname } from 'next/navigation';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
   useEffect(() => {
@@ -22,6 +24,34 @@ const Navbar = () => {
 
   const toggleMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  // Smooth scroll handler
+  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault();
+    
+    // Eğer farklı bir sayfadaysak, önce ana sayfaya git
+    if (pathname !== '/') {
+      window.location.href = `/#${targetId}`;
+      return;
+    }
+
+    const element = document.getElementById(targetId);
+    if (element) {
+      const headerOffset = 100; // Navbar yüksekliği için offset
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+    
+    // Mobil menüyü kapat
+    if (mobileMenuOpen) {
+      setMobileMenuOpen(false);
+    }
   };
 
   return (
@@ -50,44 +80,40 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link
-              href="/#projects"
+            <a
+              href="#projects"
+              onClick={(e) => handleSmoothScroll(e, 'projects')}
               className={`${
                 isScrolled ? 'text-gray-800 dark:text-gray-200' : 'text-white'
-              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium`}
+              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium cursor-pointer`}
             >
               Projeler
-            </Link>
-            <Link
-              href="/#services"
+            </a>
+            <a
+              href="#services"
+              onClick={(e) => handleSmoothScroll(e, 'services')}
               className={`${
                 isScrolled ? 'text-gray-800 dark:text-gray-200' : 'text-white'
-              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium`}
+              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium cursor-pointer`}
             >
-              Hizmetler
-            </Link>
-            <Link
-              href="/#equipment"
+              Hizmetler & Ekipmanlar
+            </a>
+            <a
+              href="#about"
+              onClick={(e) => handleSmoothScroll(e, 'about')}
               className={`${
                 isScrolled ? 'text-gray-800 dark:text-gray-200' : 'text-white'
-              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium`}
-            >
-              Ekipmanlar
-            </Link>
-            <Link
-              href="/#about"
-              className={`${
-                isScrolled ? 'text-gray-800 dark:text-gray-200' : 'text-white'
-              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium`}
+              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium cursor-pointer`}
             >
               Hakkımızda
-            </Link>
-            <Link
-              href="/#contact"
-              className="bg-primary hover:bg-primary-dark dark:bg-primary-light dark:hover:bg-primary text-white px-6 py-3 rounded-lg transition-all duration-300 font-medium shadow-md"
+            </a>
+            <a
+              href="#contact"
+              onClick={(e) => handleSmoothScroll(e, 'contact')}
+              className="bg-primary hover:bg-primary-dark dark:bg-primary-light dark:hover:bg-primary text-white px-6 py-3 rounded-lg transition-all duration-300 font-medium shadow-md cursor-pointer"
             >
               İletişim
-            </Link>
+            </a>
             
             {/* Tema değiştirme butonu */}
             <button
@@ -177,41 +203,34 @@ const Navbar = () => {
         {/* Mobil menü */}
         {mobileMenuOpen && (
           <nav className="md:hidden mt-4 py-3 bg-white dark:bg-dark-surface rounded-lg shadow-xl">
-            <Link
-              href="/#projects"
-              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light"
-              onClick={toggleMenu}
+            <a
+              href="#projects"
+              onClick={(e) => handleSmoothScroll(e, 'projects')}
+              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light cursor-pointer"
             >
               Projeler
-            </Link>
-            <Link
-              href="/#services"
-              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light"
-              onClick={toggleMenu}
+            </a>
+            <a
+              href="#services"
+              onClick={(e) => handleSmoothScroll(e, 'services')}
+              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light cursor-pointer"
             >
-              Hizmetler
-            </Link>
-            <Link
-              href="/#equipment"
-              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light"
-              onClick={toggleMenu}
-            >
-              Ekipmanlar
-            </Link>
-            <Link
-              href="/#about"
-              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light"
-              onClick={toggleMenu}
+              Hizmetler & Ekipmanlar
+            </a>
+            <a
+              href="#about"
+              onClick={(e) => handleSmoothScroll(e, 'about')}
+              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light cursor-pointer"
             >
               Hakkımızda
-            </Link>
-            <Link
-              href="/#contact"
-              className="block mx-5 my-3 py-3 text-center bg-primary dark:bg-primary-light text-white rounded-lg hover:bg-primary-dark dark:hover:bg-primary shadow-md"
-              onClick={toggleMenu}
+            </a>
+            <a
+              href="#contact"
+              onClick={(e) => handleSmoothScroll(e, 'contact')}
+              className="block mx-5 my-3 py-3 text-center bg-primary dark:bg-primary-light text-white rounded-lg hover:bg-primary-dark dark:hover:bg-primary shadow-md cursor-pointer"
             >
               İletişim
-            </Link>
+            </a>
           </nav>
         )}
       </div>

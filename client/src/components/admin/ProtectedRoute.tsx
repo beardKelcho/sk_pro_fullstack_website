@@ -16,19 +16,33 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Login sayfalarında hiçbir kontrol yapma - direkt render et
+    if (pathname === '/admin' || pathname === '/admin/login') {
+      setIsLoading(false);
+      setIsAuthenticated(null);
+      return;
+    }
+
+    let isMounted = true; // Component unmount kontrolü
+
     const checkAuth = async () => {
       try {
         // Token kontrolü - hem localStorage hem sessionStorage'dan kontrol et
         const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
         if (!token) {
-          router.push('/admin');
+          if (isMounted) {
+            router.replace('/admin'); // replace kullan, history'ye ekleme
+            setIsLoading(false);
+          }
           return;
         }
 
         // Profil bilgilerini kontrol et
         const response = await authApi.getProfile();
         
-        if (response.data.success && response.data.user) {
+        if (!isMounted) return; // Component unmount olduysa devam etme
+        
+        if (response.data && response.data.success && response.data.user) {
           const user = response.data.user;
           
           // Rol kontrolü
@@ -44,41 +58,59 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
             const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
             
             if (userRoleLevel < requiredRoleLevel) {
-              router.push('/admin/forbidden');
+              router.replace('/admin/forbidden');
+              setIsLoading(false);
               return;
             }
           }
           
           // Kullanıcı aktif değilse
           if (!user.isActive) {
-            router.push('/admin');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('user');
+            router.replace('/admin');
+            setIsLoading(false);
             return;
           }
           
           setIsAuthenticated(true);
         } else {
-          router.push('/admin');
+          // Token geçersiz, temizle ve login'e yönlendir
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('user');
+          router.replace('/admin');
         }
-      } catch (error) {
-        console.error('Auth check failed:', error);
+      } catch (error: any) {
+        // Hata durumunda sessizce login'e yönlendir (sürekli log spam'ini önle)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Auth check failed:', error);
+        }
         // Hem localStorage hem sessionStorage'dan temizle
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
         sessionStorage.removeItem('accessToken');
         sessionStorage.removeItem('user');
-        router.push('/admin');
+        // Sadece bir kez yönlendir, döngüyü önle - replace kullan
+        if (isMounted && pathname !== '/admin' && pathname !== '/admin/login') {
+          router.replace('/admin');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    // Login sayfasında kontrol yapma
-    if (pathname === '/admin' || pathname === '/admin/login') {
-      setIsLoading(false);
-      return;
-    }
-
     checkAuth();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [router, pathname, requiredRole]);
 
   if (isLoading) {
@@ -98,10 +130,18 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   }
 
   // Diğer sayfalar için authentication kontrolü
-  if (!isAuthenticated) {
+  // isLoading false olduğunda ve isAuthenticated false ise null döndür
+  // Bu, sürekli yönlendirme döngüsünü önler
+  if (!isLoading && isAuthenticated === false) {
     return null;
   }
 
-  return <>{children}</>;
+  // Authenticated ise children'ı render et
+  if (isAuthenticated === true) {
+    return <>{children}</>;
+  }
+
+  // Loading durumunda loading ekranı göster (zaten yukarıda handle edildi)
+  return null;
 }
 

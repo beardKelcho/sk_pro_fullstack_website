@@ -3,10 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createProject } from '@/services/projectService';
+import { useCreateProject } from '@/services/projectService';
 import { getAllCustomers } from '@/services/customerService';
 import { getAllEquipment } from '@/services/equipmentService';
-// TODO: getAllTeamMembers fonksiyonu eklenmeli ve import edilmeli
+import { getAllUsers } from '@/services/userService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Proje durumları için tip tanımlaması
 type ProjectStatus = 'Planlama' | 'Devam Ediyor' | 'Tamamlandı' | 'Ertelendi' | 'İptal Edildi';
@@ -15,22 +18,6 @@ interface TeamMember {
   id: string;
   name: string;
   role: string;
-  email: string;
-  phone: string;
-}
-
-interface Equipment {
-  id: string;
-  name: string;
-  model: string;
-  serialNumber: string;
-  category: string;
-}
-
-interface Customer {
-  id: string;
-  companyName: string;
-  name: string;
   email: string;
   phone: string;
 }
@@ -56,12 +43,14 @@ interface ProjectFormData {
 
 export default function AddProject() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const createProjectMutation = useCreateProject();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   
   // Dinamik veri state'leri
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [equipmentList, setEquipmentList] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]); // getAllTeamMembers ile doldurulacak
   
   // Form verileri
@@ -96,10 +85,46 @@ export default function AddProject() {
   
   // Dinamik verileri çek
   useEffect(() => {
-    getAllCustomers().then(data => setCustomers((data.clients || []) as any));
-    getAllEquipment().then(data => setEquipmentList((data.equipment || []) as any));
-    // TODO: getAllTeamMembers fonksiyonu ile ekip üyeleri çekilecek
-    // getAllTeamMembers().then(setTeamMembers);
+    getAllCustomers().then(data => {
+      const clients = data.clients || [];
+      setCustomers(clients.map((client: any) => ({
+        id: client._id || client.id || '',
+        companyName: client.companyName || client.name || '',
+        name: client.name || '',
+        email: client.email || '',
+        phone: client.phone || '',
+      })));
+    }).catch(error => {
+      logger.error('Müşteriler yüklenirken hata:', error);
+      toast.error('Müşteriler yüklenirken bir hata oluştu');
+    });
+    getAllEquipment().then(data => {
+      const equipment = data.equipment || [];
+      setEquipmentList(equipment.map((eq: any) => ({
+        id: eq._id || eq.id || '',
+        name: eq.name || '',
+        model: eq.model || '',
+        serialNumber: eq.serialNumber || '',
+        category: eq.category || '',
+      })));
+    }).catch(error => {
+      logger.error('Ekipmanlar yüklenirken hata:', error);
+      toast.error('Ekipmanlar yüklenirken bir hata oluştu');
+    });
+    // Ekip üyelerini çek (tüm kullanıcılar)
+    getAllUsers().then(data => {
+      const users = data.users || [];
+      setTeamMembers(users.map((user: any) => ({
+        id: user._id || user.id || '',
+        name: user.name || '',
+        role: user.role || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      })));
+    }).catch(error => {
+      logger.error('Ekip üyeleri yüklenirken hata:', error);
+      toast.error('Ekip üyeleri yüklenirken bir hata oluştu');
+    });
   }, []);
   
   // Filtrelenmiş listeler
@@ -220,7 +245,7 @@ export default function AddProject() {
   };
   
   // Müşteri seçme
-  const selectCustomer = (customer: Customer) => {
+  const selectCustomer = (customer: any) => {
     setFormData(prev => ({
       ...prev,
       customer: customer.id,
@@ -269,27 +294,60 @@ export default function AddProject() {
     setLoading(true);
     try {
       // API'ye gönderilecek veri - Backend formatına uygun
+      // Tarihleri ISO8601 formatına çevir (YYYY-MM-DD -> YYYY-MM-DDTHH:mm:ss.sssZ)
+      const startDateISO = formData.startDate ? new Date(formData.startDate + 'T00:00:00.000Z').toISOString() : undefined;
+      const endDateISO = formData.endDate ? new Date(formData.endDate + 'T23:59:59.999Z').toISOString() : undefined;
+      
       const projectData = {
-        name: formData.name,
-        description: formData.description,
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined, // Boşsa undefined gönder (validation optional)
         client: formData.customer, // Backend'de client olarak geçiyor
-        startDate: formData.startDate,
-        endDate: formData.endDate || undefined,
-        location: formData.location,
+        startDate: startDateISO,
+        endDate: endDateISO || undefined,
+        location: formData.location.trim() || undefined,
         status: (formData.status === 'Planlama' ? 'PLANNING' :
                 formData.status === 'Devam Ediyor' ? 'ACTIVE' :
+                formData.status === 'Ertelendi' ? 'PLANNING' :
                 formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED',
-        team: formData.team || [],
-        equipment: formData.equipment || [],
-        notes: formData.notes
+        team: formData.team && formData.team.length > 0 ? formData.team : [],
+        equipment: formData.equipment && formData.equipment.length > 0 ? formData.equipment : [],
+        notes: formData.notes.trim() || undefined
+        // Not: Budget field'ı backend model'inde henüz yok, ileride eklenebilir
       };
-      await createProject(projectData as any);
+      await createProjectMutation.mutateAsync(projectData as any);
+      
+      // Dashboard ve proje cache'lerini invalidate et
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      
+      toast.success('Proje başarıyla eklendi!');
       setSuccess(true);
       setTimeout(() => {
         router.push('/admin/projects');
       }, 2000);
-    } catch (error) {
-      setErrors({ submit: 'Proje eklenirken bir hata oluştu. Lütfen tekrar deneyin.' });
+    } catch (error: any) {
+      logger.error('Proje ekleme hatası:', error);
+      
+      // Validation hatalarını daha detaylı göster
+      let errorMessage = 'Proje eklenirken bir hata oluştu. Lütfen tekrar deneyin.';
+      
+      if (error?.response?.status === 400) {
+        const errorData = error?.response?.data;
+        if (errorData?.errors && Array.isArray(errorData.errors)) {
+          // Validation hatalarını birleştir
+          const validationErrors = errorData.errors.map((err: any) => err.msg || err.message).join(', ');
+          errorMessage = `Validasyon hatası: ${validationErrors}`;
+        } else if (errorData?.message) {
+          errorMessage = errorData.message;
+        }
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      setErrors({ submit: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

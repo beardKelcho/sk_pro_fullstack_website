@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAllTasks, deleteTask } from '@/services/taskService';
 import ExportButton from '@/components/admin/ExportButton';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Görev türü tanımlama
 interface Task {
@@ -198,8 +200,9 @@ export default function TaskList() {
         })) : [];
         setTasks(formattedTasks);
       } catch (err) {
-        console.error('Görev yükleme hatası:', err);
+        logger.error('Görev yükleme hatası:', err);
         setError('Görevler alınamadı.');
+        toast.error('Görevler yüklenirken bir hata oluştu');
       } finally {
         setLoading(false);
       }
@@ -249,8 +252,12 @@ export default function TaskList() {
       setTasks(prevTasks => prevTasks.filter(t => t.id !== taskToDelete));
       setShowDeleteModal(false);
       setTaskToDelete(null);
-    } catch (error) {
-      setError('Görev silinirken bir hata oluştu.');
+      toast.success('Görev başarıyla silindi');
+    } catch (error: any) {
+      logger.error('Görev silme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Görev silinirken bir hata oluştu.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }

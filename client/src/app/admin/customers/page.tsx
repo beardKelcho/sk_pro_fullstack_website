@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAllCustomers, deleteCustomer, getStatusLabel, industries, cities } from '@/services/customerService';
 import type { Customer } from '@/services/customerService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Renk ayarları
 const statusColors = {
@@ -49,14 +51,15 @@ export default function CustomerList() {
   // Filtreleme
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = 
-      customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.contactName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (customer.companyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (customer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (customer.phone || '').toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesIndustry = selectedIndustry === 'Tümü' || customer.industry === selectedIndustry;
-    const matchesCity = selectedCity === 'Tümü' || customer.city === selectedCity;
-    const matchesStatus = selectedStatus === 'Tümü' || customer.status === selectedStatus;
+    const customerAny = customer as any;
+    const matchesIndustry = selectedIndustry === 'Tümü' || customerAny.industry === selectedIndustry;
+    const matchesCity = selectedCity === 'Tümü' || customerAny.city === selectedCity;
+    const matchesStatus = selectedStatus === 'Tümü' || customerAny.status === selectedStatus;
     
     return matchesSearch && matchesIndustry && matchesCity && matchesStatus;
   });
@@ -70,8 +73,12 @@ export default function CustomerList() {
       setCustomers(prevCustomers => prevCustomers.filter(c => c.id !== customerToDelete));
       setShowDeleteModal(false);
       setCustomerToDelete(null);
-    } catch (error) {
-      setError('Müşteri kaydı silinirken bir hata oluştu.');
+      toast.success('Müşteri başarıyla silindi');
+    } catch (error: any) {
+      logger.error('Müşteri silme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Müşteri kaydı silinirken bir hata oluştu.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -229,62 +236,65 @@ export default function CustomerList() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredCustomers.map(customer => (
-                  <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{customer.companyName}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{customer.contactName}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <div className="text-sm text-gray-900 dark:text-white">{customer.email}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{customer.phone}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <div className="text-sm text-gray-900 dark:text-white">{customer.industry || 'Belirtilmemiş'}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{customer.city || 'Belirtilmemiş'}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <div className="text-sm text-gray-900 dark:text-white">{customer.taxNumber || 'Belirtilmemiş'}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{customer.taxOffice || 'Belirtilmemiş'}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[customer.status as 'Aktif' | 'Pasif'] || ''}`}>
-                        {getStatusLabel(customer.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Link href={`/admin/customers/view/${customer.id}`}>
-                          <button className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80">
-                            Görüntüle
+                {filteredCustomers.map(customer => {
+                  const customerAny = customer as any;
+                  return (
+                    <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{customer.companyName || customer.name || ''}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{customer.name || ''}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <div className="text-sm text-gray-900 dark:text-white">{customer.email || ''}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{customer.phone || ''}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <div className="text-sm text-gray-900 dark:text-white">{customerAny.industry || 'Belirtilmemiş'}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{customerAny.city || 'Belirtilmemiş'}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <div className="text-sm text-gray-900 dark:text-white">{customerAny.taxNumber || customer.taxNumber || 'Belirtilmemiş'}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{customerAny.taxOffice || 'Belirtilmemiş'}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[customerAny.status as 'Aktif' | 'Pasif'] || ''}`}>
+                          {getStatusLabel(customerAny.status || 'Aktif')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <Link href={`/admin/customers/view/${customer.id}`}>
+                            <button className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80">
+                              Görüntüle
+                            </button>
+                          </Link>
+                          <Link href={`/admin/customers/edit/${customer.id}`}>
+                            <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                              Düzenle
+                            </button>
+                          </Link>
+                          <button 
+                            onClick={() => {
+                              setCustomerToDelete(customer.id || null);
+                              setShowDeleteModal(true);
+                            }}
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                          >
+                            Sil
                           </button>
-                        </Link>
-                        <Link href={`/admin/customers/edit/${customer.id}`}>
-                          <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            Düzenle
-                          </button>
-                        </Link>
-                        <button 
-                          onClick={() => {
-                            setCustomerToDelete(customer.id || null);
-                            setShowDeleteModal(true);
-                          }}
-                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                        >
-                          Sil
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

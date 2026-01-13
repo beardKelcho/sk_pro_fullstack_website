@@ -1,9 +1,12 @@
 'use client';
 
 import MainLayout from '@/components/layout/MainLayout';
-import Image from 'next/image';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Carousel from '@/components/common/Carousel';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import ImmersiveHero from '@/components/common/ImmersiveHero';
+import InteractiveProjectCard from '@/components/common/InteractiveProjectCard';
+import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
+import ParallaxSection from '@/components/common/ParallaxSection';
 import ServiceCard from '@/components/common/ServiceCard';
 import EquipmentList from '@/components/common/EquipmentList';
 import Icon from '@/components/common/Icon';
@@ -16,18 +19,94 @@ import {
   HeroContent,
   ServiceItem,
   EquipmentCategory,
+  ServicesEquipmentContent,
   AboutContent,
   ContactInfo
 } from '@/services/siteContentService';
+import { PageLoadingSkeleton } from '@/components/common/LoadingSkeleton';
+import StructuredData, { createOrganizationSchema, createServiceSchema, createLocalBusinessSchema } from '@/components/common/StructuredData';
+import { getImageUrl } from '@/utils/imageUrl';
+import LazyImage from '@/components/common/LazyImage';
+import logger from '@/utils/logger';
+import Carousel, { CarouselRef } from '@/components/common/Carousel';
+
+// Video Background Player Component - React DOM hatalarını önlemek için ayrı component
+const VideoBackgroundPlayer = ({ videoUrl, poster }: { videoUrl: string; poster?: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleError = (e: Event) => {
+      if (process.env.NODE_ENV === 'development') {
+        const video = e.target as HTMLVideoElement;
+        const error = video.error;
+        logger.error('Video yükleme hatası:', {
+          videoUrl,
+          errorCode: error?.code,
+          errorMessage: error?.message
+        });
+      }
+    };
+
+    const handleLoadedData = () => {
+      video.play().catch(() => {
+        // Autoplay başarısız - sessizce devam et
+      });
+    };
+    
+    const handleCanPlayThrough = () => {
+      video.play().catch(() => {
+        // Autoplay başarısız - sessizce devam et
+      });
+    };
+    
+    video.addEventListener('error', handleError);
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('canplaythrough', handleCanPlayThrough);
+
+    return () => {
+      video.removeEventListener('error', handleError);
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('canplaythrough', handleCanPlayThrough);
+    };
+  }, [videoUrl]);
+
+  if (!videoUrl) {
+    return null;
+  }
+
+  return (
+    <video 
+      ref={videoRef}
+      src={videoUrl}
+      className="absolute inset-0 w-full h-full object-cover z-0" 
+      autoPlay 
+      loop 
+      muted 
+      playsInline
+      preload="auto"
+      poster={poster}
+      key={videoUrl}
+      style={{ zIndex: 0 }}
+      crossOrigin="anonymous"
+    >
+      <source src={videoUrl} type="video/mp4" />
+      Video yüklenemedi. Tarayıcınız video formatını desteklemiyor.
+    </video>
+  );
+};
 
 export default function Home() {
   // Site içeriği state'leri
   const [heroContent, setHeroContent] = useState<HeroContent | null>(null);
-  const [services, setServices] = useState<ServiceItem[]>([]);
-  const [equipment, setEquipment] = useState<EquipmentCategory[]>([]);
+  const [servicesEquipment, setServicesEquipment] = useState<ServicesEquipmentContent | null>(null);
   const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
   const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
+  const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'services' | 'equipment'>('services');
   
   // Hero bölümündeki değişen metinler için state
   const [textIndex, setTextIndex] = useState(0);
@@ -41,9 +120,11 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<SiteImage | null>(null);
   const [isTopCarousel, setIsTopCarousel] = useState(true);
-  // Carousel artık sürekli akacak, pause özelliği kaldırıldı
-  const carouselPaused = false;
   const modalRef = useRef<HTMLDivElement>(null);
+  
+  // Carousel referansları - scroll pozisyonunu kaydetmek için
+  const topCarouselRef = useRef<CarouselRef | null>(null);
+  const bottomCarouselRef = useRef<CarouselRef | null>(null);
   
   // Konum bilgileri (fallback)
   const defaultLocation = {
@@ -60,9 +141,7 @@ export default function Home() {
 
   // Navigasyon fonksiyonu
   const openMobileNavigation = () => {
-    // Mobil cihaz kontrolü
     if (typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      // Mobil cihazlarda kullanılabilecek navigasyon URL'leri
       const navigationApps = [
         {
           name: 'Google Maps',
@@ -82,12 +161,10 @@ export default function Home() {
         }
       ];
 
-      // Kullanıcıya seçenek sunmak için URL'leri açma
       navigationApps.forEach(app => {
         window.open(app.url, '_blank');
       });
     } else {
-      // Masaüstü için varsayılan Google Maps
       window.open(`https://www.google.com/maps/place/${encodeURIComponent(location.address)}`, '_blank');
     }
   };
@@ -96,89 +173,38 @@ export default function Home() {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        // Public endpoint'ten aktif proje resimlerini çek
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-        // Cache-busting için timestamp ekle - CORS sorununu önlemek için header'ları kaldırdık
         const response = await fetch(`${API_URL}/site-images/public?category=project&isActive=true&_t=${Date.now()}`, {
           cache: 'no-store',
-          // CORS sorununu önlemek için custom header'ları kaldırdık
         });
         
         if (response.ok) {
           const data = await response.json();
-          // API response formatını kontrol et - hem data.images hem de data olabilir
-          const images = data.images || data || [];
+          const images = (data.images || data || []);
           
-          console.log('API Response:', data);
-          console.log('API\'den gelen resimler:', images.length, images);
-          
-          // Aktif proje resimlerini al ve geçerli URL'ye sahip olanları filtrele
           const activeImages = images.filter((img: SiteImage) => {
-            // Temel kontroller
-            if (!img.isActive) {
-              console.log('Resim aktif değil:', img);
+            if (!img.isActive || img.category !== 'project') {
               return false;
             }
             
-            if (img.category !== 'project') {
-              console.log('Resim kategori uyumsuz:', img.category, img);
-              return false;
-            }
-            
-            // URL veya path kontrolü - en az birisi olmalı
             if (!img.url && !img.path && !img.filename) {
-              console.warn('Resim URL/path/filename eksik:', img);
               return false;
             }
             
-            // URL formatını kontrol et - daha esnek
-            let imageUrl = img.url || '';
-            if (!imageUrl && img.path) {
-              imageUrl = img.path;
-            }
-            if (!imageUrl && img.filename) {
-              imageUrl = `/uploads/site-images/${img.filename}`;
-            }
-            
-            // Boş veya geçersiz URL kontrolü - daha esnek
-            // Eğer filename varsa, URL oluşturulabilir, bu yüzden sadece tamamen boş olanları filtrele
-            if (!imageUrl || imageUrl.trim() === '') {
-              // Eğer filename varsa, URL oluşturulabilir, bu yüzden geçerli say
-              if (img.filename) {
-                imageUrl = `/uploads/site-images/${img.filename}`;
-                console.log('Filename\'den URL oluşturuldu:', imageUrl);
-              } else {
-                console.warn('Resim URL geçersiz ve filename yok:', imageUrl, img);
-                return false;
-              }
-            }
-            
-            console.log('Resim geçerli:', img.originalName || img.filename, 'URL:', imageUrl);
             return true;
           });
           
-          console.log('Filtrelenmiş aktif resimler:', activeImages.length, activeImages);
-          
           setAllProjectImages(activeImages);
           
-          // Veritabanından gelen resimleri kullan (fallback yok)
           if (activeImages.length > 0) {
-            // Resimleri order'a göre sırala (sabit sıra)
             const sortedImages = [...activeImages].sort((a, b) => a.order - b.order);
-            
-            // Tüm aktif resimleri her iki carousel'de de göster
-            // Aynı anda aynı resim görünmemesi için alt carousel'i yarı kadar kaydır
             const offset = Math.ceil(sortedImages.length / 2);
             
-            // Üst carousel: tüm resimler
             const topImagesArray = [...sortedImages];
-            
-            // Alt carousel: tüm resimler ama yarı kadar kaydırılmış (offset ile başla)
             const bottomImagesArray = sortedImages.length > 1
               ? [...sortedImages.slice(offset), ...sortedImages.slice(0, offset)]
               : [];
             
-            // Eğer tek resim varsa, sadece üst carousel'de göster
             if (sortedImages.length === 1) {
               setTopImages(topImagesArray);
               setBottomImages([]);
@@ -186,26 +212,14 @@ export default function Home() {
               setTopImages(topImagesArray);
               setBottomImages(bottomImagesArray);
             }
-            
-            // Debug: Resim sayılarını konsola yazdır
-            console.log(`Top images: ${topImagesArray.length}, Bottom images: ${bottomImagesArray.length}, Total active: ${sortedImages.length}`);
-          } else {
-            // Veritabanında resim yoksa boş bırak
-            console.warn('Veritabanında aktif proje resmi bulunamadı. Lütfen resimleri yükleyin.');
-            setTopImages([]);
-            setBottomImages([]);
           }
         } else {
-          // API hatası durumunda boş bırak
-          console.error('Resimler yüklenirken bir hata oluştu. Status:', response.status, response.statusText);
-          const errorText = await response.text();
-          console.error('Hata detayı:', errorText);
+          logger.error('Resimler yüklenirken bir hata oluştu. Status:', response.status);
           setTopImages([]);
           setBottomImages([]);
         }
       } catch (error) {
-        console.error('Resim yükleme hatası:', error);
-        // Hata durumunda boş bırak
+        logger.error('Resim yükleme hatası:', error);
         setTopImages([]);
         setBottomImages([]);
       }
@@ -213,7 +227,6 @@ export default function Home() {
     
     fetchImages();
     
-    // Her 10 saniyede bir resimleri yeniden yükle (yeni eklenen resimler için)
     const interval = setInterval(() => {
       fetchImages();
     }, 10000);
@@ -228,40 +241,31 @@ export default function Home() {
         setLoading(true);
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
         
-        // Tüm içerikleri paralel olarak çek
-        const [heroRes, servicesRes, equipmentRes, aboutRes, contactRes] = await Promise.allSettled([
-          fetch(`${API_URL}/site-content/public/hero`),
-          fetch(`${API_URL}/site-content/public/services`),
-          fetch(`${API_URL}/site-content/public/equipment`),
-          fetch(`${API_URL}/site-content/public/about`),
-          fetch(`${API_URL}/site-content/public/contact`),
+        const [heroRes, servicesEquipmentRes, aboutRes, contactRes, socialRes] = await Promise.allSettled([
+          fetch(`${API_URL}/site-content/public/hero?_t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`${API_URL}/site-content/public/services-equipment?_t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`${API_URL}/site-content/public/about?_t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`${API_URL}/site-content/public/contact?_t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`${API_URL}/site-content/public/social?_t=${Date.now()}`, { cache: 'no-store' }),
         ]);
 
-        // Hero içeriği
         if (heroRes.status === 'fulfilled' && heroRes.value.ok) {
           const heroData = await heroRes.value.json();
           if (heroData.content) {
-            setHeroContent(heroData.content.content as HeroContent);
+            const content = heroData.content.content as HeroContent;
+            setHeroContent(content);
           }
         }
 
-        // Hizmetler
-        if (servicesRes.status === 'fulfilled' && servicesRes.value.ok) {
-          const servicesData = await servicesRes.value.json();
-          if (servicesData.content) {
-            setServices(servicesData.content.content as ServiceItem[]);
+        // Birleşik services-equipment içeriğini yükle
+        if (servicesEquipmentRes.status === 'fulfilled' && servicesEquipmentRes.value.ok) {
+          const servicesEquipmentData = await servicesEquipmentRes.value.json();
+          if (servicesEquipmentData.content) {
+            const content = servicesEquipmentData.content.content as ServicesEquipmentContent;
+            setServicesEquipment(content);
           }
         }
 
-        // Ekipmanlar
-        if (equipmentRes.status === 'fulfilled' && equipmentRes.value.ok) {
-          const equipmentData = await equipmentRes.value.json();
-          if (equipmentData.content) {
-            setEquipment(equipmentData.content.content as EquipmentCategory[]);
-          }
-        }
-
-        // Hakkımızda
         if (aboutRes.status === 'fulfilled' && aboutRes.value.ok) {
           const aboutData = await aboutRes.value.json();
           if (aboutData.content) {
@@ -269,16 +273,24 @@ export default function Home() {
           }
         }
 
-        // İletişim
         if (contactRes.status === 'fulfilled' && contactRes.value.ok) {
           const contactData = await contactRes.value.json();
           if (contactData.content) {
             setContactInfo(contactData.content.content as ContactInfo);
           }
         }
-      } catch (error) {
-        console.error('Site içerik yükleme hatası:', error);
-      } finally {
+
+        if (socialRes.status === 'fulfilled' && socialRes.value.ok) {
+          const socialData = await socialRes.value.json();
+          if (socialData.content) {
+            setSocialMedia(socialData.content.content as SocialMedia[]);
+          }
+        }
+        } catch (error) {
+          if (process.env.NODE_ENV === 'development') {
+            logger.error('Site içerik yükleme hatası:', error);
+          }
+        } finally {
         setLoading(false);
       }
     };
@@ -288,10 +300,12 @@ export default function Home() {
 
   // Hero rotating texts için effect
   useEffect(() => {
-    if (!heroContent?.rotatingTexts || heroContent.rotatingTexts.length === 0) return;
+    const textsCount = heroContent?.rotatingTexts && heroContent.rotatingTexts.length > 0 
+      ? heroContent.rotatingTexts.length 
+      : 3;
     
     const interval = setInterval(() => {
-      setTextIndex((prevIndex) => (prevIndex + 1) % heroContent.rotatingTexts!.length);
+      setTextIndex((prevIndex) => (prevIndex + 1) % textsCount);
     }, 5000);
 
     return () => clearInterval(interval);
@@ -299,18 +313,35 @@ export default function Home() {
   
   // Resme tıklama işleyicisi
   const handleImageClick = (image: SiteImage, isTop: boolean) => {
+    // Carousel scroll pozisyonunu kaydet
+    if (isTop && topCarouselRef.current) {
+      topCarouselRef.current.saveScrollPosition();
+    } else if (!isTop && bottomCarouselRef.current) {
+      bottomCarouselRef.current.saveScrollPosition();
+    }
+    
     setSelectedImage(image);
     setIsTopCarousel(isTop);
     setIsModalOpen(true);
-    // Carousel artık durmuyor, sürekli akıyor
   };
   
   // Modal kapatma işleyicisi
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedImage(null);
-    // Carousel artık durmuyor, sürekli akıyor
+    
+    // Carousel scroll pozisyonunu geri yükle
+    setTimeout(() => {
+      if (isTopCarousel && topCarouselRef.current) {
+        topCarouselRef.current.restoreScrollPosition();
+      } else if (!isTopCarousel && bottomCarouselRef.current) {
+        bottomCarouselRef.current.restoreScrollPosition();
+      }
+    }, 100); // Kısa bir gecikme - modal animasyonu tamamlansın
   };
+  
+  // Carousel'leri durdur/devam ettir (modal açıkken durdur)
+  const isCarouselPaused = isModalOpen;
   
   // Modal dışına tıklandığında kapatma
   const handleModalBackdropClick = (e: React.MouseEvent) => {
@@ -320,536 +351,644 @@ export default function Home() {
   };
   
   // Klavye ile gezinme
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isModalOpen || !selectedImage) return;
-      
-      const currentImages = isTopCarousel ? topImages : bottomImages;
-      const currentIndex = currentImages.findIndex(img => 
-        (img._id || img.id) === (selectedImage._id || selectedImage.id)
-      );
-      
-      if (e.key === 'ArrowRight') {
-        // Sonraki resim
-        const nextIndex = (currentIndex + 1) % currentImages.length;
-        setSelectedImage(currentImages[nextIndex]);
-      } else if (e.key === 'ArrowLeft') {
-        // Önceki resim
-        const prevIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
-        setSelectedImage(currentImages[prevIndex]);
-      } else if (e.key === 'Escape') {
-        // ESC tuşu ile kapatma
-        closeModal();
-      }
-    };
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!isModalOpen || !selectedImage) return;
     
+    const currentImages = isTopCarousel ? topImages : bottomImages;
+    const currentIndex = currentImages.findIndex(img => 
+      (img._id || img.id) === (selectedImage._id || selectedImage.id)
+    );
+    
+    if (e.key === 'ArrowRight') {
+      const nextIndex = (currentIndex + 1) % currentImages.length;
+      setSelectedImage(currentImages[nextIndex]);
+    } else if (e.key === 'ArrowLeft') {
+      const prevIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+      setSelectedImage(currentImages[prevIndex]);
+    } else if (e.key === 'Escape') {
+      closeModal();
+    }
+  }, [isModalOpen, selectedImage, isTopCarousel, topImages, bottomImages, closeModal]);
+
+  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, selectedImage, isTopCarousel, topImages, bottomImages]);
+  }, [handleKeyDown]);
+
+  // Structured Data için schema'lar
+  const organizationSchema = useMemo(() => createOrganizationSchema({
+    name: 'SK Production',
+    url: 'https://skproduction.com',
+    logo: 'https://skproduction.com/images/sk-logo.png',
+    description: 'Profesyonel görüntü rejisi ve medya server çözümleri sunan teknoloji firması',
+    address: {
+      streetAddress: contactInfo?.address || 'Zincirlidere Caddesi No:52/C',
+      addressLocality: 'Şişli',
+      addressRegion: 'İstanbul',
+      addressCountry: 'TR',
+    },
+    contactPoint: {
+      telephone: contactInfo?.phone || '+90 532 123 4567',
+      contactType: 'customer service',
+      email: contactInfo?.email || 'info@skpro.com.tr',
+    },
+    sameAs: socialMedia.map(social => social.url).filter(url => url && url !== '#'),
+  }), [contactInfo, socialMedia]);
+
+  const serviceSchemas = useMemo(() => {
+    if (!servicesEquipment?.services || servicesEquipment.services.length === 0) return [];
+    return servicesEquipment.services.map(service => createServiceSchema({
+      serviceType: service.title,
+      providerName: 'SK Production',
+      areaServed: 'Türkiye',
+      description: service.description,
+    }));
+  }, [servicesEquipment]);
+
+  const localBusinessSchema = useMemo(() => createLocalBusinessSchema({
+    name: 'SK Production',
+    image: 'https://skproduction.com/images/sk-logo.png',
+    url: 'https://skproduction.com',
+    telephone: contactInfo?.phone || '+90 532 123 4567',
+    email: contactInfo?.email || 'info@skpro.com.tr',
+    address: {
+      streetAddress: contactInfo?.address || 'Zincirlidere Caddesi No:52/C',
+      addressLocality: 'Şişli',
+      addressRegion: 'İstanbul',
+      postalCode: '34000',
+      addressCountry: 'TR',
+    },
+    geo: {
+      latitude: location.lat,
+      longitude: location.lng,
+    },
+  }), [contactInfo, location]);
+
+  // Loading durumunda skeleton göster
+  if (loading) {
+    return (
+      <MainLayout>
+        <PageLoadingSkeleton />
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
-      {/* Video Arkaplan - Tüm sayfa boyunca */}
+      {/* Skip to main content link (Accessibility) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-md"
+        aria-label="Ana içeriğe geç"
+      >
+        Ana içeriğe geç
+      </a>
+      {/* Structured Data */}
+      <StructuredData type="organization" data={organizationSchema} />
+      
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'SK Production',
+            url: 'https://skproduction.com',
+            description: 'Profesyonel görüntü rejisi ve medya server çözümleri',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: {
+                '@type': 'EntryPoint',
+                urlTemplate: 'https://skproduction.com/search?q={search_term_string}',
+              },
+              'query-input': 'required name=search_term_string',
+            },
+          }),
+        }}
+      />
+      
+      {serviceSchemas.map((schema, index) => (
+        <StructuredData key={index} type="service" data={schema} />
+      ))}
+      
+      <StructuredData type="localBusiness" data={localBusinessSchema} />
+      
+      {/* Video Arkaplan */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
-        {heroContent?.backgroundVideo ? (
-          <video 
-            ref={(video) => {
-              if (video) {
-                // Perfect loop için video sonuna geldiğinde başa dön
-                video.addEventListener('ended', () => {
-                  video.currentTime = 0;
-                  video.play();
-                });
+        {(() => {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+          let baseUrl = '';
+          if (API_URL.includes('://')) {
+            baseUrl = API_URL.replace(/\/api\/?$/, '');
+          } else {
+            baseUrl = API_URL.startsWith('localhost') ? `http://${API_URL.replace(/\/api\/?$/, '')}` : API_URL.replace(/\/api\/?$/, '');
+          }
+          
+          const videoUrl = heroContent?.selectedVideo || heroContent?.backgroundVideo || '';
+          
+          if (videoUrl) {
+            let fullVideoUrl = videoUrl;
+            
+            if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+              if (/^[0-9a-fA-F]{24}$/.test(videoUrl)) {
+                fullVideoUrl = `${baseUrl}/api/site-images/public/${videoUrl}/image`;
+              } else if (videoUrl.startsWith('/uploads/')) {
+                fullVideoUrl = `${baseUrl}${videoUrl}`;
+              } else if (videoUrl.startsWith('/')) {
+                fullVideoUrl = `${baseUrl}${videoUrl}`;
+              } else if (videoUrl.includes('/')) {
+                fullVideoUrl = `${baseUrl}/uploads/${videoUrl}`;
+              } else {
+                fullVideoUrl = `${baseUrl}/uploads/general/${videoUrl}`;
               }
-            }}
-            className="absolute w-full h-full object-cover" 
-            autoPlay 
-            loop 
-            muted 
-            playsInline
-            preload="auto"
-            poster={heroContent.backgroundImage || "/images/hero-bg.jpg"}
-          >
-            <source src={heroContent.backgroundVideo} type="video/mp4" />
-            {heroContent.backgroundImage && (
-              <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center"></div>
-            )}
-          </video>
-        ) : (
-          <video 
-            ref={(video) => {
-              if (video) {
-                video.addEventListener('ended', () => {
-                  video.currentTime = 0;
-                  video.play();
-                });
-              }
-            }}
-            className="absolute w-full h-full object-cover" 
-            autoPlay 
-            loop 
-            muted 
-            playsInline
-            preload="auto"
-            poster="/images/hero-bg.jpg"
-          >
-            <source src="/videos/hero-background.mp4" type="video/mp4" />
-            <source src="/videos/hero-background.webm" type="video/webm" />
-            <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] bg-cover bg-center"></div>
-          </video>
-        )}
+            }
+            
+            return (
+              <VideoBackgroundPlayer videoUrl={fullVideoUrl} poster={heroContent?.backgroundImage || undefined} />
+            );
+          } else {
+            return null;
+          }
+        })()}
       </div>
       
-      {/* Hero Bölümü - Daha modern ve etkileyici */}
-      <section className="relative h-screen flex items-center justify-center z-10">
-        
-        <div className="container mx-auto px-4 relative z-20 text-center">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 leading-tight h-28 flex items-center justify-center">
-              {heroContent?.rotatingTexts && heroContent.rotatingTexts.length > 0 ? (
-                <span key={textIndex} className="animate-fade-in-slide-up">
-                  {heroContent.rotatingTexts[textIndex]}
-                </span>
-              ) : heroContent?.title ? (
-                <span className="animate-fade-in-slide-up">
-                  {heroContent.title}
-                </span>
-              ) : (
-                <span key={textIndex} className="animate-fade-in-slide-up">
-                  {textIndex === 0 ? (
-                    <>Görsel <span className="text-[#0066CC] dark:text-primary-light">Mükemmellikte</span> Uzman Ekip</>
-                  ) : textIndex === 1 ? (
-                    <>Etkinliklerinizde <span className="text-[#0066CC] dark:text-primary-light">Profesyonel</span> Çözümler</>
-                  ) : (
-                    <>Medya Server ve <span className="text-[#0066CC] dark:text-primary-light">Görüntü Rejisi</span> Çözümleri</>
-                  )}
-                </span>
-              )}
-            </h1>
-            {heroContent?.subtitle && (
-              <p className="text-xl md:text-2xl text-gray-200 mb-4 max-w-3xl mx-auto">
-                {heroContent.subtitle}
-              </p>
-            )}
-            <p className="text-xl md:text-2xl text-gray-200 mb-10 max-w-3xl mx-auto">
-              {heroContent?.description || 'SK Production olarak, kurumsal etkinlikleriniz için profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz. 10 yılı aşkın deneyimimizle etkinliklerinize değer katıyoruz.'}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <a 
-                href={heroContent?.buttonLink || '#contact'} 
-                className="bg-[#0066CC] dark:bg-primary-light text-white px-8 py-4 rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-all duration-300 text-lg font-medium shadow-lg"
-              >
-                {heroContent?.buttonText || 'İletişime Geçin'}
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        {/* Scroll Down İndikatörü */}
-        <div className="absolute bottom-14 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <svg 
-            className="w-8 h-8 text-white" 
-            fill="none" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth="2" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-          </svg>
-        </div>
-      </section>
+      {/* İmmersive Hero Section */}
+      <ImmersiveHero 
+        content={heroContent}
+        onScrollDown={() => {
+          document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
 
-      {/* Projeler Bölümü */}
-      <section id="projects" className="relative py-20 bg-gray-50/10 dark:bg-dark-surface/10 backdrop-blur-[2px] overflow-hidden z-10">
-        <div className="container mx-auto px-6 mb-10">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-[#0A1128] dark:text-white mb-4">Projelerimiz</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Gerçekleştirdiğimiz bazı etkinlikler ve projelerimize göz atın.
-            </p>
-          </div>
-          
-          {/* Üst Sıra Carousel - Sağdan Sola */}
-          <div className="mb-8">
-            <Carousel
-              images={topImages}
-              direction="right"
-              isPaused={carouselPaused}
-              onImageClick={handleImageClick}
-              isTop={true}
+      {/* Projeler Bölümü - İnteraktif Grid */}
+      <StageExperience>
+        <section id="projects" className="relative py-32 bg-gradient-to-b from-black/90 via-black/80 to-black/90 overflow-hidden" style={{ position: 'relative', scrollMarginTop: '100px', marginTop: '6rem', marginBottom: '6rem' }}>
+          <div className="container mx-auto px-6">
+            <StageSectionTitle
+              title="Sahne Deneyimlerimiz"
+              subtitle="Gerçekleştirdiğimiz etkinliklerde yarattığımız görsel şölenler"
             />
+            
+            {/* Üst Container - Sağdan Sola */}
+            {topImages.length > 0 && (
+              <div className="mb-8">
+                <Carousel
+                  images={topImages}
+                  direction="right"
+                  isPaused={isCarouselPaused}
+                  onImageClick={(image) => handleImageClick(image, true)}
+                  isTop={true}
+                />
+              </div>
+            )}
+
+            {/* Alt Container - Soldan Sağa */}
+            {bottomImages.length > 0 && (
+              <div className="mt-8">
+                  <Carousel
+                    ref={bottomCarouselRef}
+                    images={bottomImages}
+                    direction="left"
+                    isPaused={isCarouselPaused}
+                    onImageClick={(image) => handleImageClick(image, false)}
+                    isTop={false}
+                  />
+              </div>
+            )}
+
+            {/* Eğer carousel yoksa grid göster */}
+            {topImages.length === 0 && bottomImages.length === 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-12">
+                <AnimatePresence>
+                  {topImages.slice(0, 8).map((image, index) => (
+                    <InteractiveProjectCard
+                      key={image._id || image.id || index}
+                      image={image}
+                      index={index}
+                      onClick={() => handleImageClick(image, true)}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
-          
-          {/* Alt Sıra Carousel - Soldan Sağa */}
-          <div>
-            <Carousel
-              images={bottomImages}
-              direction="left"
-              isPaused={carouselPaused}
-              onImageClick={handleImageClick}
-              isTop={false}
-            />
-          </div>
-        </div>
-      </section>
+        </section>
+      </StageExperience>
 
       {/* Lightbox/Modal */}
-      {isModalOpen && selectedImage && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm transition-all duration-300 animate-fade-in"
-          onClick={handleModalBackdropClick}
-        >
-          <div 
-            ref={modalRef}
-            className="relative w-[90vw] max-w-7xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center bg-black/40 backdrop-blur-sm border border-white/10 animate-scale-in"
+      <AnimatePresence>
+        {isModalOpen && selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md"
+            onClick={handleModalBackdropClick}
           >
-            {/* Kapatma Butonu */}
-            <button
-              onClick={closeModal}
-              className="absolute top-6 right-6 z-10 text-white bg-black/50 rounded-full p-3 hover:bg-primary hover:rotate-90 transition-all duration-300"
+            <motion.div
+              ref={modalRef}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="relative w-[90vw] max-w-7xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl"
             >
-              <Icon name="close" className="h-7 w-7" />
-            </button>
+              <button
+                onClick={closeModal}
+                className="absolute top-6 right-6 z-10 text-white bg-black/50 rounded-full p-3 hover:bg-[#0066CC] transition-all"
+              >
+                <Icon name="close" className="h-7 w-7" />
+              </button>
 
-            {/* Sol Yön Tuşu */}
-            <button 
-              className="absolute left-6 top-1/2 transform -translate-y-1/2 z-10 text-white bg-black/50 rounded-full p-4 hover:bg-primary hover:scale-110 transition-all duration-300"
-              onClick={(e) => {
-                e.stopPropagation();
-                const currentImages = isTopCarousel ? topImages : bottomImages;
-                const currentIndex = currentImages.findIndex(img => 
-                  (img._id || img.id) === (selectedImage._id || selectedImage.id)
-                );
-                const prevIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
-                setSelectedImage(currentImages[prevIndex]);
-              }}
-            >
-              <Icon name="arrow-left" className="h-8 w-8" />
-            </button>
+              <button
+                className="absolute left-6 top-1/2 transform -translate-y-1/2 z-10 text-white bg-black/50 rounded-full p-4 hover:bg-[#0066CC] transition-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const currentImages = isTopCarousel ? topImages : bottomImages;
+                  const currentIndex = currentImages.findIndex(img => 
+                    (img._id || img.id) === (selectedImage._id || selectedImage.id)
+                  );
+                  const prevIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+                  setSelectedImage(currentImages[prevIndex]);
+                }}
+              >
+                <Icon name="arrow-left" className="h-8 w-8" />
+              </button>
 
-            {/* Sağ Yön Tuşu */}
-            <button 
-              className="absolute right-6 top-1/2 transform -translate-y-1/2 z-10 text-white bg-black/50 rounded-full p-4 hover:bg-primary hover:scale-110 transition-all duration-300"
-              onClick={(e) => {
-                e.stopPropagation();
-                const currentImages = isTopCarousel ? topImages : bottomImages;
-                const currentIndex = currentImages.findIndex(img => 
-                  (img._id || img.id) === (selectedImage._id || selectedImage.id)
-                );
-                const nextIndex = (currentIndex + 1) % currentImages.length;
-                setSelectedImage(currentImages[nextIndex]);
-              }}
-            >
-              <Icon name="arrow-right" className="h-8 w-8" />
-            </button>
+              <button
+                className="absolute right-6 top-1/2 transform -translate-y-1/2 z-10 text-white bg-black/50 rounded-full p-4 hover:bg-[#0066CC] transition-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const currentImages = isTopCarousel ? topImages : bottomImages;
+                  const currentIndex = currentImages.findIndex(img => 
+                    (img._id || img.id) === (selectedImage._id || selectedImage.id)
+                  );
+                  const nextIndex = (currentIndex + 1) % currentImages.length;
+                  setSelectedImage(currentImages[nextIndex]);
+                }}
+              >
+                <Icon name="arrow-right" className="h-8 w-8" />
+              </button>
 
-            {/* Görüntü */}
-            <div className="p-6 max-h-[90vh] w-full h-full flex items-center justify-center">
-              {(() => {
-                // Resmi ID ile serve et - veritabanı ID'si kullan
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-                // API_URL zaten /api içeriyor mu kontrol et
-                const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
-                let imageUrl = '';
-                
-                // Önce ID'yi kontrol et
-                if (selectedImage._id || selectedImage.id) {
-                  const dbId = selectedImage._id || selectedImage.id;
-                  // ID ile resmi serve eden endpoint'i kullan - çift /api/ olmaması için
-                  imageUrl = `${baseUrl}/api/site-images/public/${dbId}/image`;
-                } else {
-                  // Fallback: Eski yöntem (filename/path ile)
-                  imageUrl = selectedImage.url || '';
-                  if (!imageUrl && selectedImage.path) {
-                    imageUrl = selectedImage.path;
-                  }
-                  if (!imageUrl && selectedImage.filename) {
-                    imageUrl = `/uploads/site-images/${selectedImage.filename}`;
-                  }
+              <div className="p-6 w-full h-full flex items-center justify-center" style={{ minHeight: '400px', height: '85vh' }}>
+                {(() => {
+                  // Image URL'i oluştur - önce ID'yi dene, sonra image objesini
+                  const imageId = selectedImage._id || selectedImage.id;
+                  const imageUrl = imageId 
+                    ? getImageUrl({ imageId: imageId as string, fallback: selectedImage.url || selectedImage.path || '' })
+                    : getImageUrl({ image: selectedImage, fallback: selectedImage.url || selectedImage.path || '' });
                   
                   if (!imageUrl || imageUrl.trim() === '') {
-                    console.warn('Modal resim URL ve ID yok:', selectedImage);
-                    return <div className="text-white">Resim yüklenemedi</div>;
-                  }
-                  
-                  // Eğer /uploads/ ile başlıyorsa, backend URL'ine çevir
-                  if (imageUrl.startsWith('/uploads/')) {
-                    imageUrl = `${baseUrl}${imageUrl}`;
-                  } else if (!imageUrl.startsWith('http')) {
-                    if (!imageUrl.startsWith('/')) {
-                      imageUrl = `/${imageUrl}`;
-                    }
-                    imageUrl = `${baseUrl}${imageUrl}`;
-                  }
-                }
-                
-                return (
-                  <img 
-                    src={imageUrl}
-                    alt={selectedImage.originalName || 'Proje görseli'}
-                    className="max-w-full max-h-[85vh] object-cover rounded-lg shadow-2xl"
-                    onError={(e) => {
-                      console.error('Modal resim yüklenemedi:', imageUrl, selectedImage);
-                    }}
-                  />
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Hizmetler ve Ekipmanlar Bölümü */}
-      <section className="relative py-20 bg-white/10 dark:bg-dark-background/10 backdrop-blur-[2px] z-10">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-12">
-            {/* Hizmetler Kısmı */}
-            <div id="services" className="lg:w-1/2">
-              <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-[#0A1128] dark:text-white mb-4">Hizmetlerimiz</h2>
-                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
-                  Etkinlikleriniz için profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {services.length > 0 ? (
-                  services
-                    .sort((a, b) => a.order - b.order)
-                    .map((service, index) => (
-                      <ServiceCard
-                        key={index}
-                        title={service.title}
-                        description={service.description}
-                        icon={service.icon}
-                      />
-                    ))
-                ) : (
-                  <>
-                    <ServiceCard
-                      title="Görüntü Rejisi"
-                      description="Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz."
-                      icon="video"
-                    />
-                    <ServiceCard
-                      title="Medya Server Sistemleri"
-                      description="Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını."
-                      icon="screen"
-                    />
-                    <ServiceCard
-                      title="LED Ekran Yönetimi"
-                      description="Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri."
-                      icon="led"
-                    />
-                  </>
-                )}
-              </div>
-            </div>
-            
-            {/* Ekipmanlar Kısmı */}
-            <div id="equipment" className="lg:w-1/2">
-              <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-[#0A1128] dark:text-white mb-4">Ekipmanlarımız</h2>
-                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-xl mx-auto">
-                  Etkinlikleriniz için kullandığımız yüksek teknoloji ekipmanlarımız ile tanışın.
-                </p>
-              </div>
-              
-              <div className="space-y-6">
-                {equipment.length > 0 ? (
-                  equipment
-                    .sort((a, b) => a.order - b.order)
-                    .map((category, index) => (
-                      <EquipmentList
-                        key={index}
-                        title={category.title}
-                        items={category.items}
-                      />
-                    ))
-                ) : (
-                  <>
-                    <EquipmentList
-                      title="Görüntü Rejisi Sistemleri"
-                      items={[
-                        {
-                          name: "Analog Way Aquilon RS4",
-                          description: "4K/8K çözünürlük desteği ile görüntü işleme"
-                        },
-                        {
-                          name: "Barco E2 Gen 2",
-                          description: "Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış"
-                        },
-                        {
-                          name: "Blackmagic ATEM 4 M/E Constellation HD",
-                          description: "40 giriş, 24 çıkış, gelişmiş geçiş efektleri"
-                        }
-                      ]}
-                    />
-                    <EquipmentList
-                      title="Medya Server Sistemleri"
-                      items={[
-                        {
-                          name: "Dataton WATCHPAX 60",
-                          description: "6 çıkışlı, yüksek performanslı"
-                        },
-                        {
-                          name: "Disguise 4x4pro",
-                          description: "Gerçek zamanlı render, AR/VR desteği"
-                        },
-                        {
-                          name: "Resolume Arena 7",
-                          description: "Canlı performans için video loop ve efektler"
-                        }
-                      ]}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Hakkımızda Bölümü */}
-      <section id="about" className="relative py-20 bg-gray-50/10 dark:bg-dark-surface/10 backdrop-blur-[2px] z-10">
-        <div className="container mx-auto px-6">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="lg:w-1/2">
-              <h2 className="text-4xl font-bold text-[#0A1128] dark:text-white mb-6">
-                {aboutContent?.title || 'SK Production Hakkında'}
-              </h2>
-              {aboutContent?.description ? (
-                <div className="text-gray-600 dark:text-gray-300 mb-6 text-lg whitespace-pre-line">
-                  {aboutContent.description}
-                </div>
-              ) : (
-                <>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4 text-lg">
-                    SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.
-                    Analog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4 text-lg">
-                    10 yılı aşkın deneyime sahip ekibimiz, kurumsal etkinlikler, konserler, ürün lansmanları, 
-                    sahne gösterileri ve daha birçok alanda yüzlerce projeye imza atmıştır.
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
-                    En son teknoloji ekipmanlarımız ve yaratıcı çözümlerimiz ile etkinliklerinize 
-                    görsel mükemmellik katmayı hedefliyoruz. Her projede mükemmellik ve profesyonellik 
-                    görsel mükemmellik katmayı hedefliyoruz.
-                  </p>
-                </>
-              )}
-              <div className="flex gap-4">
-                {(aboutContent?.stats && aboutContent.stats.length > 0) ? (
-                  aboutContent.stats.map((stat, index) => (
-                    <div key={index} className="text-center">
-                      <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">{stat.value}</span>
-                      <span className="text-gray-600 dark:text-gray-300">{stat.label}</span>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="text-center">
-                      <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">250+</span>
-                      <span className="text-gray-600 dark:text-gray-300">Tamamlanan Proje</span>
-                    </div>
-                    <div className="text-center">
-                      <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">12+</span>
-                      <span className="text-gray-600 dark:text-gray-300">Yıllık Deneyim</span>
-                    </div>
-                    <div className="text-center">
-                      <span className="block text-4xl font-bold text-[#0066CC] dark:text-primary-light">50+</span>
-                      <span className="text-gray-600 dark:text-gray-300">Profesyonel Ekipman</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="lg:w-1/2">
-              <div className="relative">
-                <div className="absolute -top-4 -right-4 w-full h-full bg-[#0066CC] dark:bg-primary-light rounded-xl"></div>
-                {(() => {
-                  // Eğer aboutContent.image bir ID ise (MongoDB ObjectId formatında), SiteImage'dan çek
-                  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-                  const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
-                  
-                  if (aboutContent?.image && aboutContent.image.length === 24 && /^[a-fA-F0-9]{24}$/.test(aboutContent.image)) {
-                    // Bu bir MongoDB ObjectId, SiteImage'dan çek
+                    logger.warn('Resim URL oluşturulamadı:', { 
+                      selectedImage, 
+                      imageId,
+                      url: selectedImage.url,
+                      path: selectedImage.path 
+                    });
                     return (
-                      <img
-                        src={`${baseUrl}/api/site-images/public/${aboutContent.image}/image`}
-                        alt="SK Production Ekibi"
-                        className="relative rounded-xl w-full aspect-[4/3] object-cover z-10"
-                      />
+                      <div className="text-white text-center">
+                        <p className="text-lg mb-2">Resim yüklenemedi</p>
+                        <p className="text-sm text-gray-400">URL: {selectedImage.url || selectedImage.path || 'Yok'}</p>
+                        <p className="text-sm text-gray-400">ID: {imageId || 'Yok'}</p>
+                        <p className="text-sm text-gray-400">Oluşturulan URL: {imageUrl || 'Yok'}</p>
+                      </div>
                     );
-                  } else {
-                    // Eski format (URL string) veya fallback
-                    return (
-                      <Image
-                        src={aboutContent?.image || '/images/slide1.jpg'}
-                        alt="SK Production Ekibi"
-                        width={800}
-                        height={600}
-                        className="relative rounded-xl w-full aspect-[4/3] object-cover z-10"
-                        priority
+                  }
+                  
+                  return (
+                    <div 
+                      className="relative w-full h-full max-w-[90vw] max-h-[85vh] flex items-center justify-center"
+                      style={{ minHeight: '400px', height: '85vh' }}
+                    >
+                      <LazyImage
+                        src={imageUrl}
+                        alt={selectedImage.originalName || selectedImage.filename || 'Proje görseli'}
+                        className="rounded-lg shadow-2xl"
+                        fill={true}
+                        priority={true}
+                        objectFit="contain"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 85vh"
                         quality={90}
+                        onError={(e) => {
+                          logger.error('Modal resim yükleme hatası:', { 
+                            imageUrl, 
+                            selectedImage,
+                            error: e 
+                          });
+                        }}
                       />
-                    );
-                  }
+                    </div>
+                  );
                 })()}
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* İletişim Bölümü */}
-      <section id="contact" className="relative py-16 bg-gray-50/10 dark:bg-dark-surface/10 backdrop-blur-[2px] z-10">
-        <div className="container mx-auto px-6">
-          <h2 className="text-4xl font-bold text-center text-[#0A1128] dark:text-white mb-12">İletişim</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* İletişim Bilgileri */}
-            <div className="space-y-6">
-              <div className="flex items-start">
-                <Icon name="location" className="h-6 w-6 mr-3 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold text-[#0A1128] dark:text-white mb-1">Adres</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {contactInfo?.address || 'Zincirlidere Caddesi No:52/C Şişli/İstanbul'}
-                  </p>
+      {/* Hizmetler ve Ekipmanlar - Tek Sekme */}
+      <div style={{ marginBottom: '16rem', marginTop: '8rem' }}>
+        <ParallaxSection speed={0.3} direction="up">
+          <StageExperience>
+            <section id="services" className="relative py-32 bg-gradient-to-b from-black/80 via-[#0A1128]/90 to-black/80" style={{ position: 'relative', scrollMarginTop: '100px', paddingBottom: '8rem', minHeight: 'auto' }}>
+            <div className="container mx-auto px-6">
+              <StageSectionTitle
+                title={servicesEquipment?.title || "Hizmetlerimiz & Ekipmanlarımız"}
+                subtitle={servicesEquipment?.subtitle || "Etkinlikleriniz için profesyonel çözümler ve son teknoloji ekipmanlar"}
+              />
+              
+              {/* Tab Navigation */}
+              <div className="flex justify-center mb-12">
+                <div className="inline-flex bg-gray-900/50 backdrop-blur-sm rounded-lg p-1 border border-gray-700">
+                  <button
+                    onClick={() => setActiveTab('services')}
+                    className={`px-8 py-3 rounded-md font-medium transition-all duration-300 ${
+                      activeTab === 'services'
+                        ? 'bg-[#0066CC] text-white shadow-lg shadow-blue-500/50'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Hizmetlerimiz
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('equipment')}
+                    className={`px-8 py-3 rounded-md font-medium transition-all duration-300 ${
+                      activeTab === 'equipment'
+                        ? 'bg-[#0066CC] text-white shadow-lg shadow-blue-500/50'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Ekipmanlarımız
+                  </button>
                 </div>
               </div>
-              <div className="flex items-start">
-                <Icon name="phone" className="h-6 w-6 mr-3 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold text-[#0A1128] dark:text-white mb-1">Telefon</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {contactInfo?.phone || '+90 532 123 4567'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <Icon name="email" className="h-6 w-6 mr-3 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold text-[#0A1128] dark:text-white mb-1">E-posta</h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {contactInfo?.email || 'info@skpro.com.tr'}
-                  </p>
-                </div>
-              </div>
-              {/* Harita */}
-              <Map location={location} onOpenMobileNavigation={openMobileNavigation} />
+
+              {/* Tab Content */}
+              <AnimatePresence mode="wait">
+                {activeTab === 'services' ? (
+                  <motion.div
+                    key="services"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="pb-16 min-h-[400px]"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {(servicesEquipment?.services && servicesEquipment.services.length > 0 ? servicesEquipment.services : [
+                        { title: 'Görüntü Rejisi', description: 'Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz.', icon: 'video', order: 0 },
+                        { title: 'Medya Server Sistemleri', description: 'Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını.', icon: 'screen', order: 1 },
+                        { title: 'LED Ekran Yönetimi', description: 'Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri.', icon: 'led', order: 2 },
+                      ]).sort((a, b) => (a.order || 0) - (b.order || 0)).map((service, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 30 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: index * 0.1, duration: 0.6 }}
+                          whileHover={{ y: -10, scale: 1.02 }}
+                        >
+                          <ServiceCard
+                            title={service.title}
+                            description={service.description}
+                            icon={service.icon as 'video' | 'screen' | 'led'}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="equipment"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="pb-20 min-h-[500px]"
+                  >
+                    <div className="space-y-6">
+                      {(servicesEquipment?.equipment && servicesEquipment.equipment.length > 0 ? servicesEquipment.equipment : [
+                        {
+                          title: 'Görüntü Rejisi Sistemleri',
+                          items: [
+                            { name: 'Analog Way Aquilon RS4', description: '4K/8K çözünürlük desteği ile görüntü işleme' },
+                            { name: 'Barco E2 Gen 2', description: 'Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış' },
+                            { name: 'Blackmagic ATEM 4 M/E Constellation HD', description: '40 giriş, 24 çıkış, gelişmiş geçiş efektleri' }
+                          ],
+                          order: 0
+                        },
+                        {
+                          title: 'Medya Server Sistemleri',
+                          items: [
+                            { name: 'Dataton WATCHPAX 60', description: '6 çıkışlı, yüksek performanslı' },
+                            { name: 'Disguise 4x4pro', description: 'Gerçek zamanlı render, AR/VR desteği' },
+                            { name: 'Resolume Arena 7', description: 'Canlı performans için video loop ve efektler' }
+                          ],
+                          order: 1
+                        },
+                      ]).sort((a, b) => (a.order || 0) - (b.order || 0)).map((category, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: -30 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: index * 0.2, duration: 0.6 }}
+                        >
+                          <EquipmentList
+                            title={category.title}
+                            items={category.items}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            {/* İletişim Formu */}
-            <div>
-              <ContactForm />
+          </section>
+          </StageExperience>
+        </ParallaxSection>
+      </div>
+
+      {/* Hakkımızda */}
+      <div style={{ marginTop: '16rem', marginBottom: '8rem' }}>
+        <StageExperience>
+          <section id="about" className="relative py-32 bg-gradient-to-b from-black/90 via-[#0A1128]/80 to-black/90" style={{ position: 'relative', scrollMarginTop: '100px', paddingTop: '8rem', minHeight: 'auto' }}>
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+              <motion.div
+                className="lg:w-1/2"
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <StageSectionTitle
+                  title={aboutContent?.title || 'SK Production Hakkında'}
+                  subtitle=""
+                />
+                {aboutContent?.description ? (
+                  <div className="text-gray-300 mb-8 text-lg whitespace-pre-line leading-relaxed">
+                    {aboutContent.description}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-gray-300 mb-6 text-lg leading-relaxed">
+                      SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.
+                      Analog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.
+                    </p>
+                    <p className="text-gray-300 mb-6 text-lg leading-relaxed">
+                      10 yılı aşkın deneyime sahip ekibimiz, kurumsal etkinlikler, konserler, ürün lansmanları, 
+                      sahne gösterileri ve daha birçok alanda yüzlerce projeye imza atmıştır.
+                    </p>
+                  </>
+                )}
+                <div className="flex gap-8">
+                  {(aboutContent?.stats && aboutContent.stats.length > 0 ? aboutContent.stats : [
+                    { value: '250+', label: 'Tamamlanan Proje' },
+                    { value: '12+', label: 'Yıllık Deneyim' },
+                    { value: '50+', label: 'Profesyonel Ekipman' },
+                  ]).map((stat, index) => (
+                    <motion.div
+                      key={index}
+                      className="text-center"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.1, duration: 0.5 }}
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      <motion.span
+                        className="block text-5xl font-bold bg-gradient-to-r from-[#0066CC] to-[#00C49F] bg-clip-text text-transparent"
+                        animate={{
+                          backgroundPosition: ['0%', '100%', '0%'],
+                        }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: 'linear',
+                        }}
+                      >
+                        {stat.value}
+                      </motion.span>
+                      <span className="text-gray-400 text-sm mt-2 block">{stat.label}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+              <motion.div
+                className="lg:w-1/2"
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="relative">
+                  <motion.div
+                    className="absolute -top-4 -right-4 w-full h-full bg-gradient-to-br from-[#0066CC] to-[#00C49F] rounded-2xl blur-xl opacity-50"
+                    animate={{
+                      scale: [1, 1.1, 1],
+                      opacity: [0.5, 0.7, 0.5],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                  {(() => {
+                    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+                    const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
+                    
+                    if (aboutContent?.image && aboutContent.image.length === 24 && /^[a-fA-F0-9]{24}$/.test(aboutContent.image)) {
+                      return (
+                        <LazyImage
+                          src={`${baseUrl}/api/site-images/public/${aboutContent.image}/image`}
+                          alt="SK Production Ekibi"
+                          className="relative rounded-2xl w-full aspect-[4/3] z-10"
+                          fill
+                          objectFit="cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          quality={85}
+                        />
+                      );
+                    } else if (aboutContent?.image) {
+                      return (
+                        <LazyImage
+                          src={aboutContent.image}
+                          alt="SK Production Ekibi"
+                          className="relative rounded-2xl w-full aspect-[4/3] z-10"
+                          fill
+                          objectFit="cover"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          quality={85}
+                        />
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              </motion.div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </StageExperience>
+      </div>
+
+      {/* İletişim */}
+      <StageExperience>
+        <section id="contact" className="relative py-32 bg-gradient-to-b from-black/90 to-black overflow-hidden" style={{ position: 'relative', scrollMarginTop: '100px', marginTop: '6rem', marginBottom: '6rem' }}>
+          <div className="container mx-auto px-6">
+            <StageSectionTitle
+              title="İletişime Geçin"
+              subtitle="Projeleriniz için birlikte çalışalım"
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <motion.div
+                className="space-y-8"
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                {[
+                  { icon: 'location', title: 'Adres', content: contactInfo?.address || 'Zincirlidere Caddesi No:52/C Şişli/İstanbul' },
+                  { icon: 'phone', title: 'Telefon', content: contactInfo?.phone || '+90 532 123 4567' },
+                  { icon: 'email', title: 'E-posta', content: contactInfo?.email || 'info@skpro.com.tr' },
+                ].map((item, index) => (
+                  <motion.div
+                    key={index}
+                    className="flex items-start group"
+                    whileHover={{ x: 10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="bg-gradient-to-br from-[#0066CC] to-[#00C49F] p-4 rounded-xl mr-4 group-hover:scale-110 transition-transform">
+                      <Icon name={item.icon as any} className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-1">{item.title}</h3>
+                      <p className="text-gray-300">{item.content}</p>
+                    </div>
+                  </motion.div>
+                ))}
+                <Map location={location} onOpenMobileNavigation={openMobileNavigation} />
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <ContactForm />
+              </motion.div>
+            </div>
+          </div>
+        </section>
+      </StageExperience>
+
+      {/* Alt boşluk */}
+      <div className="min-h-screen w-full relative z-10"></div>
     </MainLayout>
   );
 }

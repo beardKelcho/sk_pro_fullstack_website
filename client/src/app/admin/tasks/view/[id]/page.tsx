@@ -79,14 +79,14 @@ const sampleTasks: Task[] = [
         id: '1',
         name: 'kurulum_plani.pdf',
         type: 'pdf',
-        url: '/attachments/kurulum_plani.pdf',
+        url: '',
         uploadedAt: '2023-10-01'
       },
       {
         id: '2',
         name: 'ekran_gorselleri.jpg',
         type: 'image',
-        url: '/attachments/ekran_gorselleri.jpg',
+        url: '',
         uploadedAt: '2023-10-15'
       }
     ]

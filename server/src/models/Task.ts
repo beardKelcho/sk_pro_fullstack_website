@@ -66,5 +66,19 @@ TaskSchema.pre('save', function (next) {
   next();
 });
 
+// Performance indexes
+// Assigned user ve status ile filtreleme için
+TaskSchema.index({ assignedTo: 1, status: 1 });
+// Project ile filtreleme için
+TaskSchema.index({ project: 1, status: 1 });
+// Due date ile sıralama için
+TaskSchema.index({ dueDate: 1, status: 1 });
+// Priority ve status ile filtreleme için
+TaskSchema.index({ priority: 1, status: 1 });
+// Arama için text index (title, description)
+TaskSchema.index({ title: 'text', description: 'text' });
+// Completed date ile sıralama için
+TaskSchema.index({ completedDate: -1 });
+
 export default mongoose.model<ITask>('Task', TaskSchema);
 

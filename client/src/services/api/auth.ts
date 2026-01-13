@@ -9,5 +9,8 @@ export const authApi = {
   getProfile: () => apiClient.get('/auth/profile'),
   updateProfile: (data: Partial<RegisterForm>) => apiClient.put('/auth/profile', data),
   changePassword: (data: { currentPassword: string; newPassword: string }) => 
-    apiClient.put('/auth/change-password', data)
+    apiClient.put('/auth/change-password', data),
+  forgotPassword: (data: { email: string }) => apiClient.post('/auth/forgot-password', data),
+  resetPassword: (data: { token: string; password: string }) => 
+    apiClient.post('/auth/reset-password', data)
 }; 

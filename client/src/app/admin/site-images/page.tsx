@@ -4,6 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { getAllImages, createImage, deleteImage, deleteMultipleImages, updateImage, SiteImage } from '@/services/siteImageService';
 import { toast } from 'react-toastify';
+import { getImageUrl } from '@/utils/imageUrl';
+import LazyImage from '@/components/common/LazyImage';
+import logger from '@/utils/logger';
 
 export default function SiteImagesPage() {
   const [images, setImages] = useState<SiteImage[]>([]);
@@ -31,7 +34,7 @@ export default function SiteImagesPage() {
       const response = await getAllImages(params);
       setImages(response.images || []);
     } catch (error) {
-      console.error('Resim yükleme hatası:', error);
+      logger.error('Resimler yükleme hatası:', error);
       toast.error('Resimler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -136,7 +139,6 @@ export default function SiteImagesPage() {
       }
       fetchImages();
     } catch (error: any) {
-      console.error('Yükleme hatası:', error);
       toast.error(error.message || 'Resimler yüklenirken bir hata oluştu');
     } finally {
       setUploading(false);
@@ -154,7 +156,6 @@ export default function SiteImagesPage() {
       setSelectedImageIds([]);
       fetchImages();
     } catch (error: any) {
-      console.error('Silme hatası:', error);
       toast.error(error.response?.data?.message || 'Resim silinirken bir hata oluştu');
     }
   };
@@ -175,7 +176,6 @@ export default function SiteImagesPage() {
       setSelectedImageIds([]);
       fetchImages();
     } catch (error: any) {
-      console.error('Toplu silme hatası:', error);
       toast.error(error.response?.data?.message || 'Resimler silinirken bir hata oluştu');
     }
   };
@@ -204,7 +204,6 @@ export default function SiteImagesPage() {
       toast.success(`Resim ${image.isActive ? 'pasif' : 'aktif'} hale getirildi`);
       fetchImages();
     } catch (error: any) {
-      console.error('Güncelleme hatası:', error);
       toast.error('Resim güncellenirken bir hata oluştu');
     }
   };
@@ -329,23 +328,23 @@ export default function SiteImagesPage() {
               )}
             </div>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {filteredImages.map((image) => {
               const imageId = image._id || image.id || '';
               const isSelected = selectedImageIds.includes(imageId);
               return (
               <div
                 key={imageId}
-                className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border-2 transition-all relative ${
+                className={`bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border-2 transition-all relative modern-card group ${
                   isSelected
-                    ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light'
+                    ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light shadow-xl scale-105'
                     : image.isActive 
-                      ? 'border-green-200 dark:border-green-800' 
-                      : 'border-gray-200 dark:border-gray-700 opacity-60'
+                      ? 'border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700' 
+                      : 'border-gray-200 dark:border-gray-700 opacity-60 hover:opacity-80'
                 }`}
               >
                 {/* Checkbox */}
-                <div className="absolute top-2 left-2 z-20 bg-white dark:bg-gray-800 rounded p-1 shadow-md">
+                <div className="absolute top-2 left-2 z-20 bg-white/95 dark:bg-gray-800/95 rounded-lg p-1.5 shadow-lg backdrop-blur-sm">
                   <input
                     type="checkbox"
                     checked={isSelected}
@@ -353,67 +352,63 @@ export default function SiteImagesPage() {
                     className="w-5 h-5 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
                   />
                 </div>
-              <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
+                
+                {/* Seçili badge */}
+                {isSelected && (
+                  <div className="absolute top-2 right-2 z-20 bg-gradient-to-r from-[#0066CC] to-[#00C49F] dark:from-primary-light dark:to-primary text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg">
+                    ✓ Seçili
+                  </div>
+                )}
+                
+              <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 {(() => {
-                  // Resmi ID ile serve et - veritabanı ID'si kullan
-                  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-                  // API_URL zaten /api içeriyor mu kontrol et
-                  const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
-                  let imageUrl = '';
+                  const imageUrl = getImageUrl({ image, fallback: '' });
                   
-                  // Önce ID'yi kontrol et
-                  if (image._id || image.id) {
-                    const dbId = image._id || image.id;
-                    // ID ile resmi serve eden endpoint'i kullan - çift /api/ olmaması için
-                    imageUrl = `${baseUrl}/api/site-images/public/${dbId}/image`;
-                  } else {
-                    // Fallback: Eski yöntem (filename/path ile)
-                    imageUrl = image.url || '';
-                    if (!imageUrl && image.path) {
-                      imageUrl = image.path;
-                    }
-                    if (!imageUrl && image.filename) {
-                      imageUrl = `/uploads/site-images/${image.filename}`;
-                    }
-                    
-                    if (!imageUrl || imageUrl.trim() === '') {
-                      console.warn('Resim URL ve ID yok:', image);
-                      return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
-                    }
-                    
-                    // Eğer /uploads/ ile başlıyorsa, backend URL'ine çevir
-                    if (imageUrl.startsWith('/uploads/')) {
-                      imageUrl = `${baseUrl}${imageUrl}`;
-                    } else if (!imageUrl.startsWith('http')) {
-                      if (!imageUrl.startsWith('/')) {
-                        imageUrl = `/${imageUrl}`;
-                      }
-                      imageUrl = `${baseUrl}${imageUrl}`;
-                    }
+                  if (!imageUrl || imageUrl.trim() === '') {
+                    return (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+                        <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p className="text-xs">Resim yok</p>
+                      </div>
+                    );
                   }
                   
                   return (
-                    <img
-                      src={imageUrl}
-                      alt={image.originalName}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        console.error('Resim yüklenemedi:', imageUrl, image);
-                        const imgElement = e.currentTarget;
-                        imgElement.style.display = 'none';
-                      }}
-                    />
+                    <>
+                      <LazyImage
+                        src={imageUrl}
+                        alt={image.originalName}
+                        fill
+                        objectFit="cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 20vw"
+                        quality={85}
+                        className="group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="w-10 h-10 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center shadow-lg">
+                            <svg className="w-5 h-5 text-[#0066CC] dark:text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   );
                 })()}
                 {!image.isActive && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">Pasif</span>
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+                    <span className="text-white text-sm font-semibold bg-red-600/90 px-3 py-1.5 rounded-full">Pasif</span>
                   </div>
                 )}
               </div>
-              <div className="p-4">
+              <div className="p-3 border-t border-gray-100 dark:border-gray-700">
                 <div className="mb-2">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {image.originalName}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -423,7 +418,7 @@ export default function SiteImagesPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleToggleActive(image)}
-                    className={`flex-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
+                    className={`flex-1 px-3 py-1.5 text-xs rounded-lg transition-colors font-medium ${
                       image.isActive
                         ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
                         : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
@@ -440,7 +435,7 @@ export default function SiteImagesPage() {
                       }
                       handleDelete(imageId);
                     }}
-                    className="px-3 py-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                    className="px-3 py-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors font-medium"
                   >
                     Sil
                   </button>

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models';
 import { Permission, hasPermission, hasRole, Role } from '../config/permissions';
+import logger from '../utils/logger';
 
 declare global {
   namespace Express {
@@ -51,11 +52,17 @@ export const authenticate = async (
       });
     }
     
+    // Session activity güncelle (async, hata olsa bile devam et)
+    const { updateSessionActivity } = require('../controllers/session.controller');
+    updateSessionActivity(user._id.toString(), token).catch((err: any) =>
+      logger.error('Session activity güncelleme hatası:', err)
+    );
+
     // Request'e kullanıcı bilgisini ekle
     req.user = user;
     next();
   } catch (error) {
-    console.error('Kimlik doğrulama hatası:', error);
+    logger.error('Kimlik doğrulama hatası:', error);
     res.status(401).json({
       success: false,
       message: 'Yetkilendirme başarısız',

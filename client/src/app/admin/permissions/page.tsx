@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getAllUsers, updateUser, mapBackendRoleToFrontend, mapFrontendRoleToBackend } from '@/services/userService';
 import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 import { Permission, rolePermissions, Role, permissionDetails, permissionsByCategory } from '@/config/permissions';
 
 // Rol tanımlamaları
@@ -77,7 +78,7 @@ export default function PermissionsPage() {
       })) : [];
       setUsers(formattedUsers);
     } catch (error) {
-      console.error('Kullanıcı yükleme hatası:', error);
+      logger.error('Kullanıcı yükleme hatası:', error);
       toast.error('Kullanıcılar yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -133,7 +134,7 @@ export default function PermissionsPage() {
         )
       );
     } catch (error: any) {
-      console.error('Yetki güncelleme hatası:', error);
+      logger.error('Yetki güncelleme hatası:', error);
       toast.error(error.response?.data?.message || 'Yetkiler güncellenirken bir hata oluştu');
     } finally {
       setUpdating(false);

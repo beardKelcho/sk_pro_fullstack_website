@@ -26,7 +26,7 @@ class PushNotificationService {
   private static instance: PushNotificationService;
   private swRegistration: ServiceWorkerRegistration | null = null;
   private subscription: globalThis.PushSubscription | null = null;
-  private readonly VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  private vapidPublicKey: string | null = null;
 
   private constructor() {
     this.init();
@@ -42,11 +42,34 @@ class PushNotificationService {
   private async init(): Promise<void> {
     try {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
+        // Önce VAPID public key'i al
+        await this.loadVapidKey();
+        
         this.swRegistration = await navigator.serviceWorker.register('/sw.js');
         await this.checkSubscription();
       }
     } catch (error) {
-      console.error('Push notification initialization failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Push notification initialization failed:', error);
+      }
+    }
+  }
+
+  private async loadVapidKey(): Promise<void> {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const response = await fetch(`${API_URL}/push/vapid-key`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        this.vapidPublicKey = data.publicKey;
+      } else {
+        // Fallback: environment variable'dan al
+        this.vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null;
+      }
+    } catch (error) {
+      // Fallback: environment variable'dan al
+      this.vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null;
     }
   }
 
@@ -67,11 +90,20 @@ class PushNotificationService {
 
   async subscribe(): Promise<boolean> {
     try {
-      if (!this.swRegistration || !this.VAPID_PUBLIC_KEY) {
-        throw new Error('Service Worker or VAPID key not available');
+      if (!this.swRegistration) {
+        throw new Error('Service Worker not available');
       }
 
-      const applicationServerKey = this.urlBase64ToUint8Array(this.VAPID_PUBLIC_KEY);
+      // VAPID key yoksa yükle
+      if (!this.vapidPublicKey) {
+        await this.loadVapidKey();
+      }
+
+      if (!this.vapidPublicKey) {
+        throw new Error('VAPID public key not available');
+      }
+
+      const applicationServerKey = this.urlBase64ToUint8Array(this.vapidPublicKey);
       const subscription = await this.swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey,
@@ -106,8 +138,8 @@ class PushNotificationService {
 
       await this.swRegistration.showNotification(options.title, {
         ...options,
-        icon: options.icon || '/images/logo.png',
-        badge: options.badge || '/images/badge.png',
+        icon: options.icon || '/images/sk-logo.png',
+        badge: options.badge || '/images/sk-logo.png',
         ...(options.vibrate && { vibrate: options.vibrate }),
         data: {
           ...options.data,
@@ -121,6 +153,9 @@ class PushNotificationService {
 
   private async updateSubscriptionOnServer(subscription: globalThis.PushSubscription): Promise<void> {
     try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
       const subscriptionData: PushSubscriptionData = {
         endpoint: subscription.endpoint,
         keys: {
@@ -128,33 +163,61 @@ class PushNotificationService {
           auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth')!))),
         },
       };
-      const response = await fetch('/api/push/subscribe', {
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/push/subscribe`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(subscriptionData),
+        headers,
+        body: JSON.stringify({
+          ...subscriptionData,
+          userAgent: typeof window !== 'undefined' ? navigator.userAgent : undefined,
+        }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
         throw new Error('Failed to update subscription on server');
       }
     } catch (error) {
-      console.error('Update subscription on server failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Update subscription on server failed:', error);
+      }
     }
   }
 
   private async deleteSubscriptionFromServer(): Promise<void> {
     try {
-      const response = await fetch('/api/push/unsubscribe', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/push/unsubscribe`, {
         method: 'POST',
+        headers,
+        credentials: 'include',
       });
 
       if (!response.ok) {
         throw new Error('Failed to delete subscription from server');
       }
     } catch (error) {
-      console.error('Delete subscription from server failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Delete subscription from server failed:', error);
+      }
     }
   }
 

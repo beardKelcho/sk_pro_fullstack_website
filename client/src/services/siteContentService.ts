@@ -1,4 +1,5 @@
 import apiClient from './api/axios';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface HeroContent {
   title: string;
@@ -6,7 +7,9 @@ export interface HeroContent {
   description: string;
   buttonText: string;
   buttonLink: string;
-  backgroundVideo?: string;
+  backgroundVideo?: string; // Seçili video URL'i (backward compatibility için)
+  selectedVideo?: string; // Aktif olarak gösterilen video URL'i
+  availableVideos?: Array<{ url: string; filename: string; uploadedAt?: string }>; // Video havuzu
   backgroundImage?: string;
   rotatingTexts?: string[];
 }
@@ -23,7 +26,18 @@ export interface EquipmentCategory {
   items: {
     name: string;
     description: string;
+    image?: string; // Ekipman görseli
   }[];
+  order: number;
+  image?: string; // Kategori görseli
+}
+
+export interface ServicesEquipmentContent {
+  title: string;
+  subtitle: string;
+  services: ServiceItem[];
+  equipment: EquipmentCategory[];
+  backgroundImage?: string;
   order: number;
 }
 
@@ -64,6 +78,7 @@ export type SiteContentData =
   | HeroContent 
   | ServiceItem[] 
   | EquipmentCategory[] 
+  | ServicesEquipmentContent
   | AboutContent 
   | ContactInfo 
   | FooterContent 
@@ -73,7 +88,7 @@ export type SiteContentData =
 export interface SiteContent {
   _id?: string;
   id?: string;
-  section: 'hero' | 'services' | 'equipment' | 'about' | 'contact' | 'footer' | 'social' | 'projects';
+  section: 'hero' | 'services' | 'equipment' | 'services-equipment' | 'about' | 'contact' | 'footer' | 'social' | 'projects';
   content: SiteContentData;
   isActive: boolean;
   order: number;
@@ -114,5 +129,73 @@ export const updateContentBySection = async (section: string, data: Partial<Site
 
 export const deleteContent = async (id: string): Promise<void> => {
   await apiClient.delete(`/site-content/${id}`);
+};
+
+// React Query Hooks
+export const useSiteContents = (params?: {
+  section?: string;
+  isActive?: boolean;
+}) => {
+  return useQuery({
+    queryKey: ['site-contents', params],
+    queryFn: () => getAllContents(params),
+    staleTime: 2 * 60 * 1000, // 2 dakika
+  });
+};
+
+export const useSiteContentBySection = (section: string | null) => {
+  return useQuery({
+    queryKey: ['site-content', 'section', section],
+    queryFn: () => getContentBySection(section!),
+    enabled: !!section,
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useCreateSiteContent = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: createContent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-contents'] });
+    },
+  });
+};
+
+export const useUpdateSiteContent = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<SiteContent> }) => updateContent(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['site-content', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['site-contents'] });
+    },
+  });
+};
+
+export const useUpdateSiteContentBySection = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ section, data }: { section: string; data: Partial<SiteContent> }) => 
+      updateContentBySection(section, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['site-content', 'section', variables.section] });
+      queryClient.invalidateQueries({ queryKey: ['site-contents'] });
+    },
+  });
+};
+
+export const useDeleteSiteContent = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: deleteContent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-contents'] });
+    },
+  });
 };
 

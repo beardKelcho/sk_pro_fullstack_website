@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { Task, User } from '../models';
 import mongoose from 'mongoose';
-import { sendTaskAssignedEmail } from '../utils/emailService';
+import { sendTaskAssignedEmail, sendTaskUpdatedEmail } from '../utils/emailService';
+import { notifyUser } from '../utils/notificationService';
 import logger from '../utils/logger';
 
 // Tüm görevleri listele
@@ -142,9 +143,11 @@ export const createTask = async (req: Request, res: Response) => {
       .populate('project', 'name status')
       .populate('assignedTo', 'name email');
     
-    // Email gönder (async, hata olsa bile devam et)
+    // Email ve bildirim gönder (async, hata olsa bile devam et)
     if (populatedTask?.assignedTo && typeof populatedTask.assignedTo === 'object') {
       const assignedUser = populatedTask.assignedTo as any;
+      
+      // Email gönder
       sendTaskAssignedEmail(
         assignedUser.email,
         assignedUser.name,
@@ -152,6 +155,16 @@ export const createTask = async (req: Request, res: Response) => {
         populatedTask.description || '',
         populatedTask.dueDate
       ).catch(err => logger.error('Email gönderme hatası:', err));
+      
+      // Bildirim gönder
+      notifyUser(
+        assignedUser._id,
+        'TASK_ASSIGNED',
+        'Yeni Görev Atandı',
+        `Size "${populatedTask.title}" görevi atandı.`,
+        { taskId: populatedTask._id.toString() },
+        false // Email zaten gönderildi
+      ).catch(err => logger.error('Bildirim gönderme hatası:', err));
     }
     
     res.status(201).json({
@@ -179,6 +192,9 @@ export const updateTask = async (req: Request, res: Response) => {
         message: 'Geçersiz görev ID',
       });
     }
+    
+    // Eski görevi al (değişiklik takibi için)
+    const oldTask = await Task.findById(id);
     
     const updateData: any = {};
     if (title) updateData.title = title;
@@ -208,6 +224,55 @@ export const updateTask = async (req: Request, res: Response) => {
         success: false,
         message: 'Görev bulunamadı',
       });
+    }
+    
+    // Değişiklikleri tespit et ve bildirim gönder
+    if (oldTask && updatedTask.assignedTo && typeof updatedTask.assignedTo === 'object') {
+      const assignedUser = updatedTask.assignedTo as any;
+      const changes: { field: string; oldValue: string; newValue: string }[] = [];
+      
+      if (oldTask.status !== updatedTask.status) {
+        changes.push({
+          field: 'Durum',
+          oldValue: oldTask.status,
+          newValue: updatedTask.status
+        });
+      }
+      
+      if (oldTask.priority !== updatedTask.priority) {
+        changes.push({
+          field: 'Öncelik',
+          oldValue: oldTask.priority || 'Belirtilmemiş',
+          newValue: updatedTask.priority || 'Belirtilmemiş'
+        });
+      }
+      
+      if (oldTask.dueDate?.toString() !== updatedTask.dueDate?.toString()) {
+        changes.push({
+          field: 'Son Tarih',
+          oldValue: oldTask.dueDate ? new Date(oldTask.dueDate).toLocaleDateString('tr-TR') : 'Belirtilmemiş',
+          newValue: updatedTask.dueDate ? new Date(updatedTask.dueDate).toLocaleDateString('tr-TR') : 'Belirtilmemiş'
+        });
+      }
+      
+      // Değişiklik varsa email ve bildirim gönder
+      if (changes.length > 0 && assignedUser.email) {
+        sendTaskUpdatedEmail(
+          assignedUser.email,
+          assignedUser.name,
+          updatedTask.title,
+          changes
+        ).catch(err => logger.error('Görev güncelleme email gönderme hatası:', err));
+        
+        notifyUser(
+          assignedUser._id,
+          'TASK_UPDATED',
+          'Görev Güncellendi',
+          `"${updatedTask.title}" görevi güncellendi.`,
+          { taskId: updatedTask._id.toString(), changes },
+          false // Email zaten gönderildi
+        ).catch(err => logger.error('Görev güncelleme bildirim gönderme hatası:', err));
+      }
     }
     
     res.status(200).json({

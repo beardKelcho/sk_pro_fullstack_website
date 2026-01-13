@@ -86,8 +86,8 @@ export const serveImageById = async (req: Request, res: Response) => {
     }
     
     // Resim dosyasının yolunu oluştur
-    // Path formatı: "site-images/filename.jpg" veya "general/filename.jpg" veya "images/slide1.jpg" (client/public/images) veya "/uploads/site-images/filename.jpg" veya direkt "filename.jpg"
-    let filePath: string;
+    // Path formatı: "site-images/filename.jpg" veya "general/filename.jpg" veya "/uploads/site-images/filename.jpg" veya direkt "filename.jpg"
+    let filePath: string | undefined;
     
     // Önce image.path'i kontrol et
     if (image.path) {
@@ -99,9 +99,10 @@ export const serveImageById = async (req: Request, res: Response) => {
         // "uploads/site-images/filename.jpg" formatı
         filePath = path.join(process.cwd(), image.path);
       } else if (image.path.startsWith('/images/') || image.path.startsWith('images/')) {
-        // "/images/slide1.jpg" veya "images/slide1.jpg" formatı - client/public/images klasöründe
+        // Artık client/public/images kullanılmıyor, tüm dosyalar uploads klasöründe
+        // Eski resimler için uploads/general veya uploads/site-images klasörlerini dene
         const imageFileName = image.path.replace(/^\/?images\//, '');
-        filePath = path.join(process.cwd(), 'client', 'public', 'images', imageFileName);
+        filePath = path.join(process.cwd(), 'uploads', 'general', imageFileName);
       } else if (image.path.startsWith('/')) {
         // "/site-images/filename.jpg" formatı
         filePath = path.join(process.cwd(), 'uploads', image.path.substring(1));
@@ -110,11 +111,36 @@ export const serveImageById = async (req: Request, res: Response) => {
         filePath = path.join(process.cwd(), 'uploads', image.path);
       }
     } else if (image.filename) {
-      // Path yoksa, filename'den oluştur - önce site-images, sonra general klasörünü dene
-      filePath = path.join(process.cwd(), 'uploads', 'site-images', image.filename);
+      // Path yoksa, filename'den oluştur - önce category'ye göre, sonra alternatif yolları dene
+      const category = image.category || 'general';
+        const possiblePaths = [
+          path.join(process.cwd(), 'uploads', 'general', image.filename), // ÖNCE general (video dosyaları genelde orada)
+          path.join(process.cwd(), 'uploads', 'videos', image.filename), // Sonra videos
+          path.join(process.cwd(), 'uploads', category, image.filename), // category klasörü (videos, site-images, general)
+          path.join(process.cwd(), 'uploads', 'site-images', image.filename),
+        ];
+      
+      // İlk bulunan path'i kullan
+      for (const possiblePath of possiblePaths) {
+        if (fs.existsSync(possiblePath)) {
+          filePath = possiblePath;
+          break;
+        }
+      }
+      
+      // Hiçbiri bulunamazsa, category klasörünü kullan
+      if (!filePath) {
+        filePath = path.join(process.cwd(), 'uploads', category, image.filename);
+      }
     } else {
       logger.error(`Resim path ve filename eksik: ${id}`, image);
-      return res.status(404).send('Resim dosya bilgisi bulunamadı');
+      return res.status(404).send('Resim/video dosya bilgisi bulunamadı');
+    }
+    
+    // filePath kontrolü
+    if (!filePath) {
+      logger.error(`Resim dosya yolu oluşturulamadı: ${id}`, image);
+      return res.status(404).send('Resim/video dosya yolu bulunamadı');
     }
     
     // Dosya var mı kontrol et - birden fazla yerde ara
@@ -126,16 +152,18 @@ export const serveImageById = async (req: Request, res: Response) => {
       const alternativePaths = [
         // Path'teki kategori ile (eğer path varsa)
         categoryFromPath && !image.path.startsWith('images/') ? path.join(process.cwd(), 'uploads', image.path) : null,
-        // images/ ile başlayan path'ler için client/public/images
+        // images/ ile başlayan path'ler için uploads/general (eski resimler)
         image.path && (image.path.startsWith('images/') || image.path.startsWith('/images/')) 
-          ? path.join(process.cwd(), 'client', 'public', 'images', image.filename)
+          ? path.join(process.cwd(), 'uploads', 'general', image.filename)
           : null,
+        // general klasörü (upload route'u bazen general'a kaydediyor - ÖNCE BUNU KONTROL ET)
+        path.join(process.cwd(), 'uploads', 'general', image.filename),
+        // videos klasörü (video dosyaları için)
+        path.join(process.cwd(), 'uploads', 'videos', image.filename),
+        // category klasörü (videos, site-images, general)
+        image.category ? path.join(process.cwd(), 'uploads', image.category, image.filename) : null,
         // site-images klasörü
         path.join(process.cwd(), 'uploads', 'site-images', image.filename),
-        // general klasörü (upload route'u bazen general'a kaydediyor)
-        path.join(process.cwd(), 'uploads', 'general', image.filename),
-        // client/public/images klasörü (eski resimler için - direkt filename ile)
-        path.join(process.cwd(), 'client', 'public', 'images', image.filename),
         // direkt uploads klasörü
         path.join(process.cwd(), 'uploads', image.filename),
       ].filter((p): p is string => p !== null);
@@ -164,16 +192,22 @@ export const serveImageById = async (req: Request, res: Response) => {
       }
     }
     
-    // Content-Type'ı ayarla
+    // Content-Type'ı ayarla - hem resim hem video dosyaları için
     const ext = path.extname(image.filename).toLowerCase();
     const contentTypeMap: { [key: string]: string } = {
+      // Resim formatları
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
       '.png': 'image/png',
       '.gif': 'image/gif',
       '.webp': 'image/webp',
+      // Video formatları
+      '.mp4': 'video/mp4',
+      '.webm': 'video/webm',
+      '.mov': 'video/quicktime',
+      '.avi': 'video/x-msvideo',
     };
-    const contentType = contentTypeMap[ext] || 'image/jpeg';
+    const contentType = contentTypeMap[ext] || (image.category === 'video' ? 'video/mp4' : 'image/jpeg');
     
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -281,15 +315,53 @@ export const deleteImage = async (req: Request, res: Response) => {
       });
     }
     
-    // Fiziksel dosyayı sil
-    // Önce uploads klasöründe dene
-    let filePath = path.join(process.cwd(), 'uploads', 'site-images', image.filename);
-    if (!fs.existsSync(filePath)) {
-      // Sonra client/public/images altında dene
-      filePath = path.join(process.cwd(), 'client', 'public', image.path);
+    // Fiziksel dosyayı sil - path'e göre doğru klasörü bul
+    let filePath: string | null = null;
+    
+    // ÖNCE: Tüm olası path'leri kontrol et (path'e bakmadan)
+    const allPossiblePaths = [
+      // ÖNCE general klasörünü kontrol et (dosyalar genelde orada)
+      path.join(process.cwd(), 'uploads', 'general', image.filename),
+      // Sonra path'teki klasörü kontrol et
+      image.path ? path.join(process.cwd(), 'uploads', image.path) : null,
+      // Path formatlarına göre
+      image.path && image.path.startsWith('/uploads/') 
+        ? path.join(process.cwd(), image.path.substring(1))
+        : null,
+      image.path && image.path.startsWith('uploads/')
+        ? path.join(process.cwd(), image.path)
+        : null,
+      // Category klasörleri
+      image.category ? path.join(process.cwd(), 'uploads', image.category, image.filename) : null,
+      path.join(process.cwd(), 'uploads', 'videos', image.filename),
+      path.join(process.cwd(), 'uploads', 'site-images', image.filename),
+    ].filter((p): p is string => p !== null);
+    
+    // İlk bulunan dosyayı kullan
+    for (const possiblePath of allPossiblePaths) {
+      if (fs.existsSync(possiblePath)) {
+        filePath = possiblePath;
+        break;
+      }
     }
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    
+    // Dosyayı sil
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        logger.info(`Fiziksel dosya silindi: ${filePath}`);
+      } catch (error) {
+        logger.warn(`Fiziksel dosya silinemedi: ${filePath}`, error);
+      }
+    } else {
+      logger.warn(`Fiziksel dosya bulunamadı: ${filePath || 'path belirlenemedi'}`, {
+        imageId: id,
+        image: {
+          path: image.path,
+          filename: image.filename,
+          category: image.category
+        }
+      });
     }
     
     // Veritabanından sil
@@ -335,31 +407,54 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
     // Resimleri bul ve sil
     const images = await SiteImage.find({ _id: { $in: validIds } });
     
-    // Fiziksel dosyaları sil
+      // Fiziksel dosyaları sil - path'e göre doğru klasörü bul
     for (const image of images) {
-      let filePath = path.join(process.cwd(), 'uploads', 'site-images', image.filename);
-      if (!fs.existsSync(filePath)) {
-        // Alternatif yolları dene
-        const alternativePaths = [
-          path.join(process.cwd(), 'uploads', 'general', image.filename),
-          path.join(process.cwd(), 'client', 'public', 'images', image.filename),
-        ];
-        
-        for (const altPath of alternativePaths) {
-          if (fs.existsSync(altPath)) {
-            filePath = altPath;
-            break;
-          }
+      let filePath: string | null = null;
+      
+      // ÖNCE: Tüm olası path'leri kontrol et (path'e bakmadan)
+      const allPossiblePaths = [
+        // ÖNCE general klasörünü kontrol et (dosyalar genelde orada)
+        path.join(process.cwd(), 'uploads', 'general', image.filename),
+        // Sonra path'teki klasörü kontrol et
+        image.path ? path.join(process.cwd(), 'uploads', image.path) : null,
+        // Path formatlarına göre
+        image.path && image.path.startsWith('/uploads/') 
+          ? path.join(process.cwd(), image.path.substring(1))
+          : null,
+        image.path && image.path.startsWith('uploads/')
+          ? path.join(process.cwd(), image.path)
+          : null,
+        // Category klasörleri
+        image.category ? path.join(process.cwd(), 'uploads', image.category, image.filename) : null,
+        path.join(process.cwd(), 'uploads', 'videos', image.filename),
+        path.join(process.cwd(), 'uploads', 'site-images', image.filename),
+      ].filter((p): p is string => p !== null);
+      
+      // İlk bulunan dosyayı kullan
+      for (const possiblePath of allPossiblePaths) {
+        if (fs.existsSync(possiblePath)) {
+          filePath = possiblePath;
+          break;
         }
       }
-      
-      if (fs.existsSync(filePath)) {
+    
+    // Dosyayı sil
+    if (filePath && fs.existsSync(filePath)) {
         try {
           fs.unlinkSync(filePath);
           logger.info(`Fiziksel dosya silindi: ${filePath}`);
         } catch (error) {
           logger.warn(`Fiziksel dosya silinemedi: ${filePath}`, error);
         }
+      } else {
+        logger.warn(`Fiziksel dosya bulunamadı: ${filePath || 'path belirlenemedi'}`, {
+          imageId: image._id,
+          image: {
+            path: image.path,
+            filename: image.filename,
+            category: image.category
+          }
+        });
       }
     }
     

@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getAllImages, createImage, deleteImage, deleteMultipleImages, updateImage, SiteImage } from '@/services/siteImageService';
 import { toast } from 'react-toastify';
+import { getImageUrl } from '@/utils/imageUrl';
+import LazyImage from '@/components/common/LazyImage';
+import logger from '@/utils/logger';
 
 export default function ProjectGalleryPage() {
   const [images, setImages] = useState<SiteImage[]>([]);
@@ -24,7 +27,7 @@ export default function ProjectGalleryPage() {
       const response = await getAllImages({ category: 'project' });
       setImages(response.images || []);
     } catch (error) {
-      console.error('Resim yükleme hatası:', error);
+      logger.error('Resim yükleme hatası:', error);
       toast.error('Resimler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -123,7 +126,6 @@ export default function ProjectGalleryPage() {
       }
       fetchImages();
     } catch (error: any) {
-      console.error('Yükleme hatası:', error);
       toast.error(error.message || 'Resimler yüklenirken bir hata oluştu');
     } finally {
       setUploading(false);
@@ -141,7 +143,6 @@ export default function ProjectGalleryPage() {
       setSelectedImageIds([]);
       fetchImages();
     } catch (error: any) {
-      console.error('Silme hatası:', error);
       toast.error(error.response?.data?.message || 'Resim silinirken bir hata oluştu');
     }
   };
@@ -162,7 +163,6 @@ export default function ProjectGalleryPage() {
       setSelectedImageIds([]);
       fetchImages();
     } catch (error: any) {
-      console.error('Toplu silme hatası:', error);
       toast.error(error.response?.data?.message || 'Görseller silinirken bir hata oluştu');
     }
   };
@@ -191,7 +191,6 @@ export default function ProjectGalleryPage() {
       toast.success(`Proje görseli ${image.isActive ? 'pasif' : 'aktif'} hale getirildi`);
       fetchImages();
     } catch (error: any) {
-      console.error('Güncelleme hatası:', error);
       toast.error('Proje görseli güncellenirken bir hata oluştu');
     }
   };
@@ -340,53 +339,20 @@ export default function ProjectGalleryPage() {
                     </div>
                     <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
                       {(() => {
-                        // Resmi ID ile serve et - veritabanı ID'si kullan
-                        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-                        // API_URL zaten /api içeriyor mu kontrol et
-                        const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
-                        let imageUrl = '';
+                        const imageUrl = getImageUrl({ image, fallback: '' });
                         
-                        // Önce ID'yi kontrol et
-                        if (image._id || image.id) {
-                          const dbId = image._id || image.id;
-                          // ID ile resmi serve eden endpoint'i kullan - çift /api/ olmaması için
-                          imageUrl = `${baseUrl}/api/site-images/public/${dbId}/image`;
-                        } else {
-                          // Fallback: Eski yöntem (filename/path ile)
-                          imageUrl = image.url || '';
-                          if (!imageUrl && image.path) {
-                            imageUrl = image.path;
-                          }
-                          if (!imageUrl && image.filename) {
-                            imageUrl = `/uploads/site-images/${image.filename}`;
-                          }
-                          
-                          if (!imageUrl || imageUrl.trim() === '') {
-                            console.warn('Resim URL ve ID yok:', image);
-                            return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
-                          }
-                          
-                          // Eğer /uploads/ ile başlıyorsa, backend URL'ine çevir
-                          if (imageUrl.startsWith('/uploads/')) {
-                            imageUrl = `${baseUrl}${imageUrl}`;
-                          } else if (!imageUrl.startsWith('http')) {
-                            if (!imageUrl.startsWith('/')) {
-                              imageUrl = `/${imageUrl}`;
-                            }
-                            imageUrl = `${baseUrl}${imageUrl}`;
-                          }
+                        if (!imageUrl || imageUrl.trim() === '') {
+                          return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
                         }
                         
                         return (
-                          <img
+                          <LazyImage
                             src={imageUrl}
                             alt={image.originalName}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.error('Resim yüklenemedi:', imageUrl, image);
-                              const imgElement = e.currentTarget;
-                              imgElement.style.display = 'none';
-                            }}
+                            fill
+                            objectFit="cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            quality={80}
                           />
                         );
                       })()}
@@ -454,41 +420,10 @@ export default function ProjectGalleryPage() {
                     </div>
                     <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
                       {(() => {
-                        // Resmi ID ile serve et - veritabanı ID'si kullan
-                        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-                        // API_URL zaten /api içeriyor mu kontrol et
-                        const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
-                        let imageUrl = '';
+                        const imageUrl = getImageUrl({ image, fallback: '' });
                         
-                        // Önce ID'yi kontrol et
-                        if (image._id || image.id) {
-                          const dbId = image._id || image.id;
-                          // ID ile resmi serve eden endpoint'i kullan - çift /api/ olmaması için
-                          imageUrl = `${baseUrl}/api/site-images/public/${dbId}/image`;
-                        } else {
-                          // Fallback: Eski yöntem (filename/path ile)
-                          imageUrl = image.url || '';
-                          if (!imageUrl && image.path) {
-                            imageUrl = image.path;
-                          }
-                          if (!imageUrl && image.filename) {
-                            imageUrl = `/uploads/site-images/${image.filename}`;
-                          }
-                          
-                          if (!imageUrl || imageUrl.trim() === '') {
-                            console.warn('Resim URL ve ID yok:', image);
-                            return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
-                          }
-                          
-                          // Eğer /uploads/ ile başlıyorsa, backend URL'ine çevir
-                          if (imageUrl.startsWith('/uploads/')) {
-                            imageUrl = `${baseUrl}${imageUrl}`;
-                          } else if (!imageUrl.startsWith('http')) {
-                            if (!imageUrl.startsWith('/')) {
-                              imageUrl = `/${imageUrl}`;
-                            }
-                            imageUrl = `${baseUrl}${imageUrl}`;
-                          }
+                        if (!imageUrl || imageUrl.trim() === '') {
+                          return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
                         }
                         
                         return (
@@ -498,7 +433,6 @@ export default function ProjectGalleryPage() {
                               alt={image.originalName}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                console.error('Resim yüklenemedi:', imageUrl, image);
                                 const imgElement = e.currentTarget;
                                 imgElement.style.display = 'none';
                               }}

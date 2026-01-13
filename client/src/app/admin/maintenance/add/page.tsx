@@ -149,17 +149,20 @@ export default function AddMaintenance() {
     
     try {
       // API'ye gönderilecek veri - Backend formatına uygun
+      // Tarih formatını ISO8601'e çevir
+      const scheduledDateISO = formData.startDate ? new Date(formData.startDate + 'T00:00:00.000Z').toISOString() : undefined;
+      
       const maintenanceData = {
         equipment: formData.equipmentId,
         type: formData.type === 'Periyodik' ? 'ROUTINE' :
               formData.type === 'Arıza' ? 'REPAIR' :
               formData.type === 'Kalibrasyon' ? 'INSPECTION' : 'UPGRADE',
-        description: formData.description,
-        scheduledDate: formData.startDate,
+        description: formData.description.trim(),
+        scheduledDate: scheduledDateISO,
         status: 'SCHEDULED',
         assignedTo: formData.assignedTo,
         cost: formData.cost ? Number(formData.cost) : undefined,
-        notes: formData.notes
+        notes: formData.notes.trim() || undefined
       };
       
       await createMaintenance(maintenanceData as any);

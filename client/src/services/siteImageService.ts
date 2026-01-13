@@ -1,4 +1,5 @@
 import apiClient from './api/axios';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface SiteImage {
   _id?: string;
@@ -7,7 +8,7 @@ export interface SiteImage {
   originalName: string;
   path: string;
   url: string;
-  category: 'project' | 'gallery' | 'hero' | 'about' | 'other';
+  category: 'project' | 'gallery' | 'hero' | 'about' | 'video' | 'other';
   order: number;
   isActive: boolean;
   createdAt?: string;
@@ -51,5 +52,82 @@ export const deleteMultipleImages = async (ids: string[]): Promise<{ deletedCoun
 
 export const updateImageOrder = async (images: { id: string; order: number }[]): Promise<void> => {
   await apiClient.put('/site-images/order/update', { images });
+};
+
+// React Query Hooks
+export const useSiteImages = (params?: {
+  category?: string;
+  isActive?: boolean;
+}) => {
+  return useQuery({
+    queryKey: ['site-images', params],
+    queryFn: () => getAllImages(params),
+    staleTime: 2 * 60 * 1000, // 2 dakika
+  });
+};
+
+export const useSiteImageById = (id: string | null) => {
+  return useQuery({
+    queryKey: ['site-image', id],
+    queryFn: () => getImageById(id!),
+    enabled: !!id,
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useCreateSiteImage = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: createImage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-images'] });
+    },
+  });
+};
+
+export const useUpdateSiteImage = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<SiteImage> }) => updateImage(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['site-image', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['site-images'] });
+    },
+  });
+};
+
+export const useDeleteSiteImage = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: deleteImage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-images'] });
+    },
+  });
+};
+
+export const useDeleteMultipleSiteImages = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: deleteMultipleImages,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-images'] });
+    },
+  });
+};
+
+export const useUpdateImageOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: updateImageOrder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['site-images'] });
+    },
+  });
 };
 

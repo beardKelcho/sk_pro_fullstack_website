@@ -5,13 +5,9 @@ const API_CACHE = 'api-v1';
 
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/offline.html',
-  '/images/logo.png',
-  '/images/hero-bg.jpg',
-  '/css/main.css',
-  '/js/main.js',
+  '/images/sk-logo.png',
 ];
 
 const API_ENDPOINTS = [
@@ -128,29 +124,56 @@ async function handleStaticRequest(request) {
 
 // Push bildirimlerini yönet
 self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data.text(),
-    icon: '/images/logo.png',
-    badge: '/images/badge.png',
+  let notificationData = {
+    title: 'SK Production',
+    body: '',
+    icon: '/images/sk-logo.png',
+    badge: '/images/sk-logo.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: 1,
+      url: '/admin/notifications',
     },
     actions: [
       {
-        action: 'explore',
-        title: 'Detayları Gör',
+        action: 'view',
+        title: 'Görüntüle',
       },
       {
-        action: 'close',
+        action: 'dismiss',
         title: 'Kapat',
       },
     ],
+    requireInteraction: false,
+    tag: 'default',
   };
 
+  // Eğer event.data varsa ve JSON ise parse et
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = {
+        ...notificationData,
+        title: data.title || notificationData.title,
+        body: data.body || notificationData.body,
+        icon: data.icon || notificationData.icon,
+        badge: data.badge || notificationData.badge,
+        data: {
+          ...notificationData.data,
+          ...data.data,
+        },
+        actions: data.actions || notificationData.actions,
+        requireInteraction: data.requireInteraction || notificationData.requireInteraction,
+        tag: data.tag || notificationData.tag,
+      };
+    } catch (e) {
+      // JSON değilse text olarak kullan
+      notificationData.body = event.data.text();
+    }
+  }
+
   event.waitUntil(
-    self.registration.showNotification('SK Production', options)
+    self.registration.showNotification(notificationData.title, notificationData)
   );
 });
 
@@ -158,10 +181,29 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  if (event.action === 'explore') {
+  const notificationData = event.notification.data || {};
+  const url = notificationData.url || '/admin/notifications';
+
+  if (event.action === 'view' || event.action === '') {
+    // Bildirime tıklandığında veya "Görüntüle" butonuna tıklandığında
     event.waitUntil(
-      clients.openWindow('/')
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        // Açık bir pencere varsa ona odaklan
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url.includes(url) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Açık pencere yoksa yeni pencere aç
+        if (clients.openWindow) {
+          return clients.openWindow(url);
+        }
+      })
     );
+  } else if (event.action === 'dismiss') {
+    // "Kapat" butonuna tıklandığında sadece bildirimi kapat
+    // Zaten event.notification.close() çağrıldı
   }
 });
 

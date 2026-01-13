@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAllImages, createImage, SiteImage } from '@/services/siteImageService';
+import { getAllImages, createImage, deleteImage, SiteImage } from '@/services/siteImageService';
 import { 
   getAllContents, 
   updateContentBySection, 
@@ -10,12 +10,16 @@ import {
   HeroContent,
   ServiceItem,
   EquipmentCategory,
+  ServicesEquipmentContent,
   AboutContent,
   ContactInfo,
   FooterContent,
   SocialMedia
 } from '@/services/siteContentService';
 import { toast } from 'react-toastify';
+import { getImageUrl } from '@/utils/imageUrl';
+import LazyImage from '@/components/common/LazyImage';
+import logger from '@/utils/logger';
 
 export default function SiteContentPage() {
   const [contents, setContents] = useState<SiteContent[]>([]);
@@ -25,8 +29,7 @@ export default function SiteContentPage() {
 
   const sections = [
     { key: 'hero', name: 'Hero Bölümü', icon: '🏠' },
-    { key: 'services', name: 'Hizmetler', icon: '⚙️' },
-    { key: 'equipment', name: 'Ekipmanlar', icon: '🔧' },
+    { key: 'services-equipment', name: 'Hizmetler & Ekipmanlar', icon: '⚙️' },
     { key: 'about', name: 'Hakkımızda', icon: 'ℹ️' },
     { key: 'contact', name: 'İletişim', icon: '📞' },
     { key: 'footer', name: 'Footer', icon: '📄' },
@@ -43,7 +46,7 @@ export default function SiteContentPage() {
       const response = await getAllContents();
       setContents(response.contents || []);
     } catch (error) {
-      console.error('İçerik yükleme hatası:', error);
+      logger.error('İçerik yükleme hatası:', error);
       toast.error('İçerikler yüklenirken bir hata oluştu');
     } finally {
       setLoading(false);
@@ -76,7 +79,7 @@ export default function SiteContentPage() {
       toast.success(`${sections.find(s => s.key === section)?.name} başarıyla kaydedildi`);
       fetchContents();
     } catch (error: any) {
-      console.error('Kaydetme hatası:', error);
+      logger.error('Kaydetme hatası:', error);
       toast.error(error.response?.data?.message || 'İçerik kaydedilirken bir hata oluştu');
     } finally {
       setSaving(false);
@@ -93,16 +96,10 @@ export default function SiteContentPage() {
           onSave={(data) => handleSave('hero', data)} 
           saving={saving}
         />;
-      case 'services':
-        return <ServicesForm 
-          content={currentContent?.content as ServiceItem[]} 
-          onSave={(data) => handleSave('services', data)} 
-          saving={saving}
-        />;
-      case 'equipment':
-        return <EquipmentForm 
-          content={currentContent?.content as EquipmentCategory[]} 
-          onSave={(data) => handleSave('equipment', data)} 
+      case 'services-equipment':
+        return <ServicesEquipmentForm 
+          content={currentContent?.content as ServicesEquipmentContent} 
+          onSave={(data) => handleSave('services-equipment', data)} 
           saving={saving}
         />;
       case 'about':
@@ -202,7 +199,9 @@ function HeroForm({ content, onSave, saving }: {
     description: content?.description || '',
     buttonText: content?.buttonText || 'İletişime Geçin',
     buttonLink: content?.buttonLink || '#contact',
-    backgroundVideo: content?.backgroundVideo || '',
+    backgroundVideo: content?.selectedVideo || content?.backgroundVideo || '',
+    selectedVideo: content?.selectedVideo || content?.backgroundVideo || '',
+    availableVideos: content?.availableVideos || [],
     backgroundImage: content?.backgroundImage || '',
     rotatingTexts: content?.rotatingTexts || [],
   });
@@ -283,15 +282,39 @@ function HeroForm({ content, onSave, saving }: {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Arkaplan Video URL
+          Arkaplan Video
         </label>
-        <input
-          type="text"
-          value={formData.backgroundVideo}
-          onChange={(e) => setFormData({ ...formData, backgroundVideo: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-          placeholder="/videos/hero-background.mp4"
+        <VideoSelector
+          selectedVideo={formData.selectedVideo || formData.backgroundVideo}
+          availableVideos={formData.availableVideos || []}
+          onVideoSelect={(videoUrl, videoList) => {
+            setFormData({ 
+              ...formData, 
+              selectedVideo: videoUrl,
+              backgroundVideo: videoUrl, // Backward compatibility
+              availableVideos: videoList || formData.availableVideos || []
+            });
+          }}
         />
+        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700">
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+            Veya Manuel URL Girin
+          </label>
+          <input
+            type="text"
+            value={formData.selectedVideo || formData.backgroundVideo || ''}
+            onChange={(e) => {
+              const url = e.target.value;
+              setFormData({ 
+                ...formData, 
+                selectedVideo: url,
+                backgroundVideo: url // Backward compatibility
+              });
+            }}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
+            placeholder="http://example.com/video.mp4 veya /videos/hero-background.mp4"
+          />
+        </div>
       </div>
 
       <button
@@ -417,6 +440,490 @@ function ServicesForm({ content, onSave, saving }: {
         {saving ? 'Kaydediliyor...' : 'Kaydet'}
       </button>
     </form>
+  );
+}
+
+// Services & Equipment Combined Form Bileşeni
+function ServicesEquipmentForm({ content, onSave, saving }: { 
+  content?: ServicesEquipmentContent; 
+  onSave: (data: ServicesEquipmentContent) => void; 
+  saving: boolean;
+}) {
+  const [formData, setFormData] = useState<ServicesEquipmentContent>(content || {
+    title: 'Hizmetlerimiz & Ekipmanlarımız',
+    subtitle: 'Etkinlikleriniz için profesyonel çözümler ve son teknoloji ekipmanlar',
+    services: [
+      { title: 'Görüntü Rejisi', description: '', icon: 'video', order: 0 },
+      { title: 'Medya Server Sistemleri', description: '', icon: 'screen', order: 1 },
+      { title: 'LED Ekran Yönetimi', description: '', icon: 'led', order: 2 },
+    ],
+    equipment: [
+      {
+        title: 'Görüntü Rejisi Sistemleri',
+        items: [
+          { name: 'Analog Way Aquilon RS4', description: '4K/8K çözünürlük desteği ile görüntü işleme' },
+          { name: 'Barco E2 Gen 2', description: 'Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış' },
+        ],
+        order: 0,
+      },
+    ],
+    order: 0,
+  });
+
+  const [images, setImages] = useState<SiteImage[]>([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [imageModalType, setImageModalType] = useState<'background' | 'service' | 'equipment' | 'equipmentItem' | null>(null);
+  const [selectedServiceIndex, setSelectedServiceIndex] = useState<number | null>(null);
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState<number | null>(null);
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (showImageModal) {
+      fetchImages();
+    }
+  }, [showImageModal]);
+
+  const fetchImages = async () => {
+    try {
+      const response = await getAllImages({ category: 'general' });
+      setImages(response.images || []);
+    } catch (error) {
+      logger.error('Resim yükleme hatası:', error);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const updateField = (field: keyof ServicesEquipmentContent, value: any) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  // Services functions
+  const addService = () => {
+    setFormData({
+      ...formData,
+      services: [...formData.services, { title: '', description: '', icon: 'video', order: formData.services.length }],
+    });
+  };
+
+  const removeService = (index: number) => {
+    setFormData({
+      ...formData,
+      services: formData.services.filter((_, i) => i !== index).map((s, i) => ({ ...s, order: i })),
+    });
+  };
+
+  const updateService = (index: number, field: keyof ServiceItem, value: any) => {
+    const updated = [...formData.services];
+    updated[index] = { ...updated[index], [field]: value };
+    setFormData({ ...formData, services: updated });
+  };
+
+  // Equipment functions
+  const addCategory = () => {
+    setFormData({
+      ...formData,
+      equipment: [...formData.equipment, { title: '', items: [], order: formData.equipment.length }],
+    });
+  };
+
+  const removeCategory = (index: number) => {
+    setFormData({
+      ...formData,
+      equipment: formData.equipment.filter((_, i) => i !== index).map((c, i) => ({ ...c, order: i })),
+    });
+  };
+
+  const updateCategory = (index: number, field: keyof EquipmentCategory, value: any) => {
+    const updated = [...formData.equipment];
+    updated[index] = { ...updated[index], [field]: value };
+    setFormData({ ...formData, equipment: updated });
+  };
+
+  const addEquipmentItem = (categoryIndex: number) => {
+    const updated = [...formData.equipment];
+    updated[categoryIndex].items.push({ name: '', description: '' });
+    setFormData({ ...formData, equipment: updated });
+  };
+
+  const removeEquipmentItem = (categoryIndex: number, itemIndex: number) => {
+    const updated = [...formData.equipment];
+    updated[categoryIndex].items = updated[categoryIndex].items.filter((_, i) => i !== itemIndex);
+    setFormData({ ...formData, equipment: updated });
+  };
+
+  const updateEquipmentItem = (categoryIndex: number, itemIndex: number, field: string, value: string) => {
+    const updated = [...formData.equipment];
+    updated[categoryIndex].items[itemIndex] = { ...updated[categoryIndex].items[itemIndex], [field]: value };
+    setFormData({ ...formData, equipment: updated });
+  };
+
+  const handleImageSelect = (imageId: string) => {
+    if (imageModalType === 'background') {
+      updateField('backgroundImage', imageId);
+    } else if (imageModalType === 'service' && selectedServiceIndex !== null) {
+      updateService(selectedServiceIndex, 'image', imageId);
+    } else if (imageModalType === 'equipment' && selectedCategoryIndex !== null) {
+      updateCategory(selectedCategoryIndex, 'image', imageId);
+    } else if (imageModalType === 'equipmentItem' && selectedCategoryIndex !== null && selectedItemIndex !== null) {
+      updateEquipmentItem(selectedCategoryIndex, selectedItemIndex, 'image', imageId);
+    }
+    setShowImageModal(false);
+    setImageModalType(null);
+    setSelectedServiceIndex(null);
+    setSelectedCategoryIndex(null);
+    setSelectedItemIndex(null);
+  };
+
+  const openImageModal = (type: 'background' | 'service' | 'equipment' | 'equipmentItem', serviceIndex?: number, categoryIndex?: number, itemIndex?: number) => {
+    setImageModalType(type);
+    setSelectedServiceIndex(serviceIndex ?? null);
+    setSelectedCategoryIndex(categoryIndex ?? null);
+    setSelectedItemIndex(itemIndex ?? null);
+    setShowImageModal(true);
+  };
+
+  return (
+    <>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Bölüm Başlığı
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => updateField('title', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+              placeholder="Bölüm başlığı"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Alt Başlık
+            </label>
+            <input
+              type="text"
+              value={formData.subtitle}
+              onChange={(e) => updateField('subtitle', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+              placeholder="Alt başlık"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Arka Plan Görseli
+            </label>
+            <div className="flex gap-2">
+              {formData.backgroundImage && (
+                <div className="relative w-24 h-24 rounded border border-gray-300 dark:border-gray-600 overflow-hidden">
+                  <LazyImage
+                    src={getImageUrl(formData.backgroundImage)}
+                    alt="Background"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => openImageModal('background')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+              >
+                {formData.backgroundImage ? 'Değiştir' : 'Görsel Seç'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Services Section */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Hizmetler</h3>
+            <button
+              type="button"
+              onClick={addService}
+              className="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+            >
+              + Hizmet Ekle
+            </button>
+          </div>
+
+          {formData.services.map((service, index) => (
+            <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3 mb-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium text-gray-900 dark:text-white">Hizmet {index + 1}</h4>
+                {formData.services.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeService(index)}
+                    className="text-red-600 hover:text-red-700 text-sm"
+                  >
+                    Sil
+                  </button>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Başlık
+                </label>
+                <input
+                  type="text"
+                  value={service.title}
+                  onChange={(e) => updateService(index, 'title', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="Hizmet başlığı"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Açıklama
+                </label>
+                <textarea
+                  value={service.description}
+                  onChange={(e) => updateService(index, 'description', e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="Hizmet açıklaması"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  İkon
+                </label>
+                <select
+                  value={service.icon}
+                  onChange={(e) => updateService(index, 'icon', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                >
+                  <option value="video">Video</option>
+                  <option value="screen">Ekran</option>
+                  <option value="led">LED</option>
+                  <option value="audio">Ses</option>
+                  <option value="camera">Kamera</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Görsel
+                </label>
+                <div className="flex gap-2">
+                  {(service as any).image && (
+                    <div className="relative w-24 h-24 rounded border border-gray-300 dark:border-gray-600 overflow-hidden">
+                      <LazyImage
+                        src={getImageUrl((service as any).image)}
+                        alt={service.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openImageModal('service', index)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                  >
+                    {(service as any).image ? 'Değiştir' : 'Görsel Seç'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Equipment Section */}
+        <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Ekipmanlar</h3>
+            <button
+              type="button"
+              onClick={addCategory}
+              className="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+            >
+              + Kategori Ekle
+            </button>
+          </div>
+
+          {formData.equipment.map((category, catIndex) => (
+            <div key={catIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3 mb-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium text-gray-900 dark:text-white">Kategori {catIndex + 1}</h4>
+                {formData.equipment.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeCategory(catIndex)}
+                    className="text-red-600 hover:text-red-700 text-sm"
+                  >
+                    Sil
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Kategori Başlığı
+                </label>
+                <input
+                  type="text"
+                  value={category.title}
+                  onChange={(e) => updateCategory(catIndex, 'title', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                  placeholder="Kategori adı"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Kategori Görseli
+                </label>
+                <div className="flex gap-2">
+                  {category.image && (
+                    <div className="relative w-24 h-24 rounded border border-gray-300 dark:border-gray-600 overflow-hidden">
+                      <LazyImage
+                        src={getImageUrl(category.image)}
+                        alt={category.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => openImageModal('equipment', undefined, catIndex)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                  >
+                    {category.image ? 'Değiştir' : 'Görsel Seç'}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Ekipmanlar
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => addEquipmentItem(catIndex)}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    + Ekipman Ekle
+                  </button>
+                </div>
+                {category.items.map((item, itemIndex) => (
+                  <div key={itemIndex} className="mb-3 p-3 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ekipman {itemIndex + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeEquipmentItem(catIndex, itemIndex)}
+                        className="text-xs text-red-600 hover:text-red-700"
+                      >
+                        Sil
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={item.name}
+                      onChange={(e) => updateEquipmentItem(catIndex, itemIndex, 'name', e.target.value)}
+                      className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                      placeholder="Ekipman adı"
+                    />
+                    <input
+                      type="text"
+                      value={item.description}
+                      onChange={(e) => updateEquipmentItem(catIndex, itemIndex, 'description', e.target.value)}
+                      className="w-full mb-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                      placeholder="Açıklama"
+                    />
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Ekipman Görseli
+                      </label>
+                      <div className="flex gap-2">
+                        {item.image && (
+                          <div className="relative w-20 h-20 rounded border border-gray-300 dark:border-gray-600 overflow-hidden">
+                            <LazyImage
+                              src={getImageUrl(item.image)}
+                              alt={item.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => openImageModal('equipmentItem', undefined, catIndex, itemIndex)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs"
+                        >
+                          {item.image ? 'Değiştir' : 'Görsel Seç'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full px-4 py-2 bg-[#0066CC] dark:bg-primary-light text-white rounded-md hover:bg-[#0055AA] dark:hover:bg-primary transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Kaydediliyor...' : 'Kaydet'}
+        </button>
+      </form>
+
+      {/* Image Selection Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Görsel Seç</h3>
+                <button
+                  onClick={() => {
+                    setShowImageModal(false);
+                    setImageModalType(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {images.map((image) => (
+                  <div
+                    key={image._id}
+                    onClick={() => handleImageSelect(image._id)}
+                    className="relative aspect-square rounded border-2 border-gray-300 dark:border-gray-600 overflow-hidden cursor-pointer hover:border-blue-500 transition-colors"
+                  >
+                    <LazyImage
+                      src={getImageUrl(image._id)}
+                      alt={image.filename || 'Image'}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -571,6 +1078,642 @@ function EquipmentForm({ content, onSave, saving }: {
   );
 }
 
+// Video Thumbnail Component - Video'dan frame çekerek thumbnail oluştur
+const VideoThumbnail = ({ 
+  video, 
+  videoUrl, 
+  baseUrl, 
+  isSelected, 
+  onSelect,
+  onDelete
+}: { 
+  video: SiteImage; 
+  videoUrl: string; 
+  baseUrl: string; 
+  isSelected: boolean; 
+  onSelect: () => void;
+  onDelete?: () => void;
+}) => {
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const generateThumbnail = () => {
+      const videoEl = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      if (!videoEl || !canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const handleLoadedMetadata = () => {
+        try {
+          // Video'nun ilk frame'ini çek (1. saniye)
+          videoEl.currentTime = 1;
+        } catch (err) {
+          logger.error('Video metadata yükleme hatası:', err);
+          setLoading(false);
+        }
+      };
+
+      const handleSeeked = () => {
+        try {
+          // Canvas boyutlarını video boyutlarına ayarla
+          canvas.width = videoEl.videoWidth || 320;
+          canvas.height = videoEl.videoHeight || 180;
+          
+          // Video frame'ini canvas'a çiz
+          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+          
+          // Canvas'ı data URL'e çevir
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setThumbnail(dataUrl);
+          setLoading(false);
+        } catch (err) {
+          logger.error('Thumbnail oluşturma hatası:', err);
+          setLoading(false);
+        }
+      };
+
+      videoEl.addEventListener('loadedmetadata', handleLoadedMetadata);
+      videoEl.addEventListener('seeked', handleSeeked);
+
+      return () => {
+        videoEl.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoEl.removeEventListener('seeked', handleSeeked);
+      };
+    };
+
+    generateThumbnail();
+  }, [videoUrl]);
+
+  return (
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect();
+      }}
+      className={`
+        relative group cursor-pointer rounded-xl overflow-hidden border-2 transition-all modern-card
+        ${isSelected 
+          ? 'border-[#0066CC] dark:border-primary-light shadow-xl scale-105 ring-2 ring-[#0066CC] dark:ring-primary-light' 
+          : 'border-gray-200 dark:border-gray-700 hover:border-[#0066CC]/50 dark:hover:border-primary-light/50 hover:shadow-lg'
+        }
+      `}
+    >
+      {/* Thumbnail veya Loading */}
+      <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
+        {loading ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-center">
+              <svg className="animate-spin h-8 w-8 text-[#0066CC] dark:text-primary-light mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Yükleniyor...</p>
+            </div>
+          </div>
+        ) : thumbnail ? (
+          <img 
+            src={thumbnail} 
+            alt={video.originalName || video.filename}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+            <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <p className="text-xs">Önizleme yok</p>
+          </div>
+        )}
+        
+        {/* Video element (gizli, sadece thumbnail için) */}
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          className="hidden"
+          preload="metadata"
+          muted
+          playsInline
+          crossOrigin="anonymous"
+          onError={() => {
+            setLoading(false);
+          }}
+        />
+        <canvas ref={canvasRef} className="hidden" />
+        
+        {/* Play icon overlay */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
+          <div className="w-14 h-14 rounded-full bg-white/95 dark:bg-gray-800/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+            <svg className="w-8 h-8 text-[#0066CC] dark:text-primary-light ml-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+        
+        {/* Sil butonu */}
+        {onDelete && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onDelete();
+            }}
+            className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity shadow-lg z-10"
+          >
+            Sil
+          </button>
+        )}
+        
+        {/* Seçili badge */}
+        {isSelected && (
+          <div className="absolute top-2 right-2 bg-gradient-to-r from-[#0066CC] to-[#00C49F] dark:from-primary-light dark:to-primary text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg z-10">
+            ✓ Seçili
+          </div>
+        )}
+      </div>
+      
+      {/* Video bilgisi */}
+      <div className="p-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
+        <p className="text-xs font-semibold text-gray-900 dark:text-white truncate mb-1">
+          {video.originalName || video.filename}
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Video
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// Video Selector Bileşeni
+function VideoSelector({
+  selectedVideo,
+  availableVideos = [],
+  onVideoSelect
+}: {
+  selectedVideo?: string;
+  availableVideos?: Array<{ url: string; filename: string; uploadedAt?: string }>;
+  onVideoSelect: (videoUrl: string, videoList?: Array<{ url: string; filename: string; uploadedAt?: string }>) => void;
+}) {
+  const [videos, setVideos] = useState<SiteImage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+  // baseUrl'i doğru oluştur - http://localhost:5001 formatında olmalı
+  let baseUrl = '';
+  if (API_URL.includes('://')) {
+    // http:// veya https:// içeriyorsa
+    baseUrl = API_URL.replace(/\/api\/?$/, '');
+  } else {
+    // Sadece localhost:5001/api gibi bir format ise
+    baseUrl = API_URL.startsWith('localhost') ? `http://${API_URL.replace(/\/api\/?$/, '')}` : API_URL.replace(/\/api\/?$/, '');
+  }
+
+  // Sayfa yüklendiğinde videoları çek
+  useEffect(() => {
+    fetchVideos();
+  }, []);
+
+  const fetchVideos = async () => {
+    try {
+      setLoading(true);
+      // Veritabanından video kategorisindeki tüm aktif videoları çek
+      const response = await getAllImages({ category: 'video', isActive: true });
+      setVideos(response.images || []);
+      
+      // availableVideos'u da güncelle (backward compatibility)
+      const videoList = (response.images || []).map(img => {
+        // URL'yi düzelt - hem /uploads/general/ hem de /uploads/videos/ destekle
+        let videoUrl = img.url || '';
+        if (!videoUrl.startsWith('http')) {
+          if (videoUrl.startsWith('/uploads/')) {
+            videoUrl = `${baseUrl}${videoUrl}`;
+          } else if (videoUrl.startsWith('/')) {
+            videoUrl = `${baseUrl}${videoUrl}`;
+          } else {
+            // Path formatı: "general/filename.mp4" veya "videos/filename.mp4"
+            videoUrl = `${baseUrl}/uploads/${videoUrl}`;
+          }
+        }
+        return {
+          url: videoUrl,
+          filename: img.filename,
+          uploadedAt: img.createdAt
+        };
+      });
+      onVideoSelect(selectedVideo || '', videoList);
+    } catch (error) {
+      logger.error('Video yükleme hatası:', error);
+      toast.error('Videolar yüklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.type.startsWith('video/') && file.size <= 100 * 1024 * 1024) {
+      setSelectedFile(file);
+    } else {
+      toast.error('Geçersiz dosya. Sadece video dosyaları (max 100MB) yüklenebilir.');
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('type', 'videos');
+
+      const uploadResponse = await fetch(`${API_URL}/upload/single`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken')}`,
+        },
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) throw new Error('Dosya yükleme başarısız');
+
+      const uploadData = await uploadResponse.json();
+      
+      if (!uploadData.success || !uploadData.file) {
+        throw new Error('Dosya yükleme başarısız');
+      }
+
+      // URL formatını kontrol et ve düzelt
+      let videoUrl = uploadData.file.url;
+      if (!videoUrl.startsWith('http')) {
+        // Relative URL ise baseUrl ile birleştir
+        if (videoUrl.startsWith('/uploads/')) {
+          videoUrl = `${baseUrl}${videoUrl}`;
+        } else if (videoUrl.startsWith('/')) {
+          videoUrl = `${baseUrl}${videoUrl}`;
+        } else {
+          videoUrl = `${baseUrl}/uploads/${videoUrl}`;
+        }
+      }
+      
+      // Video path'ini düzelt (DB'ye kaydetmek için)
+      // Path formatı: "videos/filename.mp4" (type: 'videos' olduğu için)
+      const imagePath = uploadData.file.url.replace(/^\/uploads\//, '');
+      
+      // Veritabanına video olarak kaydet
+      const newVideoImage = await createImage({
+        filename: uploadData.file.filename,
+        originalName: uploadData.file.originalname,
+        path: imagePath,
+        url: uploadData.file.url,
+        category: 'video',
+        order: videos.length,
+        isActive: true,
+      });
+      
+      // Yeni videoyu havuza ekle ve otomatik olarak seç
+      const updatedVideos = [...videos, newVideoImage];
+      setVideos(updatedVideos);
+      
+      // availableVideos formatına çevir - URL'leri düzelt
+      const videoList = updatedVideos.map(img => {
+        let imgUrl = img.url || '';
+        if (!imgUrl.startsWith('http')) {
+          if (imgUrl.startsWith('/uploads/')) {
+            imgUrl = `${baseUrl}${imgUrl}`;
+          } else if (imgUrl.startsWith('/')) {
+            imgUrl = `${baseUrl}${imgUrl}`;
+          } else {
+            imgUrl = `${baseUrl}/uploads/${imgUrl}`;
+          }
+        }
+        return {
+          url: imgUrl,
+          filename: img.filename,
+          uploadedAt: img.createdAt
+        };
+      });
+      
+      // Veritabanına kaydetmek için video ID kullan
+      const videoIdForDb = newVideoImage._id || newVideoImage.id || '';
+      onVideoSelect(videoIdForDb, videoList); // Video ID'yi kaydet
+      
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      toast.success('Video başarıyla yüklendi ve otomatik olarak seçildi');
+    } catch (error: any) {
+      toast.error(error.message || 'Video yüklenirken bir hata oluştu');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (video: SiteImage) => {
+    if (!confirm('Bu videoyu silmek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    try {
+      const videoId = video._id || video.id;
+      if (!videoId) {
+        throw new Error('Video ID bulunamadı');
+      }
+
+      // Veritabanından sil (bu aynı zamanda fiziksel dosyayı da siler)
+      await deleteImage(videoId);
+
+      // Videoyu havuzdan çıkar
+      const updatedVideos = videos.filter(v => (v._id || v.id) !== videoId);
+      setVideos(updatedVideos);
+      
+      // Video URL'ini oluştur - hem /uploads/general/ hem de /uploads/videos/ destekle
+      let videoUrl = video.url || '';
+      if (!videoUrl.startsWith('http')) {
+        if (videoUrl.startsWith('/uploads/')) {
+          videoUrl = `${baseUrl}${videoUrl}`;
+        } else if (videoUrl.startsWith('/')) {
+          videoUrl = `${baseUrl}${videoUrl}`;
+        } else {
+          videoUrl = `${baseUrl}/uploads/${videoUrl}`;
+        }
+      }
+      
+      // Video listesini oluştur
+      const createVideoList = (videos: SiteImage[]) => {
+        return videos.map(img => {
+          let imgUrl = img.url || '';
+          if (!imgUrl.startsWith('http')) {
+            if (imgUrl.startsWith('/uploads/')) {
+              imgUrl = `${baseUrl}${imgUrl}`;
+            } else if (imgUrl.startsWith('/')) {
+              imgUrl = `${baseUrl}${imgUrl}`;
+            } else {
+              imgUrl = `${baseUrl}/uploads/${imgUrl}`;
+            }
+          }
+          return {
+            url: imgUrl,
+            filename: img.filename,
+            uploadedAt: img.createdAt
+          };
+        });
+      };
+      
+      // Eğer silinen video seçiliyse, seçimi kaldır
+      // selectedVideo artık video ID olabilir, videoUrl ile karşılaştır
+      if (selectedVideo === videoId || selectedVideo === videoUrl) {
+        onVideoSelect('', createVideoList(updatedVideos));
+      } else {
+        // Sadece video listesini güncelle
+        onVideoSelect(selectedVideo || '', createVideoList(updatedVideos));
+      }
+      
+      toast.success('Video başarıyla silindi');
+    } catch (error: any) {
+      toast.error(error.message || 'Video silinirken bir hata oluştu');
+    }
+  };
+
+  // Sayfa yüklendiğinde videoları çek
+  useEffect(() => {
+    fetchVideos();
+  }, []);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      {/* Başlık ve Seçili Video */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Arkaplan Video Yönetimi</h3>
+          {selectedVideo && (
+            <span className="px-2 py-1 text-xs font-medium bg-[#0066CC] dark:bg-primary-light text-white rounded-full">
+              Aktif
+            </span>
+          )}
+        </div>
+        
+        {/* Seçili Video Önizleme - Büyük Thumbnail */}
+        {selectedVideo ? (() => {
+          const selectedVideoObj = videos.find(v => {
+            const videoId = v._id || v.id || '';
+            const videoUrl = v.url.startsWith('http') 
+              ? v.url 
+              : `${baseUrl}${v.url.startsWith('/') ? '' : '/'}${v.url}`;
+            return selectedVideo === videoId || selectedVideo === videoUrl || selectedVideo.includes(v.url);
+          });
+          
+          const previewUrl = selectedVideo.startsWith('http') 
+            ? selectedVideo 
+            : selectedVideoObj?.url?.startsWith('http')
+              ? selectedVideoObj.url
+              : `${baseUrl}${selectedVideo.startsWith('/') ? '' : '/'}${selectedVideo}`;
+          
+          return (
+            <div className="bg-white dark:bg-gray-900 rounded-xl border-2 border-[#0066CC] dark:border-primary-light shadow-lg overflow-hidden">
+              <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">
+                <video
+                  src={previewUrl}
+                  className="w-full h-full object-cover"
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  onError={(e) => {
+                    logger.error('Video önizleme hatası:', previewUrl, e);
+                    const target = e.target as HTMLVideoElement;
+                    target.style.display = 'none';
+                  }}
+                  onLoadedMetadata={(e) => {
+                    const target = e.target as HTMLVideoElement;
+                    target.currentTime = 1;
+                  }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div className="w-16 h-16 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center shadow-lg">
+                    <svg className="w-8 h-8 text-[#0066CC] dark:text-primary-light ml-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div className="absolute top-3 right-3 bg-[#0066CC] dark:bg-primary-light text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg">
+                  ✓ Seçili Video
+                </div>
+              </div>
+              <div className="p-4">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate mb-1">
+                  {selectedVideoObj?.originalName || selectedVideoObj?.filename || selectedVideo.split('/').pop() || 'Video'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const videoList = videos.map(img => {
+                      const url = img.url.startsWith('http') 
+                        ? img.url 
+                        : `${baseUrl}${img.url.startsWith('/') ? '' : '/'}${img.url}`;
+                      return {
+                        url,
+                        filename: img.filename,
+                        uploadedAt: img.createdAt
+                      };
+                    });
+                    onVideoSelect('', videoList);
+                  }}
+                  className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium"
+                >
+                  Seçimi Kaldır
+                </button>
+              </div>
+            </div>
+          );
+        })() : (
+          <div className="p-8 text-center bg-gray-50 dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600">
+            <svg className="mx-auto h-16 w-16 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Henüz video seçilmedi</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Aşağıdan bir video seçin veya yeni video yükleyin</p>
+          </div>
+        )}
+      </div>
+
+      {/* Video Yükleme - Kompakt */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*"
+            onChange={handleFileSelect}
+            className="flex-1 text-sm text-gray-500 dark:text-gray-400
+              file:mr-3 file:py-2 file:px-4
+              file:rounded-md file:border-0
+              file:text-sm file:font-medium
+              file:bg-[#0066CC] dark:file:bg-primary-light file:text-white
+              hover:file:bg-[#0055AA] dark:hover:file:bg-primary
+              file:cursor-pointer"
+          />
+          {selectedFile && (
+            <>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+              </span>
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={uploading}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {uploading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Yükleniyor...
+                  </span>
+                ) : (
+                  'Yükle'
+                )}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Video Havuzu */}
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Video Havuzu</h4>
+          {videos.length > 0 && (
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {videos.length} video
+            </span>
+          )}
+        </div>
+        
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <svg className="animate-spin h-8 w-8 text-[#0066CC] dark:text-primary-light" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        ) : videos.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto p-2">
+            {videos.map((video) => {
+              const videoUrl = video.url.startsWith('http') 
+                ? video.url 
+                : `${baseUrl}${video.url.startsWith('/') ? '' : '/'}${video.url}`;
+              
+              // Seçili video kontrolü - hem tam URL hem de dosya adına göre
+              const videoFilename = video.url.split('/').pop() || '';
+              const selectedFilename = selectedVideo?.split('/').pop() || '';
+              const videoId = video._id || video.id || '';
+              const isSelected: boolean = Boolean(
+                selectedVideo === videoUrl 
+                || selectedVideo === videoId
+                || (selectedVideo && typeof selectedVideo === 'string' && selectedVideo.includes(videoFilename))
+                || (selectedVideo && typeof selectedVideo === 'string' && selectedVideo.includes(video.url))
+                || (selectedFilename && selectedFilename === videoFilename)
+              );
+              
+              return (
+                <VideoThumbnail
+                  key={video._id || video.id}
+                  video={video}
+                  videoUrl={videoUrl}
+                  baseUrl={baseUrl}
+                  isSelected={isSelected}
+                  onSelect={() => {
+                    // Veritabanına kaydetmek için video ID kullan (en güvenilir yöntem)
+                    const videoId = video._id || video.id || '';
+                    const videoList = videos.map(img => {
+                      const url = img.url.startsWith('http') 
+                        ? img.url 
+                        : `${baseUrl}${img.url.startsWith('/') ? '' : '/'}${img.url}`;
+                      return {
+                        url,
+                        filename: img.filename,
+                        uploadedAt: img.createdAt
+                      };
+                    });
+                    logger.debug('Video seçiliyor:', videoId, 'Seçili video:', selectedVideo);
+                    onVideoSelect(videoId, videoList); // Video ID'yi kaydet
+                    toast.success('Video seçildi. Değişiklikleri kaydetmek için "Kaydet" butonuna tıklayın.');
+                  }}
+                  onDelete={() => handleDelete(video)}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Henüz video yüklenmedi</p>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Yukarıdan video yükleyerek başlayın</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // About Image Selector Bileşeni
 function AboutImageSelector({ 
   selectedImageId, 
@@ -598,7 +1741,7 @@ function AboutImageSelector({
       const response = await getAllImages({ category: 'about' });
       setImages(response.images || []);
     } catch (error) {
-      console.error('Resim yükleme hatası:', error);
+      logger.error('Resim yükleme hatası:', error);
     } finally {
       setLoading(false);
     }
@@ -670,7 +1813,6 @@ function AboutImageSelector({
       }
       fetchImages();
     } catch (error: any) {
-      console.error('Yükleme hatası:', error);
       toast.error(error.message || 'Resim yüklenirken bir hata oluştu');
     } finally {
       setUploading(false);
@@ -678,8 +1820,6 @@ function AboutImageSelector({
   };
 
   const selectedImage = images.find(img => (img._id || img.id) === selectedImageId);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-  const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
 
   return (
     <div>
@@ -688,28 +1828,43 @@ function AboutImageSelector({
       </label>
       
       {selectedImage ? (
-        <div className="mb-3 p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center gap-3">
-            <img
-              src={`${baseUrl}/api/site-images/public/${selectedImageId}/image`}
+        <div className="mb-4 p-4 border-2 border-[#0066CC] dark:border-primary-light rounded-xl bg-white dark:bg-gray-900 shadow-lg">
+          <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-3">
+            <LazyImage
+              src={getImageUrl({ imageId: selectedImageId, fallback: '' })}
               alt={selectedImage.originalName}
-              className="w-20 h-20 object-cover rounded"
+              fill
+              objectFit="cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              quality={85}
             />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedImage.originalName}</p>
-              <button
-                type="button"
-                onClick={() => onImageSelect('')}
-                className="text-xs text-red-600 hover:text-red-700 mt-1"
-              >
-                Seçimi Kaldır
-              </button>
+            <div className="absolute top-2 right-2 bg-[#0066CC] dark:bg-primary-light text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg">
+              ✓ Seçili
             </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{selectedImage.originalName}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {selectedImage.category || 'Görsel'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => onImageSelect('')}
+              className="ml-3 px-3 py-1.5 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium bg-red-50 dark:bg-red-900/20 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            >
+              Kaldır
+            </button>
           </div>
         </div>
       ) : (
-        <div className="mb-3 p-3 border border-dashed border-gray-300 dark:border-gray-600 rounded-md text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Henüz görsel seçilmedi</p>
+        <div className="mb-4 p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-center bg-gray-50 dark:bg-gray-900">
+          <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Henüz görsel seçilmedi</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Aşağıdan bir görsel seçin veya yeni görsel yükleyin</p>
         </div>
       )}
 
@@ -775,7 +1930,7 @@ function AboutImageSelector({
                     </svg>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto p-2">
                     {images.map((image) => {
                       const imageId = image._id || image.id || '';
                       const isSelected = selectedImageId === imageId;
@@ -786,26 +1941,55 @@ function AboutImageSelector({
                             onImageSelect(imageId);
                             setShowModal(false);
                           }}
-                          className={`cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
+                          className={`cursor-pointer border-2 rounded-xl overflow-hidden transition-all modern-card group ${
                             isSelected
-                              ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light'
-                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                              ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light shadow-lg scale-105'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-[#0066CC]/50 dark:hover:border-primary-light/50 hover:shadow-md'
                           }`}
                         >
-                          <img
-                            src={`${baseUrl}/api/site-images/public/${imageId}/image`}
-                            alt={image.originalName}
-                            className="w-full h-24 object-cover"
-                          />
-                          <p className="p-2 text-xs text-gray-600 dark:text-gray-400 truncate">
-                            {image.originalName}
-                          </p>
+                          <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">
+                            <LazyImage
+                              src={getImageUrl({ imageId, fallback: '' })}
+                              alt={image.originalName}
+                              fill
+                              objectFit="cover"
+                              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                              quality={80}
+                            />
+                            {isSelected && (
+                              <div className="absolute top-2 right-2 bg-[#0066CC] dark:bg-primary-light text-white text-xs px-2 py-1 rounded-full font-semibold shadow-lg">
+                                ✓
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="w-10 h-10 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center shadow-lg">
+                                  <svg className="w-5 h-5 text-[#0066CC] dark:text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="p-2 bg-white dark:bg-gray-800">
+                            <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                              {image.originalName}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {image.category || 'Görsel'}
+                            </p>
+                          </div>
                         </div>
                       );
                     })}
                     {images.length === 0 && (
-                      <div className="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
-                        Henüz görsel yüklenmemiş
+                      <div className="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
+                        <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p className="font-medium">Henüz görsel yüklenmemiş</p>
+                        <p className="text-sm mt-1">Yukarıdan görsel yükleyerek başlayın</p>
                       </div>
                     )}
                   </div>

@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { updateEquipment } from '@/services/equipmentService';
+import { updateEquipment, getEquipmentById } from '@/services/equipmentService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Ekipman türü tanımlama
 interface Equipment {
@@ -167,54 +169,61 @@ export default function EditEquipment() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Type'dan category'ye mapping - Backend enum değerlerini frontend category'ye çevir
+  const typeToCategoryMap: Record<string, string> = {
+    'VIDEO_SWITCHER': 'VideoSwitcher',
+    'MEDIA_SERVER': 'MediaServer',
+    'MONITOR': 'Display',
+    'CABLE': 'Cable',
+    'AUDIO_EQUIPMENT': 'Audio',
+    'OTHER': 'Accessory'
+  };
+  
+  // Status mapping - Backend'den frontend'e
+  const statusMap: Record<string, string> = {
+    'AVAILABLE': 'Available',
+    'IN_USE': 'InUse',
+    'MAINTENANCE': 'Maintenance',
+    'DAMAGED': 'Broken'
+  };
+  
   // Ekipman verisini yükle
   useEffect(() => {
     const fetchEquipment = async () => {
       setLoading(true);
       
       try {
-        // Gerçek uygulamada API çağrısı yapılacak
-        // const response = await fetch(`/api/admin/equipment/${equipmentId}`);
-        // if (!response.ok) throw new Error('Ekipman verisi alınamadı');
-        // const data = await response.json();
+        const equipment = await getEquipmentById(equipmentId);
         
-        // Şimdilik örnek veriyi kullan
-        setTimeout(() => {
-          const equipment = sampleEquipment.find(item => item.id === equipmentId);
-          
-          if (equipment) {
-            // Specs object'ini array'e dönüştür
-            const specsArray = Object.entries(equipment.specs).map(([key, value]) => ({
-              key,
-              value
-            }));
-            
-            // FormData'yı doldur
-            setFormData({
-              name: equipment.name,
-              model: equipment.model,
-              serialNumber: equipment.serialNumber,
-              category: equipment.category,
-              status: equipment.status,
-              purchaseDate: equipment.purchaseDate || '',
-              lastMaintenanceDate: equipment.lastMaintenanceDate || '',
-              nextMaintenanceDate: equipment.nextMaintenanceDate || '',
-              currentProject: equipment.currentProject || '',
-              assignedTo: equipment.assignedTo || '',
-              location: equipment.location,
-              specs: specsArray.length > 0 ? specsArray : [{ key: '', value: '' }],
-              notes: equipment.notes || ''
-            });
-            
-            setLoading(false);
-          } else {
-            setError('Ekipman bulunamadı');
-            setLoading(false);
-          }
-        }, 500);
+        // Backend'den gelen type'ı category'ye çevir
+        const category = equipment.type ? (typeToCategoryMap[equipment.type] || 'Accessory') : '';
+        const status = equipment.status ? (statusMap[equipment.status] || 'Available') : 'Available';
         
+        // Specs varsa object'ten array'e çevir, yoksa boş array
+        const specsArray = equipment.specs && typeof equipment.specs === 'object' 
+          ? Object.entries(equipment.specs).map(([key, value]) => ({ key, value: String(value) }))
+          : [{ key: '', value: '' }];
+        
+        // FormData'yı doldur
+        setFormData({
+          name: equipment.name || '',
+          model: equipment.model || '',
+          serialNumber: equipment.serialNumber || '',
+          category: category as any,
+          status: status as any,
+          purchaseDate: equipment.purchaseDate ? equipment.purchaseDate.split('T')[0] : '',
+          lastMaintenanceDate: '',
+          nextMaintenanceDate: '',
+          currentProject: '',
+          assignedTo: equipment.responsibleUser || '',
+          location: equipment.location || '',
+          specs: specsArray.length > 0 ? specsArray : [{ key: '', value: '' }],
+          notes: equipment.notes || ''
+        });
+        
+        setLoading(false);
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setError('Ekipman verisi yüklenirken bir hata oluştu');
         setLoading(false);
       }
@@ -322,10 +331,22 @@ export default function EditEquipment() {
           specsObject[spec.key] = spec.value;
         }
       });
+      // Category'den type'a mapping - Backend enum değerlerine çevir
+      const categoryToTypeMap: Record<string, string> = {
+        'VideoSwitcher': 'VIDEO_SWITCHER',
+        'MediaServer': 'MEDIA_SERVER',
+        'Camera': 'OTHER',
+        'Display': 'MONITOR',
+        'Audio': 'AUDIO_EQUIPMENT',
+        'Lighting': 'OTHER',
+        'Cable': 'CABLE',
+        'Accessory': 'OTHER'
+      };
+      
       // API isteği için ekipman verilerini hazırla - Backend formatına uygun
       const equipmentData: any = {
         name: formData.name,
-        type: formData.category || undefined, // Backend'de type olarak geçiyor
+        type: formData.category ? (categoryToTypeMap[formData.category] || 'OTHER') : undefined,
         model: formData.model,
         serialNumber: formData.serialNumber,
         status: (formData.status === 'Available' ? 'AVAILABLE' :
@@ -338,17 +359,21 @@ export default function EditEquipment() {
       };
       // Gerçek API çağrısı
       await updateEquipment(equipmentId, equipmentData as any);
+      toast.success('Ekipman başarıyla güncellendi');
       setSuccess(true);
       setSubmitting(false);
       setTimeout(() => {
         router.push(`/admin/equipment/view/${equipmentId}`);
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
+      logger.error('Ekipman güncelleme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Ekipman güncellenirken bir hata oluştu. Lütfen tekrar deneyiniz.';
       setSubmitting(false);
       setErrors(prev => ({
         ...prev,
-        general: 'Ekipman güncellenirken bir hata oluştu. Lütfen tekrar deneyiniz.'
+        general: errorMessage
       }));
+      toast.error(errorMessage);
     }
   };
 

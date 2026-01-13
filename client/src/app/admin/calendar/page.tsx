@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ProjectStatus } from '@/types/project';
+import logger from '@/utils/logger';
 
 // Proje arayüzü
 interface Project {
@@ -23,7 +24,7 @@ type CalendarCell = {
   day: number;
   isCurrentMonth: boolean;
   hasEvent: boolean;
-  events: any[];
+  events: Event[];
 };
 
 // Takvim satırı tipi
@@ -45,83 +46,13 @@ const statusNames: Record<ProjectStatus, string> = {
   'CANCELLED': 'İptal Edildi'
 };
 
-// Örnek proje verileri
-const sampleProjects: Project[] = [
-  {
-    id: '1',
-    name: 'Teknoloji Zirvesi 2023',
-    client: 'TechCon Group',
-    startDate: '2023-11-10',
-    endDate: '2023-11-12',
-    location: 'İstanbul Kongre Merkezi',
-    status: 'COMPLETED',
-    team: ['1', '2', '3', '4'],
-    equipment: ['1', '2', '3', '4', '5'],
-  },
-  {
-    id: '2',
-    name: 'Startup Haftası 2023',
-    client: 'X Teknoloji A.Ş.',
-    startDate: '2023-12-05',
-    endDate: '2023-12-07',
-    location: 'Lütfi Kırdar Kongre Merkezi',
-    status: 'COMPLETED',
-    team: ['2', '3', '5', '6'],
-    equipment: ['2', '3', '6'],
-  },
-  {
-    id: '3',
-    name: 'Dijital Pazarlama Konferansı',
-    client: 'Y İletişim',
-    startDate: '2024-02-15',
-    endDate: '2024-02-16',
-    location: 'Hilton Convention Center',
-    status: 'PLANNING',
-    team: ['1', '4', '7', '8'],
-    equipment: ['1', '3', '4', '7'],
-  },
-  {
-    id: '4',
-    name: 'Müzik Ödülleri 2024',
-    client: 'Z Organizasyon',
-    startDate: '2024-03-20',
-    endDate: '2024-03-20',
-    location: 'Volkswagen Arena',
-    status: 'PLANNING',
-    team: ['1', '2', '5', '6', '7', '9'],
-    equipment: ['1', '2', '3', '4', '5', '7', '8', '9'],
-  },
-  {
-    id: '5',
-    name: 'Kurumsal Ürün Lansmanı',
-    client: 'Mega Holding',
-    startDate: '2024-04-10',
-    endDate: '2024-04-10',
-    location: 'Four Seasons Hotel',
-    status: 'PLANNING',
-    team: ['3', '4', '8'],
-    equipment: ['2', '3', '5'],
-  },
-  {
-    id: '6',
-    name: 'Bilimsel Araştırma Paneli',
-    client: 'Eğitim Kurumu',
-    startDate: '2023-10-05',
-    endDate: '2023-10-07',
-    location: 'Üniversite Kampüsü',
-    status: 'CANCELLED',
-    team: ['2', '4'],
-    equipment: ['3', '6'],
-  },
-];
-
-
 interface Event {
   id: string;
   name: string;
   status: ProjectStatus;
   startDate: string;
   endDate: string;
+  type?: 'project' | 'maintenance';
 }
 
 export default function Calendar() {
@@ -131,7 +62,15 @@ export default function Calendar() {
   const [showProjects, setShowProjects] = useState(true);
   const [showEquipment, setShowEquipment] = useState(true);
   const [selectedProjectStatuses, setSelectedProjectStatuses] = useState<ProjectStatus[]>(['PLANNING', 'ACTIVE']);
-  
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [maintenances, setMaintenances] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    scheduledDate: string;
+    status: string;
+    equipment: string;
+  }>>([]);
   
   // Tarih filtrelemesi ve veri yükleme
   useEffect(() => {
@@ -139,18 +78,92 @@ export default function Calendar() {
       setLoading(true);
       
       try {
-        // Veri yüklendi, loading'i false yap
-        // Not: sampleProjects const olduğu için API'den gelen veri şimdilik kullanılmıyor
-        // TODO: sampleProjects'i state'e çevir ve API'den gelen veriyi kullan
+        // Ayın başlangıç ve bitiş tarihlerini hesapla
+        const { year, month } = getMonthDetails(currentDate);
+        const startOfMonth = new Date(year, month, 1);
+        const endOfMonth = new Date(year, month + 1, 0);
+        
+        // API'den projeleri çek (tarih filtresi ile)
+        const { getAllProjects } = await import('@/services/projectService');
+        const projectResponse = await getAllProjects({
+          status: selectedProjectStatuses.join(','),
+          startDate: startOfMonth.toISOString(),
+          endDate: endOfMonth.toISOString(),
+          limit: 1000, // Takvim için yeterli sayıda proje çek
+        });
+        
+        // Projeleri calendar formatına çevir
+        const calendarProjects: Project[] = projectResponse.projects
+          .map((project: {
+            _id?: string;
+            id?: string;
+            name?: string;
+            client?: string | { name?: string };
+            startDate?: string;
+            endDate?: string;
+            location?: string;
+            status?: ProjectStatus;
+            team?: Array<string | { _id?: string; id?: string }>;
+            equipment?: Array<string | { _id?: string; id?: string }>;
+          }) => ({
+            id: project._id || project.id || '',
+            name: project.name || '',
+            client: typeof project.client === 'object' && project.client ? project.client.name || '' : project.client || '',
+            startDate: project.startDate || '',
+            endDate: project.endDate || project.startDate || '',
+            location: project.location || '',
+            status: project.status || 'PLANNING',
+            team: Array.isArray(project.team) ? project.team.map((t: string | { _id?: string; id?: string }) => typeof t === 'string' ? t : (t._id || t.id || '')) : [],
+            equipment: Array.isArray(project.equipment) ? project.equipment.map((e: string | { _id?: string; id?: string }) => typeof e === 'string' ? e : (e._id || e.id || '')) : [],
+          }));
+        
+        setProjects(calendarProjects);
+        
+        // API'den bakımları çek (eğer gösteriliyorsa)
+        if (showEquipment) {
+          const { getAllMaintenance } = await import('@/services/maintenanceService');
+          const maintenanceResponse = await getAllMaintenance({
+            status: 'SCHEDULED,IN_PROGRESS',
+            startDate: startOfMonth.toISOString(),
+            endDate: endOfMonth.toISOString(),
+            limit: 1000, // Takvim için yeterli sayıda bakım çek
+          });
+          
+          // Bakımları calendar formatına çevir
+          const calendarMaintenances = maintenanceResponse.maintenances
+            .map((maintenance: {
+              _id?: string;
+              id?: string;
+              equipment?: { name?: string; _id?: string } | string;
+              type?: string;
+              scheduledDate?: string;
+              status?: string;
+            }) => ({
+              id: maintenance._id || maintenance.id || '',
+              name: maintenance.equipment?.name || 'Bakım',
+              type: maintenance.type || 'ROUTINE',
+              scheduledDate: maintenance.scheduledDate || '',
+              status: maintenance.status || 'SCHEDULED',
+              equipment: maintenance.equipment?._id || maintenance.equipment || '',
+            }));
+          
+          setMaintenances(calendarMaintenances);
+        } else {
+          setMaintenances([]);
+        }
+        
         setLoading(false);
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
+        // Hata durumunda boş liste göster
+        setProjects([]);
+        setMaintenances([]);
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [selectedProjectStatuses]);
+  }, [selectedProjectStatuses, currentDate, showEquipment]);
   
   // Sonraki aya geç
   const nextMonth = () => {
@@ -170,7 +183,6 @@ export default function Calendar() {
     });
   };
   
-  // Bugünün tarihine dön
   const goToToday = () => {
     setCurrentDate(new Date());
   };
@@ -205,20 +217,50 @@ export default function Calendar() {
   // Belirli bir gün için etkinlikleri getir
   function getEventsForDay(day: number, year: number, month: number): Event[] {
     const date = new Date(year, month, day);
+    const events: Event[] = [];
     
-    return sampleProjects
-      .filter(project => {
-        const startDate = new Date(project.startDate);
-        const endDate = new Date(project.endDate);
-        return date >= startDate && date <= endDate;
-      })
-      .map(project => ({
-        id: project.id,
-        name: project.name,
-        status: project.status as ProjectStatus,
-        startDate: project.startDate,
-        endDate: project.endDate
-      }));
+    // Projeleri ekle
+    if (showProjects) {
+      projects
+        .filter(project => {
+          if (!project.startDate) return false;
+          const startDate = new Date(project.startDate);
+          const endDate = project.endDate ? new Date(project.endDate) : startDate;
+          return date >= startDate && date <= endDate;
+        })
+        .forEach(project => {
+          events.push({
+            id: project.id,
+            name: project.name,
+            status: project.status as ProjectStatus,
+            startDate: project.startDate,
+            endDate: project.endDate || project.startDate,
+            type: 'project'
+          });
+        });
+    }
+    
+    // Bakımları ekle
+    if (showEquipment) {
+      maintenances
+        .filter(maintenance => {
+          if (!maintenance.scheduledDate) return false;
+          const scheduledDate = new Date(maintenance.scheduledDate);
+          return scheduledDate.toDateString() === date.toDateString();
+        })
+        .forEach(maintenance => {
+          events.push({
+            id: maintenance.id,
+            name: maintenance.name || 'Bakım',
+            status: 'PLANNING' as ProjectStatus, // Bakımlar için varsayılan durum
+            startDate: maintenance.scheduledDate,
+            endDate: maintenance.scheduledDate,
+            type: 'maintenance'
+          });
+        });
+    }
+    
+    return events;
   }
   
   // Ay görünümü oluştur
@@ -332,13 +374,23 @@ export default function Calendar() {
                           )}
                         </div>
                         <div className="flex-grow overflow-y-auto mt-1">
-                          {cell.events.map((event: Event, eventIndex) => (
-                            <Link href={`/admin/projects/view/${event.id}`} key={eventIndex}>
-                              <div className={`p-1 mb-1 text-xs rounded truncate ${statusColors[event.status]}`}>
-                                {event.name}
-                              </div>
-                            </Link>
-                          ))}
+                          {cell.events.map((event: Event, eventIndex) => {
+                            const href = event.type === 'maintenance' 
+                              ? `/admin/maintenance/edit/${event.id}` 
+                              : `/admin/projects/view/${event.id}`;
+                            return (
+                              <Link href={href} key={eventIndex}>
+                                <div className={`p-1 mb-1 text-xs rounded truncate ${
+                                  event.type === 'maintenance' 
+                                    ? 'bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200'
+                                    : statusColors[event.status]
+                                }`}>
+                                  {event.type === 'maintenance' && '🔧 '}
+                                  {event.name}
+                                </div>
+                              </Link>
+                            );
+                          })}
                         </div>
                       </div>
                     </td>

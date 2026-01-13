@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAllUsers, deleteUser, getRoleLabel, mapBackendRoleToFrontend } from '@/services/userService';
 import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
+import logger from '@/utils/logger';
+import { toast } from 'react-toastify';
 
 // Kullanıcı türü tanımlama
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Proje Yöneticisi' | 'Teknik Direktör' | 'Teknisyen' | 'Medya Server Uzmanı' | 'Görüntü Yönetmeni';
+  role: 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen';
   department?: string;
   status: 'Aktif' | 'Pasif';
   avatar?: string;
@@ -25,7 +27,7 @@ const sampleUsers: User[] = [
     id: '1',
     name: 'Ahmet Yılmaz',
     email: 'ahmet@skproduction.com',
-    role: 'Teknik Direktör',
+    role: 'Teknisyen',
     department: 'Teknik',
     status: 'Aktif',
     avatar: 'AY',
@@ -36,7 +38,7 @@ const sampleUsers: User[] = [
     id: '2',
     name: 'Zeynep Kaya',
     email: 'zeynep@skproduction.com',
-    role: 'Medya Server Uzmanı',
+    role: 'Teknisyen',
     department: 'Medya',
     status: 'Aktif',
     avatar: 'ZK',
@@ -47,7 +49,7 @@ const sampleUsers: User[] = [
     id: '3',
     name: 'Mehmet Demir',
     email: 'mehmet@skproduction.com',
-    role: 'Görüntü Yönetmeni',
+    role: 'Teknisyen',
     department: 'Görüntü',
     status: 'Aktif',
     avatar: 'MD',
@@ -150,7 +152,7 @@ export default function UserList() {
         })) : [];
         setUsers(formattedUsers);
       } catch (err) {
-        console.error('Kullanıcı yükleme hatası:', err);
+        logger.error('Kullanıcı yükleme hatası:', err);
         setError('Kullanıcılar alınamadı.');
       } finally {
         setLoading(false);
@@ -196,8 +198,12 @@ export default function UserList() {
       setUsers(prevUsers => prevUsers.filter(u => u.id !== userToDelete));
       setShowDeleteModal(false);
       setUserToDelete(null);
-    } catch (error) {
-      setError('Kullanıcı silinirken bir hata oluştu.');
+      toast.success('Kullanıcı başarıyla silindi');
+    } catch (error: any) {
+      logger.error('Kullanıcı silme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Kullanıcı silinirken bir hata oluştu.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -256,10 +262,10 @@ export default function UserList() {
               <option value="Tümü">Tüm Roller</option>
               <option value="Admin">Admin</option>
               <option value="Proje Yöneticisi">Proje Yöneticisi</option>
-              <option value="Teknik Direktör">Teknik Direktör</option>
+              <option value="Firma Sahibi">Firma Sahibi</option>
+              <option value="Proje Yöneticisi">Proje Yöneticisi</option>
+              <option value="Depo Sorumlusu">Depo Sorumlusu</option>
               <option value="Teknisyen">Teknisyen</option>
-              <option value="Medya Server Uzmanı">Medya Server Uzmanı</option>
-              <option value="Görüntü Yönetmeni">Görüntü Yönetmeni</option>
             </select>
           </div>
           

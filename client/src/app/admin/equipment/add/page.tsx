@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
 import { createEquipment, type Equipment as EquipmentType } from '@/services/equipmentService';
+import logger from '@/utils/logger';
 
 // Ekipman türü tanımlama
 interface Equipment {
@@ -195,10 +197,22 @@ export default function AddEquipment() {
         }
       });
       // API isteği için ekipman verilerini hazırla - Backend formatına uygun
+      // Category'den type'a mapping - Backend enum değerlerine çevir
+      const categoryToTypeMap: Record<string, string> = {
+        'VideoSwitcher': 'VIDEO_SWITCHER',
+        'MediaServer': 'MEDIA_SERVER',
+        'Camera': 'OTHER',
+        'Display': 'MONITOR',
+        'Audio': 'AUDIO_EQUIPMENT',
+        'Lighting': 'OTHER',
+        'Cable': 'CABLE',
+        'Accessory': 'OTHER'
+      };
+      
       // API isteği için ekipman verilerini hazırla - Backend formatına uygun
       const equipmentData: any = {
         name: formData.name,
-        type: formData.category || undefined, // Backend'de type olarak geçiyor
+        type: formData.category ? (categoryToTypeMap[formData.category] || 'OTHER') : undefined,
         model: formData.model,
         serialNumber: formData.serialNumber,
         status: (formData.status === 'Available' ? 'AVAILABLE' :
@@ -216,12 +230,15 @@ export default function AddEquipment() {
       setTimeout(() => {
         router.push('/admin/equipment');
       }, 2000);
-    } catch (error) {
+    } catch (error: any) {
       setLoading(false);
+      logger.error('Equipment creation error:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Ekipman eklenirken bir hata oluştu. Lütfen tekrar deneyiniz.';
       setErrors(prev => ({
         ...prev,
-        general: 'Ekipman eklenirken bir hata oluştu. Lütfen tekrar deneyiniz.'
+        general: errorMessage
       }));
+      toast.error(errorMessage);
     }
   };
   

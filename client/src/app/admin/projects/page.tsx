@@ -3,8 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getAllProjects, deleteProject } from '@/services/projectService';
-import ExportButton from '@/components/admin/ExportButton';
+import ExportMenu from '@/components/admin/ExportMenu';
+import ImportModal from '@/components/admin/ImportModal';
 import { Project, ProjectStatus, ProjectStatusDisplay, Client } from '@/types/project';
+import logger from '@/utils/logger';
+import { toast } from 'react-toastify';
 
 // Backend enum'larını Türkçe string'e çeviren yardımcı fonksiyon
 const getStatusDisplay = (status: ProjectStatus): ProjectStatusDisplay => {
@@ -48,6 +51,7 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [projectToDelete, setProjectToDelete] = useState<ProjectDisplay | null>(null);
@@ -104,7 +108,7 @@ export default function ProjectsPage() {
         }) : [];
         setProjects(formattedProjects);
       } catch (err) {
-        console.error('Proje yükleme hatası:', err);
+        logger.error('Proje yükleme hatası:', err);
         setError('Projeler alınamadı.');
       } finally {
         setLoading(false);
@@ -134,8 +138,12 @@ export default function ProjectsPage() {
       setProjects(prevProjects => prevProjects.filter(p => p.id !== projectToDelete.id));
       setShowDeleteModal(false);
       setProjectToDelete(null);
-    } catch (error) {
-      setError('Proje silinirken bir hata oluştu.');
+      toast.success('Proje başarıyla silindi');
+    } catch (error: any) {
+      logger.error('Proje silme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Proje silinirken bir hata oluştu.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -179,9 +187,9 @@ export default function ProjectsPage() {
           <p className="mt-1 text-gray-600 dark:text-gray-300">Tüm etkinlik ve organizasyon projelerini yönetin</p>
         </div>
         <div className="mt-4 md:mt-0 flex gap-2">
-          <ExportButton
-            endpoint="/export/projects"
-            filename="projects-export.csv"
+          <ExportMenu 
+            baseEndpoint="/api/export/projects"
+            baseFilename="projects"
             label="Dışa Aktar"
           />
           <Link href="/admin/projects/add">

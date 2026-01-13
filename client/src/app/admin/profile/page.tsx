@@ -7,6 +7,7 @@ import { authApi } from '@/services/api/auth';
 import { toast } from 'react-toastify';
 import { User } from '@/types/auth';
 import PasswordInput from '@/components/ui/PasswordInput';
+import logger from '@/utils/logger';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function ProfilePage() {
         });
       }
     } catch (error: any) {
-      console.error('Profil yükleme hatası:', error);
+      logger.error('Profil yükleme hatası:', error);
       toast.error('Profil bilgileri yüklenirken bir hata oluştu');
       // localStorage'dan kullanıcı bilgilerini al
       const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
@@ -58,7 +59,7 @@ export default function ProfilePage() {
             confirmPassword: '',
           });
         } catch (e) {
-          console.error('Kullanıcı bilgisi parse hatası:', e);
+          logger.error('Kullanıcı bilgisi parse hatası:', e);
         }
       }
     } finally {
@@ -155,9 +156,9 @@ export default function ProfilePage() {
         }
       }
       
-      setUser(updatedUser);
+      setUser(updatedUser as any);
     } catch (error: any) {
-      console.error('Profil güncelleme hatası:', error);
+      logger.error('Profil güncelleme hatası:', error);
       const errorMessage = error.response?.data?.message || 'Profil güncellenirken bir hata oluştu';
       toast.error(errorMessage);
       setErrors(prev => ({

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FormError } from '@/types/form';
 import { createTask } from '@/services/taskService';
+import logger from '@/utils/logger';
+import { toast } from 'react-toastify';
 
 // Kullanıcı arayüzü
 interface User {
@@ -20,23 +22,7 @@ interface Project {
   status: string;
 }
 
-// Örnek kullanıcı verileri
-const sampleUsers: User[] = [
-  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör' },
-  { id: '2', name: 'Zeynep Kaya', role: 'Medya Server Uzmanı' },
-  { id: '3', name: 'Mehmet Demir', role: 'Görüntü Yönetmeni' },
-  { id: '4', name: 'Ayşe Şahin', role: 'Teknisyen' },
-  { id: '5', name: 'Can Özkan', role: 'Proje Yöneticisi' }
-];
-
-// Örnek proje verileri
-const sampleProjects: Project[] = [
-  { id: '1', name: 'TechCon 2023 Lansman Etkinliği', status: 'Tamamlandı' },
-  { id: '2', name: 'Kurumsal Tanıtım Filmi', status: 'Devam Ediyor' },
-  { id: '3', name: 'Yıllık Bayi Toplantısı', status: 'Planlanıyor' },
-  { id: '4', name: 'Festival Organizasyonu', status: 'Devam Ediyor' },
-  { id: '5', name: 'Müze Multimedya Kurulumu', status: 'Planlanıyor' }
-];
+// Sample data kaldırıldı - Artık API'den çekiliyor
 
 // Görev formu arayüzü
 interface TaskForm {
@@ -82,32 +68,30 @@ export default function AddTask() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // API entegrasyonu olduğunda burada backend'den veri çekilecek
-        // const usersResponse = await fetch('/api/admin/users');
-        // if (!usersResponse.ok) throw new Error('Kullanıcı verileri alınamadı');
-        // const usersData = await usersResponse.json();
-        // setUsers(usersData);
+        // Kullanıcıları API'den çek
+        const { getAllUsers } = await import('@/services/userService');
+        const usersResponse = await getAllUsers();
+        const usersList = usersResponse.users || [];
+        setUsers(usersList.map((user: any) => ({
+          id: user._id || user.id || '',
+          name: user.name || '',
+          role: user.role || ''
+        })));
+        setLoadingUsers(false);
         
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          setUsers(sampleUsers);
-          setLoadingUsers(false);
-        }, 300);
-        
-        // Projeleri de yükle
-        // const projectsResponse = await fetch('/api/admin/projects');
-        // if (!projectsResponse.ok) throw new Error('Proje verileri alınamadı');
-        // const projectsData = await projectsResponse.json();
-        // setProjects(projectsData);
-        
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          setProjects(sampleProjects);
-          setLoadingProjects(false);
-        }, 500);
+        // Projeleri API'den çek
+        const { getAllProjects } = await import('@/services/projectService');
+        const projectsResponse = await getAllProjects();
+        const projectsList = projectsResponse.projects || [];
+        setProjects(projectsList.map((project: any) => ({
+          id: project._id || project.id || '',
+          name: project.name || '',
+          status: project.status || ''
+        })));
+        setLoadingProjects(false);
         
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setLoadingUsers(false);
         setLoadingProjects(false);
       }
@@ -115,7 +99,7 @@ export default function AddTask() {
     
     fetchData();
     
-    // Bugünün tarihini varsayılan son tarih olarak ayarla
+    // Varsayılan son tarih: yarın
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
@@ -189,30 +173,37 @@ export default function AddTask() {
     
     try {
       // API'ye gönderilecek veri - Backend formatına uygun
+      // Tarih formatını ISO8601'e çevir
+      const dueDateISO = formData.dueDate ? new Date(formData.dueDate + 'T23:59:59.999Z').toISOString() : undefined;
+      
       const taskData = {
-        title: formData.title,
-        description: formData.description,
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
         status: (formData.status === 'Atandı' ? 'TODO' :
                 formData.status === 'Devam Ediyor' ? 'IN_PROGRESS' :
+                formData.status === 'Beklemede' ? 'TODO' :
                 formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
         priority: (formData.priority === 'Düşük' ? 'LOW' :
                  formData.priority === 'Orta' ? 'MEDIUM' :
                  formData.priority === 'Yüksek' ? 'HIGH' : 'URGENT') as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
-        dueDate: formData.dueDate,
+        dueDate: dueDateISO,
         assignedTo: formData.assignedTo,
         project: formData.relatedProject || undefined
       };
       await createTask(taskData);
+      toast.success('Görev başarıyla eklendi!');
       setShowSuccessNotification(true);
       setTimeout(() => {
         router.push('/admin/tasks');
       }, 2000);
-    } catch (error) {
-      console.error('Görev ekleme hatası:', error);
+    } catch (error: any) {
+      logger.error('Görev ekleme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Görev eklenirken bir hata oluştu. Lütfen tekrar deneyin.';
       setErrors({
         ...errors,
-        form: 'Görev eklenirken bir hata oluştu. Lütfen tekrar deneyin.'
+        form: errorMessage
       });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

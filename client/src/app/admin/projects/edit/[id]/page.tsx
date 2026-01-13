@@ -6,6 +6,8 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ProjectStatus, Project, TeamMember, Equipment } from '@/types/project';
 import { updateProject } from '@/services/projectService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Form verileri için arayüz
 interface FormData {
@@ -126,7 +128,7 @@ export default function EditProject() {
           endDate: project.endDate || '',
           location: project.location || '',
           status: status as ProjectStatus,
-          budget: project.budget?.toString() || '0',
+          budget: project.budget || 0,
           team: teamIds,
           equipment: equipmentIds,
           notes: project.notes || ''
@@ -151,7 +153,7 @@ export default function EditProject() {
         }, 500);
         
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setError('Proje bilgileri yüklenirken bir hata oluştu');
         setLoading(false);
       }
@@ -270,12 +272,16 @@ export default function EditProject() {
         notes: formData.notes
       };
       await updateProject(projectId, projectData as any);
+      toast.success('Proje başarıyla güncellendi');
       setSuccess(true);
       setTimeout(() => {
         router.push('/admin/projects');
       }, 2000);
-    } catch (error) {
-      setError('Proje güncellenirken bir hata oluştu. Lütfen tekrar deneyin.');
+    } catch (error: any) {
+      logger.error('Proje güncelleme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Proje güncellenirken bir hata oluştu. Lütfen tekrar deneyin.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

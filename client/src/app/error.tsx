@@ -13,7 +13,8 @@ export default function Error({
 }) {
   useEffect(() => {
     // Hata loglama
-    console.error('Error:', error);
+    const logger = require('@/utils/logger').default;
+    logger.error('Error:', error);
   }, [error]);
 
   return (

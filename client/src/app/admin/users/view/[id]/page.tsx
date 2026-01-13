@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 import { mapBackendRoleToFrontend } from '@/services/userService';
+import logger from '@/utils/logger';
 
 // Kullanıcı türü tanımlama
 interface User {
@@ -40,7 +41,7 @@ const sampleUsers: User[] = [
     id: '1',
     name: 'Ahmet Yılmaz',
     email: 'ahmet@skproduction.com',
-    role: 'Teknik Direktör',
+    role: 'Teknisyen',
     department: 'Teknik',
     status: 'Aktif',
     avatar: 'AY',
@@ -57,7 +58,7 @@ const sampleUsers: User[] = [
     id: '2',
     name: 'Zeynep Kaya',
     email: 'zeynep@skproduction.com',
-    role: 'Medya Server Uzmanı',
+    role: 'Teknisyen',
     department: 'Medya',
     status: 'Aktif',
     avatar: 'ZK',
@@ -73,7 +74,7 @@ const sampleUsers: User[] = [
     id: '3',
     name: 'Mehmet Demir',
     email: 'mehmet@skproduction.com',
-    role: 'Görüntü Yönetmeni',
+    role: 'Teknisyen',
     department: 'Görüntü',
     status: 'Aktif',
     avatar: 'MD',
@@ -203,7 +204,7 @@ export default function ViewUser() {
         setLoading(false);
         
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setLoading(false);
       }
     };

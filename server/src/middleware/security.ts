@@ -29,7 +29,7 @@ export const helmetConfig = helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'", process.env.API_URL || 'http://localhost:5000'],
+      connectSrc: ["'self'", process.env.API_URL || 'http://localhost:5001'],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],

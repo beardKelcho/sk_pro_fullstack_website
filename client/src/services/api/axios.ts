@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Next.js rewrites kullanıyorsak relative path kullan, yoksa tam URL
+// Browser'da çalışıyorsa (client-side) relative path kullan (Next.js rewrites devreye girer)
+// Server-side'da ise tam URL kullan
+const getApiUrl = () => {
+  // Client-side'da (browser) relative path kullan - Next.js rewrites devreye girer
+  if (typeof window !== 'undefined') {
+    return '/api';
+  }
+  // Server-side'da (SSR) tam URL kullan
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+};
+
+const API_URL = getApiUrl();
 
 // Axios instance oluştur
 const apiClient = axios.create({
@@ -9,7 +21,7 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-  timeout: 10000, // 10 saniye timeout
+  timeout: 30000, // 30 saniye timeout (resim yükleme için daha uzun)
 });
 
 // Request interceptor - Token'ı header'a ekle
@@ -40,7 +52,12 @@ apiClient.interceptors.response.use(
     // Network hatası (backend çökmüş olabilir)
     if (!error.response) {
       // Backend'e erişilemiyor, graceful degradation
-      console.warn('Backend\'e erişilemiyor. Offline mod aktif.');
+      // Sadece gerçek network hatalarında logla (ECONNREFUSED, ETIMEDOUT, vb.)
+      // Axios cancel veya diğer geçici hatalarda loglama yapma
+      if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND' || error.code === 'ERR_NETWORK') {
+        const logger = require('@/utils/logger').default;
+        logger.warn('Backend\'e erişilemiyor. Offline mod aktif.', { code: error.code, url: originalRequest?.url });
+      }
       
       // Sadece kritik olmayan istekler için retry yap
       if (originalRequest && !originalRequest._retry && originalRequest.method !== 'get') {
@@ -68,7 +85,10 @@ apiClient.interceptors.response.use(
 
       try {
         // Refresh token ile yeni access token al
-        const response = await axios.post(`${API_URL}/auth/refresh-token`, {}, {
+        const refreshUrl = typeof window !== 'undefined' 
+          ? '/api/auth/refresh-token' 
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/auth/refresh-token`;
+        const response = await axios.post(refreshUrl, {}, {
           withCredentials: true,
           timeout: 5000,
         });

@@ -7,7 +7,9 @@ export interface HeroContent {
   description: string;
   buttonText: string;
   buttonLink: string;
-  backgroundVideo?: string;
+  backgroundVideo?: string; // Seçili video URL'i (backward compatibility için)
+  selectedVideo?: string; // Aktif olarak gösterilen video URL'i
+  availableVideos?: Array<{ url: string; filename: string; uploadedAt?: string }>; // Video havuzu
   backgroundImage?: string;
   rotatingTexts?: string[];
 }
@@ -67,10 +69,20 @@ export interface FooterContent {
   }[];
 }
 
+// Hizmetler ve Ekipmanlar birleşik bölümü için
+export interface ServicesEquipmentContent {
+  title: string;
+  subtitle: string;
+  services: ServiceItem[];
+  equipment: EquipmentCategory[];
+  backgroundImage?: string;
+  order: number;
+}
+
 // Ana site içeriği interface
 export interface ISiteContent extends Document {
-  section: 'hero' | 'services' | 'equipment' | 'about' | 'contact' | 'footer' | 'social' | 'projects';
-  content: HeroContent | ServiceItem[] | EquipmentCategory[] | AboutContent | ContactInfo | FooterContent | SocialMedia[] | any;
+  section: 'hero' | 'services' | 'equipment' | 'services-equipment' | 'about' | 'contact' | 'footer' | 'social' | 'projects';
+  content: HeroContent | ServiceItem[] | EquipmentCategory[] | ServicesEquipmentContent | AboutContent | ContactInfo | FooterContent | SocialMedia[] | any;
   isActive: boolean;
   order: number;
   createdAt: Date;
@@ -81,7 +93,7 @@ const SiteContentSchema: Schema = new Schema(
   {
     section: {
       type: String,
-      enum: ['hero', 'services', 'equipment', 'about', 'contact', 'footer', 'social', 'projects'],
+      enum: ['hero', 'services', 'equipment', 'services-equipment', 'about', 'contact', 'footer', 'social', 'projects'],
       required: [true, 'Bölüm adı gereklidir'],
       unique: true,
     },

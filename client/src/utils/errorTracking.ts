@@ -1,167 +1,311 @@
-'use client';
+/**
+ * Error Tracking Utility
+ * Production'da hataları loglamak ve izlemek için
+ * Sentry entegrasyonu ile birlikte çalışır
+ */
 
-import * as Sentry from '@sentry/nextjs';
-import { trackUserBehavior } from './analytics';
+// Sentry import (conditional - sadece production'da yüklenecek)
+let Sentry: typeof import('@sentry/nextjs') | null = null;
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+  try {
+    Sentry = require('@sentry/nextjs');
+  } catch {
+    // Sentry yoksa devam et
+  }
+}
 
-interface ErrorDetails {
+interface ErrorInfo {
   message: string;
   stack?: string;
+  url?: string;
+  userAgent?: string;
+  timestamp: string;
+  userId?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
   context?: Record<string, any>;
-  level?: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
 }
 
-// Hata izleme fonksiyonu
-export function trackError(error: Error | string, details?: ErrorDetails) {
-  const errorMessage = error instanceof Error ? error.message : error;
-  const errorStack = error instanceof Error ? error.stack : undefined;
+class ErrorTracker {
+  private isProduction: boolean;
+  private apiEndpoint: string;
+  private sentryEnabled: boolean;
 
-  // Sentry'ye gönder
-  Sentry.withScope((scope) => {
-    if (details?.context) {
-      Object.entries(details.context).forEach(([key, value]) => {
-        scope.setExtra(key, value);
+  constructor() {
+    this.isProduction = process.env.NODE_ENV === 'production';
+    this.apiEndpoint = process.env.NEXT_PUBLIC_API_URL || '/api';
+    this.sentryEnabled = !!(
+      this.isProduction &&
+      typeof window !== 'undefined' &&
+      process.env.NEXT_PUBLIC_SENTRY_DSN &&
+      Sentry
+    );
+  }
+
+  /**
+   * Hata loglar ve Sentry'ye gönderir (production'da)
+   * @param error - Hata objesi veya mesajı
+   * @param context - Ek bağlam bilgileri
+   * @param severity - Hata önem seviyesi (low, medium, high, critical)
+   * @example
+   * errorTracker.logError(new Error('Something went wrong'), { userId: '123' }, 'high')
+   */
+  logError(error: Error | string, context?: Record<string, any>, severity: ErrorInfo['severity'] = 'medium') {
+    const errorInfo: ErrorInfo = {
+      message: typeof error === 'string' ? error : error.message,
+      stack: typeof error === 'object' && error.stack ? error.stack : undefined,
+      url: typeof window !== 'undefined' ? window.location.href : undefined,
+      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
+      timestamp: new Date().toISOString(),
+      severity,
+      context,
+    };
+
+    // Development'ta konsola yazdır
+    if (!this.isProduction) {
+      console.error('Error logged:', errorInfo);
+    }
+
+    // Sentry'ye gönder (production'da ve DSN varsa)
+    if (this.sentryEnabled && Sentry) {
+      try {
+        const errorObj = typeof error === 'string' ? new Error(error) : error;
+        
+        // Severity'yi Sentry formatına çevir
+        const sentryLevel = this.mapSeverityToSentryLevel(severity);
+        
+        // Sentry'ye gönder
+        Sentry.captureException(errorObj, {
+          level: sentryLevel,
+          tags: {
+            severity,
+            ...(context?.tags || {}),
+          },
+          extra: {
+            ...context,
+            url: errorInfo.url,
+            userAgent: errorInfo.userAgent,
+            timestamp: errorInfo.timestamp,
+          },
+          contexts: {
+            custom: {
+              ...context,
+            },
+          },
+        });
+      } catch (sentryError) {
+        // Sentry hatası olursa sessizce devam et
+        if (!this.isProduction) {
+          console.warn('Sentry error capture failed:', sentryError);
+        }
+      }
+    }
+
+    // Production'da backend'e gönder (fallback)
+    if (this.isProduction && typeof window !== 'undefined') {
+      this.sendToBackend(errorInfo).catch((err) => {
+        // Backend hatası olursa sessizce devam et
+        if (!this.isProduction) {
+          console.error('Failed to send error to backend:', err);
+        }
       });
     }
+  }
 
-    if (details?.level) {
-      scope.setLevel(details.level);
+  /**
+   * Severity'yi Sentry level formatına çevirir
+   * @param severity - Hata önem seviyesi
+   * @returns Sentry log level
+   * @private
+   */
+  private mapSeverityToSentryLevel(severity?: ErrorInfo['severity']): 'fatal' | 'error' | 'warning' | 'info' | 'debug' {
+    switch (severity) {
+      case 'critical':
+        return 'fatal';
+      case 'high':
+        return 'error';
+      case 'medium':
+        return 'warning';
+      case 'low':
+        return 'info';
+      default:
+        return 'error';
     }
+  }
 
-    Sentry.captureException(error, {
-      level: details?.level || 'error',
-    });
-  });
+  /**
+   * Backend'e hata gönderir (fallback mekanizması)
+   * Şimdilik localStorage'a kaydeder, backend endpoint eklenebilir
+   * @param errorInfo - Gönderilecek hata bilgisi
+   * @private
+   */
+  private async sendToBackend(errorInfo: ErrorInfo) {
+    try {
+      // Backend'de error logging endpoint'i varsa kullan
+      // Şimdilik sadece localStorage'a kaydet (backend endpoint eklenebilir)
+      const errors = JSON.parse(localStorage.getItem('errorLogs') || '[]');
+      errors.push(errorInfo);
+      
+      // Son 50 hatayı sakla
+      if (errors.length > 50) {
+        errors.shift();
+      }
+      
+      localStorage.setItem('errorLogs', JSON.stringify(errors));
+    } catch (error) {
+      console.error('Error tracking failed:', error);
+    }
+  }
 
-  // Google Analytics'e gönder
-  trackUserBehavior.trackError(
-    details?.level || 'error',
-    `${errorMessage}${errorStack ? `\n${errorStack}` : ''}`
-  );
+  /**
+   * React Error Boundary için hata yakalar
+   * @param error - Yakalanan hata
+   * @param errorInfo - React error info (componentStack vb.)
+   * @example
+   * errorTracker.captureException(error, errorInfo)
+   */
+  captureException(error: Error, errorInfo?: React.ErrorInfo) {
+    // Sentry'ye gönder (production'da)
+    if (this.sentryEnabled && Sentry) {
+      try {
+        Sentry.captureException(error, {
+          level: 'error',
+          tags: {
+            errorBoundary: true,
+          },
+          extra: {
+            componentStack: errorInfo?.componentStack,
+          },
+          contexts: {
+            react: {
+              componentStack: errorInfo?.componentStack,
+            },
+          },
+        });
+      } catch (sentryError) {
+        // Sentry hatası olursa sessizce devam et
+        if (!this.isProduction) {
+          console.warn('Sentry error capture failed:', sentryError);
+        }
+      }
+    }
+    
+    // Local tracking
+    this.logError(error, {
+      componentStack: errorInfo?.componentStack,
+      errorBoundary: true,
+    }, 'high');
+  }
+
+  /**
+   * Unhandled promise rejection yakalar
+   * @param reason - Promise rejection nedeni
+   * @example
+   * errorTracker.captureUnhandledRejection(error)
+   */
+  captureUnhandledRejection(reason: any) {
+    const error = reason instanceof Error 
+      ? reason 
+      : new Error(String(reason));
+    
+    // Sentry'ye gönder (production'da)
+    if (this.sentryEnabled && Sentry) {
+      try {
+        Sentry.captureException(error, {
+          level: 'error',
+          tags: {
+            unhandledRejection: true,
+          },
+          extra: {
+            reason: String(reason),
+          },
+        });
+      } catch (sentryError) {
+        // Sentry hatası olursa sessizce devam et
+        if (!this.isProduction) {
+          console.warn('Sentry error capture failed:', sentryError);
+        }
+      }
+    }
+    
+    // Local tracking
+    this.logError(error, {
+      unhandledRejection: true,
+      reason: String(reason),
+    }, 'high');
+  }
+
+  /**
+   * Hata loglarını temizler (localStorage'dan)
+   */
+  clearLogs() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('errorLogs');
+    }
+  }
+
+  /**
+   * Hata loglarını getirir (localStorage'dan)
+   * @returns Hata logları dizisi
+   */
+  getLogs(): ErrorInfo[] {
+    if (typeof window !== 'undefined') {
+      try {
+        return JSON.parse(localStorage.getItem('errorLogs') || '[]');
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
 }
 
-// React hata sınırı işleyicisi
-export function handleErrorBoundary(error: Error, errorInfo: React.ErrorInfo) {
-  trackError(error, {
-    message: error.message,
-    context: {
-      componentStack: errorInfo.componentStack,
-    },
-    level: 'error',
-  });
-}
+// Singleton instance
+export const errorTracker = new ErrorTracker();
 
-// API hatalarını izleme
-export function trackApiError(error: any, endpoint: string, method: string) {
-  trackError(error, {
-    message: error.message || error.response?.data?.message || 'API error',
-    context: {
+/**
+ * API hatalarını track etmek için yardımcı fonksiyon
+ * @param error - Hata objesi
+ * @param endpoint - API endpoint'i
+ * @param method - HTTP method
+ */
+export const trackApiError = (error: any, endpoint: string, method: string) => {
+  errorTracker.logError(
+    error instanceof Error ? error : new Error(String(error)),
+    {
       endpoint,
       method,
-      status: error.status,
-      response: error.response,
+      type: 'api_error',
     },
-    level: 'error',
-  });
-}
+    'medium'
+  );
+};
 
-// Form hatalarını izleme
-export function trackFormError(error: any, formId: string, field?: string) {
-  trackError(error, {
-    message: error.message || 'Form validation error',
-    context: {
-      formId,
-      field,
-      formData: error.formData,
-    },
-    level: 'warning',
-  });
-}
+/**
+ * Genel hata tracking fonksiyonu
+ * @param error - Hata objesi veya mesajı
+ * @param context - Ek bağlam bilgileri
+ */
+export const trackError = (error: Error | string, context?: Record<string, any>) => {
+  errorTracker.logError(error, context, 'medium');
+};
 
-// Ağ hatalarını izleme
-export function trackNetworkError(error: any, url: string, method: string) {
-  trackError(error, {
-    message: error.message || 'Network error',
-    context: {
-      url,
-      method,
-      status: error.status,
-      response: error.response,
-    },
-    level: 'error',
-  });
-}
-
-// Global hata yakalayıcı
-export function setupGlobalErrorHandling() {
-  // Yakalanmamış hataları yakala
+// Global error handlers
+if (typeof window !== 'undefined') {
+  // Unhandled errors
   window.addEventListener('error', (event) => {
-    trackError(event.error, {
-      message: event.error?.message || event.message || 'Unhandled error',
-      context: {
+    errorTracker.logError(
+      event.error || new Error(event.message),
+      {
         filename: event.filename,
         lineno: event.lineno,
         colno: event.colno,
       },
-      level: 'fatal',
-    });
+      'high'
+    );
   });
 
-  // Yakalanmamış promise redlerini yakala
+  // Unhandled promise rejections
   window.addEventListener('unhandledrejection', (event) => {
-    const reason = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
-    trackError(reason, {
-      message: reason.message || 'Unhandled promise rejection',
-      context: {
-        type: 'unhandledrejection',
-      },
-      level: 'fatal',
-    });
+    errorTracker.captureUnhandledRejection(event.reason);
   });
 }
-
-// Performans izleme
-export function trackPerformance(metric: string, value: number, context?: Record<string, any>) {
-  Sentry.addBreadcrumb({
-    category: 'performance',
-    message: `${metric}: ${value}ms`,
-    data: context,
-    level: 'info',
-  });
-}
-
-// Kullanıcı davranışı izleme
-export function trackUserAction(action: string, context?: Record<string, any>) {
-  Sentry.addBreadcrumb({
-    category: 'user',
-    message: action,
-    data: context,
-    level: 'info',
-  });
-}
-
-// Sayfa yükleme performansı izleme
-export function trackPageLoad(performance: Performance) {
-  const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-  if (navigation) {
-    trackPerformance('pageLoad', navigation.loadEventEnd - navigation.startTime, {
-      domContentLoaded: navigation.domContentLoadedEventEnd - navigation.startTime,
-      firstPaint: performance.getEntriesByName('first-paint')[0]?.startTime,
-      firstContentfulPaint: performance.getEntriesByName('first-contentful-paint')[0]?.startTime,
-      largestContentfulPaint: performance.getEntriesByName('largest-contentful-paint')[0]?.startTime,
-      firstInputDelay: performance.getEntriesByName('first-input-delay')[0]?.duration,
-      cumulativeLayoutShift: (performance.getEntriesByName('cumulative-layout-shift')[0] as any)?.value,
-    });
-  }
-}
-
-// Kaynak yükleme performansı izleme
-export function trackResourceLoad(performance: Performance) {
-  performance.getEntriesByType('resource').forEach((resource) => {
-    const resourceTiming = resource as PerformanceResourceTiming;
-    trackPerformance('resourceLoad', resourceTiming.duration, {
-      name: resourceTiming.name,
-      initiatorType: resourceTiming.initiatorType,
-      size: resourceTiming.transferSize,
-    });
-  });
-} 

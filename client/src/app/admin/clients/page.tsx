@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ExportButton from '@/components/admin/ExportButton';
+import { deleteCustomer } from '@/services/customerService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Müşteri türü tanımlama
 interface Client {
@@ -69,7 +72,7 @@ export default function ClientList() {
         setClients(formattedClients);
         setLoading(false);
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setLoading(false);
       }
     };
@@ -106,22 +109,15 @@ export default function ClientList() {
     if (!clientToDelete) return;
     
     try {
-      // API entegrasyonu olduğunda burada backend'e istek gönderilecek
-      // const response = await fetch(`/api/admin/clients/${clientToDelete}`, {
-      //   method: 'DELETE',
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Müşteri silinirken bir hata oluştu');
-      // }
-      
-      // Şimdilik örnek veriyi güncelliyoruz
+      await deleteCustomer(clientToDelete);
       setClients(clients.filter(client => client.id !== clientToDelete));
       setShowDeleteModal(false);
       setClientToDelete(null);
-      
-    } catch (error) {
-      console.error('Silme hatası:', error);
+      toast.success('Müşteri başarıyla silindi');
+    } catch (error: any) {
+      logger.error('Müşteri silme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Müşteri silinirken bir hata oluştu.';
+      toast.error(errorMessage);
     }
   };
   

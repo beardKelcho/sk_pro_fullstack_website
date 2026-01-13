@@ -1,31 +1,40 @@
 {
-  "name": "sk-production",
+  "name": "skproduction",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "dev:client": "npm run dev --workspace=client",
-    "dev:server": "npm run dev --workspace=server",
-    "build": "concurrently \"npm run build:client\" \"npm run build:server\"",
-    "build:client": "npm run build --workspace=client",
-    "build:server": "npm run build --workspace=server",
-    "test": "concurrently \"npm run test:client\" \"npm run test:server\"",
-    "test:client": "npm run test --workspace=client",
-    "test:server": "npm run test --workspace=server",
-    "lint": "concurrently \"npm run lint:client\" \"npm run lint:server\"",
-    "lint:client": "npm run lint --workspace=client",
-    "lint:server": "npm run lint --workspace=server"
+    "test:all": "npm run test:frontend && npm run test:backend && npm run test:e2e",
+    "test:frontend": "cd client && npm run test:ci",
+    "test:backend": "cd server && npm run test:coverage",
+    "test:e2e": "cd client && npm run cypress:run",
+    "test:coverage": "npm run test:frontend:coverage && npm run test:backend:coverage",
+    "test:frontend:coverage": "cd client && npm run test:coverage",
+    "test:backend:coverage": "cd server && npm run test:coverage",
+    "test:watch": "cd client && npm run test:watch",
+    "test:ci": "npm run test:all",
+    "lint": "cd client && npm run lint && cd ../server && npm run lint",
+    "type-check": "cd client && npm run type-check && cd ../server && npm run type-check",
+    "build": "cd client && npm run build && cd ../server && npm run build",
+    "dev": "concurrently --names \"SERVER,CLIENT\" --prefix-colors \"blue,green\" \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "dev:ngrok": "node scripts/start-ngrok.js",
+    "dev:with-ngrok": "concurrently --names \"SERVER,CLIENT,NGROK\" --prefix-colors \"blue,green,yellow\" \"cd server && npm run dev\" \"cd client && npm run dev\" \"npm run dev:ngrok\"",
+    "ngrok": "node scripts/start-ngrok.js",
+    "ngrok:frontend": "node scripts/start-ngrok-frontend.js",
+    "ngrok:url": "node scripts/get-ngrok-url.js",
+    "ngrok:urls": "node scripts/get-all-ngrok-urls.js",
+    "ngrok:both": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm run ngrok\" \"npm run ngrok:frontend\"",
+    "check-ports": "./scripts/check-ports.sh",
+    "test:production": "./scripts/test-production-deployment.sh",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "setup:branches": "./scripts/setup-branches.sh",
+    "deploy:staging": "./scripts/deploy-staging.sh",
+    "deploy:production": "./scripts/deploy-production.sh",
+    "hotfix:create": "./scripts/create-hotfix.sh"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "@vercel/speed-insights": "^1.2.0",
-    "critters": "^0.0.23",
-    "next": "^15.3.1"
+    "concurrently": "^8.2.2",
+    "ngrok": "^5.0.0-beta.2"
   }
 }

@@ -1,25 +1,32 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import apiClient from '@/services/api/axios';
 
+/**
+ * Push subscription sil
+ * Backend API'ye proxy eder
+ */
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    const body = await request.json();
+    const { endpoint } = body;
+
+    if (!endpoint) {
+      return NextResponse.json(
+        { error: 'Endpoint gereklidir' },
+        { status: 400 }
+      );
     }
 
-    // Kullanıcının subscription'ını sil
-    await db.pushSubscription.deleteMany({
-      where: {
-        userId: (session.user as any)?.id || session.user?.email || '',
-      },
+    // Backend API'ye gönder
+    const response = await apiClient.delete(`/push-subscriptions/unsubscribe`, {
+      data: { endpoint },
     });
 
-    return new NextResponse('Subscription deleted', { status: 200 });
-  } catch (error) {
-    console.error('Push unsubscription error:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return NextResponse.json(response.data, { status: 200 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.response?.data?.message || 'Push subscription silinemedi' },
+      { status: error.response?.status || 500 }
+    );
   }
 } 

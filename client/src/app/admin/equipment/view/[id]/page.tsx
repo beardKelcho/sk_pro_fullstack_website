@@ -3,6 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useQRCode, useCreateQRCode, useQRCodes } from '@/services/qrCodeService';
+import { toast } from 'react-toastify';
+import VersionHistoryModal from '@/components/admin/VersionHistoryModal';
+import LazyImage from '@/components/common/LazyImage';
+import logger from '@/utils/logger';
 
 // Ana interface
 interface Equipment {
@@ -63,9 +68,47 @@ export default function ViewEquipment() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [changeStatusModal, setChangeStatusModal] = useState(false);
   const [newStatus, setNewStatus] = useState<Equipment['status'] | ''>('');
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrImage, setQrImage] = useState<string | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
   
   // ID parametresini al
   const equipmentId = params.id as string;
+  
+  // QR kod sorgula - bu ekipman için QR kod var mı?
+  const { data: qrCodesData } = useQRCodes({
+    relatedType: 'Equipment',
+    isActive: true,
+    limit: 100, // Tüm QR kodları getir, filtreleme client-side
+  });
+  
+  const equipmentQRCode = qrCodesData?.qrCodes.find(
+    (qr) => (qr.relatedId === equipmentId) || (qr.relatedId === (equipment as any)?._id) || (qr.relatedId === equipment?.id)
+  );
+  
+  const { data: qrCodeDetail } = useQRCode(equipmentQRCode?._id || equipmentQRCode?.id || null);
+  const createQRMutation = useCreateQRCode();
+  
+  // QR kod oluştur
+  const handleCreateQRCode = async () => {
+    if (!equipment) return;
+    
+    try {
+      const result = await createQRMutation.mutateAsync({
+        type: 'EQUIPMENT',
+        relatedId: equipmentId,
+        relatedType: 'Equipment',
+        title: `${equipment.name} - QR Kod`,
+        description: `${equipment.name} ekipmanı için QR kod`,
+      });
+      
+      setQrImage(result.qrImage);
+      setShowQRModal(true);
+      toast.success('QR kod başarıyla oluşturuldu!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'QR kod oluşturulurken bir hata oluştu');
+    }
+  };
   
   // Ekipman verisini yükle
   useEffect(() => {
@@ -86,17 +129,17 @@ export default function ViewEquipment() {
                   equipmentData.status === 'IN_USE' ? 'InUse' :
                   equipmentData.status === 'MAINTENANCE' ? 'Maintenance' : 'Broken') as Equipment['status'],
           purchaseDate: equipmentData.purchaseDate,
-          lastMaintenanceDate: equipmentData.lastMaintenanceDate,
-          nextMaintenanceDate: equipmentData.nextMaintenanceDate,
+          lastMaintenanceDate: (equipmentData as any).lastMaintenanceDate,
+          nextMaintenanceDate: (equipmentData as any).nextMaintenanceDate,
           location: equipmentData.location || '',
-          specs: equipmentData.specs || {},
+          specs: (equipmentData as any).specs || {},
           notes: equipmentData.notes || ''
         };
         
         setEquipment(formattedEquipment);
         setLoading(false);
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setError('Ekipman verisi yüklenirken bir hata oluştu');
         setLoading(false);
       }
@@ -141,7 +184,7 @@ export default function ViewEquipment() {
       router.push('/admin/equipment');
       
     } catch (error) {
-      console.error('Silme hatası:', error);
+      logger.error('Silme hatası:', error);
       // Hata mesajı gösterilebilir
     }
   };
@@ -173,7 +216,7 @@ export default function ViewEquipment() {
       setChangeStatusModal(false);
       
     } catch (error) {
-      console.error('Durum güncelleme hatası:', error);
+      logger.error('Durum güncelleme hatası:', error);
       // Hata mesajı gösterilebilir
     }
   };
@@ -233,6 +276,15 @@ export default function ViewEquipment() {
               </div>
             </div>
             <div className="flex mt-4 md:mt-0 space-x-3">
+              <button
+                onClick={() => setShowVersionHistory(true)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Versiyon Geçmişi
+              </button>
               <button
                 onClick={() => setChangeStatusModal(true)}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -367,6 +419,46 @@ export default function ViewEquipment() {
                         </div>
                       </div>
                     )}
+                    
+                    {/* QR Kod Bölümü */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-md font-medium text-gray-900 dark:text-white">QR Kod</h4>
+                        {equipmentQRCode && (
+                          <Link
+                            href={`/admin/qr-codes/${equipmentQRCode._id || equipmentQRCode.id}`}
+                            className="text-xs text-[#0066CC] dark:text-primary-light hover:underline"
+                          >
+                            Detaylar
+                          </Link>
+                        )}
+                      </div>
+                      <div className="rounded-md border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+                        {equipmentQRCode ? (
+                          <div className="text-center">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              QR Kod: <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{equipmentQRCode.code}</code>
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500">
+                              Tarama Sayısı: {equipmentQRCode.scanCount}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                              Bu ekipman için QR kod oluşturulmamış
+                            </p>
+                            <button
+                              onClick={handleCreateQRCode}
+                              disabled={createQRMutation.isPending}
+                              className="text-xs text-[#0066CC] dark:text-primary-light hover:underline disabled:opacity-50"
+                            >
+                              {createQRMutation.isPending ? 'Oluşturuluyor...' : 'QR Kod Oluştur'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -570,6 +662,86 @@ export default function ViewEquipment() {
           </div>
         </div>
       )}
+      
+      {/* QR Kod Görüntüleme Modalı */}
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">QR Kod</h3>
+              <button
+                onClick={() => {
+                  setShowQRModal(false);
+                  setQrImage(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {qrImage && (
+              <div className="text-center mb-4">
+                <LazyImage
+                  src={qrImage}
+                  alt="QR Kod"
+                  className="mx-auto w-64 h-64 border border-gray-200 dark:border-gray-700 rounded"
+                  width={256}
+                  height={256}
+                  sizes="256px"
+                  quality={100}
+                  priority
+                />
+                <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                  QR kodu yazdırmak için sağ tıklayıp "Resmi Farklı Kaydet" seçeneğini kullanabilirsiniz.
+                </p>
+              </div>
+            )}
+            
+            {equipmentQRCode && !qrImage && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">QR Kod:</p>
+                <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded block break-all">
+                  {equipmentQRCode.code}
+                </code>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                  Tarama Sayısı: {equipmentQRCode.scanCount}
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowQRModal(false);
+                  setQrImage(null);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Kapat
+              </button>
+              {qrImage && (
+                <a
+                  href={qrImage}
+                  download={`${equipment?.name || 'equipment'}-qr-code.png`}
+                  className="flex-1 text-center px-4 py-2 rounded-md text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary"
+                >
+                  İndir
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Version History Modal */}
+      <VersionHistoryModal
+        isOpen={showVersionHistory}
+        onClose={() => setShowVersionHistory(false)}
+        resource="Equipment"
+        resourceId={equipmentId}
+        resourceName={equipment?.name}
+      />
     </div>
   );
 } 

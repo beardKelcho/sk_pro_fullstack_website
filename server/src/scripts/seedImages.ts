@@ -77,8 +77,8 @@ const seedImages = async () => {
       const imageData = {
         filename: filename,
         originalName: filename,
-        path: `images/${filename}`, // Client public/images altında
-        url: `/images/${filename}`, // Public URL
+        path: `general/${filename}`, // Artık uploads/general klasörüne kaydediliyor
+        url: `/uploads/general/${filename}`, // Public URL
         category: 'project' as const,
         order: i,
         isActive: true,

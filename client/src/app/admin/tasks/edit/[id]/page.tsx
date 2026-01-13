@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { FormError } from '@/types/form';
 import { updateTask } from '@/services/taskService';
+import logger from '@/utils/logger';
+import { toast } from 'react-toastify';
 
 // Kullanıcı arayüzü
 interface User {
@@ -47,91 +49,7 @@ interface TaskForm {
   notes?: string;
 }
 
-// Örnek kullanıcı verileri
-const sampleUsers: User[] = [
-  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör' },
-  { id: '2', name: 'Zeynep Kaya', role: 'Medya Server Uzmanı' },
-  { id: '3', name: 'Mehmet Demir', role: 'Görüntü Yönetmeni' },
-  { id: '4', name: 'Ayşe Şahin', role: 'Teknisyen' },
-  { id: '5', name: 'Can Özkan', role: 'Proje Yöneticisi' }
-];
-
-// Örnek proje verileri
-const sampleProjects: Project[] = [
-  { id: '1', name: 'TechCon 2023 Lansman Etkinliği', status: 'Tamamlandı' },
-  { id: '2', name: 'Kurumsal Tanıtım Filmi', status: 'Devam Ediyor' },
-  { id: '3', name: 'Yıllık Bayi Toplantısı', status: 'Planlanıyor' },
-  { id: '4', name: 'Festival Organizasyonu', status: 'Devam Ediyor' },
-  { id: '5', name: 'Müze Multimedya Kurulumu', status: 'Planlanıyor' }
-];
-
-// Örnek görev verileri
-const sampleTasks: Task[] = [
-  {
-    id: '1',
-    title: 'LED Ekran Kurulumu',
-    description: 'TechCon etkinliği için ana salona LED ekranların kurulması ve ayarlanması',
-    priority: 'Yüksek',
-    status: 'Tamamlandı',
-    dueDate: '2023-10-15',
-    assignedTo: '2',
-    relatedProject: '1',
-    createdAt: '2023-10-01',
-    updatedAt: '2023-10-15',
-    notes: 'Kurulum başarıyla tamamlandı. Ekranlar test edildi ve çalışır durumda.'
-  },
-  {
-    id: '2',
-    title: 'Video İçerik Hazırlama',
-    description: 'Kurumsal tanıtım filmi için video içeriğinin düzenlenmesi ve efektlerin eklenmesi',
-    priority: 'Orta',
-    status: 'Devam Ediyor',
-    dueDate: '2023-11-20',
-    assignedTo: '3',
-    relatedProject: '2',
-    createdAt: '2023-11-01',
-    updatedAt: '2023-11-10',
-    notes: 'Montaj işlemleri devam ediyor. Müzik seçimi için öneriler bekleniyor.'
-  },
-  {
-    id: '3',
-    title: 'Ses Sistemi Testi',
-    description: 'Festival için kurulacak ses sisteminin test edilmesi ve kalibrasyonu',
-    priority: 'Yüksek',
-    status: 'Atandı',
-    dueDate: '2023-12-10',
-    assignedTo: '4',
-    relatedProject: '4',
-    createdAt: '2023-12-01',
-    updatedAt: '2023-12-01'
-  },
-  {
-    id: '4',
-    title: 'Medya Server Programlama',
-    description: 'Müze için interaktif medya içeriğinin programlanması',
-    priority: 'Acil',
-    status: 'Devam Ediyor',
-    dueDate: '2023-12-15',
-    assignedTo: '2',
-    relatedProject: '5',
-    createdAt: '2023-12-05',
-    updatedAt: '2023-12-07',
-    notes: 'İnteraktif kiosk için dokunmatik ekran kodlaması devam ediyor. İçerik akışı tasarlandı.'
-  },
-  {
-    id: '5',
-    title: 'Teknik Plan Hazırlama',
-    description: 'Bayi toplantısı için teknik gereksinimlerin planlanması',
-    priority: 'Düşük',
-    status: 'Beklemede',
-    dueDate: '2024-01-15',
-    assignedTo: '1',
-    relatedProject: '3',
-    createdAt: '2023-12-20',
-    updatedAt: '2023-12-20',
-    notes: 'Toplantı yeri netleşince devam edilecek.'
-  }
-];
+// Sample data kaldırıldı - Artık API'den çekiliyor
 
 export default function EditTask() {
   const router = useRouter();
@@ -199,7 +117,7 @@ export default function EditTask() {
         
         setLoading(false);
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setLoading(false);
       }
     };
@@ -213,26 +131,30 @@ export default function EditTask() {
         // const usersData = await usersResponse.json();
         // setUsers(usersData);
         
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          setUsers(sampleUsers);
-          setLoadingUsers(false);
-        }, 300);
+        // Kullanıcıları API'den çek
+        const { getAllUsers } = await import('@/services/userService');
+        const usersResponse = await getAllUsers();
+        const usersList = usersResponse.users || [];
+        setUsers(usersList.map((user: any) => ({
+          id: user._id || user.id || '',
+          name: user.name || '',
+          role: user.role || ''
+        })));
+        setLoadingUsers(false);
         
-        // Projeleri de yükle
-        // const projectsResponse = await fetch('/api/admin/projects');
-        // if (!projectsResponse.ok) throw new Error('Proje verileri alınamadı');
-        // const projectsData = await projectsResponse.json();
-        // setProjects(projectsData);
-        
-        // Şimdilik örnek verileri kullanıyoruz
-        setTimeout(() => {
-          setProjects(sampleProjects);
-          setLoadingProjects(false);
-        }, 500);
+        // Projeleri API'den çek
+        const { getAllProjects } = await import('@/services/projectService');
+        const projectsResponse = await getAllProjects();
+        const projectsList = projectsResponse.projects || [];
+        setProjects(projectsList.map((project: any) => ({
+          id: project._id || project.id || '',
+          name: project.name || '',
+          status: project.status || ''
+        })));
+        setLoadingProjects(false);
         
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setLoadingUsers(false);
         setLoadingProjects(false);
       }
@@ -312,12 +234,16 @@ export default function EditTask() {
         project: formData.relatedProject || undefined
       };
       await updateTask(taskId, taskData);
+      toast.success('Görev başarıyla güncellendi');
       setShowSuccessNotification(true);
       setTimeout(() => {
         router.push('/admin/tasks');
       }, 2000);
-    } catch (error) {
-      setErrors({ form: 'Görev güncellenirken bir hata oluştu. Lütfen tekrar deneyin.' });
+    } catch (error: any) {
+      logger.error('Görev güncelleme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Görev güncellenirken bir hata oluştu. Lütfen tekrar deneyin.';
+      setErrors({ form: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

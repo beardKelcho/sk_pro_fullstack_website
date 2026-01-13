@@ -136,3 +136,123 @@ export const sendProjectStartEmail = async (
   );
 };
 
+// Proje durumu değişikliği email'i
+export const sendProjectStatusChangeEmail = async (
+  userEmails: string[],
+  projectName: string,
+  oldStatus: string,
+  newStatus: string,
+  projectId: string
+): Promise<boolean> => {
+  const statusLabels: { [key: string]: string } = {
+    'PLANNING': 'Planlama',
+    'ACTIVE': 'Aktif',
+    'ON_HOLD': 'Beklemede',
+    'COMPLETED': 'Tamamlandı',
+    'CANCELLED': 'İptal Edildi'
+  };
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #0066CC;">Proje Durumu Güncellendi</h2>
+      <p>Merhaba,</p>
+      <p><strong>${projectName}</strong> projesinin durumu güncellendi:</p>
+      <div style="background-color: #e7f3ff; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #0066CC;">
+        <p><strong>Eski Durum:</strong> ${statusLabels[oldStatus] || oldStatus}</p>
+        <p><strong>Yeni Durum:</strong> ${statusLabels[newStatus] || newStatus}</p>
+      </div>
+      <p>Proje detaylarını admin panelinden görüntüleyebilirsiniz.</p>
+      <p>İyi çalışmalar,<br>SK Production</p>
+    </div>
+  `;
+
+  return sendEmail(
+    userEmails,
+    `Proje Durumu Güncellendi: ${projectName} - SK Production`,
+    html
+  );
+};
+
+// Kullanıcı davet email'i
+export const sendUserInviteEmail = async (
+  userEmail: string,
+  userName: string,
+  inviterName: string,
+  role: string,
+  temporaryPassword?: string
+): Promise<boolean> => {
+  const roleLabels: { [key: string]: string } = {
+    'ADMIN': 'Yönetici',
+    'FIRMA_SAHIBI': 'Firma Sahibi',
+    'PROJE_YONETICISI': 'Proje Yöneticisi',
+    'DEPO_SORUMLUSU': 'Depo Sorumlusu',
+    'TEKNISYEN': 'Teknisyen'
+  };
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #0066CC;">SK Production'a Hoş Geldiniz!</h2>
+      <p>Merhaba ${userName},</p>
+      <p><strong>${inviterName}</strong> sizi SK Production sistemine <strong>${roleLabels[role] || role}</strong> rolü ile ekledi.</p>
+      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p><strong>Email:</strong> ${userEmail}</p>
+        ${temporaryPassword ? `<p><strong>Geçici Şifre:</strong> ${temporaryPassword}</p>
+        <p style="color: #d32f2f; font-size: 12px;">⚠️ İlk girişte şifrenizi değiştirmeniz önerilir.</p>` : ''}
+      </div>
+      <p>Admin paneline giriş yapmak için:</p>
+      <p style="text-align: center; margin: 20px 0;">
+        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/login" 
+           style="background-color: #0066CC; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+          Giriş Yap
+        </a>
+      </p>
+      <p>İyi çalışmalar,<br>SK Production</p>
+    </div>
+  `;
+
+  return sendEmail(
+    userEmail,
+    'SK Production - Hesap Oluşturuldu',
+    html
+  );
+};
+
+// Görev güncellendi email'i
+export const sendTaskUpdatedEmail = async (
+  userEmail: string,
+  userName: string,
+  taskTitle: string,
+  changes: { field: string; oldValue: string; newValue: string }[]
+): Promise<boolean> => {
+  const changesHtml = changes.map(change => `
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>${change.field}:</strong></td>
+      <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+        <span style="color: #d32f2f;">${change.oldValue}</span> → 
+        <span style="color: #28a745;">${change.newValue}</span>
+      </td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #0066CC;">Görev Güncellendi</h2>
+      <p>Merhaba ${userName},</p>
+      <p><strong>${taskTitle}</strong> görevi güncellendi:</p>
+      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          ${changesHtml}
+        </table>
+      </div>
+      <p>Görevi görüntülemek için admin paneline giriş yapın.</p>
+      <p>İyi çalışmalar,<br>SK Production</p>
+    </div>
+  `;
+
+  return sendEmail(
+    userEmail,
+    'Görev Güncellendi - SK Production',
+    html
+  );
+};
+

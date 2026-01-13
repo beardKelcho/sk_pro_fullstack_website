@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { Maintenance, Equipment } from '../models';
 import { sendMaintenanceReminderEmail } from './emailService';
+import { startAllScheduledReports } from '../controllers/reportSchedule.controller';
 import logger from './logger';
 
 // Bakım hatırlatma görevini çalıştır (her gün saat 09:00'da)
@@ -94,6 +95,10 @@ export const startScheduledTasks = () => {
   if (process.env.NODE_ENV === 'production') {
     scheduleMaintenanceReminders();
     scheduleEquipmentStatusCheck();
+    // Rapor zamanlamalarını başlat
+    startAllScheduledReports().catch((error) => {
+      logger.error('Rapor zamanlamaları başlatma hatası:', error);
+    });
   }
 };
 

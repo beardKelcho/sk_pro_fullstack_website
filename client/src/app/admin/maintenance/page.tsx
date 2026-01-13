@@ -6,6 +6,8 @@ import ExportButton from '@/components/admin/ExportButton';
 import { useRouter } from 'next/navigation';
 import { getAllMaintenance, deleteMaintenance, getStatusLabel, getTypeLabel, getPriorityLabel } from '@/services/maintenanceService';
 import type { Maintenance } from '@/services/maintenanceService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Renk ayarları
 const statusColors = {
@@ -77,13 +79,17 @@ export default function MaintenanceList() {
   
   // Filtreleme
   const filteredMaintenance = maintenance.filter(item => {
+    const itemAny = item as any;
+    const equipmentName = typeof item.equipment === 'object' && item.equipment 
+      ? (item.equipment as any).name || itemAny.equipmentName || ''
+      : itemAny.equipmentName || '';
     const matchesSearch = 
-      item.equipmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+      equipmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesType = selectedType === 'Tümü' || item.type === selectedType;
     const matchesStatus = selectedStatus === 'Tümü' || item.status === selectedStatus;
-    const matchesPriority = selectedPriority === 'Tümü' || item.priority === selectedPriority;
+    const matchesPriority = selectedPriority === 'Tümü' || (itemAny.priority && itemAny.priority === selectedPriority);
     
     return matchesSearch && matchesType && matchesStatus && matchesPriority;
   });
@@ -97,8 +103,12 @@ export default function MaintenanceList() {
       setMaintenance(prevMaintenance => prevMaintenance.filter(m => m.id !== maintenanceToDelete));
       setShowDeleteModal(false);
       setMaintenanceToDelete(null);
-    } catch (error) {
-      setError('Bakım kaydı silinirken bir hata oluştu.');
+      toast.success('Bakım kaydı başarıyla silindi');
+    } catch (error: any) {
+      logger.error('Bakım kaydı silme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Bakım kaydı silinirken bir hata oluştu.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -267,67 +277,75 @@ export default function MaintenanceList() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredMaintenance.map(item => (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{item.equipmentName}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{item.description}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1.5">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColors[getTypeLabel(item.type) as keyof typeof typeColors] || ''}`}>
-                          {getTypeLabel(item.type)}
-                        </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[getPriorityLabel(item.priority) as keyof typeof priorityColors] || ''}`}>
-                          {getPriorityLabel(item.priority)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[getStatusLabel(item.status) as keyof typeof statusColors] || ''}`}>
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        Başlangıç: {formatDate(item.startDate)}
-                      </div>
-                      {item.endDate && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          Bitiş: {formatDate(item.endDate)}
+                {filteredMaintenance.map(item => {
+                  const itemAny = item as any;
+                  const equipmentName = typeof item.equipment === 'object' && item.equipment 
+                    ? (item.equipment as any).name || itemAny.equipmentName || ''
+                    : itemAny.equipmentName || '';
+                  return (
+                    <tr key={item.id || item._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{equipmentName}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{item.description || ''}</div>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {item.assignedTo}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Link href={`/admin/maintenance/view/${item.id}`}>
-                          <button className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80">
-                            Görüntüle
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1.5">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeColors[getTypeLabel(item.type) as keyof typeof typeColors] || ''}`}>
+                            {getTypeLabel(item.type)}
+                          </span>
+                          {itemAny.priority && (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[getPriorityLabel(itemAny.priority) as keyof typeof priorityColors] || ''}`}>
+                              {getPriorityLabel(itemAny.priority)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[getStatusLabel(item.status) as keyof typeof statusColors] || ''}`}>
+                          {getStatusLabel(item.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          Başlangıç: {formatDate(item.scheduledDate || itemAny.startDate || '')}
+                        </div>
+                        {(item.completedDate || itemAny.endDate) && (
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            Bitiş: {formatDate(item.completedDate || itemAny.endDate || '')}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {itemAny.assignedToName || item.assignedTo || ''}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <Link href={`/admin/maintenance/view/${item.id || item._id}`}>
+                            <button className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80">
+                              Görüntüle
+                            </button>
+                          </Link>
+                          <Link href={`/admin/maintenance/edit/${item.id || item._id}`}>
+                            <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                              Düzenle
+                            </button>
+                          </Link>
+                          <button 
+                            onClick={() => {
+                              setMaintenanceToDelete(item.id || item._id || null);
+                              setShowDeleteModal(true);
+                            }}
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                          >
+                            Sil
                           </button>
-                        </Link>
-                        <Link href={`/admin/maintenance/edit/${item.id}`}>
-                          <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            Düzenle
-                          </button>
-                        </Link>
-                        <button 
-                          onClick={() => {
-                            setMaintenanceToDelete(item.id || item._id || null);
-                            setShowDeleteModal(true);
-                          }}
-                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                        >
-                          Sil
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

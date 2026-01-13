@@ -66,6 +66,7 @@ const ContactForm: React.FC = () => {
           value={formData.name}
           onChange={handleChange}
           required
+          autoComplete="name"
           className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
           placeholder="İsim Soyisim"
         />
@@ -81,6 +82,7 @@ const ContactForm: React.FC = () => {
           value={formData.email}
           onChange={handleChange}
           required
+          autoComplete="email"
           className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
           placeholder="E-posta adresiniz"
         />

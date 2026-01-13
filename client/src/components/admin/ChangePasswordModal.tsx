@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import PasswordInput from '@/components/ui/PasswordInput';
+import logger from '@/utils/logger';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -49,7 +50,7 @@ export default function ChangePasswordModal({
 
     try {
       const { updateUser } = await import('@/services/userService');
-      await updateUser(userId, { password: newPassword });
+      await updateUser(userId, { password: newPassword } as any);
       
       // Başarılı
       if (onSuccess) {
@@ -65,7 +66,7 @@ export default function ChangePasswordModal({
       const { toast } = await import('react-toastify');
       toast.success(`${userName} kullanıcısının şifresi başarıyla değiştirildi`);
     } catch (error: any) {
-      console.error('Şifre değiştirme hatası:', error);
+      logger.error('Şifre değiştirme hatası:', error);
       const errorMessage = error.response?.data?.message || 
                           error.message || 
                           'Şifre değiştirilirken bir hata oluştu';

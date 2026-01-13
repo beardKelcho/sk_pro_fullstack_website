@@ -88,5 +88,19 @@ MaintenanceSchema.pre('findOneAndUpdate', async function (next) {
   next();
 });
 
+// Performance indexes
+// Equipment ve status ile filtreleme için
+MaintenanceSchema.index({ equipment: 1, status: 1 });
+// Scheduled date ile sıralama için (yaklaşan bakımlar)
+MaintenanceSchema.index({ scheduledDate: 1, status: 1 });
+// Assigned user ile filtreleme için
+MaintenanceSchema.index({ assignedTo: 1, status: 1 });
+// Type ve status ile filtreleme için
+MaintenanceSchema.index({ type: 1, status: 1 });
+// Arama için text index (description)
+MaintenanceSchema.index({ description: 'text' });
+// Completed date ile sıralama için
+MaintenanceSchema.index({ completedDate: -1 });
+
 export default mongoose.model<IMaintenance>('Maintenance', MaintenanceSchema);
 

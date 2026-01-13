@@ -1,20 +1,17 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://skproduction.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://skproduction.com';
   
-  return [
+  const routes = [
     {
       url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 1,
+      changeFrequency: 'daily' as const,
+      priority: 1.0,
     },
-    {
-      url: `${baseUrl}/admin`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.5,
-    },
+    // Admin sayfaları sitemap'e eklenmez (robots.txt'de disallow edilmiş)
   ];
+
+  return routes;
 } 

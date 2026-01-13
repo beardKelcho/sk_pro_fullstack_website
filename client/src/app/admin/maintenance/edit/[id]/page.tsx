@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { getMaintenanceById, updateMaintenance } from '@/services/maintenanceService';
 import type { Maintenance } from '@/services/maintenanceService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Form tipi
 interface MaintenanceForm {
@@ -213,16 +215,20 @@ export default function EditMaintenance() {
         notes: formData.notes
       };
       await updateMaintenance(maintenanceId, maintenanceData as any);
+      toast.success('Bakım kaydı başarıyla güncellendi');
       setSuccess(true);
       
       setTimeout(() => {
         router.push('/admin/maintenance');
       }, 2000);
       
-    } catch (error) {
+    } catch (error: any) {
+      logger.error('Bakım kaydı güncelleme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Bakım kaydı güncellenirken bir hata oluştu. Lütfen tekrar deneyin.';
       setErrors({
-        submit: 'Bakım kaydı güncellenirken bir hata oluştu. Lütfen tekrar deneyin.'
+        submit: errorMessage
       });
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }

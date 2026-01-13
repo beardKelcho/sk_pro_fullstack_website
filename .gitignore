@@ -93,4 +93,12 @@ logs
 
 # PWA
 public/sw.js
-public/workbox-*.js 
+public/workbox-*.js
+
+# Uploaded files (stored in file system, metadata in database)
+server/uploads/
+uploads/
+*.mp4
+*.mov
+*.avi
+*.webm 

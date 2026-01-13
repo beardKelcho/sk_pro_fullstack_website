@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { FormError } from '@/types/form';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Müşteri türü
 interface Client {
@@ -189,7 +191,7 @@ export default function EditClient() {
         }, 500);
         
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setLoading(false);
       }
     };
@@ -246,16 +248,19 @@ export default function EditClient() {
         notes: formData.notes
       });
       
+      toast.success('Müşteri başarıyla güncellendi');
       // 2 saniye sonra müşteri detay sayfasına yönlendir
       setTimeout(() => {
         router.push(`/admin/clients/view/${clientId}`);
       }, 2000);
       
-    } catch (error) {
-      console.error('Müşteri güncelleme hatası:', error);
+    } catch (error: any) {
+      logger.error('Müşteri güncelleme hatası:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Müşteri güncellenirken bir hata oluştu. Lütfen tekrar deneyin.';
       setErrors({
-        form: 'Müşteri güncellenirken bir hata oluştu. Lütfen tekrar deneyin.'
+        form: errorMessage
       });
+      toast.error(errorMessage);
     }
   };
   

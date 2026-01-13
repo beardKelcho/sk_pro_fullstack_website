@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { User } from '../models';
 import mongoose from 'mongoose';
+import { sendUserInviteEmail } from '../utils/emailService';
+import { notifyUser } from '../utils/notificationService';
 import logger from '../utils/logger';
 
 // Tüm kullanıcıları listele
@@ -127,6 +129,26 @@ export const createUser = async (req: Request, res: Response) => {
     
     const userResponse = user.toObject();
     delete (userResponse as any).password;
+    
+    // Kullanıcı davet email'i gönder (async, hata olsa bile devam et)
+    const inviterName = req.user ? (req.user as any).name : 'Sistem';
+    sendUserInviteEmail(
+      user.email,
+      user.name,
+      inviterName,
+      user.role,
+      password // Geçici şifre (ilk oluşturulduğunda)
+    ).catch(err => logger.error('Kullanıcı davet email gönderme hatası:', err));
+    
+    // Kullanıcıya hoş geldin bildirimi gönder
+    notifyUser(
+      user._id,
+      'USER_INVITED',
+      'SK Production\'a Hoş Geldiniz!',
+      `${inviterName} sizi SK Production sistemine ${user.role} rolü ile ekledi.`,
+      { role: user.role },
+      false // Email zaten gönderildi
+    ).catch(err => logger.error('Hoş geldin bildirimi gönderme hatası:', err));
     
     res.status(201).json({
       success: true,

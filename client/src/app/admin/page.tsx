@@ -6,6 +6,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { authApi } from '@/services/api/auth';
 import PasswordInput from '@/components/ui/PasswordInput';
+import { useVerify2FALogin } from '@/services/twoFactorService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -17,6 +20,10 @@ export default function AdminLogin() {
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFactorToken, setTwoFactorToken] = useState('');
+  const [twoFactorBackupCode, setTwoFactorBackupCode] = useState('');
+  const verify2FAMutation = useVerify2FALogin();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -69,9 +76,16 @@ export default function AdminLogin() {
         password: formData.password,
       });
       
-      console.log('Login response:', response.data); // Debug için
+      logger.debug('Login response:', response.data);
       
       if (response.data && response.data.success) {
+        // 2FA kontrolü
+        if (response.data.requires2FA) {
+          setRequires2FA(true);
+          setLoading(false);
+          return;
+        }
+
         // Token'ı kaydet - "Beni hatırla" seçiliyse localStorage, değilse sessionStorage kullan
         if (response.data.accessToken) {
           if (formData.rememberMe) {
@@ -94,16 +108,64 @@ export default function AdminLogin() {
         router.push('/admin/dashboard');
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
-        console.error('Login failed:', errorMsg);
+        logger.error('Login failed:', errorMsg);
         setLoginError(errorMsg);
       }
     } catch (error: any) {
-      console.error('Giriş hatası:', error);
-      console.error('Error response:', error.response?.data);
+      logger.error('Giriş hatası:', error);
+      logger.error('Error response:', error.response?.data);
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.error || 
                           error.message || 
                           'Giriş işlemi sırasında bir hata oluştu';
+      setLoginError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handle2FAVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!twoFactorToken && !twoFactorBackupCode) {
+      setLoginError('Lütfen doğrulama kodu veya backup kod girin');
+      return;
+    }
+
+    setLoading(true);
+    setLoginError('');
+
+    try {
+      const response = await verify2FAMutation.mutateAsync({
+        email: formData.email,
+        token: twoFactorToken || undefined,
+        backupCode: twoFactorBackupCode || undefined,
+      });
+
+      if (response.success && response.accessToken) {
+        // Token'ı kaydet
+        if (formData.rememberMe) {
+          localStorage.setItem('accessToken', response.accessToken);
+          if (response.user) {
+            localStorage.setItem('user', JSON.stringify(response.user));
+          }
+        } else {
+          sessionStorage.setItem('accessToken', response.accessToken);
+          if (response.user) {
+            sessionStorage.setItem('user', JSON.stringify(response.user));
+          }
+        }
+
+        // Dashboard'a yönlendir
+        router.push('/admin/dashboard');
+      } else {
+        setLoginError(response.message || '2FA doğrulama başarısız');
+      }
+    } catch (error: any) {
+      logger.error('2FA doğrulama hatası:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          '2FA doğrulama sırasında bir hata oluştu';
       setLoginError(errorMessage);
     } finally {
       setLoading(false);
@@ -135,8 +197,9 @@ export default function AdminLogin() {
               {loginError}
             </div>
           )}
-          
-          <form onSubmit={handleSubmit}>
+
+          {!requires2FA ? (
+            <form onSubmit={handleSubmit}>
             <div className="mb-6">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 E-posta Adresi
@@ -216,6 +279,82 @@ export default function AdminLogin() {
               ) : 'Giriş Yap'}
             </button>
           </form>
+          ) : (
+            <form onSubmit={handle2FAVerify}>
+              <div className="mb-6">
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <div>
+                      <h3 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-1">
+                        2FA Doğrulaması Gerekli
+                      </h3>
+                      <p className="text-sm text-blue-800 dark:text-blue-300">
+                        Hesabınızda 2FA aktif. Lütfen Google Authenticator uygulamanızdan doğrulama kodunu girin.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <label htmlFor="twoFactorToken" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Doğrulama Kodu (6 haneli)
+                </label>
+                <input
+                  type="text"
+                  id="twoFactorToken"
+                  value={twoFactorToken}
+                  onChange={(e) => setTwoFactorToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-black focus:outline-none dark:bg-gray-700 dark:text-white text-center text-2xl tracking-widest"
+                />
+              </div>
+              <div className="text-center text-gray-500 dark:text-gray-400 text-sm mb-4">veya</div>
+              <div className="mb-6">
+                <label htmlFor="twoFactorBackupCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Backup Kod
+                </label>
+                <input
+                  type="text"
+                  id="twoFactorBackupCode"
+                  value={twoFactorBackupCode}
+                  onChange={(e) => setTwoFactorBackupCode(e.target.value.toUpperCase())}
+                  placeholder="XXXX-XXXX"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-black focus:outline-none dark:bg-gray-700 dark:text-white text-center font-mono"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRequires2FA(false);
+                    setTwoFactorToken('');
+                    setTwoFactorBackupCode('');
+                    setLoginError('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Geri
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || verify2FAMutation.isPending}
+                  className="flex-1 px-4 py-2 bg-black dark:bg-black text-white rounded-lg font-medium hover:bg-gray-900 dark:hover:bg-gray-900 transition-colors disabled:opacity-70"
+                >
+                  {loading || verify2FAMutation.isPending ? (
+                    <div className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Doğrulanıyor...
+                    </div>
+                  ) : 'Doğrula ve Giriş Yap'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

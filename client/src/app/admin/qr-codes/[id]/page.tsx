@@ -3,7 +3,7 @@
 import LazyImage from '@/components/common/LazyImage';
 import Image from 'next/image';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQRCode, useUpdateQRCode, useDeleteQRCode, useRegenerateQRImage } from '@/services/qrCodeService';
@@ -24,11 +24,35 @@ export default function QRCodeDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showQRImageModal, setShowQRImageModal] = useState(false);
   const [qrImage, setQrImage] = useState<string | null>(null);
+  const [qrImageLoading, setQrImageLoading] = useState(false);
+  const [qrImageError, setQrImageError] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
     isActive: true,
   });
+
+  const loadQrImage = async (opts?: { openModal?: boolean; silent?: boolean }) => {
+    try {
+      setQrImageLoading(true);
+      setQrImageError(null);
+      const result = await regenerateMutation.mutateAsync(qrCodeId);
+      setQrImage(result.qrImage);
+      if (opts?.openModal) setShowQRImageModal(true);
+      if (!opts?.silent) toast.success('QR kod görseli hazır');
+    } catch (err) {
+      setQrImageError('QR kod görseli alınamadı');
+      if (!opts?.silent) toast.error('QR kod görseli alınamadı');
+    } finally {
+      setQrImageLoading(false);
+    }
+  };
+
+  // Sayfa açılınca QR görselini otomatik getir
+  useEffect(() => {
+    loadQrImage({ silent: true }).catch(() => null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrCodeId]);
 
   if (isLoading) {
     return (
@@ -81,14 +105,7 @@ export default function QRCodeDetailPage() {
   };
 
   const handleRegenerateImage = async () => {
-    try {
-      const result = await regenerateMutation.mutateAsync(qrCodeId);
-      setQrImage(result.qrImage);
-      setShowQRImageModal(true);
-      toast.success('QR kod görseli yeniden oluşturuldu');
-    } catch (err: any) {
-      toast.error('QR kod görseli oluşturulamadı');
-    }
+    await loadQrImage({ openModal: true });
   };
 
   return (
@@ -115,7 +132,7 @@ export default function QRCodeDetailPage() {
             disabled={regenerateMutation.isPending}
             className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
           >
-            {regenerateMutation.isPending ? 'Oluşturuluyor...' : 'QR Görseli Oluştur'}
+            {regenerateMutation.isPending || qrImageLoading ? 'Yükleniyor...' : 'QR Görseli'}
           </button>
           <button
             onClick={handleEdit}
@@ -272,6 +289,62 @@ export default function QRCodeDetailPage() {
 
         {/* Sağ Kolon - İstatistikler */}
         <div className="space-y-6">
+          {/* QR Görseli */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">QR Görseli</h2>
+              <button
+                type="button"
+                onClick={() => loadQrImage({ silent: true })}
+                disabled={qrImageLoading || regenerateMutation.isPending}
+                className="text-sm text-[#0066CC] dark:text-primary-light hover:underline disabled:opacity-50"
+              >
+                Yenile
+              </button>
+            </div>
+
+            {qrImageLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0066CC]" />
+              </div>
+            ) : qrImage ? (
+              <div className="space-y-4">
+                <div
+                  className="w-full flex items-center justify-center bg-gray-50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer"
+                  onClick={() => setShowQRImageModal(true)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <LazyImage
+                    src={qrImage}
+                    alt="QR Kod"
+                    className="w-56 h-56 object-contain"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowQRImageModal(true)}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    Büyüt
+                  </button>
+                  <a
+                    href={qrImage}
+                    download={`${qrCode.title || qrCode.code}-qr-code.png`}
+                    className="flex-1 text-center px-4 py-2 bg-[#0066CC] dark:bg-primary-light text-white rounded hover:bg-[#0055AA] dark:hover:bg-primary"
+                  >
+                    İndir
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {qrImageError || 'QR görseli henüz oluşturulmadı.'}
+              </div>
+            )}
+          </div>
+
           {/* İstatistikler */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">İstatistikler</h2>

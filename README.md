@@ -43,14 +43,14 @@ SK Production için geliştirilmiş modern web sitesi ve yeniden kullanılabilir
 
 ## 📦 Kurulum
 
-Detaylı kurulum rehberi için **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)** dosyasına bakın.
+Detaylı kurulum rehberi için **[KURULUM_REHBERI.md](./docs/KURULUM_REHBERI.md)** dosyasına bakın.
 
 ### 🚀 Production'a Alma
 
 Production'a almak ve yayındayken geliştirme yapmak için:
-- **[DEPLOYMENT_README.md](./DEPLOYMENT_README.md)** - Deployment ve geliştirme rehberi
-- **[PRODUCTION_DEPLOYMENT_CHECKLIST.md](./PRODUCTION_DEPLOYMENT_CHECKLIST.md)** - Production deployment checklist
-- **[PRODUCTION_GELISTIRME_REHBERI.md](./PRODUCTION_GELISTIRME_REHBERI.md)** - Production'da geliştirme rehberi
+- **[DEPLOYMENT_README.md](./docs/DEPLOYMENT_README.md)** - Deployment ve geliştirme rehberi
+- **[PRODUCTION_DEPLOYMENT_CHECKLIST.md](./docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md)** - Production deployment checklist
+- **[PRODUCTION_GELISTIRME_REHBERI.md](./docs/PRODUCTION_GELISTIRME_REHBERI.md)** - Production'da geliştirme rehberi
 
 ### Hızlı Başlangıç
 
@@ -174,7 +174,7 @@ cd client && npm run cypress:open
 
 ## 🚢 Deployment
 
-Detaylı deployment rehberi için **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)** dosyasının "Deployment" bölümüne bakın.
+Detaylı deployment rehberi için **[KURULUM_REHBERI.md](./docs/KURULUM_REHBERI.md)** dosyasının "Deployment" bölümüne bakın.
 
 ### Özet
 
@@ -185,9 +185,11 @@ Detaylı deployment rehberi için **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)**
 
 ## 📚 Dokümantasyon
 
+Tüm dokümanların indeks listesi: **[docs/README.md](./docs/README.md)**  
+
 ### Ana Dokümanlar
 
-- **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)** - Kapsamlı kurulum, başlatma ve kullanım rehberi
+- **[KURULUM_REHBERI.md](./docs/KURULUM_REHBERI.md)** - Kapsamlı kurulum, başlatma ve kullanım rehberi
   - MongoDB kurulumu (Atlas + Local)
   - Environment yapılandırması
   - Proje başlatma yöntemleri
@@ -195,7 +197,7 @@ Detaylı deployment rehberi için **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)**
   - Deployment rehberi
   - Production checklist
 
-- **[PROJE_GELISTIRME.md](./PROJE_GELISTIRME.md)** - Proje geliştirme, iyileştirmeler ve teknik detaylar
+- **[PROJE_GELISTIRME.md](./docs/PROJE_GELISTIRME.md)** - Proje geliştirme, iyileştirmeler ve teknik detaylar
   - Tamamlanan özellikler
   - Test stratejisi (detaylı)
   - Yetki sistemi (detaylı tablo)

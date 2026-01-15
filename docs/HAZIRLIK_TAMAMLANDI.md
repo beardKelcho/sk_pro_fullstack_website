@@ -254,7 +254,7 @@ Detaylı adımlar için: **[DEPLOYMENT_README.md](./DEPLOYMENT_README.md)**
 
 - **[KURULUM_REHBERI.md](./KURULUM_REHBERI.md)** - Kurulum rehberi
 - **[BASLATMA_REHBERI.md](./BASLATMA_REHBERI.md)** - Hızlı başlangıç
-- **[README.md](./README.md)** - Proje genel bakış
+- **[README.md](../README.md)** - Proje genel bakış
 
 ---
 

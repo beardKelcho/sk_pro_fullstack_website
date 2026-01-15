@@ -10,6 +10,7 @@ import DonutChartWidget from '@/components/admin/widgets/DonutChartWidget';
 import PieChartWidget from '@/components/admin/widgets/PieChartWidget';
 import LineChartWidget from '@/components/admin/widgets/LineChartWidget';
 import BarChartWidget from '@/components/admin/widgets/BarChartWidget';
+import { getAllProjects } from '@/services/projectService';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -19,7 +20,7 @@ export default function Dashboard() {
     tasks: { total: 0, open: 0, completed: 0 },
     clients: { total: 0, active: 0 }
   });
-  const [upcomingProjects, setUpcomingProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
   const [upcomingMaintenances, setUpcomingMaintenances] = useState<any[]>([]);
   const [charts, setCharts] = useState<ChartData | null>(null);
 
@@ -28,10 +29,21 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
-        const statsData = await getDashboardStats();
-        setStats(statsData.stats);
-        setUpcomingProjects(statsData.upcomingProjects || []);
-        setUpcomingMaintenances(statsData.upcomingMaintenances || []);
+        const [statsData, projectsData] = await Promise.allSettled([
+          getDashboardStats(),
+          getAllProjects({ page: 1, limit: 1000 }),
+        ]);
+
+        if (statsData.status === 'fulfilled') {
+          setStats(statsData.value.stats);
+          setUpcomingMaintenances(statsData.value.upcomingMaintenances || []);
+        }
+
+        if (projectsData.status === 'fulfilled') {
+          setProjects(projectsData.value.projects || []);
+        } else {
+          setProjects([]);
+        }
 
         // Charts verisini ayrı bir request olarak lazy load et (non-blocking)
         getDashboardCharts(7)
@@ -52,6 +64,46 @@ export default function Dashboard() {
     return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
+  const getProjectStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'PENDING_APPROVAL':
+      case 'PLANNING':
+        return 'Onay Bekleyen';
+      case 'APPROVED':
+        return 'Onaylanan';
+      case 'ACTIVE':
+        return 'Devam Ediyor';
+      case 'ON_HOLD':
+        return 'Ertelendi';
+      case 'COMPLETED':
+        return 'Tamamlandı';
+      case 'CANCELLED':
+        return 'İptal Edildi';
+      default:
+        return 'Onay Bekleyen';
+    }
+  };
+
+  const getProjectStatusBadgeClass = (status?: string) => {
+    switch (status) {
+      case 'PENDING_APPROVAL':
+      case 'PLANNING':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'APPROVED':
+        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300';
+      case 'ACTIVE':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      case 'ON_HOLD':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+      case 'COMPLETED':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      default:
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -60,7 +112,7 @@ export default function Dashboard() {
     );
   }
 
-  const dashboardStats = { stats, upcomingProjects, upcomingMaintenances };
+  const dashboardStats = { stats, upcomingProjects: [], upcomingMaintenances };
   const chartData = charts
     ? {
         equipmentStatus: charts.equipmentStatus || [],
@@ -92,76 +144,58 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 1) En üst: Yaklaşan Etkinlikler + Yaklaşan Bakımlar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Yaklaşan Etkinlikler */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="font-semibold text-lg text-gray-800 dark:text-white">Yaklaşan Etkinlikler</h2>
-            <Link href="/admin/projects">
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
-                Tümünü Gör
-              </span>
-            </Link>
-          </div>
-          <div className="p-4">
-            {upcomingProjects.length > 0 ? (
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {upcomingProjects.map((project) => (
-                  <div key={project._id || project.id} className="py-3 flex items-start">
-                    <div className="flex-shrink-0 w-3 h-3 rounded-full mt-2 bg-blue-500"></div>
-                    <div className="ml-4">
-                      <h3 className="text-sm font-medium text-gray-800 dark:text-white">{project.name}</h3>
-                      <div className="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
-                        <span className="mr-2">{formatDate(project.startDate)}</span>
-                        <span>•</span>
-                        <span className="ml-2">{project.location || 'Konum belirtilmemiş'}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-sm py-4 text-center">
-                Yaklaşan proje bulunmuyor
-              </p>
-            )}
-          </div>
+      {/* 1) En üst: Tüm Projeler (durumlarıyla) */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h2 className="font-semibold text-lg text-gray-800 dark:text-white">Projeler</h2>
+          <Link href="/admin/projects">
+            <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Tümünü Gör
+            </span>
+          </Link>
         </div>
-        
-        {/* Yaklaşan Bakımlar */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-            <h2 className="font-semibold text-lg text-gray-800 dark:text-white">Yaklaşan Bakımlar</h2>
-            <Link href="/admin/equipment/maintenance">
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
-                Tümünü Gör
-              </span>
-            </Link>
-          </div>
-          <div className="p-4">
-            {upcomingMaintenances.length > 0 ? (
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {upcomingMaintenances.map((item) => (
-                  <div key={item._id || item.id} className="py-3 flex items-start">
-                    <div className="flex-shrink-0 w-3 h-3 rounded-full mt-2 bg-yellow-500"></div>
-                    <div className="ml-4 flex-1">
-                      <h3 className="text-sm font-medium text-gray-800 dark:text-white">
-                        {item.equipment?.name || 'Ekipman bilgisi yok'}
-                      </h3>
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Bakım Tarihi: {formatDate(item.scheduledDate)}
-                      </p>
+        <div className="p-4">
+          {projects.length > 0 ? (
+            <div className="max-h-80 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
+              {projects.map((project: any) => {
+                const id = project._id || project.id || '';
+                const clientName =
+                  typeof project.client === 'object' && project.client
+                    ? (project.client.companyName || project.client.name || '')
+                    : '';
+                const statusLabel = getProjectStatusLabel(project.status);
+                const badgeClass = getProjectStatusBadgeClass(project.status);
+
+                return (
+                  <Link
+                    key={id}
+                    href={id ? `/admin/projects/view/${id}` : '/admin/projects'}
+                    className="block py-3 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {project.name || 'Proje'}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {clientName ? `${clientName} • ` : ''}
+                          {project.startDate ? formatDate(project.startDate) : 'Tarih yok'}
+                          {project.location ? ` • ${project.location}` : ''}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${badgeClass}`}>
+                        {statusLabel}
+                      </span>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-sm py-4 text-center">
-                Yaklaşan bakım bulunmuyor
-              </p>
-            )}
-          </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400 text-sm py-4 text-center">
+              Proje bulunmuyor
+            </p>
+          )}
         </div>
       </div>
 
@@ -202,13 +236,49 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 4) Altında: Ekipman Durum Dağılımı */}
-      <div className="min-h-[380px]">
-        <PieChartWidget
-          widget={makeWidget({ type: 'PIE_CHART', title: 'Ekipman Durum Dağılımı', settings: { chartType: 'equipment_status' } })}
-          chartData={chartData}
-          isEditable={false}
-        />
+      {/* 4) Altında: Ekipman Durum Dağılımı + Yaklaşan Bakımlar */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="min-h-[380px]">
+          <PieChartWidget
+            widget={makeWidget({ type: 'PIE_CHART', title: 'Ekipman Durum Dağılımı', settings: { chartType: 'equipment_status' } })}
+            chartData={chartData}
+            isEditable={false}
+          />
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <h2 className="font-semibold text-lg text-gray-800 dark:text-white">Yaklaşan Bakımlar</h2>
+            <Link href="/admin/equipment/maintenance">
+              <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Tümünü Gör
+              </span>
+            </Link>
+          </div>
+          <div className="p-4">
+            {upcomingMaintenances.length > 0 ? (
+              <div className="max-h-80 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
+                {upcomingMaintenances.map((item: any) => (
+                  <div key={item._id || item.id} className="py-3 flex items-start">
+                    <div className="flex-shrink-0 w-3 h-3 rounded-full mt-2 bg-yellow-500"></div>
+                    <div className="ml-4 flex-1">
+                      <h3 className="text-sm font-medium text-gray-800 dark:text-white">
+                        {item.equipment?.name || 'Ekipman bilgisi yok'}
+                      </h3>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Bakım Tarihi: {formatDate(item.scheduledDate)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400 text-sm py-4 text-center">
+                Yaklaşan bakım bulunmuyor
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 5) Altında: Görev Tamamlanma Trendi */}

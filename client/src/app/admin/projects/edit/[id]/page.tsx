@@ -4,8 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ProjectStatus, Project, TeamMember, Equipment } from '@/types/project';
-import { updateProject } from '@/services/projectService';
+import { ProjectStatus } from '@/types/project';
+import { getProjectById, updateProject } from '@/services/projectService';
+import { getAllCustomers, type Customer } from '@/services/customerService';
+import { getAllUsers, getRoleLabel, type User } from '@/services/userService';
+import { getAllEquipment, type Equipment as EquipmentItem } from '@/services/equipmentService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 
@@ -27,7 +30,7 @@ interface FormData {
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'PLANNING': 'Onay Bekleyen', // legacy
+  'PLANNING': 'Onay Bekleyen', // legacy (dropdown'da gösterilmeyecek)
   'PENDING_APPROVAL': 'Onay Bekleyen',
   'APPROVED': 'Onaylanan',
   'ACTIVE': 'Devam Ediyor',
@@ -36,44 +39,14 @@ const statusNames: Record<ProjectStatus, string> = {
   'CANCELLED': 'İptal Edildi'
 };
 
-// Örnek takım üyeleri
-const sampleTeamMembers: TeamMember[] = [
-  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör', email: 'ahmet.yilmaz@skpro.com', phone: '+90 532 111 1111', status: 'active' },
-  { id: '2', name: 'Mehmet Demir', role: 'Video Operatörü', email: 'mehmet.demir@skpro.com', phone: '+90 533 222 2222', status: 'active' },
-  { id: '3', name: 'Ayşe Kaya', role: 'Işık Operatörü', email: 'ayse.kaya@skpro.com', phone: '+90 534 333 3333', status: 'active' },
-  { id: '4', name: 'Can Öztürk', role: 'Ses Operatörü', email: 'can.ozturk@skpro.com', phone: '+90 535 444 4444', status: 'active' },
-  { id: '5', name: 'Zeynep Aydın', role: 'LED Operatörü', email: 'zeynep.aydin@skpro.com', phone: '+90 536 555 5555', status: 'active' },
-  { id: '6', name: 'Ali Çelik', role: 'Teknik Asistan', email: 'ali.celik@skpro.com', phone: '+90 537 666 6666', status: 'active' },
-  { id: '7', name: 'Fatma Şahin', role: 'Video Operatörü', email: 'fatma.sahin@skpro.com', phone: '+90 538 777 7777', status: 'active' },
-  { id: '8', name: 'Emre Yıldız', role: 'Ses Operatörü', email: 'emre.yildiz@skpro.com', phone: '+90 539 888 8888', status: 'active' },
-  { id: '9', name: 'Selin Arslan', role: 'Işık Operatörü', email: 'selin.arslan@skpro.com', phone: '+90 540 999 9999', status: 'active' },
-  { id: '10', name: 'Burak Kara', role: 'LED Operatörü', email: 'burak.kara@skpro.com', phone: '+90 541 000 0000', status: 'active' },
-  { id: '11', name: 'Deniz Yalçın', role: 'Teknik Asistan', email: 'deniz.yalcin@skpro.com', phone: '+90 542 111 0000', status: 'active' }
-];
+const toDateInputValue = (value?: string) => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10); // yyyy-MM-dd
+};
 
-// Örnek ekipmanlar
-const sampleEquipment: Equipment[] = [
-  { id: '1', name: 'Analog Way Aquilon RS4', model: 'Aquilon RS4', serialNumber: 'AW-123456', category: 'Video Switcher', status: 'available' },
-  { id: '2', name: 'Dataton Watchpax 60', model: 'Watchpax 60', serialNumber: 'DT-789012', category: 'Media Server', status: 'available' },
-  { id: '3', name: 'Blackmagic ATEM 4 M/E', model: 'ATEM 4 M/E Constellation HD', serialNumber: 'BM-345678', category: 'Video Switcher', status: 'available' },
-  { id: '4', name: 'Barco UDX-4K32', model: 'UDX-4K32', serialNumber: 'BC-901234', category: 'Projeksiyon', status: 'available' },
-  { id: '5', name: 'Sony PVM-X2400', model: 'PVM-X2400', serialNumber: 'SN-567890', category: 'Monitör', status: 'available' },
-  { id: '6', name: 'Dell Precision 7920', model: 'Precision 7920', serialNumber: 'DL-123789', category: 'Workstation', status: 'available' },
-  { id: '7', name: 'DiGiCo S31', model: 'S31', serialNumber: 'DG-456123', category: 'Ses Mikseri', status: 'available' },
-  { id: '8', name: 'GrandMA3 Light', model: 'MA3 Light', serialNumber: 'GM-789456', category: 'Işık Konsolu', status: 'available' },
-  { id: '9', name: 'Shure ULXD4', model: 'ULXD4', serialNumber: 'SH-012345', category: 'Kablosuz Mikrofon', status: 'available' },
-  { id: '10', name: 'ROE Visual CB5', model: 'Carbon CB5', serialNumber: 'ROE-678901', category: 'LED Panel', status: 'available' }
-];
-
-// Müşteri seçimi için örnek veriler
-const sampleClients = [
-  { id: '1', name: 'TechCon Group' },
-  { id: '2', name: 'X Teknoloji A.Ş.' },
-  { id: '3', name: 'Y İletişim' },
-  { id: '4', name: 'Z Organizasyon' },
-  { id: '5', name: 'Mega Holding' },
-  { id: '6', name: 'Eğitim Kurumu' },
-];
+const toIsoUtcMidnight = (dateInput: string) => `${dateInput}T00:00:00.000Z`;
 
 
 export default function EditProject() {
@@ -106,18 +79,29 @@ export default function EditProject() {
   // State'ler - takım üyeleri ve ekipman seçimi için
   const [teamCheckboxes, setTeamCheckboxes] = useState<{ [key: string]: boolean }>({});
   const [equipmentCheckboxes, setEquipmentCheckboxes] = useState<{ [key: string]: boolean }>({});
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>([]);
 
   // Proje verilerini yükle
   useEffect(() => {
     const fetchProject = async () => {
       setLoading(true);
       try {
-        const { getProjectById } = await import('@/services/projectService');
-        const project = await getProjectById(projectId);
+        const [project, customerRes, userRes, equipmentRes] = await Promise.all([
+          getProjectById(projectId),
+          getAllCustomers({ page: 1, limit: 1000 }),
+          getAllUsers({ page: 1, limit: 1000 }),
+          getAllEquipment({ page: 1, limit: 1000 }),
+        ]);
+        setCustomers(customerRes.clients || []);
+        setUsers(userRes.users || []);
+        setEquipmentList(equipmentRes.equipment || []);
         
         // Backend formatını frontend formatına dönüştür
         const clientId = typeof project.client === 'string' ? project.client : (project.client as any)?._id || (project.client as any)?.id || '';
-        const status = project.status as ProjectStatus;
+        // Legacy normalize: PLANNING -> PENDING_APPROVAL (UI'da PLANNING gösterme)
+        const status = (project.status === 'PLANNING' ? 'PENDING_APPROVAL' : project.status) as ProjectStatus;
         const teamIds = Array.isArray(project.team) ? project.team.map((t: any) => typeof t === 'string' ? t : t._id || t.id) : [];
         const equipmentIds = Array.isArray(project.equipment) ? project.equipment.map((e: any) => typeof e === 'string' ? e : e._id || e.id) : [];
         
@@ -127,8 +111,8 @@ export default function EditProject() {
           name: project.name,
           description: project.description || '',
           customer: clientId,
-          startDate: project.startDate,
-          endDate: project.endDate || '',
+          startDate: toDateInputValue(project.startDate),
+          endDate: toDateInputValue(project.endDate || ''),
           location: project.location || '',
           status: status as ProjectStatus,
           budget: project.budget || 0,
@@ -139,14 +123,18 @@ export default function EditProject() {
         
         // Ekip ve ekipman checkbox'larını mevcut verilerle doldur
         const teamStates: { [key: string]: boolean } = {};
-        sampleTeamMembers.forEach(member => {
-          teamStates[member.id] = teamIds.includes(member.id);
+        (userRes.users || []).forEach((u: User) => {
+          const uid = (u._id || u.id || '').toString();
+          if (!uid) return;
+          teamStates[uid] = teamIds.includes(uid);
         });
         setTeamCheckboxes(teamStates);
         
         const equipmentStates: { [key: string]: boolean } = {};
-        sampleEquipment.forEach(equipment => {
-          equipmentStates[equipment.id] = equipmentIds.includes(equipment.id);
+        (equipmentRes.equipment || []).forEach((eq: EquipmentItem) => {
+          const eid = (eq._id || eq.id || '').toString();
+          if (!eid) return;
+          equipmentStates[eid] = equipmentIds.includes(eid);
         });
         setEquipmentCheckboxes(equipmentStates);
         
@@ -158,6 +146,7 @@ export default function EditProject() {
       } catch (error) {
         logger.error('Veri yükleme hatası:', error);
         setError('Proje bilgileri yüklenirken bir hata oluştu');
+        setNotFound(true);
         setLoading(false);
       }
     };
@@ -259,15 +248,15 @@ export default function EditProject() {
     e.preventDefault();
     // Form doğrulama
     if (!validateForm()) return;
-    setLoading(true);
+    setSubmitting(true);
     try {
       // API'ye gönderilecek veri - Backend formatına uygun
       const projectData = {
         name: formData.name,
         description: formData.description,
         client: formData.customer, // Backend'de client olarak geçiyor
-        startDate: formData.startDate,
-        endDate: formData.endDate || undefined,
+        startDate: toIsoUtcMidnight(formData.startDate),
+        endDate: formData.endDate ? toIsoUtcMidnight(formData.endDate) : undefined,
         location: formData.location,
         status: formData.status,
         team: formData.team || [],
@@ -286,7 +275,7 @@ export default function EditProject() {
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -386,9 +375,16 @@ export default function EditProject() {
                 required
               >
                 <option value="">Müşteri seçin</option>
-                {sampleClients.map(client => (
-                  <option key={client.id} value={client.name}>{client.name}</option>
-                ))}
+                {customers.map((c) => {
+                  const id = (c._id || c.id || '').toString();
+                  if (!id) return null;
+                  const label = c.companyName || c.name;
+                  return (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             
@@ -454,7 +450,7 @@ export default function EditProject() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white"
                 required
               >
-                {Object.entries(statusNames).map(([value, label]) => (
+                {Object.entries(statusNames).filter(([value]) => value !== 'PLANNING').map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
@@ -494,29 +490,33 @@ export default function EditProject() {
                 Ekip Üyeleri
               </label>
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-                {sampleTeamMembers.length === 0 ? (
+                {users.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">Ekip üyesi bulunamadı</p>
                 ) : (
                   <div className="space-y-2">
-                    {sampleTeamMembers.map(member => (
-                      <div key={member.id} className="flex items-start">
+                    {users.map((u) => {
+                      const uid = (u._id || u.id || '').toString();
+                      if (!uid) return null;
+                      return (
+                      <div key={uid} className="flex items-start">
                         <div className="flex items-center h-5">
                           <input
-                            id={`team-${member.id}`}
+                            id={`team-${uid}`}
                             type="checkbox"
-                            checked={teamCheckboxes[member.id] || false}
-                            onChange={() => handleTeamToggle(member.id)}
+                            checked={teamCheckboxes[uid] || false}
+                            onChange={() => handleTeamToggle(uid)}
                             className="focus:ring-[#0066CC] dark:focus:ring-primary-light h-4 w-4 text-[#0066CC] dark:text-primary-light border-gray-300 dark:border-gray-600 rounded"
                           />
                         </div>
                         <div className="ml-3 text-sm">
-                          <label htmlFor={`team-${member.id}`} className="font-medium text-gray-700 dark:text-gray-300">
-                            {member.name}
+                          <label htmlFor={`team-${uid}`} className="font-medium text-gray-700 dark:text-gray-300">
+                            {u.name}
                           </label>
-                          <p className="text-gray-500 dark:text-gray-400">{member.role}</p>
+                          <p className="text-gray-500 dark:text-gray-400">{getRoleLabel(u.role)}</p>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -531,29 +531,33 @@ export default function EditProject() {
                 Ekipmanlar
               </label>
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-                {sampleEquipment.length === 0 ? (
+                {equipmentList.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">Ekipman bulunamadı</p>
                 ) : (
                   <div className="space-y-2">
-                    {sampleEquipment.map(equipment => (
-                      <div key={equipment.id} className="flex items-start">
+                    {equipmentList.map((eq) => {
+                      const eid = (eq._id || eq.id || '').toString();
+                      if (!eid) return null;
+                      return (
+                      <div key={eid} className="flex items-start">
                         <div className="flex items-center h-5">
                           <input
-                            id={`equipment-${equipment.id}`}
+                            id={`equipment-${eid}`}
                             type="checkbox"
-                            checked={equipmentCheckboxes[equipment.id] || false}
-                            onChange={() => handleEquipmentToggle(equipment.id)}
+                            checked={equipmentCheckboxes[eid] || false}
+                            onChange={() => handleEquipmentToggle(eid)}
                             className="focus:ring-[#0066CC] dark:focus:ring-primary-light h-4 w-4 text-[#0066CC] dark:text-primary-light border-gray-300 dark:border-gray-600 rounded"
                           />
                         </div>
                         <div className="ml-3 text-sm">
-                          <label htmlFor={`equipment-${equipment.id}`} className="font-medium text-gray-700 dark:text-gray-300">
-                            {equipment.name}
+                          <label htmlFor={`equipment-${eid}`} className="font-medium text-gray-700 dark:text-gray-300">
+                            {eq.name}
                           </label>
-                          <p className="text-gray-500 dark:text-gray-400">{equipment.category}</p>
+                          <p className="text-gray-500 dark:text-gray-400">{eq.type}</p>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

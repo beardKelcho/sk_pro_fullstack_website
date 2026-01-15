@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { createEquipment, type Equipment as EquipmentType } from '@/services/equipmentService';
+import { createEquipmentWithQRCode } from '@/services/equipmentService';
 import logger from '@/utils/logger';
+import QRCodePrintModal from '@/components/admin/QRCodePrintModal';
 
 // Ekipman türü tanımlama
 interface Equipment {
@@ -76,6 +77,8 @@ const statusOptions = [
 
 export default function AddEquipment() {
   const router = useRouter();
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [createdQr, setCreatedQr] = useState<{ title: string; code: string; qrImage: string } | null>(null);
   
   // Form durumu
   const [formData, setFormData] = useState<EquipmentFormData>({
@@ -224,7 +227,20 @@ export default function AddEquipment() {
         responsibleUser: formData.assignedTo || undefined
       };
       // Gerçek API çağrısı
-      await createEquipment(equipmentData as any);
+      const result = await createEquipmentWithQRCode(equipmentData as any);
+
+      if (result?.qrImage && result?.qrCode?.code) {
+        setCreatedQr({
+          title: `${result.equipment?.name || formData.name}${result.equipment?.serialNumber ? ` - ${result.equipment.serialNumber}` : ''}`,
+          code: result.qrCode.code,
+          qrImage: result.qrImage,
+        });
+        setQrModalOpen(true);
+        setSuccess(true);
+        setLoading(false);
+        return;
+      }
+
       setSuccess(true);
       setLoading(false);
       setTimeout(() => {
@@ -249,6 +265,16 @@ export default function AddEquipment() {
   
   return (
     <div>
+      <QRCodePrintModal
+        isOpen={qrModalOpen && !!createdQr}
+        onClose={() => {
+          setQrModalOpen(false);
+          router.push('/admin/equipment');
+        }}
+        title={createdQr?.title}
+        code={createdQr?.code || ''}
+        qrImage={createdQr?.qrImage || ''}
+      />
       {/* Başlık bölümü */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>

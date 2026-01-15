@@ -16,6 +16,8 @@ export interface Equipment {
   location?: string;
   notes?: string;
   responsibleUser?: string;
+  qrCodeId?: string;
+  qrCodeValue?: string;
   specs?: Record<string, unknown> | null;
   createdAt?: string;
   updatedAt?: string;
@@ -23,6 +25,13 @@ export interface Equipment {
   warrantyExpiry?: string;
   images?: string[];
   documents?: string[];
+}
+
+export interface CreateEquipmentWithQRCodeResponse {
+  success: boolean;
+  equipment: Equipment;
+  qrCode?: any;
+  qrImage?: string | null;
 }
 
 export const getAllEquipment = async (params?: {
@@ -60,6 +69,18 @@ export const createEquipment = async (data: Partial<Equipment>): Promise<Equipme
   } catch (error) {
     const apiError = handleApiError(error);
     logger.error('createEquipment error:', apiError);
+    throw new Error(getUserFriendlyMessage(apiError));
+  }
+};
+
+export const createEquipmentWithQRCode = async (data: Partial<Equipment>): Promise<CreateEquipmentWithQRCodeResponse> => {
+  try {
+    const res = await apiClient.post('/equipment', data);
+    // Backend: { success, equipment, qrCode, qrImage }
+    return res.data as CreateEquipmentWithQRCodeResponse;
+  } catch (error) {
+    const apiError = handleApiError(error);
+    logger.error('createEquipmentWithQRCode error:', apiError);
     throw new Error(getUserFriendlyMessage(apiError));
   }
 };

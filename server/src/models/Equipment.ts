@@ -11,6 +11,8 @@ export interface IEquipment extends Omit<Document, 'model'> {
   location: string;
   notes: string;
   responsibleUser: mongoose.Types.ObjectId;
+  qrCodeId?: mongoose.Types.ObjectId;
+  qrCodeValue?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +55,16 @@ const EquipmentSchema: Schema = new Schema(
     responsibleUser: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+    },
+    qrCodeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'QRCode',
+      index: true,
+    },
+    qrCodeValue: {
+      type: String,
+      trim: true,
+      index: true,
     },
   },
   {

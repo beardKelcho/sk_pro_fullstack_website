@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
-import { Equipment } from '../models';
+import { Equipment, QRCode } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
 import { invalidateEquipmentCache } from '../middleware/cache.middleware';
 import { createVersionHistory } from '../utils/versionHistory';
+import { generateQRCodeContent, generateQRCodeImage } from '../utils/qrGenerator';
 
 // Tüm ekipmanları listele
 export const getAllEquipment = async (req: Request, res: Response) => {
@@ -137,13 +138,70 @@ export const createEquipment = async (req: Request, res: Response) => {
       notes,
       responsibleUser,
     });
+
+    // Ekipman için otomatik QR oluştur ve equipment'e bağla
+    // QR oluşturma hatasında ekipmanı geri al (QR zorunlu akış)
+    const userId = (req.user as any)?._id;
+    if (!userId) {
+      await Equipment.findByIdAndDelete(equipment._id).catch(() => null);
+      return res.status(401).json({
+        success: false,
+        message: 'QR oluşturmak için yetkili kullanıcı bulunamadı',
+      });
+    }
+
+    let qrCodeDoc: any = null;
+    let qrImage: string | null = null;
+    const maxAttempts = 5;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const code = generateQRCodeContent('EQUIPMENT', equipment._id.toString());
+
+        qrCodeDoc = await QRCode.create({
+          code,
+          type: 'EQUIPMENT',
+          relatedId: equipment._id,
+          relatedType: 'Equipment',
+          title: `${name}${serialNumber ? ` - ${serialNumber}` : ''}`,
+          description: model ? `Model: ${model}` : undefined,
+          createdBy: userId,
+          isActive: true,
+        });
+
+        qrImage = await generateQRCodeImage(code, { width: 420, margin: 2 });
+
+        await Equipment.findByIdAndUpdate(
+          equipment._id,
+          { qrCodeId: qrCodeDoc._id, qrCodeValue: qrCodeDoc.code },
+          { new: false }
+        );
+        break;
+      } catch (err: any) {
+        // Duplicate key: retry
+        if (err?.code === 11000 && attempt < maxAttempts) {
+          continue;
+        }
+        // Diğer hatalarda geri al
+        logger.error('Ekipman QR oluşturma hatası:', err);
+        await Equipment.findByIdAndDelete(equipment._id).catch(() => null);
+        return res.status(500).json({
+          success: false,
+          message: 'Ekipman için QR kod oluşturulamadı. Lütfen tekrar deneyin.',
+        });
+      }
+    }
+
+    // Güncel ekipmanı dön (qr alanları ile)
+    const equipmentWithQr = await Equipment.findById(equipment._id).populate('responsibleUser', 'name email');
     
     // Cache'i invalidate et
     await invalidateEquipmentCache();
     
     res.status(201).json({
       success: true,
-      equipment,
+      equipment: equipmentWithQr || equipment,
+      qrCode: qrCodeDoc,
+      qrImage,
     });
   } catch (error) {
     logger.error('Ekipman oluşturma hatası:', error);

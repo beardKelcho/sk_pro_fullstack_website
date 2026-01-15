@@ -58,6 +58,30 @@ const statusLabels = {
   'Broken': 'Arızalı'
 };
 
+// Backend status enum'larını bu sayfadaki UI status tipine normalize et
+const normalizeStatus = (rawStatus: any): Equipment['status'] => {
+  if (!rawStatus) return 'Available';
+
+  // Zaten UI formatındaysa
+  if (rawStatus === 'Available' || rawStatus === 'InUse' || rawStatus === 'Maintenance' || rawStatus === 'Broken') {
+    return rawStatus;
+  }
+
+  // Backend enum
+  switch (String(rawStatus).toUpperCase()) {
+    case 'AVAILABLE':
+      return 'Available';
+    case 'IN_USE':
+      return 'InUse';
+    case 'MAINTENANCE':
+      return 'Maintenance';
+    case 'DAMAGED':
+      return 'Broken';
+    default:
+      return 'Available';
+  }
+};
+
 // Örnek ekipman verileri
 const sampleEquipment: Equipment[] = [
   {
@@ -274,7 +298,7 @@ export default function EquipmentList() {
           model: item.model || '',
           serialNumber: item.serialNumber || '',
           category: item.type || item.category,
-          status: item.status,
+          status: normalizeStatus(item.status),
           purchaseDate: item.purchaseDate,
           lastMaintenanceDate: item.lastMaintenanceDate,
           nextMaintenanceDate: item.nextMaintenanceDate,
@@ -435,7 +459,7 @@ export default function EquipmentList() {
         model: item.model || '',
         serialNumber: item.serialNumber || '',
         category: item.type || item.category,
-        status: item.status,
+        status: normalizeStatus(item.status),
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
         nextMaintenanceDate: item.nextMaintenanceDate,
@@ -471,7 +495,7 @@ export default function EquipmentList() {
         model: item.model || '',
         serialNumber: item.serialNumber || '',
         category: item.type || item.category,
-        status: item.status,
+        status: normalizeStatus(item.status),
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
         nextMaintenanceDate: item.nextMaintenanceDate,

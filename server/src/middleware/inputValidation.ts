@@ -125,6 +125,7 @@ export const validateEquipment = [
 // Proje ekleme/düzenleme validasyonu
 export const validateProject = [
   body('name')
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ min: 3 })
     .withMessage('Proje adı en az 3 karakter olmalıdır'),
@@ -138,10 +139,11 @@ export const validateProject = [
       return true;
     }),
   body('startDate')
+    .optional({ checkFalsy: true })
     .isISO8601()
     .withMessage('Geçerli bir başlangıç tarihi giriniz'),
   body('endDate')
-    .optional()
+    .optional({ checkFalsy: true })
     .isISO8601()
     .withMessage('Geçerli bir bitiş tarihi giriniz'),
   (req: Request, res: Response, next: NextFunction) => {

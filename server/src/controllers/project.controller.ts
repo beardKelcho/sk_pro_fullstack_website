@@ -239,22 +239,29 @@ export const updateProject = async (req: Request, res: Response) => {
     
     // Eski projeyi al (durum değişikliği kontrolü için)
     const oldProject = await Project.findById(id);
-    
-    const updatedProject = await Project.findByIdAndUpdate(
-      id,
-      {
-        name,
-        description,
-        startDate,
-        endDate,
-        status,
-        location,
-        client,
-        team,
-        equipment,
-      },
-      { new: true, runValidators: true }
-    )
+
+    // Partial update: sadece gelen alanları güncelle (undefined alanlar DB'yi bozmasın)
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (startDate !== undefined) updateData.startDate = startDate;
+    if (endDate !== undefined) updateData.endDate = endDate;
+    if (location !== undefined) updateData.location = location;
+    if (client !== undefined) updateData.client = client;
+    if (team !== undefined) updateData.team = team;
+    if (equipment !== undefined) updateData.equipment = equipment;
+    if (status !== undefined) {
+      updateData.status = status === 'PLANNING' ? 'PENDING_APPROVAL' : status;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Güncellenecek alan bulunamadı',
+      });
+    }
+
+    const updatedProject = await Project.findByIdAndUpdate(id, updateData, { new: true, runValidators: true })
       .populate('client', 'name email phone')
       .populate('team', 'name email role')
       .populate('equipment', 'name type model status');

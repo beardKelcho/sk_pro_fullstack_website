@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getAllProjects, deleteProject } from '@/services/projectService';
+import { getAllProjects, deleteProject, updateProject } from '@/services/projectService';
 import ExportMenu from '@/components/admin/ExportMenu';
 import ImportModal from '@/components/admin/ImportModal';
 import { Project, ProjectStatus, ProjectStatusDisplay, Client } from '@/types/project';
 import logger from '@/utils/logger';
 import { toast } from 'react-toastify';
+import { getStoredUserPermissions, getStoredUserRole } from '@/utils/authStorage';
+import { hasPermission, Permission } from '@/config/permissions';
 
 // Backend enum'larını Türkçe string'e çeviren yardımcı fonksiyon
 const getStatusDisplay = (status: ProjectStatus): ProjectStatusDisplay => {
@@ -63,9 +65,17 @@ export default function ProjectsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [projectToDelete, setProjectToDelete] = useState<ProjectDisplay | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>('');
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
+
+  const canUpdateProject = hasPermission(userRole, Permission.PROJECT_UPDATE, userPermissions);
 
   // Proje verilerini getirme
   useEffect(() => {
+    setUserRole(getStoredUserRole());
+    setUserPermissions(getStoredUserPermissions());
+
     const fetchProjects = async () => {
       setLoading(true);
       setError(null);
@@ -123,6 +133,30 @@ export default function ProjectsPage() {
     };
     fetchProjects();
   }, []);
+
+  const handleQuickStatusChange = async (projectId: string, newDisplay: ProjectStatusDisplay) => {
+    const old = projects.find((p) => p.id === projectId);
+    if (!old) return;
+    if (old.status === newDisplay) return;
+
+    const nextBackendStatus = getStatusFromDisplay(newDisplay);
+
+    // Optimistic UI
+    setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, status: newDisplay } : p)));
+    setUpdatingStatusId(projectId);
+
+    try {
+      await updateProject(projectId, { status: nextBackendStatus } as any);
+      toast.success('Proje durumu güncellendi');
+    } catch (err: any) {
+      logger.error('Proje durum quick update hatası:', err);
+      // Revert
+      setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, status: old.status } : p)));
+      toast.error(err?.message || 'Proje durumu güncellenemedi');
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
 
   // Tarihi formatlama
   const formatDate = (dateString: string) => {
@@ -346,9 +380,28 @@ export default function ProjectsPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[project.status]}`}>
-                          {project.status}
-                        </span>
+                        {canUpdateProject ? (
+                          <select
+                            value={project.status}
+                            disabled={updatingStatusId === project.id}
+                            onChange={(e) => handleQuickStatusChange(project.id, e.target.value as ProjectStatusDisplay)}
+                            className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${
+                              statusColors[project.status]
+                            } ${updatingStatusId === project.id ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                            aria-label="Proje durumunu değiştir"
+                          >
+                            <option value="Onay Bekleyen">Onay Bekleyen</option>
+                            <option value="Onaylanan">Onaylanan</option>
+                            <option value="Devam Ediyor">Devam Ediyor</option>
+                            <option value="Tamamlandı">Tamamlandı</option>
+                            <option value="Ertelendi">Ertelendi</option>
+                            <option value="İptal Edildi">İptal Edildi</option>
+                          </select>
+                        ) : (
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[project.status]}`}>
+                            {project.status}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         <div className="truncate max-w-xs">{project.location}</div>

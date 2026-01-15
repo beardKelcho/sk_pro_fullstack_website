@@ -23,3 +23,6 @@ export const getStoredUserRole = (): string => {
   return getStoredUser()?.role || '';
 };
 
+export const getStoredUserPermissions = (): string[] => {
+  return getStoredUser()?.permissions || [];
+};

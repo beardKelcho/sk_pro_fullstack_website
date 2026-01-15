@@ -35,9 +35,13 @@ export async function POST(request: Request) {
     }
 
     // Email içeriği
+    const contactRecipient = (process.env.CONTACT_EMAIL && process.env.CONTACT_EMAIL.trim() !== '')
+      ? process.env.CONTACT_EMAIL
+      : 'info@skpro.com.tr';
+
     const mailOptions = {
       from: process.env.SMTP_USER,
-      to: process.env.CONTACT_EMAIL,
+      to: contactRecipient,
       subject: `Yeni İletişim Formu Mesajı - ${name}`,
       html: `
         <h2>Yeni İletişim Formu Mesajı</h2>

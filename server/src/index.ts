@@ -11,6 +11,7 @@ import logger from './utils/logger';
 import { startScheduledTasks } from './utils/scheduledTasks';
 import connectDB from './config/database';
 import { connectRedis } from './config/redis';
+import { requireDbConnection } from './middleware/requireDbConnection';
 import fs from 'fs';
 import path from 'path';
 
@@ -130,7 +131,7 @@ if (fs.existsSync(uploadsDir)) {
 setupSwagger(app);
 
 // API Routeları (rate limiter burada uygulanır)
-app.use('/api', limiter, routes);
+app.use('/api', requireDbConnection, limiter, routes);
 
 // 404 handler
 app.use('*', (req, res) => {

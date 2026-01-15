@@ -4,6 +4,10 @@ import logger from '../utils/logger';
 
 const connectDB = async () => {
   try {
+    // DB bağlantısı yokken yapılan sorguların 10sn buffer timeout'larına düşmesini engelle
+    mongoose.set('bufferCommands', false);
+    mongoose.set('bufferTimeoutMS', 0);
+
     // MONGO_URI veya MONGODB_URI destekle (geriye dönük uyumluluk)
     const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/skproduction';
     

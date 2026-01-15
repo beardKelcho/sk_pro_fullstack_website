@@ -25,6 +25,7 @@ import versionHistoryRoutes from './versionHistory.routes';
 import sessionRoutes from './session.routes';
 import twoFactorRoutes from './twoFactor.routes';
 import fileCleanupRoutes from './fileCleanup.routes';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -43,6 +44,10 @@ router.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+    database: {
+      readyState: mongoose.connection.readyState,
+      status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    },
   });
 });
 

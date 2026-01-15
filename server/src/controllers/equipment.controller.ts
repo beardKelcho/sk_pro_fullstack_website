@@ -90,7 +90,7 @@ export const getEquipmentById = async (req: Request, res: Response) => {
       .populate('responsibleUser', 'name email')
       .populate({
         path: 'maintenances',
-        options: { sort: { startDate: -1 } }
+        options: { sort: { scheduledDate: -1 } }
       });
     
     if (!equipment) {

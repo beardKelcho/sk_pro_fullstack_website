@@ -69,8 +69,18 @@ const EquipmentSchema: Schema = new Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+// Virtual populate: Equipment -> Maintenance (Maintenance.equipment)
+EquipmentSchema.virtual('maintenances', {
+  ref: 'Maintenance',
+  localField: '_id',
+  foreignField: 'equipment',
+  justOne: false,
+});
 
 // Ekipman statüsü değiştiğinde log oluşturma
 EquipmentSchema.pre('save', function (next) {

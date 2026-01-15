@@ -1,33 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { getDashboardStats, getDashboardCharts, ChartData } from '@/services/dashboardService';
-import { getUserWidgets, createDefaultWidgets, Widget } from '@/services/widgetService';
-import { trackApiError } from '@/utils/errorTracking';
 import logger from '@/utils/logger';
-import { authApi } from '@/services/api/auth';
-import { Permission, Role, rolePermissions, hasPermission } from '@/config/permissions';
-import { User } from '@/services/userService';
-
-// Lazy load WidgetContainer (react-grid-layout içerir, büyük bundle)
-const WidgetContainer = dynamic(
-  () => import('@/components/admin/widgets/WidgetContainer'),
-  {
-    loading: () => (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066CC]"></div>
-      </div>
-    ),
-    ssr: false, // Client-side only (react-grid-layout SSR desteklemiyor)
-  }
-);
+import type { Widget } from '@/services/widgetService';
+import StatCardWidget from '@/components/admin/widgets/StatCardWidget';
+import DonutChartWidget from '@/components/admin/widgets/DonutChartWidget';
+import PieChartWidget from '@/components/admin/widgets/PieChartWidget';
+import LineChartWidget from '@/components/admin/widgets/LineChartWidget';
+import BarChartWidget from '@/components/admin/widgets/BarChartWidget';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
-  const [widgets, setWidgets] = useState<Widget[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [stats, setStats] = useState({
     equipment: { total: 0, available: 0, inUse: 0, maintenance: 0 },
     projects: { total: 0, active: 0, completed: 0 },
@@ -42,70 +27,16 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
-        // Kullanıcı profilini yükle
-        try {
-          const profileResponse = await authApi.getProfile();
-          if (profileResponse.data?.user) {
-            setCurrentUser(profileResponse.data.user);
-          }
-        } catch (error) {
-          logger.error('Kullanıcı profili yüklenirken hata:', error);
-          // localStorage'dan kullanıcı bilgilerini al (fallback)
-          try {
-            const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
-            if (storedUser) {
-              const userData = JSON.parse(storedUser);
-              setCurrentUser(userData);
-            }
-          } catch (e) {
-            logger.error('Kullanıcı bilgisi parse hatası:', e);
-          }
-        }
-        
-        // Dashboard verilerini ve widget'ları paralel yükle
-        // Charts verisini lazy load yap (ilk yüklemede sadece stats ve widgets)
-        const [statsData, userWidgets] = await Promise.allSettled([
-          getDashboardStats(),
-          getUserWidgets(),
-        ]);
-        
+
+        const statsData = await getDashboardStats();
+        setStats(statsData.stats);
+        setUpcomingProjects(statsData.upcomingProjects || []);
+        setUpcomingMaintenances(statsData.upcomingMaintenances || []);
+
         // Charts verisini ayrı bir request olarak lazy load et (non-blocking)
-        getDashboardCharts(7).then((chartsData) => {
-          setCharts(chartsData);
-        }).catch((error) => {
-          logger.error('Charts verisi yüklenirken hata:', error);
-        });
-
-        if (statsData.status === 'fulfilled') {
-          setStats(statsData.value.stats);
-          setUpcomingProjects(statsData.value.upcomingProjects || []);
-          setUpcomingMaintenances(statsData.value.upcomingMaintenances || []);
-        }
-
-        if (userWidgets.status === 'fulfilled') {
-          if (userWidgets.value.length === 0) {
-            // Varsayılan widget'ları oluştur
-            try {
-              const defaultWidgets = await createDefaultWidgets();
-              setWidgets(defaultWidgets);
-            } catch (error: any) {
-              trackApiError(error, '/widgets/defaults', 'POST');
-              logger.error('Varsayılan widget oluşturma hatası:', error);
-            }
-          } else {
-            setWidgets(userWidgets.value);
-          }
-        } else {
-          // Widget yükleme hatası - varsayılan widget'ları oluşturmayı dene
-          try {
-            const defaultWidgets = await createDefaultWidgets();
-            setWidgets(defaultWidgets);
-          } catch (error: any) {
-            trackApiError(error, '/widgets/defaults', 'POST');
-            logger.error('Varsayılan widget oluşturma hatası:', error);
-          }
-        }
+        getDashboardCharts(7)
+          .then((chartsData) => setCharts(chartsData))
+          .catch((error) => logger.error('Charts verisi yüklenirken hata:', error));
       } catch (error) {
         logger.error('Dashboard verileri yüklenirken hata:', error);
       } finally {
@@ -114,68 +45,6 @@ export default function Dashboard() {
     };
 
     fetchDashboardData();
-  }, []);
-
-  // Widget'ları yetkilere göre filtrele - useMemo ile optimize et
-  // ÖNEMLİ: Position'ları yeniden hesaplama - Widget'ların kendi position'larını kullan
-  const filteredWidgets = React.useMemo(() => {
-    if (!currentUser) {
-      return [];
-    }
-
-    const filtered = widgets.filter(widget => {
-      // Widget görünür değilse gösterme
-      if (!widget.isVisible) return false;
-
-      // Widget'ın requiredPermission ayarı varsa kontrol et
-      const requiredPermission = widget.settings?.requiredPermission as Permission | undefined;
-      if (requiredPermission) {
-        return hasPermission(currentUser.role, requiredPermission, currentUser.permissions);
-      }
-
-      // Permission yoksa varsayılan olarak göster
-      return true;
-    });
-
-    // Widget'ları order ve position'a göre sırala - position'ları değiştirme!
-    const sorted = [...filtered].sort((a, b) => {
-      // Önce order'a göre sırala
-      if (a.order !== undefined && b.order !== undefined && a.order !== b.order) {
-        return a.order - b.order;
-      }
-      // Sonra y pozisyonuna göre
-      const aY = a.position?.y ?? 0;
-      const bY = b.position?.y ?? 0;
-      if (aY !== bY) {
-        return aY - bY;
-      }
-      // Son olarak x pozisyonuna göre
-      return (a.position?.x ?? 0) - (b.position?.x ?? 0);
-    });
-
-    // Position'ları değiştirmeden döndür - WidgetContainer kendi layout'unu yönetecek
-    return sorted;
-  }, [
-    // Stable dependencies
-    widgets.length,
-    widgets.map(w => `${w._id}-${w.isVisible}-${w.order}-${w.position?.x}-${w.position?.y}-${w.position?.w}-${w.position?.h}`).join('|'),
-    currentUser?.role || '',
-    (currentUser?.permissions || []).join(',')
-  ]);
-
-  const handleWidgetsChange = useCallback((updatedWidgets: Widget[]) => {
-    // Sadece gerçekten değiştiyse güncelle - referans karşılaştırması yap
-    setWidgets(prevWidgets => {
-      // Deep comparison - sadece gerçekten değiştiyse güncelle
-      const prevKey = prevWidgets.map(w => `${w._id}-${w.position?.x}-${w.position?.y}-${w.position?.w}-${w.position?.h}-${w.order}`).join('|');
-      const newKey = updatedWidgets.map(w => `${w._id}-${w.position?.x}-${w.position?.y}-${w.position?.w}-${w.position?.h}-${w.order}`).join('|');
-      
-      if (prevKey === newKey) {
-        return prevWidgets; // Değişiklik yok, aynı referansı döndür
-      }
-      
-      return updatedWidgets;
-    });
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -191,8 +60,29 @@ export default function Dashboard() {
     );
   }
 
+  const dashboardStats = { stats, upcomingProjects, upcomingMaintenances };
+  const chartData = charts
+    ? {
+        equipmentStatus: charts.equipmentStatus || [],
+        projectStatus: charts.projectStatus || [],
+        taskCompletion: (charts as any).taskCompletion || (charts as any).taskCompletionTrend || [],
+        monthlyActivity: (charts as any).monthlyActivity || (charts as any).activityData || [],
+        activityData: (charts as any).activityData || [],
+      }
+    : undefined;
+
+  const makeWidget = (w: Pick<Widget, 'type' | 'title' | 'settings'>): Widget => ({
+    userId: 'system',
+    type: w.type,
+    title: w.title,
+    settings: w.settings,
+    isVisible: true,
+    order: 0,
+    position: { x: 0, y: 0, w: 4, h: 4 },
+  });
+
   return (
-    <div>
+    <div className="space-y-6">
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
@@ -202,50 +92,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Widget Container */}
-      {filteredWidgets.length > 0 ? (
-        <WidgetContainer
-          widgets={filteredWidgets}
-          onWidgetsChange={handleWidgetsChange}
-          isEditable={false}
-          dashboardStats={{
-            stats,
-            upcomingProjects,
-            upcomingMaintenances,
-          }}
-          chartData={charts ? {
-            equipmentStatus: charts.equipmentStatus || [],
-            projectStatus: charts.projectStatus || [],
-            taskCompletion: (charts as any).taskCompletion || charts.taskCompletionTrend || [],
-            monthlyActivity: (charts as any).monthlyActivity || charts.activityData || [],
-          } : undefined}
-        />
-      ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
-            Henüz widget yapılandırılmamış
-          </p>
-          <button
-            onClick={async () => {
-              try {
-                const defaultWidgets = await createDefaultWidgets();
-                setWidgets(defaultWidgets);
-              } catch (error: any) {
-                trackApiError(error, '/widgets/defaults', 'POST');
-                logger.error('Varsayılan widget oluşturma hatası:', error);
-              }
-            }}
-            className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
-          >
-            Varsayılan Widget&apos;ları Oluştur
-          </button>
-        </div>
-      )}
-
-      {/* Yaklaşan Etkinlikler ve Bakımlar - Widget olmayan sabit bölümler */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+      {/* 1) En üst: Yaklaşan Etkinlikler + Yaklaşan Bakımlar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Yaklaşan Etkinlikler */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
           <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h2 className="font-semibold text-lg text-gray-800 dark:text-white">Yaklaşan Etkinlikler</h2>
             <Link href="/admin/projects">
@@ -280,7 +130,7 @@ export default function Dashboard() {
         </div>
         
         {/* Yaklaşan Bakımlar */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
           <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <h2 className="font-semibold text-lg text-gray-800 dark:text-white">Yaklaşan Bakımlar</h2>
             <Link href="/admin/equipment/maintenance">
@@ -313,6 +163,70 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* 2) Altında: Toplam Ekipman + Aktif Projeler + Açık Görevler */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCardWidget
+          widget={makeWidget({ type: 'STAT_CARD', title: 'Toplam Ekipman', settings: { statType: 'equipment_total' } })}
+          dashboardStats={dashboardStats}
+          isEditable={false}
+        />
+        <StatCardWidget
+          widget={makeWidget({ type: 'STAT_CARD', title: 'Aktif Projeler', settings: { statType: 'projects_active' } })}
+          dashboardStats={dashboardStats}
+          isEditable={false}
+        />
+        <StatCardWidget
+          widget={makeWidget({ type: 'STAT_CARD', title: 'Açık Görevler', settings: { statType: 'tasks_open' } })}
+          dashboardStats={dashboardStats}
+          isEditable={false}
+        />
+      </div>
+
+      {/* 3) Altında: Proje Durum Dağılımı + Müşteriler */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 min-h-[380px]">
+          <DonutChartWidget
+            widget={makeWidget({ type: 'DONUT_CHART', title: 'Proje Durum Dağılımı', settings: { chartType: 'project_status' } })}
+            chartData={chartData}
+            isEditable={false}
+          />
+        </div>
+        <div className="min-h-[190px]">
+          <StatCardWidget
+            widget={makeWidget({ type: 'STAT_CARD', title: 'Müşteriler', settings: { statType: 'clients_total' } })}
+            dashboardStats={dashboardStats}
+            isEditable={false}
+          />
+        </div>
+      </div>
+
+      {/* 4) Altında: Ekipman Durum Dağılımı */}
+      <div className="min-h-[380px]">
+        <PieChartWidget
+          widget={makeWidget({ type: 'PIE_CHART', title: 'Ekipman Durum Dağılımı', settings: { chartType: 'equipment_status' } })}
+          chartData={chartData}
+          isEditable={false}
+        />
+      </div>
+
+      {/* 5) Altında: Görev Tamamlanma Trendi */}
+      <div className="min-h-[380px]">
+        <LineChartWidget
+          widget={makeWidget({ type: 'LINE_CHART', title: 'Görev Tamamlanma Trendi', settings: { chartType: 'task_completion' } })}
+          chartData={chartData}
+          isEditable={false}
+        />
+      </div>
+
+      {/* 6) Altında: Aylık Aktivite */}
+      <div className="min-h-[380px]">
+        <BarChartWidget
+          widget={makeWidget({ type: 'BAR_CHART', title: 'Aylık Aktivite', settings: { chartType: 'monthly_activity' } })}
+          chartData={chartData}
+          isEditable={false}
+        />
       </div>
     </div>
   );

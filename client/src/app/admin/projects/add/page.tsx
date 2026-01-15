@@ -265,7 +265,10 @@ export default function AddProject() {
     
     // Zorunlu alanları kontrol et
     if (!formData.name.trim()) newErrors.name = 'Proje adı zorunludur';
-    if (!formData.customerName.trim()) newErrors.customerName = 'Müşteri bilgisi zorunludur';
+    // Müşteri selection mutlaka ID üzerinden yapılmalı (backend ObjectId bekliyor)
+    if (!formData.customer || !/^[0-9a-fA-F]{24}$/.test(formData.customer)) {
+      newErrors.customerName = 'Lütfen listeden geçerli bir müşteri seçin';
+    }
     if (!formData.contactPerson.trim()) newErrors.contactPerson = 'İletişim kişisi zorunludur';
     if (!formData.location.trim()) newErrors.location = 'Lokasyon zorunludur';
     
@@ -424,9 +427,21 @@ export default function AddProject() {
                   name="customerName"
                   value={formData.customerName}
                   onChange={(e) => {
-                    handleChange(e);
-                    setCustomerSearchTerm(e.target.value);
-                    if (e.target.value) setShowCustomerList(true);
+                    const value = e.target.value;
+                    // Kullanıcı yazmaya başlarsa seçili müşteri id'sini sıfırla (aksi halde backend'e yanlış id gidebilir)
+                    setFormData(prev => ({
+                      ...prev,
+                      customerName: value,
+                      customer: '',
+                      contactPerson: '',
+                      contactEmail: '',
+                      contactPhone: '',
+                    }));
+                    setCustomerSearchTerm(value);
+                    setShowCustomerList(true);
+                    if (errors.customerName) {
+                      setErrors(prev => ({ ...prev, customerName: '' }));
+                    }
                   }}
                   onFocus={() => setShowCustomerList(true)}
                   className={`block w-full px-3 py-2 border ${errors.customerName ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm`}
@@ -446,7 +461,10 @@ export default function AddProject() {
                           key={customer.id}
                           type="button"
                           className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
-                          onClick={() => selectCustomer(customer)}
+                          onClick={() => {
+                            if (!customer.id || !/^[0-9a-fA-F]{24}$/.test(customer.id)) return;
+                            selectCustomer(customer);
+                          }}
                         >
                           <div className="font-medium">{customer.companyName}</div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">

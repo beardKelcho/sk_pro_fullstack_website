@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import { Equipment, Project, Task, Client, Maintenance, User } from '../models';
+import { Equipment, Project, Task, Client, Maintenance } from '../models';
 import logger from '../utils/logger';
-import mongoose from 'mongoose';
 
 // Dashboard istatistiklerini getir
 export const getDashboardStats = async (req: Request, res: Response) => {

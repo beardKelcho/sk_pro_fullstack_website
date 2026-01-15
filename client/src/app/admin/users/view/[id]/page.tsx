@@ -227,7 +227,7 @@ export default function ViewUser() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <h2 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">Kullanıcı Bulunamadı</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Bu ID'ye sahip bir kullanıcı bulunamadı.</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Bu ID&apos;ye sahip bir kullanıcı bulunamadı.</p>
           <div className="mt-6">
             <Link href="/admin/users">
               <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none">
@@ -341,7 +341,7 @@ export default function ViewUser() {
                           <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Şifre</h3>
                           <div className="mt-1 flex items-center gap-2">
                             <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                              Şifreler güvenlik nedeniyle hash'lenmiş olarak saklanır
+                              Şifreler güvenlik nedeniyle hash&apos;lenmiş olarak saklanır
                             </p>
                             <button
                               onClick={() => setShowPasswordModal(true)}

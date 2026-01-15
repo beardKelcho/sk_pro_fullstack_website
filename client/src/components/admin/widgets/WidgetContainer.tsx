@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ResponsiveGridLayout, LayoutItem, Layout } from 'react-grid-layout';
+import { Responsive, Layout, LayoutItem, ResponsiveLayouts } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
 // resizable.css artık styles.css içinde dahil edilmiş olabilir, ayrı import gerekmiyor
 import { Widget } from '@/services/widgetService';
@@ -13,6 +13,10 @@ import BarChartWidget from './BarChartWidget';
 import { updateWidgetsBulk } from '@/services/widgetService';
 import { trackApiError } from '@/utils/errorTracking';
 import logger from '@/utils/logger';
+
+type Layouts = ResponsiveLayouts;
+
+const ResponsiveGridLayout = Responsive;
 
 interface WidgetContainerProps {
   widgets: Widget[];
@@ -29,7 +33,7 @@ export default function WidgetContainer({
   dashboardStats,
   chartData,
 }: WidgetContainerProps) {
-  const [layouts, setLayouts] = useState<{ [key: string]: LayoutItem[] }>({});
+  const [layouts, setLayouts] = useState<Layouts>({});
   const [isDragging, setIsDragging] = useState(false);
   const [containerWidth, setContainerWidth] = useState(1200);
 
@@ -87,7 +91,7 @@ export default function WidgetContainer({
 
   // Layout değişikliğini handle et - Deep comparison ile optimize et
   const handleLayoutChange = useCallback(
-    async (currentLayout: Layout, allLayouts: Partial<Record<string, Layout>>) => {
+    async (currentLayout: Layout, allLayouts: Layouts) => {
       if (!isEditable) return;
       
       const lgLayout = (allLayouts.lg || currentLayout) as LayoutItem[];
@@ -99,7 +103,7 @@ export default function WidgetContainer({
         const currentLayoutItems = layouts.lg || [];
         const hasChanged = 
           currentLayoutItems.length !== lgLayout.length ||
-          currentLayoutItems.some((item, index) => {
+          currentLayoutItems.some((item: LayoutItem, index: number) => {
             const newItem = lgLayout[index];
             return !newItem || 
               item.i !== newItem.i ||
@@ -223,7 +227,6 @@ export default function WidgetContainer({
         compactType={isEditable ? undefined : null}
         isDraggable={isEditable}
         isResizable={isEditable}
-        static={!isEditable}
         {...(isEditable ? {
           onDragStart: () => setIsDragging(true),
           onDragStop: () => {

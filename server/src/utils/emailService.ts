@@ -142,7 +142,7 @@ export const sendProjectStatusChangeEmail = async (
   projectName: string,
   oldStatus: string,
   newStatus: string,
-  projectId: string
+  _projectId: string
 ): Promise<boolean> => {
   const statusLabels: { [key: string]: string } = {
     'PLANNING': 'Planlama',

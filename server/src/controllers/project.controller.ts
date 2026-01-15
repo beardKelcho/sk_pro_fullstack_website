@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
-import { Project, Client } from '../models';
+import { Project } from '../models';
 import mongoose from 'mongoose';
 import { sendProjectStartEmail, sendProjectStatusChangeEmail } from '../utils/emailService';
-import { notifyProjectTeam, notifyUser } from '../utils/notificationService';
+import { notifyProjectTeam } from '../utils/notificationService';
 import logger from '../utils/logger';
 import { logAction, extractChanges } from '../utils/auditLogger';
-import { createVersionHistory } from '../utils/versionHistory';
 
 // Tüm projeleri listele
 export const getAllProjects = async (req: Request, res: Response) => {

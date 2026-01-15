@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import ExcelJS from 'exceljs';
-import { Equipment, Project, Task, Client, Maintenance } from '../models';
+import { Equipment, Project, Client } from '../models';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
 import mongoose from 'mongoose';
@@ -153,7 +153,7 @@ export const importEquipment = async (req: Request, res: Response) => {
         const status = statusMapping[row['Durum'] || row['Status'] || row['status']] || row['Durum'] || row['Status'] || row['status'] || 'AVAILABLE';
 
         // Ekipman oluştur
-        const equipment = await Equipment.create({
+        await Equipment.create({
           name,
           type,
           model: row['Model'] || row['model'] || undefined,
@@ -261,7 +261,7 @@ export const importProjects = async (req: Request, res: Response) => {
         }
 
         // Proje oluştur
-        const project = await Project.create({
+        await Project.create({
           name,
           description: row['Açıklama'] || row['Description'] || row['description'] || undefined,
           startDate: row['Başlangıç Tarihi'] || row['Start Date'] || row['startDate'] || new Date(),

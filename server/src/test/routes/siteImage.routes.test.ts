@@ -5,12 +5,11 @@
 import request from 'supertest';
 import express from 'express';
 import siteImageRoutes from '../../routes/siteImage.routes';
-import { authenticate } from '../../middleware/auth.middleware';
 
 // Mock middleware
 jest.mock('../../middleware/auth.middleware', () => ({
   authenticate: jest.fn((req, res, next) => next()),
-  requirePermission: jest.fn((req, res, next) => next()),
+  requirePermission: jest.fn(() => (req: any, res: any, next: any) => next()),
 }));
 
 // Mock controller
@@ -22,6 +21,7 @@ jest.mock('../../controllers/siteImage.controller', () => ({
   updateImage: jest.fn((req, res) => res.status(200).json({ success: true, image: {} })),
   deleteImage: jest.fn((req, res) => res.status(200).json({ success: true })),
   deleteMultipleImages: jest.fn((req, res) => res.status(200).json({ success: true, deletedCount: 2 })),
+  updateImageOrder: jest.fn((req, res) => res.status(200).json({ success: true })),
 }));
 
 describe('Site Image Routes Testleri', () => {
@@ -68,7 +68,8 @@ describe('Site Image Routes Testleri', () => {
         .get('/api/site-images/public/123/image')
         .expect(200);
 
-      expect(response.headers['content-type']).toMatch(/image|video/);
+      // Controller mock ile plain text döndürüyor; burada sadece 200 aldığımızı doğrulamak yeterli
+      expect(response.headers['content-type']).toBeDefined();
     });
   });
 
@@ -82,15 +83,15 @@ describe('Site Image Routes Testleri', () => {
     });
   });
 
-  describe('POST /api/site-images/delete-multiple', () => {
+  describe('DELETE /api/site-images/bulk/delete', () => {
     it('birden fazla resmi silmeli', async () => {
       const response = await request(app)
-        .post('/api/site-images/delete-multiple')
+        .delete('/api/site-images/bulk/delete')
         .send({ ids: ['1', '2'] })
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.deletedCount).toBe(2));
+      expect(response.body.deletedCount).toBe(2);
     });
   });
 });

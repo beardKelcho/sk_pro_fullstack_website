@@ -1,4 +1,3 @@
-import { RedisClientType } from 'redis';
 import { getRedisClient } from '../config/redis';
 import logger from './logger';
 
@@ -159,7 +158,7 @@ export const getCacheStats = async (): Promise<{
       return { connected: false };
     }
 
-    const info = await client.info('keyspace');
+    await client.info('keyspace');
     const keys = await client.dbSize();
 
     return {

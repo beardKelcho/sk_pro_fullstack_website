@@ -142,7 +142,7 @@ export default function MonitoringPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* API Response Times */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">En Yavaş Endpoint'ler</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">En Yavaş Endpoint&apos;ler</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={apiMetricsData}>
               <CartesianGrid strokeDasharray="3 3" />

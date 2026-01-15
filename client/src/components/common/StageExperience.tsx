@@ -19,7 +19,6 @@ export default function StageExperience({ children, className = '' }: StageExper
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start end', 'end start'],
-    layoutEffect: false, // Uyarıyı önlemek için
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);

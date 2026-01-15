@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Equipment } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
-import { logAction, extractChanges } from '../utils/auditLogger';
+import { logAction } from '../utils/auditLogger';
 import { invalidateEquipmentCache } from '../middleware/cache.middleware';
 import { createVersionHistory } from '../utils/versionHistory';
 

@@ -21,7 +21,8 @@ import {
   EquipmentCategory,
   ServicesEquipmentContent,
   AboutContent,
-  ContactInfo
+  ContactInfo,
+  SocialMedia
 } from '@/services/siteContentService';
 import { PageLoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import StructuredData, { createOrganizationSchema, createServiceSchema, createLocalBusinessSchema } from '@/components/common/StructuredData';

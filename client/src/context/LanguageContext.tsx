@@ -22,8 +22,8 @@ const translations: Record<Language, Record<string, any>> = {
 // Dil dosyalarını dinamik olarak yükle
 const loadTranslations = async (lang: Language) => {
   try {
-    const module = await import(`@/locales/${lang}.json`);
-    translations[lang] = module.default || module;
+    const translationModule = await import(`@/locales/${lang}.json`);
+    translations[lang] = translationModule.default || translationModule;
   } catch (error) {
     logger.error(`Failed to load translations for ${lang}:`, error);
   }

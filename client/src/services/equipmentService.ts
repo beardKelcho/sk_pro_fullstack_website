@@ -16,6 +16,7 @@ export interface Equipment {
   location?: string;
   notes?: string;
   responsibleUser?: string;
+  specs?: Record<string, unknown> | null;
   createdAt?: string;
   updatedAt?: string;
   category?: string;

@@ -161,7 +161,6 @@ export const cleanupInactiveFiles = async (daysOld: number = 90): Promise<{ dele
  */
 export const checkFileSizes = async (maxSizeMB: number = 50): Promise<{ largeFiles: Array<{ path: string; size: number }> }> => {
   const uploadDir = path.join(process.cwd(), 'uploads');
-  const largeFiles: Array<{ path: string; size: number }> = [];
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
   try {

@@ -57,8 +57,11 @@ export const getBaseUrl = (): string => {
  * getImageUrl({ imageId: "123" }) // "/api/site-images/public/123/image"
  * getImageUrl({ image: { url: "/uploads/image.jpg" } }) // "http://localhost:5001/uploads/image.jpg"
  */
-export const getImageUrl = (options: ImageUrlOptions): string => {
-  const { imageId, image, fallback } = options;
+export const getImageUrl = (options: ImageUrlOptions | string | null | undefined): string => {
+  if (!options) return '';
+
+  const normalized: ImageUrlOptions = typeof options === 'string' ? { imageId: options } : options;
+  const { imageId, image, fallback } = normalized;
   const baseUrl = getBaseUrl();
   
   // If imageId is provided, use it directly

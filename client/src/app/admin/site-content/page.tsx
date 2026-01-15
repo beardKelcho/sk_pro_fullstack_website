@@ -906,8 +906,10 @@ function ServicesEquipmentForm({ content, onSave, saving }: {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {images.map((image) => (
                   <div
-                    key={image._id}
-                    onClick={() => handleImageSelect(image._id)}
+                    key={image._id || image.id || image.filename}
+                    onClick={() => {
+                      if (image._id) handleImageSelect(image._id);
+                    }}
                     className="relative aspect-square rounded border-2 border-gray-300 dark:border-gray-600 overflow-hidden cursor-pointer hover:border-blue-500 transition-colors"
                   >
                     <LazyImage

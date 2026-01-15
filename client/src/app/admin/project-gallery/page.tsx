@@ -205,7 +205,7 @@ export default function ProjectGalleryPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Proje Görselleri Yönetimi</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-300">
-            Anasayfadaki "Projelerimiz" bölümünde gösterilen görselleri yönetin
+            Anasayfadaki &quot;Projelerimiz&quot; bölümünde gösterilen görselleri yönetin
           </p>
         </div>
         <div className="flex gap-3">

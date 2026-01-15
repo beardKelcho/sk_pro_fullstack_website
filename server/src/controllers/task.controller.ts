@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Task, User } from '../models';
+import { Task } from '../models';
 import mongoose from 'mongoose';
 import { sendTaskAssignedEmail, sendTaskUpdatedEmail } from '../utils/emailService';
 import { notifyUser } from '../utils/notificationService';

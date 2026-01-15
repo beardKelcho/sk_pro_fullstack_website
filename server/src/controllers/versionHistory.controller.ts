@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { VersionHistory, Equipment, Project } from '../models';
+import { VersionHistory } from '../models';
 import { getVersionHistory, rollbackToVersion } from '../utils/versionHistory';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';

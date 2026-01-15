@@ -28,7 +28,7 @@ const Footer: React.FC = () => {
     fetchSocialMedia();
   }, []);
 
-  const getIconName = (platform: string): string => {
+  const getIconName = (platform: string): React.ComponentProps<typeof Icon>['name'] => {
     const platformLower = platform.toLowerCase();
     if (platformLower.includes('facebook')) return 'facebook';
     if (platformLower.includes('instagram')) return 'instagram';

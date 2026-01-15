@@ -693,7 +693,7 @@ export default function ViewEquipment() {
                   priority
                 />
                 <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                  QR kodu yazdırmak için sağ tıklayıp "Resmi Farklı Kaydet" seçeneğini kullanabilirsiniz.
+                  QR kodu yazdırmak için sağ tıklayıp &quot;Resmi Farklı Kaydet&quot; seçeneğini kullanabilirsiniz.
                 </p>
               </div>
             )}

@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import { User, Session } from '../models';
+import { User } from '../models';
 import { IUser } from '../models/User';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';

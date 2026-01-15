@@ -4,7 +4,6 @@ import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
 import cron from 'node-cron';
 import { sendEmail } from '../utils/emailService';
-import * as exportController from './export.controller';
 
 /**
  * Tüm rapor zamanlamalarını getir

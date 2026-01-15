@@ -24,31 +24,17 @@ export default function ParallaxSection({
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start end', 'end start'],
-    layoutEffect: false, // Uyarıyı önlemek için
   });
 
   const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 };
   const smoothProgress = useSpring(scrollYProgress, springConfig);
 
-  let transformValue;
-  switch (direction) {
-    case 'up':
-      transformValue = useTransform(smoothProgress, [0, 1], ['0%', `${speed * 100}%`]);
-      break;
-    case 'down':
-      transformValue = useTransform(smoothProgress, [0, 1], ['0%', `-${speed * 100}%`]);
-      break;
-    case 'left':
-      transformValue = useTransform(smoothProgress, [0, 1], ['0%', `${speed * 100}%`]);
-      break;
-    case 'right':
-      transformValue = useTransform(smoothProgress, [0, 1], ['0%', `-${speed * 100}%`]);
-      break;
-    default:
-      transformValue = useTransform(smoothProgress, [0, 1], ['0%', `${speed * 100}%`]);
-  }
-
   const axis = direction === 'left' || direction === 'right' ? 'x' : 'y';
+  const endValue =
+    direction === 'down' || direction === 'right'
+      ? `-${speed * 100}%`
+      : `${speed * 100}%`;
+  const transformValue = useTransform(smoothProgress, [0, 1], ['0%', endValue]);
 
   return (
     <div ref={ref} className={className} style={{ position: 'relative' }}>

@@ -9,7 +9,6 @@ import * as siteImageController from '../../controllers/siteImage.controller';
 import SiteImage from '../../models/SiteImage';
 import mongoose from 'mongoose';
 import fs from 'fs';
-import path from 'path';
 
 // Mock dependencies
 jest.mock('../../models/SiteImage');
@@ -23,7 +22,6 @@ jest.mock('../../utils/logger', () => ({
 describe('Site Image Controller Testleri', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
-  let mockNext: jest.Mock;
 
   beforeEach(() => {
     mockRequest = {
@@ -39,7 +37,6 @@ describe('Site Image Controller Testleri', () => {
       sendFile: jest.fn().mockReturnThis(),
       setHeader: jest.fn().mockReturnThis(),
     };
-    mockNext = jest.fn();
     jest.clearAllMocks();
   });
 
@@ -91,7 +88,7 @@ describe('Site Image Controller Testleri', () => {
   describe('getImageById', () => {
     it('geçerli ID ile resmi getirmeli', async () => {
       const mockImage = { _id: '123', filename: 'test.jpg' };
-      mockRequest.params = { id: '123' };
+      mockRequest.params = { id: '507f1f77bcf86cd799439011' };
 
       (SiteImage.findById as jest.Mock).mockResolvedValue(mockImage);
 
@@ -138,7 +135,7 @@ describe('Site Image Controller Testleri', () => {
         filename: 'test.jpg',
         path: 'uploads/site-images/test.jpg',
       };
-      mockRequest.params = { id: '123' };
+      mockRequest.params = { id: '507f1f77bcf86cd799439011' };
 
       (SiteImage.findById as jest.Mock).mockResolvedValue(mockImage);
       (fs.existsSync as jest.Mock).mockReturnValue(true);
@@ -158,7 +155,7 @@ describe('Site Image Controller Testleri', () => {
         filename: 'test.jpg',
         path: 'uploads/site-images/test.jpg',
       };
-      mockRequest.params = { id: '123' };
+      mockRequest.params = { id: '507f1f77bcf86cd799439011' };
 
       (SiteImage.findById as jest.Mock).mockResolvedValue(mockImage);
       (fs.existsSync as jest.Mock).mockReturnValue(false);
@@ -179,11 +176,11 @@ describe('Site Image Controller Testleri', () => {
         filename: 'test.jpg',
         path: 'uploads/site-images/test.jpg',
         category: 'project',
+        deleteOne: jest.fn().mockResolvedValue(undefined),
       };
-      mockRequest.params = { id: '123' };
+      mockRequest.params = { id: '507f1f77bcf86cd799439011' };
 
       (SiteImage.findById as jest.Mock).mockResolvedValue(mockImage);
-      (SiteImage.findByIdAndDelete as jest.Mock).mockResolvedValue(mockImage);
       // İlk path'te dosya bulunmalı
       (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
         return path.includes('general') || path.includes('test.jpg');
@@ -197,7 +194,7 @@ describe('Site Image Controller Testleri', () => {
 
       // Dosya silme işlemi çağrılmalı (en az bir kez)
       expect(fs.unlinkSync).toHaveBeenCalled();
-      expect(SiteImage.findByIdAndDelete).toHaveBeenCalledWith('123');
+      expect(mockImage.deleteOne).toHaveBeenCalled();
       expect(mockResponse.status).toHaveBeenCalledWith(200);
     });
   });
@@ -205,17 +202,13 @@ describe('Site Image Controller Testleri', () => {
   describe('deleteMultipleImages', () => {
     it('birden fazla resmi başarıyla silmeli', async () => {
       const mockImages = [
-        { _id: '1', filename: 'test1.jpg' },
-        { _id: '2', filename: 'test2.jpg' },
+        { _id: '507f1f77bcf86cd799439011', filename: 'test1.jpg', path: 'uploads/site-images/test1.jpg', category: 'project' },
+        { _id: '507f1f77bcf86cd799439012', filename: 'test2.jpg', path: 'uploads/site-images/test2.jpg', category: 'project' },
       ];
-      mockRequest.body = { ids: ['1', '2'] };
+      mockRequest.body = { ids: ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012'] };
 
-      (SiteImage.findById as jest.Mock)
-        .mockResolvedValueOnce(mockImages[0])
-        .mockResolvedValueOnce(mockImages[1]);
-      (SiteImage.findByIdAndDelete as jest.Mock)
-        .mockResolvedValueOnce(mockImages[0])
-        .mockResolvedValueOnce(mockImages[1]);
+      (SiteImage.find as jest.Mock).mockResolvedValue(mockImages);
+      (SiteImage.deleteMany as jest.Mock).mockResolvedValue({ deletedCount: 2 });
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.unlinkSync as jest.Mock).mockImplementation(() => {});
 

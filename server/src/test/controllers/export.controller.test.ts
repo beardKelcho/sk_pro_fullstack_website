@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import * as exportController from '../../controllers/export.controller';
 import { Equipment, Project } from '../../models';
-import mongoose from 'mongoose';
 
 // Mock models
 jest.mock('../../models', () => ({
@@ -30,22 +29,24 @@ jest.mock('../../models', () => ({
 jest.mock('exceljs', () => {
   return {
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
-      addWorksheet: jest.fn().mockReturnValue({
-        addRow: jest.fn(),
-        getRow: jest.fn().mockReturnValue({
-          font: {},
-          fill: {},
-          alignment: {},
+    default: {
+      Workbook: jest.fn().mockImplementation(() => ({
+        addWorksheet: jest.fn().mockReturnValue({
+          addRow: jest.fn(),
+          getRow: jest.fn().mockReturnValue({
+            font: {},
+            fill: {},
+            alignment: {},
+          }),
+          getColumn: jest.fn().mockReturnValue({
+            width: 0,
+          }),
         }),
-        getColumn: jest.fn().mockReturnValue({
-          width: 0,
-        }),
-      }),
-      xlsx: {
-        write: jest.fn().mockResolvedValue(undefined),
-      },
-    })),
+        xlsx: {
+          write: jest.fn().mockResolvedValue(undefined),
+        },
+      })),
+    },
   };
 });
 
@@ -264,7 +265,9 @@ describe('Export Controller', () => {
 
       (Project.find as jest.Mock).mockReturnValue({
         populate: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue(mockProjects),
+          populate: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue(mockProjects),
+          }),
         }),
       });
 

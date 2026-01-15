@@ -50,7 +50,7 @@ export default function TermsOfService() {
                 3. Fikri Mülkiyet Hakları
               </h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Web sitesindeki tüm içerik (metinler, görseller, logolar, tasarımlar) SK Production'a aittir 
+                Web sitesindeki tüm içerik (metinler, görseller, logolar, tasarımlar) SK Production&apos;a aittir 
                 ve telif hakkı yasaları ile korunmaktadır. İçeriği izinsiz kullanmak yasaktır.
               </p>
             </section>

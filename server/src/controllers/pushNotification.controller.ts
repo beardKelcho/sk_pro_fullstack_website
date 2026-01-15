@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import logger from '../utils/logger';
-import { sendPushNotification, sendPushNotificationToUsers, broadcastPushNotification } from '../utils/pushNotificationService';
+import { sendPushNotification } from '../utils/pushNotificationService';
 
 /**
  * VAPID public key'i getir (frontend için)

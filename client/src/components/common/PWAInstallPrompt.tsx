@@ -93,7 +93,7 @@ export default function PWAInstallPrompt() {
                 Uygulamayı Yükle
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                SK Production'ı cihazınıza yükleyin
+                SK Production&apos;ı cihazınıza yükleyin
               </p>
             </div>
           </div>

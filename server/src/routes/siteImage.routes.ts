@@ -1,5 +1,5 @@
 import express from 'express';
-import { siteImageController } from '../controllers';
+import * as siteImageController from '../controllers/siteImage.controller';
 import { authenticate, requirePermission } from '../middleware/auth.middleware';
 import { Permission } from '../config/permissions';
 

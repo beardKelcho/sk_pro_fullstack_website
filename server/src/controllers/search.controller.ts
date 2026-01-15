@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { Equipment, Project, Task, Client, User, Maintenance } from '../models';
-import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import { addToSearchHistory } from './savedSearch.controller';
 

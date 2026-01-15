@@ -140,11 +140,17 @@ export default function Calendar() {
               status?: string;
             }) => ({
               id: maintenance._id || maintenance.id || '',
-              name: maintenance.equipment?.name || 'Bakım',
+              name:
+                typeof maintenance.equipment === 'string'
+                  ? 'Bakım'
+                  : maintenance.equipment?.name || 'Bakım',
               type: maintenance.type || 'ROUTINE',
               scheduledDate: maintenance.scheduledDate || '',
               status: maintenance.status || 'SCHEDULED',
-              equipment: maintenance.equipment?._id || maintenance.equipment || '',
+              equipment:
+                typeof maintenance.equipment === 'string'
+                  ? maintenance.equipment
+                  : maintenance.equipment?._id || '',
             }));
           
           setMaintenances(calendarMaintenances);

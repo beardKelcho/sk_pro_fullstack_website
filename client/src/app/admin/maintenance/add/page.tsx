@@ -162,7 +162,7 @@ export default function AddMaintenance() {
         status: 'SCHEDULED',
         assignedTo: formData.assignedTo,
         cost: formData.cost ? Number(formData.cost) : undefined,
-        notes: formData.notes.trim() || undefined
+        notes: (formData.notes ?? '').trim() || undefined
       };
       
       await createMaintenance(maintenanceData as any);

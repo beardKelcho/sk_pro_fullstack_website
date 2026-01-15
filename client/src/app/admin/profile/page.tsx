@@ -188,7 +188,7 @@ export default function ProfilePage() {
           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Dashboard'a Dön
+          Dashboard&apos;a Dön
         </Link>
       </div>
 

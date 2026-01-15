@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Maintenance, Equipment } from '../models';
+import { Maintenance } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
 

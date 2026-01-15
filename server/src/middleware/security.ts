@@ -1,6 +1,5 @@
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import cors from 'cors';
 
 // Rate limiting configuration
 export const rateLimiter = rateLimit({

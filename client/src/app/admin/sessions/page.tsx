@@ -297,7 +297,7 @@ export default function SessionsPage() {
               <li>• Tanımadığınız cihazlardan gelen oturumları hemen sonlandırın</li>
               <li>• Düzenli olarak oturumlarınızı kontrol edin</li>
               <li>• Şüpheli aktivite fark ederseniz tüm oturumları sonlandırın ve şifrenizi değiştirin</li>
-              <li>• Ortak bilgisayarlarda "Beni Hatırla" özelliğini kullanmayın</li>
+              <li>• Ortak bilgisayarlarda &quot;Beni Hatırla&quot; özelliğini kullanmayın</li>
             </ul>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import express from 'express';
 import { userController } from '../controllers';
-import { authenticate, authorize, requirePermission } from '../middleware/auth.middleware';
+import { authenticate, requirePermission } from '../middleware/auth.middleware';
 import { validateUser, validateCreateUser, sanitizeInput } from '../middleware/inputValidation';
 import { Permission } from '../config/permissions';
 

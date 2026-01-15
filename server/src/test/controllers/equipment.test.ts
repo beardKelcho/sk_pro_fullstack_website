@@ -1,10 +1,15 @@
 import { Request, Response } from 'express';
-import { equipmentController } from '../../controllers';
+import * as equipmentController from '../../controllers/equipment.controller';
 import { Equipment } from '../../models';
-import mongoose from 'mongoose';
 
 // Mock mongoose
-jest.mock('../../models');
+jest.mock('../../models', () => ({
+  Equipment: {
+    find: jest.fn(),
+    countDocuments: jest.fn(),
+    create: jest.fn(),
+  },
+}));
 
 describe('Equipment Controller', () => {
   let mockRequest: Partial<Request>;
@@ -41,7 +46,9 @@ describe('Equipment Controller', () => {
       (Equipment.find as jest.Mock).mockReturnValue({
         sort: jest.fn().mockReturnValue({
           skip: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue(mockEquipment),
+            limit: jest.fn().mockReturnValue({
+              populate: jest.fn().mockResolvedValue(mockEquipment),
+            }),
           }),
         }),
       });

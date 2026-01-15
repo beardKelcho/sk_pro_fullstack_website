@@ -39,7 +39,6 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ['start start', 'end start'],
-    layoutEffect: false, // Uyarıyı önlemek için
   });
 
   // Parallax efektleri

@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
 import { QRCode, QRScanHistory, Equipment, Project } from '../models';
-import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import { generateQRCodeContent, generateQRCodeImage, parseQRCodeContent } from '../utils/qrGenerator';
-import { requirePermission } from '../middleware/auth.middleware';
-import { Permission } from '../config/permissions';
 
 // Tüm QR kodları listele
 export const getAllQRCodes = async (req: Request, res: Response) => {

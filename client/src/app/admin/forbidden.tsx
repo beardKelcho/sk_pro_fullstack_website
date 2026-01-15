@@ -18,7 +18,7 @@ export default function Forbidden() {
             href="/admin/dashboard"
             className="bg-[#0066CC] dark:bg-primary-light text-white px-8 py-4 rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-all duration-300 text-lg font-medium shadow-lg"
           >
-            Dashboard'a Dön
+            Dashboard&apos;a Dön
           </Link>
           <Link
             href="/"

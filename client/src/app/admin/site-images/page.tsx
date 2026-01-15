@@ -480,7 +480,7 @@ export default function SiteImagesPage() {
                     </select>
                     {imageCategory === 'project' && (
                       <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                        Bu resim anasayfadaki carousel'de gösterilecektir.
+                        Bu resim anasayfadaki carousel&apos;de gösterilecektir.
                       </p>
                     )}
                   </div>

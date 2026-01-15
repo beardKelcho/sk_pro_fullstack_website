@@ -541,13 +541,21 @@ export const deleteProject = async (req: Request, res: Response) => {
         message: 'Aktif proje silinemez. Önce projeyi tamamlayın veya iptal edin.',
       });
     }
-    
+
+    // Proje silinmeden önce: bu projeye rezerve edilmiş ekipmanları boşa çıkar
+    // (status=AVAILABLE + currentProject unset)
+    await Equipment.updateMany(
+      { currentProject: project._id },
+      { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+    ).catch((err: any) => logger.error('Proje silme sırasında ekipman release hatası:', err));
+
     await project.deleteOne();
     
     // Cache'i invalidate et
-    const { invalidateProjectCache, invalidateDashboardCache } = await import('../middleware/cache.middleware');
+    const { invalidateProjectCache, invalidateDashboardCache, invalidateEquipmentCache } = await import('../middleware/cache.middleware');
     await invalidateProjectCache().catch((err: any) => logger.error('Project cache invalidation hatası:', err));
     await invalidateDashboardCache().catch((err: any) => logger.error('Dashboard cache invalidation hatası:', err));
+    await invalidateEquipmentCache().catch((err: any) => logger.error('Equipment cache invalidation hatası:', err));
     
     // Audit log
     await logAction(req, 'DELETE', 'Project', id);

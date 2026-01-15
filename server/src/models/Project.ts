@@ -66,9 +66,14 @@ ProjectSchema.post('save', async function () {
   const doc = this as unknown as IProject;
   if (doc.status === 'ACTIVE' && doc.equipment && doc.equipment.length > 0) {
     const Equipment = mongoose.model('Equipment');
+    // Sadece boşta olanları bu projeye rezerve et
     await Equipment.updateMany(
-      { _id: { $in: doc.equipment } },
-      { $set: { status: 'IN_USE' } }
+      {
+        _id: { $in: doc.equipment },
+        status: 'AVAILABLE',
+        $or: [{ currentProject: { $exists: false } }, { currentProject: null }],
+      },
+      { $set: { status: 'IN_USE', currentProject: (doc as any)._id } }
     );
   }
 });
@@ -85,8 +90,8 @@ ProjectSchema.pre('findOneAndUpdate', async function (next) {
     if (project && project.equipment && project.equipment.length > 0) {
       const Equipment = mongoose.model('Equipment');
       await Equipment.updateMany(
-        { _id: { $in: project.equipment } },
-        { $set: { status: 'AVAILABLE' } }
+        { _id: { $in: project.equipment }, currentProject: project._id },
+        { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
       );
     }
   }

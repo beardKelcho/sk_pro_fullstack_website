@@ -56,7 +56,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       
       // Yaklaşan projeler (30 gün içinde)
       Project.find({
-        status: { $in: ['PLANNING', 'ACTIVE'] },
+        status: { $in: ['PLANNING', 'PENDING_APPROVAL', 'APPROVED', 'ACTIVE'] },
         startDate: {
           $gte: new Date(),
           $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -206,8 +206,9 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
           name: item._id,
           value: item.count
         })),
+        // Legacy normalize: PLANNING -> PENDING_APPROVAL (chart'ta Planlama görünmesin)
         projectStatus: projectStatus.map(item => ({
-          name: item._id,
+          name: item._id === 'PLANNING' ? 'PENDING_APPROVAL' : item._id,
           value: item.count
         })),
         taskStatus: taskStatus.map(item => ({

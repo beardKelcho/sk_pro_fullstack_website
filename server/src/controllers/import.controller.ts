@@ -221,8 +221,11 @@ export const importProjects = async (req: Request, res: Response) => {
 
     // Durum mapping
     const statusMapping: Record<string, string> = {
-      'Planlama': 'PLANNING',
+      'Planlama': 'PENDING_APPROVAL', // legacy
+      'Onay Bekleyen': 'PENDING_APPROVAL',
+      'Onaylanan': 'APPROVED',
       'Aktif': 'ACTIVE',
+      'Ertelendi': 'ON_HOLD',
       'Tamamlandı': 'COMPLETED',
       'İptal': 'CANCELLED',
     };

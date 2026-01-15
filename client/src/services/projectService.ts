@@ -11,7 +11,8 @@ export interface Project {
   description?: string;
   startDate: string;
   endDate?: string;
-  status: 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  // PLANNING legacy (geriye uyumluluk)
+  status: 'PLANNING' | 'PENDING_APPROVAL' | 'APPROVED' | 'ON_HOLD' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   location?: string;
   client: string;
   team?: string[];

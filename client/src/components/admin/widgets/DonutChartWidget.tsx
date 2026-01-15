@@ -19,9 +19,11 @@ const DonutChartWidget: React.FC<DonutChartWidgetProps> = ({ widget, chartData, 
     
     if (chartType === 'project_status' && chartData?.projectStatus) {
       return chartData.projectStatus.map((item: any) => ({
-        name: item.name === 'PLANNING' ? 'Planlama' :
+        name: item.name === 'PENDING_APPROVAL' ? 'Onay Bekleyen' :
+              item.name === 'APPROVED' ? 'Onaylanan' :
+              item.name === 'PLANNING' ? 'Onay Bekleyen' : // legacy
               item.name === 'ACTIVE' ? 'Aktif' :
-              item.name === 'ON_HOLD' ? 'Beklemede' :
+              item.name === 'ON_HOLD' ? 'Ertelendi' :
               item.name === 'COMPLETED' ? 'Tamamlandı' :
               item.name === 'CANCELLED' ? 'İptal Edildi' : item.name,
         value: item.value || item.count || 0,

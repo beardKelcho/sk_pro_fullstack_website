@@ -33,16 +33,22 @@ interface Project {
 
 // Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  'PLANNING': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  'PLANNING': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', // legacy
+  'PENDING_APPROVAL': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  'APPROVED': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
   'ACTIVE': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  'ON_HOLD': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
   'COMPLETED': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
   'CANCELLED': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
 };
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'PLANNING': 'Planlama',
+  'PLANNING': 'Onay Bekleyen', // legacy
+  'PENDING_APPROVAL': 'Onay Bekleyen',
+  'APPROVED': 'Onaylanan',
   'ACTIVE': 'Devam Ediyor',
+  'ON_HOLD': 'Ertelendi',
   'COMPLETED': 'Tamamlandı',
   'CANCELLED': 'İptal Edildi'
 };

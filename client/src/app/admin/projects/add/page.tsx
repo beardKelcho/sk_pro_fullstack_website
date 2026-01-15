@@ -12,7 +12,7 @@ import logger from '@/utils/logger';
 import { useQueryClient } from '@tanstack/react-query';
 
 // Proje durumları için tip tanımlaması
-type ProjectStatus = 'Planlama' | 'Devam Ediyor' | 'Tamamlandı' | 'Ertelendi' | 'İptal Edildi';
+type ProjectStatus = 'Onay Bekleyen' | 'Onaylanan' | 'Devam Ediyor' | 'Tamamlandı' | 'Ertelendi' | 'İptal Edildi';
 
 interface TeamMember {
   id: string;
@@ -65,7 +65,7 @@ export default function AddProject() {
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 hafta sonrası
     location: '',
-    status: 'Planlama',
+    status: 'Onay Bekleyen',
     budget: '',
     team: [],
     equipment: [],
@@ -305,10 +305,14 @@ export default function AddProject() {
         startDate: startDateISO,
         endDate: endDateISO || undefined,
         location: formData.location.trim() || undefined,
-        status: (formData.status === 'Planlama' ? 'PLANNING' :
-                formData.status === 'Devam Ediyor' ? 'ACTIVE' :
-                formData.status === 'Ertelendi' ? 'PLANNING' :
-                formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED',
+        status: (
+          formData.status === 'Onay Bekleyen' ? 'PENDING_APPROVAL' :
+          formData.status === 'Onaylanan' ? 'APPROVED' :
+          formData.status === 'Devam Ediyor' ? 'ACTIVE' :
+          formData.status === 'Ertelendi' ? 'ON_HOLD' :
+          formData.status === 'Tamamlandı' ? 'COMPLETED' :
+          'CANCELLED'
+        ) as 'PENDING_APPROVAL' | 'APPROVED' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED',
         team: formData.team && formData.team.length > 0 ? formData.team : [],
         equipment: formData.equipment && formData.equipment.length > 0 ? formData.equipment : [],
         notes: formData.notes.trim() || undefined
@@ -580,7 +584,8 @@ export default function AddProject() {
                 className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm"
                 required
               >
-                <option value="Planlama">Planlama</option>
+                <option value="Onay Bekleyen">Onay Bekleyen</option>
+                <option value="Onaylanan">Onaylanan</option>
                 <option value="Devam Ediyor">Devam Ediyor</option>
                 <option value="Tamamlandı">Tamamlandı</option>
                 <option value="Ertelendi">Ertelendi</option>

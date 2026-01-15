@@ -1,8 +1,22 @@
 // Proje durumu için tip tanımı (Backend enum'ları ile uyumlu)
-export type ProjectStatus = 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+// PLANNING legacy (geriye uyumluluk)
+export type ProjectStatus =
+  | 'PLANNING'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'ON_HOLD'
+  | 'ACTIVE'
+  | 'COMPLETED'
+  | 'CANCELLED';
 
 // Türkçe görüntüleme için yardımcı tip
-export type ProjectStatusDisplay = 'Planlama' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi';
+export type ProjectStatusDisplay =
+  | 'Onay Bekleyen'
+  | 'Onaylanan'
+  | 'Devam Ediyor'
+  | 'Tamamlandı'
+  | 'Ertelendi'
+  | 'İptal Edildi';
 
 // Ekip üyesi tipi
 export interface TeamMember {

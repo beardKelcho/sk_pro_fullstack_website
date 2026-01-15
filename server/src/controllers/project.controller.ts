@@ -170,12 +170,17 @@ export const createProject = async (req: Request, res: Response) => {
       });
     }
     
+    // Status normalization (backward compat)
+    // Eski PLANNING -> PENDING_APPROVAL
+    const normalizedStatus =
+      status === 'PLANNING' ? 'PENDING_APPROVAL' : (status || 'PENDING_APPROVAL');
+
     const project = await Project.create({
       name,
       description,
       startDate,
       endDate,
-      status: status || 'PLANNING',
+      status: normalizedStatus,
       location,
       client,
       team: team || [],

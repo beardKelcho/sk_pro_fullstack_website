@@ -12,23 +12,28 @@ import { toast } from 'react-toastify';
 // Backend enum'larını Türkçe string'e çeviren yardımcı fonksiyon
 const getStatusDisplay = (status: ProjectStatus): ProjectStatusDisplay => {
   const statusMap: Record<ProjectStatus, ProjectStatusDisplay> = {
-    'PLANNING': 'Planlama',
+    'PLANNING': 'Onay Bekleyen', // legacy
+    'PENDING_APPROVAL': 'Onay Bekleyen',
+    'APPROVED': 'Onaylanan',
     'ACTIVE': 'Devam Ediyor',
+    'ON_HOLD': 'Ertelendi',
     'COMPLETED': 'Tamamlandı',
     'CANCELLED': 'İptal Edildi'
   };
-  return statusMap[status] || 'Planlama';
+  return statusMap[status] || 'Onay Bekleyen';
 };
 
 // Türkçe string'i backend enum'a çeviren yardımcı fonksiyon
 const getStatusFromDisplay = (display: ProjectStatusDisplay): ProjectStatus => {
   const displayMap: Record<ProjectStatusDisplay, ProjectStatus> = {
-    'Planlama': 'PLANNING',
+    'Onay Bekleyen': 'PENDING_APPROVAL',
+    'Onaylanan': 'APPROVED',
     'Devam Ediyor': 'ACTIVE',
     'Tamamlandı': 'COMPLETED',
+    'Ertelendi': 'ON_HOLD',
     'İptal Edildi': 'CANCELLED'
   };
-  return displayMap[display] || 'PLANNING';
+  return displayMap[display] || 'PENDING_APPROVAL';
 };
 
 // Görüntüleme için genişletilmiş Project tipi
@@ -39,9 +44,11 @@ interface ProjectDisplay extends Omit<Project, 'status' | 'client'> {
 
 // Durum renkleri (Türkçe görüntüleme için)
 const statusColors: Record<ProjectStatusDisplay, string> = {
-  'Planlama': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  'Onay Bekleyen': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  'Onaylanan': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
   'Devam Ediyor': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   'Tamamlandı': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  'Ertelendi': 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
   'İptal Edildi': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
 };
 
@@ -233,8 +240,10 @@ export default function ProjectsPage() {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             >
               <option value="">Tüm Durumlar</option>
-              <option value="Planlama">Planlama</option>
+              <option value="Onay Bekleyen">Onay Bekleyen</option>
+              <option value="Onaylanan">Onaylanan</option>
               <option value="Devam Ediyor">Devam Ediyor</option>
+              <option value="Ertelendi">Ertelendi</option>
               <option value="Tamamlandı">Tamamlandı</option>
               <option value="İptal Edildi">İptal Edildi</option>
             </select>

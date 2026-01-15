@@ -1,5 +1,8 @@
 export const PROJECT_STATUS = {
+  // Legacy: PLANNING UI'da "Onay Bekleyen" olarak kullanılır
   PLANNING: 'planning',
+  PENDING_APPROVAL: 'pending_approval',
+  APPROVED: 'approved',
   IN_PROGRESS: 'in_progress',
   ON_HOLD: 'on_hold',
   COMPLETED: 'completed',
@@ -29,6 +32,8 @@ export const USER_ROLES = {
 
 export const STATUS_COLORS = {
   [`project_${PROJECT_STATUS.PLANNING}`]: 'bg-blue-100 text-blue-800',
+  [`project_${PROJECT_STATUS.PENDING_APPROVAL}`]: 'bg-blue-100 text-blue-800',
+  [`project_${PROJECT_STATUS.APPROVED}`]: 'bg-cyan-100 text-cyan-800',
   [`project_${PROJECT_STATUS.IN_PROGRESS}`]: 'bg-yellow-100 text-yellow-800',
   [`project_${PROJECT_STATUS.ON_HOLD}`]: 'bg-gray-100 text-gray-800',
   [`project_${PROJECT_STATUS.COMPLETED}`]: 'bg-green-100 text-green-800',
@@ -44,9 +49,11 @@ export const STATUS_COLORS = {
 } as const;
 
 export const STATUS_NAMES = {
-  [`project_${PROJECT_STATUS.PLANNING}`]: 'Planlama',
+  [`project_${PROJECT_STATUS.PLANNING}`]: 'Onay Bekleyen',
+  [`project_${PROJECT_STATUS.PENDING_APPROVAL}`]: 'Onay Bekleyen',
+  [`project_${PROJECT_STATUS.APPROVED}`]: 'Onaylanan',
   [`project_${PROJECT_STATUS.IN_PROGRESS}`]: 'Devam Ediyor',
-  [`project_${PROJECT_STATUS.ON_HOLD}`]: 'Beklemede',
+  [`project_${PROJECT_STATUS.ON_HOLD}`]: 'Ertelendi',
   [`project_${PROJECT_STATUS.COMPLETED}`]: 'Tamamlandı',
   [`project_${PROJECT_STATUS.CANCELLED}`]: 'İptal Edildi',
   [`task_${TASK_STATUS.TODO}`]: 'Yapılacak',

@@ -145,9 +145,11 @@ export const sendProjectStatusChangeEmail = async (
   _projectId: string
 ): Promise<boolean> => {
   const statusLabels: { [key: string]: string } = {
-    'PLANNING': 'Planlama',
+    'PLANNING': 'Onay Bekleyen', // legacy
+    'PENDING_APPROVAL': 'Onay Bekleyen',
+    'APPROVED': 'Onaylanan',
     'ACTIVE': 'Aktif',
-    'ON_HOLD': 'Beklemede',
+    'ON_HOLD': 'Ertelendi',
     'COMPLETED': 'Tamamlandı',
     'CANCELLED': 'İptal Edildi'
   };

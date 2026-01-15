@@ -5,7 +5,7 @@ export interface IProject extends Document {
   description: string;
   startDate: Date;
   endDate?: Date;
-  status: 'PLANNING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  status: 'PLANNING' | 'PENDING_APPROVAL' | 'APPROVED' | 'ON_HOLD' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   location: string;
   client: mongoose.Types.ObjectId;
   team: mongoose.Types.ObjectId[];
@@ -34,8 +34,9 @@ const ProjectSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['PLANNING', 'ACTIVE', 'COMPLETED', 'CANCELLED'],
-      default: 'PLANNING',
+      // PLANNING legacy (geriye uyumluluk): UI'da kullanılmıyor; PENDING_APPROVAL ile aynı anlamda ele alınır
+      enum: ['PLANNING', 'PENDING_APPROVAL', 'APPROVED', 'ON_HOLD', 'ACTIVE', 'COMPLETED', 'CANCELLED'],
+      default: 'PENDING_APPROVAL',
     },
     location: {
       type: String,

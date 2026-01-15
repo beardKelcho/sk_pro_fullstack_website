@@ -27,8 +27,11 @@ interface FormData {
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'PLANNING': 'Planlama',
+  'PLANNING': 'Onay Bekleyen', // legacy
+  'PENDING_APPROVAL': 'Onay Bekleyen',
+  'APPROVED': 'Onaylanan',
   'ACTIVE': 'Devam Ediyor',
+  'ON_HOLD': 'Ertelendi',
   'COMPLETED': 'Tamamlandı',
   'CANCELLED': 'İptal Edildi'
 };
@@ -87,7 +90,7 @@ export default function EditProject() {
     startDate: '',
     endDate: '',
     location: '',
-    status: 'PLANNING' as ProjectStatus,
+    status: 'PENDING_APPROVAL' as ProjectStatus,
     budget: 0,
     team: [],
     equipment: [],

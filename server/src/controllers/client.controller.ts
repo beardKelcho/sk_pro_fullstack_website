@@ -196,7 +196,7 @@ export const deleteClient = async (req: Request, res: Response) => {
     const { Project } = require('../models');
     const activeProjects = await Project.countDocuments({ 
       client: id, 
-      status: { $in: ['PLANNING', 'ACTIVE'] } 
+      status: { $in: ['PLANNING', 'PENDING_APPROVAL', 'APPROVED', 'ACTIVE'] } 
     });
     
     if (activeProjects > 0) {

@@ -33,9 +33,11 @@ const statusLabels: { [key: string]: string } = {
   'IN_USE': 'Kullanımda',
   'MAINTENANCE': 'Bakımda',
   'DAMAGED': 'Arızalı',
-  'PLANNING': 'Planlama',
+  'PLANNING': 'Onay Bekleyen', // legacy
+  'PENDING_APPROVAL': 'Onay Bekleyen',
+  'APPROVED': 'Onaylanan',
   'ACTIVE': 'Aktif',
-  'ON_HOLD': 'Beklemede',
+  'ON_HOLD': 'Ertelendi',
   'COMPLETED': 'Tamamlandı',
   'CANCELLED': 'İptal Edildi',
   'TODO': 'Yapılacak',

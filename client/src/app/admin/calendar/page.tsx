@@ -32,16 +32,22 @@ type CalendarRow = CalendarCell[];
 
 // Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  'PLANNING': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+  'PLANNING': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200', // legacy
+  'PENDING_APPROVAL': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+  'APPROVED': 'bg-cyan-100 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200',
   'ACTIVE': 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200',
+  'ON_HOLD': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
   'COMPLETED': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
   'CANCELLED': 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200'
 };
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'PLANNING': 'Planlama',
+  'PLANNING': 'Onay Bekleyen', // legacy
+  'PENDING_APPROVAL': 'Onay Bekleyen',
+  'APPROVED': 'Onaylanan',
   'ACTIVE': 'Devam Ediyor',
+  'ON_HOLD': 'Ertelendi',
   'COMPLETED': 'Tamamlandı',
   'CANCELLED': 'İptal Edildi'
 };
@@ -61,7 +67,7 @@ export default function Calendar() {
   const [loading, setLoading] = useState(true);
   const [showProjects, setShowProjects] = useState(true);
   const [showEquipment, setShowEquipment] = useState(true);
-  const [selectedProjectStatuses, setSelectedProjectStatuses] = useState<ProjectStatus[]>(['PLANNING', 'ACTIVE']);
+  const [selectedProjectStatuses, setSelectedProjectStatuses] = useState<ProjectStatus[]>(['PENDING_APPROVAL', 'APPROVED', 'ACTIVE']);
   const [projects, setProjects] = useState<Project[]>([]);
   const [maintenances, setMaintenances] = useState<Array<{
     id: string;
@@ -112,7 +118,7 @@ export default function Calendar() {
             startDate: project.startDate || '',
             endDate: project.endDate || project.startDate || '',
             location: project.location || '',
-            status: project.status || 'PLANNING',
+            status: (project.status || 'PENDING_APPROVAL') as ProjectStatus,
             team: Array.isArray(project.team) ? project.team.map((t: string | { _id?: string; id?: string }) => typeof t === 'string' ? t : (t._id || t.id || '')) : [],
             equipment: Array.isArray(project.equipment) ? project.equipment.map((e: string | { _id?: string; id?: string }) => typeof e === 'string' ? e : (e._id || e.id || '')) : [],
           }));

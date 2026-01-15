@@ -66,16 +66,22 @@ interface TimelineItem {
 
 // Renk kodları
 const statusColors: Record<ProjectStatus, string> = {
-  'PLANNING': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+  'PLANNING': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200', // legacy
+  'PENDING_APPROVAL': 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+  'APPROVED': 'bg-cyan-100 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200',
   'ACTIVE': 'bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200',
+  'ON_HOLD': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
   'COMPLETED': 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200',
   'CANCELLED': 'bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200'
 };
 
 // Durum Türkçe isimleri
 const statusNames: Record<ProjectStatus, string> = {
-  'PLANNING': 'Planlama',
+  'PLANNING': 'Onay Bekleyen', // legacy
+  'PENDING_APPROVAL': 'Onay Bekleyen',
+  'APPROVED': 'Onaylanan',
   'ACTIVE': 'Devam Ediyor',
+  'ON_HOLD': 'Ertelendi',
   'COMPLETED': 'Tamamlandı',
   'CANCELLED': 'İptal Edildi'
 };

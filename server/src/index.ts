@@ -79,6 +79,36 @@ app.use(cookieParser());
 // Uploads klasörünü static olarak serve et - Optimized
 const uploadsDir = path.join(process.cwd(), 'uploads');
 if (fs.existsSync(uploadsDir)) {
+  // Backward-compat: Bazı eski upload'larda type alanı multipart'ta geç geldiği için dosyalar `general/` altına kaydedilmiş olabilir.
+  // Ancak DB'de/URL'de `/uploads/videos/...` veya `/uploads/site-images/...` görünebilir.
+  // Bu durumda 404 yerine `general/` altındaki aynı dosyayı servis etmeye çalış.
+  app.get('/uploads/:folder/:file(*)', (req, res, next) => {
+    try {
+      const { folder } = req.params;
+      const file = req.params.file;
+
+      // basic traversal guard
+      const safeFile = path.normalize(file).replace(/^(\.\.(\/|\\|$))+/, '');
+      const primaryPath = path.join(uploadsDir, folder, safeFile);
+
+      if (primaryPath.startsWith(uploadsDir) && fs.existsSync(primaryPath)) {
+        return next(); // express.static handle etsin
+      }
+
+      // Sadece belirli klasörler için fallback uygula
+      if (folder === 'videos' || folder === 'site-images') {
+        const fallbackPath = path.join(uploadsDir, 'general', safeFile);
+        if (fallbackPath.startsWith(uploadsDir) && fs.existsSync(fallbackPath)) {
+          return res.sendFile(fallbackPath);
+        }
+      }
+
+      return next();
+    } catch {
+      return next();
+    }
+  });
+
   app.use(
     '/uploads',
     express.static(uploadsDir, {

@@ -1364,10 +1364,11 @@ function VideoSelector({
     setUploading(true);
     try {
       const formData = new FormData();
+      // Multer destination'da `req.body.type` her zaman garanti değil (multipart field sırası yüzünden).
+      // Bu yüzden type'ı query param ile gönderiyoruz.
       formData.append('file', selectedFile);
-      formData.append('type', 'videos');
 
-      const uploadResponse = await fetch(`${API_URL}/upload/single`, {
+      const uploadResponse = await fetch(`${API_URL}/upload/single?type=videos`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken')}`,
@@ -1536,6 +1537,8 @@ function VideoSelector({
         
         {/* Seçili Video Önizleme - Büyük Thumbnail */}
         {selectedVideo ? (() => {
+          const isObjectId = (value: string) => /^[a-f0-9]{24}$/i.test(value);
+
           const selectedVideoObj = videos.find(v => {
             const videoId = v._id || v.id || '';
             const videoUrl = v.url.startsWith('http') 
@@ -1543,12 +1546,30 @@ function VideoSelector({
               : `${baseUrl}${v.url.startsWith('/') ? '' : '/'}${v.url}`;
             return selectedVideo === videoId || selectedVideo === videoUrl || selectedVideo.includes(v.url);
           });
-          
-          const previewUrl = selectedVideo.startsWith('http') 
-            ? selectedVideo 
-            : selectedVideoObj?.url?.startsWith('http')
-              ? selectedVideoObj.url
-              : `${baseUrl}${selectedVideo.startsWith('/') ? '' : '/'}${selectedVideo}`;
+
+          // ObjectId olup listede bulunamıyorsa yanlış URL üretmeyelim (http://localhost:5001/<id> gibi)
+          if (isObjectId(selectedVideo) && !selectedVideoObj) {
+            return (
+              <div className="p-8 text-center bg-gray-50 dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Seçili video bulunamadı (muhtemelen silinmiş veya URL eşleşmiyor).
+                </p>
+              </div>
+            );
+          }
+
+          const previewUrl =
+            selectedVideoObj
+              ? (selectedVideoObj.url?.startsWith('http')
+                  ? selectedVideoObj.url
+                  : `${baseUrl}${selectedVideoObj.url?.startsWith('/') ? '' : '/'}${selectedVideoObj.url}`)
+              : (selectedVideo.startsWith('http')
+                  ? selectedVideo
+                  : selectedVideo.startsWith('/uploads/')
+                      ? `${baseUrl}${selectedVideo}`
+                      : selectedVideo.startsWith('/')
+                          ? `${baseUrl}${selectedVideo}`
+                          : `${baseUrl}/uploads/${selectedVideo}`);
           
           return (
             <div className="bg-white dark:bg-gray-900 rounded-xl border-2 border-[#0066CC] dark:border-primary-light shadow-lg overflow-hidden">

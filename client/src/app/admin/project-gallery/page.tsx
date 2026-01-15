@@ -81,9 +81,9 @@ export default function ProjectGalleryPage() {
       selectedFiles.forEach(file => {
         formData.append('files', file);
       });
-      formData.append('type', 'site-images');
 
-      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/upload/multiple`, {
+      // type'ı query param ile gönder (multipart field sırası yüzünden multer destination'da body type garanti değil)
+      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/upload/multiple?type=site-images`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken')}`,

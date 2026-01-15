@@ -46,9 +46,9 @@ export default function FileUpload({
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('type', type);
 
-      const response = await apiClient.post('/upload/single', formData, {
+      // type'ı query param ile gönder (multipart field sırası yüzünden multer destination'da body type garanti değil)
+      const response = await apiClient.post(`/upload/single?type=${encodeURIComponent(type)}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

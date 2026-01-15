@@ -176,19 +176,21 @@ export const validateClient = [
 // Kullanıcı ekleme/düzenleme validasyonu
 export const validateUser = [
   body('name')
+    .optional({ checkFalsy: true })
     .trim()
     .isLength({ min: 2 })
     .withMessage('İsim en az 2 karakter olmalıdır'),
   body('email')
+    .optional({ checkFalsy: true })
     .isEmail()
     .normalizeEmail()
     .withMessage('Geçerli bir e-posta adresi giriniz'),
   body('role')
-    .optional()
+    .optional({ checkFalsy: true })
     .isIn(['ADMIN', 'FIRMA_SAHIBI', 'PROJE_YONETICISI', 'DEPO_SORUMLUSU', 'TEKNISYEN'])
     .withMessage('Geçersiz kullanıcı rolü'),
   body('password')
-    .optional()
+    .optional({ checkFalsy: true })
     .isLength({ min: 6 })
     .withMessage('Şifre en az 6 karakter olmalıdır'),
   (req: Request, res: Response, next: NextFunction) => {

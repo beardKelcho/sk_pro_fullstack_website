@@ -9,6 +9,10 @@ on:
 
 env:
   NODE_VERSION: '18.x'
+  # VSCode/GitHub Actions linter'ının `env.VERSION` uyarısını engellemek ve
+  # her durumda bir VERSION değeri olmasını sağlamak için default veriyoruz.
+  # Production job'unda "Create release tag" step'i çalışırsa bu değer $GITHUB_ENV ile override edilir.
+  VERSION: ${{ github.sha }}
 
 jobs:
   # ============================================

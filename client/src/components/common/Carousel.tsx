@@ -42,6 +42,7 @@ const Carousel = forwardRef<CarouselRef, CarouselProps>(({
   const [scrollLeft, setScrollLeft] = useState(0);
   const savedScrollPositionRef = useRef<number | null>(null); // Popup açıldığında scroll pozisyonunu kaydet
   const animationIdRef = useRef<number | null>(null); // Animation ID'yi kaydet
+  const hasInitializedRef = useRef(false); // İlk init yapıldı mı? (pause/resume'da baştan başlamasın)
 
   // Perfect loop için: resimlerin genişliğini hesapla
   const imageWidth = 320 + 32; // w-80 (320px) + mx-4 (16px her iki tarafta = 32px toplam)
@@ -117,12 +118,21 @@ const Carousel = forwardRef<CarouselRef, CarouselProps>(({
     // setTimeout ile DOM'un hazır olmasını bekle
     const initTimeout = setTimeout(() => {
       if (scrollContainer && singleSetWidth > 0) {
-        // Eğer kaydedilmiş pozisyon varsa onu kullan, yoksa ikinci set'in başından başla
-        const initialScroll = savedScrollPositionRef.current !== null 
-          ? savedScrollPositionRef.current 
-          : (direction === 'right' ? 2 * singleSetWidth : singleSetWidth);
+        // Eğer kaydedilmiş pozisyon varsa onu kullan.
+        // Pause/resume durumunda (modal kapandıktan sonra) ise mevcut scrollLeft'ten devam et
+        // (aksi halde her seferinde başa sarar gibi görünür).
+        const initialScroll =
+          savedScrollPositionRef.current !== null
+            ? savedScrollPositionRef.current
+            : (hasInitializedRef.current && scrollContainer.scrollLeft !== 0
+              ? scrollContainer.scrollLeft
+              : (direction === 'right' ? 2 * singleSetWidth : singleSetWidth));
+
         scrollContainer.scrollLeft = initialScroll;
-        savedScrollPositionRef.current = null; // Kullanıldı, temizle
+        hasInitializedRef.current = true;
+
+        // savedScrollPositionRef: parent restore timing'ine göre null olabilir; burada zorla temizlemiyoruz.
+        // Böylece initTimeout ile parent restore aynı anda çalışsa bile reset yaşanmaz.
         // Animasyonu başlat
         animationIdRef.current = requestAnimationFrame(animate);
       }

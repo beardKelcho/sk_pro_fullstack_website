@@ -7,6 +7,13 @@ import { useClickOutside } from '@/hooks/useClickOutside';
 import { authApi } from '@/services/api/auth';
 import { User } from '@/types/auth';
 import logger from '@/utils/logger';
+import {
+  useMarkAllAsRead,
+  useMarkAsRead,
+  useNotifications,
+  useUnreadCount,
+  type Notification,
+} from '@/services/notificationService';
 
 interface AdminHeaderProps {
   onToggleSidebar: () => void;
@@ -42,6 +49,12 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
     };
     loadUser();
   }, []);
+
+  // Route değişiminde açık popupları kapat
+  useEffect(() => {
+    setShowNotificationPanel(false);
+    setShowProfileMenu(false);
+  }, [pathname]);
   
   // Sayfa başlığını bulma
   const getPageTitle = () => {
@@ -64,12 +77,45 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
     return titles[lastSegment] || 'SK Admin';
   };
   
-  // Örnek bildirimler
-  const notifications = [
-    { id: 1, title: 'Bakım Hatırlatması', message: 'Analog Way Aquilon RS4 için planlanan bakım 2 gün sonra gerçekleşecek.', time: '2 saat önce', read: false },
-    { id: 2, title: 'Yeni Proje Eklendi', message: 'Acme Corp Konferansı adlı yeni bir proje oluşturuldu.', time: '5 saat önce', read: false },
-    { id: 3, title: 'Ekipman İadesi', message: 'Dataton Watchpax depoya geri döndü.', time: '1 gün önce', read: true },
-  ];
+  const { data: unreadCount = 0 } = useUnreadCount();
+  const { data: notificationList, isLoading: notificationsLoading } = useNotifications({ page: 1, limit: 10 });
+  const markAllAsReadMutation = useMarkAllAsRead();
+  const markAsReadMutation = useMarkAsRead();
+
+  const notifications: Notification[] = notificationList?.notifications || [];
+
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return 'Az önce';
+    if (minutes < 60) return `${minutes} dakika önce`;
+    if (hours < 24) return `${hours} saat önce`;
+    if (days < 7) return `${days} gün önce`;
+    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsReadMutation.mutateAsync();
+    } catch (error) {
+      logger.error('Tüm bildirimleri okundu işaretleme hatası:', error);
+    }
+  };
+
+  const handleNotificationClick = async (n: Notification) => {
+    try {
+      if (!n.read) {
+        await markAsReadMutation.mutateAsync(n._id);
+      }
+    } finally {
+      setShowNotificationPanel(false);
+    }
+  };
   
   return (
     <header className="h-16 glass dark:glass-dark shadow-lg border-b border-white/20 dark:border-white/10 flex items-center justify-between px-4 md:px-6 relative z-50 backdrop-blur-xl">
@@ -120,10 +166,12 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
             </svg>
             
             {/* Bildirim sayısı */}
-            <span className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full 
-              w-5 h-5 flex items-center justify-center font-bold shadow-lg pulse-glow">
-              2
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full 
+                w-5 h-5 flex items-center justify-center font-bold shadow-lg pulse-glow">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </button>
           
           {/* Bildirim paneli */}
@@ -132,20 +180,29 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
               border border-white/20 dark:border-white/10 backdrop-blur-xl slide-in-right">
               <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h3 className="font-medium text-gray-800 dark:text-white">Bildirimler</h3>
-                <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                <button
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+                  disabled={unreadCount === 0 || markAllAsReadMutation.isPending}
+                  onClick={handleMarkAllAsRead}
+                >
                   Tümünü Okundu İşaretle
                 </button>
               </div>
               
               <div className="max-h-72 overflow-y-auto">
-                {notifications.length > 0 ? (
+                {notificationsLoading ? (
+                  <p className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">
+                    Yükleniyor...
+                  </p>
+                ) : notifications.length > 0 ? (
                   <div className="divide-y divide-gray-200 dark:divide-gray-700">
                     {notifications.map((notification) => (
                       <div 
-                        key={notification.id} 
+                        key={notification._id} 
                         className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
                           !notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
-                        }`}
+                        } ${markAsReadMutation.isPending ? 'opacity-80' : ''}`}
+                        onClick={() => handleNotificationClick(notification)}
                       >
                         <div className="flex items-start">
                           <div className="flex-shrink-0 mr-3">
@@ -159,7 +216,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
                               {notification.message}
                             </p>
                             <span className="text-xs text-gray-500 dark:text-gray-400 block mt-1">
-                              {notification.time}
+                              {formatRelativeTime(notification.createdAt)}
                             </span>
                           </div>
                         </div>
@@ -176,6 +233,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
               <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
                 <Link 
                   href="/admin/notifications"
+                  onClick={() => setShowNotificationPanel(false)}
                   className="text-sm text-blue-600 dark:text-blue-400 hover:underline block text-center"
                 >
                   Tüm Bildirimleri Görüntüle

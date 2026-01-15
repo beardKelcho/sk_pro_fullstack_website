@@ -1102,54 +1102,81 @@ const VideoThumbnail = ({
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const generateThumbnail = () => {
-      const videoEl = videoRef.current;
-      const canvas = canvasRef.current;
-      
-      if (!videoEl || !canvas) return;
+    setLoading(true);
+    setThumbnail(null);
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+    const videoEl = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!videoEl || !canvas) {
+      setLoading(false);
+      return;
+    }
 
-      const handleLoadedMetadata = () => {
-        try {
-          // Video'nun ilk frame'ini çek (1. saniye)
-          videoEl.currentTime = 1;
-        } catch (err) {
-          logger.error('Video metadata yükleme hatası:', err);
-          setLoading(false);
-        }
-      };
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setLoading(false);
+      return;
+    }
 
-      const handleSeeked = () => {
-        try {
-          // Canvas boyutlarını video boyutlarına ayarla
-          canvas.width = videoEl.videoWidth || 320;
-          canvas.height = videoEl.videoHeight || 180;
-          
-          // Video frame'ini canvas'a çiz
-          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-          
-          // Canvas'ı data URL'e çevir
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          setThumbnail(dataUrl);
-          setLoading(false);
-        } catch (err) {
-          logger.error('Thumbnail oluşturma hatası:', err);
-          setLoading(false);
-        }
-      };
+    const timeoutId = window.setTimeout(() => {
+      // Bazı tarayıcılarda medya yükleme olayları hiç gelmeyebilir; UI kilitlenmesin.
+      setLoading(false);
+    }, 5000);
 
-      videoEl.addEventListener('loadedmetadata', handleLoadedMetadata);
-      videoEl.addEventListener('seeked', handleSeeked);
-
-      return () => {
-        videoEl.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        videoEl.removeEventListener('seeked', handleSeeked);
-      };
+    const handleLoadedMetadata = () => {
+      try {
+        // display:none (tailwind `hidden`) video yüklemeyi engelleyebiliyor; bu yüzden element görünmez ama DOM'da.
+        // İlk kareyi yakalamak için güvenli bir saniyeye seek et.
+        const d = videoEl.duration;
+        const safeTime =
+          Number.isFinite(d) && d > 0 ? (d <= 0.1 ? 0 : Math.min(0.1, d - 0.1)) : 0.1;
+        videoEl.currentTime = safeTime;
+      } catch (err) {
+        logger.error('Video metadata yükleme hatası:', err);
+        setLoading(false);
+      }
     };
 
-    generateThumbnail();
+    const handleSeeked = () => {
+      try {
+        canvas.width = videoEl.videoWidth || 320;
+        canvas.height = videoEl.videoHeight || 180;
+
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setThumbnail(dataUrl);
+        setLoading(false);
+      } catch (err) {
+        logger.error('Thumbnail oluşturma hatası:', err);
+        setLoading(false);
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+    };
+
+    const handleError = () => {
+      window.clearTimeout(timeoutId);
+      setLoading(false);
+    };
+
+    videoEl.addEventListener('loadedmetadata', handleLoadedMetadata);
+    videoEl.addEventListener('seeked', handleSeeked);
+    videoEl.addEventListener('error', handleError);
+
+    // Bazı tarayıcılarda otomatik yükleme tetiklenmeyebiliyor
+    try {
+      videoEl.load();
+    } catch {
+      // no-op
+    }
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      videoEl.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      videoEl.removeEventListener('seeked', handleSeeked);
+      videoEl.removeEventListener('error', handleError);
+    };
   }, [videoUrl]);
 
   return (
@@ -1198,14 +1225,13 @@ const VideoThumbnail = ({
         <video
           ref={videoRef}
           src={videoUrl}
-          className="hidden"
+          // `hidden` (display:none) bazı tarayıcılarda video yüklemeyi engelleyebiliyor.
+          // Görünmez ama DOM'da kalsın ki `loadedmetadata/seeked` event'leri çalışsın.
+          className="absolute left-0 top-0 w-px h-px opacity-0 pointer-events-none"
           preload="metadata"
           muted
           playsInline
           crossOrigin="anonymous"
-          onError={() => {
-            setLoading(false);
-          }}
         />
         <canvas ref={canvasRef} className="hidden" />
         

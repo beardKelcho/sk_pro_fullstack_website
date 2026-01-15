@@ -29,13 +29,55 @@ export default function Breadcrumb({ items, showHome = true }: BreadcrumbProps) 
       breadcrumbs.push({ name: 'Ana Sayfa', url: '/' });
     }
     
+    const isObjectId = (segment: string) => /^[a-f0-9]{24}$/i.test(segment);
+
+    // Admin panel route'ları için daha okunabilir isimler
+    const labelMap: Record<string, string> = {
+      admin: 'Admin',
+      dashboard: 'Dashboard',
+      users: 'Kullanıcılar',
+      projects: 'Projeler',
+      equipment: 'Ekipmanlar',
+      tasks: 'Görevler',
+      clients: 'Müşteriler',
+      customers: 'Müşteriler',
+      maintenance: 'Bakım',
+      calendar: 'Takvim',
+      'site-images': 'Site Görselleri',
+      'site-content': 'Site İçeriği',
+      'project-gallery': 'Proje Galerisi',
+      notifications: 'Bildirimler',
+      'notification-settings': 'Bildirim Ayarları',
+      permissions: 'Yetkiler',
+      sessions: 'Oturumlar',
+      monitoring: 'İzleme',
+      'qr-codes': 'QR Kodlar',
+      'two-factor': '2FA',
+      profile: 'Profil',
+      view: 'Görüntüle',
+      edit: 'Düzenle',
+      add: 'Ekle',
+      new: 'Yeni',
+      login: 'Giriş',
+      forbidden: 'Erişim Yok',
+    };
+
     let currentPath = '';
     paths.forEach((path, index) => {
       currentPath += `/${path}`;
-      const name = path
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+
+      // Mongo ObjectId gibi dinamik segmentleri breadcrumb'da göstermeyelim
+      // Örn: /admin/users/edit/6959d9... => "6959d9..." yerine sadece "Düzenle" kalsın.
+      if (isObjectId(path)) {
+        return;
+      }
+
+      const name =
+        labelMap[path] ||
+        path
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
       
       // Son öğe için URL ekleme (mevcut sayfa)
       if (index === paths.length - 1) {

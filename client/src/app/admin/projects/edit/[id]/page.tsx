@@ -234,12 +234,7 @@ export default function EditProject() {
       setError('Lokasyon gereklidir');
       return false;
     }
-    
-    if (formData.budget <= 0) {
-      setError('Geçerli bir bütçe girmelisiniz');
-      return false;
-    }
-    
+
     return true;
   };
   
@@ -459,7 +454,7 @@ export default function EditProject() {
             {/* Bütçe */}
             <div>
               <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Bütçe (TL) <span className="text-red-500">*</span>
+                Bütçe (TL)
               </label>
               <input
                 type="text"
@@ -469,7 +464,6 @@ export default function EditProject() {
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white"
                 placeholder="Proje bütçesini girin"
-                required
               />
               {formData.budget > 0 && (
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">

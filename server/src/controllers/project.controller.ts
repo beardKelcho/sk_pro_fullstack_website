@@ -188,7 +188,10 @@ export const createProject = async (req: Request, res: Response) => {
     if (validEquipmentIds.length > 0) {
       const notAvailable = await Equipment.find({
         _id: { $in: validEquipmentIds },
-        status: { $ne: 'AVAILABLE' },
+        $or: [
+          { status: { $ne: 'AVAILABLE' } },
+          { currentProject: { $exists: true, $ne: null } },
+        ],
       })
         .select('_id name status')
         .lean();
@@ -231,18 +234,38 @@ export const createProject = async (req: Request, res: Response) => {
       ).catch(err => logger.error('Email gönderme hatası:', err));
     }
 
-    // Ekipmanlar projeye atanıyorsa depoda değil -> IN_USE (rezerv)
+    // Ekipmanları projeye atomik olarak rezerve et (race condition ve çift atama engeli)
     if (validEquipmentIds.length > 0) {
-      await Equipment.updateMany(
-        { _id: { $in: validEquipmentIds } },
-        { $set: { status: 'IN_USE' } }
-      ).catch((err: any) => logger.error('Ekipman status IN_USE update hatası:', err));
+      const reserveResult = await Equipment.updateMany(
+        {
+          _id: { $in: validEquipmentIds },
+          status: 'AVAILABLE',
+          $or: [{ currentProject: { $exists: false } }, { currentProject: null }],
+        },
+        { $set: { status: 'IN_USE', currentProject: project._id } }
+      );
+
+      if ((reserveResult as any).modifiedCount !== validEquipmentIds.length) {
+        // Rollback: sadece bu proje için rezerve edilenleri geri al
+        await Equipment.updateMany(
+          { _id: { $in: validEquipmentIds }, currentProject: project._id },
+          { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+        ).catch(() => null);
+        await Project.findByIdAndDelete(project._id).catch(() => null);
+
+        return res.status(409).json({
+          success: false,
+          message: 'Bazı ekipmanlar aynı anda başka bir projeye atanmış. Lütfen tekrar deneyin.',
+          code: 'EQUIPMENT_RESERVATION_FAILED',
+        });
+      }
     }
     
     // Cache'i invalidate et
-    const { invalidateProjectCache, invalidateDashboardCache } = await import('../middleware/cache.middleware');
+    const { invalidateProjectCache, invalidateDashboardCache, invalidateEquipmentCache } = await import('../middleware/cache.middleware');
     await invalidateProjectCache().catch((err: any) => logger.error('Project cache invalidation hatası:', err));
     await invalidateDashboardCache().catch((err: any) => logger.error('Dashboard cache invalidation hatası:', err));
+    await invalidateEquipmentCache().catch((err: any) => logger.error('Equipment cache invalidation hatası:', err));
     
     // Audit log
     await logAction(req, 'CREATE', 'Project', project._id.toString());
@@ -291,9 +314,10 @@ export const updateProject = async (req: Request, res: Response) => {
     if (location !== undefined) updateData.location = location;
     if (client !== undefined) updateData.client = client;
     if (team !== undefined) updateData.team = team;
-    // Equipment diff + availability validation
+    // Equipment diff + availability validation (atomik rezerv)
     let addedEquipmentIds: string[] = [];
     let removedEquipmentIds: string[] = [];
+    let reservedForThisUpdate = false;
     if (equipment !== undefined) {
       const newEquipmentIds: string[] = Array.isArray(equipment) ? equipment : [];
       const validNewEquipmentIds = newEquipmentIds.filter((x) => mongoose.Types.ObjectId.isValid(x));
@@ -310,23 +334,43 @@ export const updateProject = async (req: Request, res: Response) => {
       addedEquipmentIds = newIds.filter((x) => !oldIds.includes(x));
       removedEquipmentIds = oldIds.filter((x) => !newIds.includes(x));
 
-      // Yeni eklenenler AVAILABLE olmalı
+      // Yeni eklenenleri atomik rezerve et (AVAILABLE + currentProject boş olmalı)
       if (addedEquipmentIds.length > 0) {
-        const notAvailable = await Equipment.find({
-          _id: { $in: addedEquipmentIds },
-          status: { $ne: 'AVAILABLE' },
-        })
-          .select('_id name status')
-          .lean();
+        const reserveResult = await Equipment.updateMany(
+          {
+            _id: { $in: addedEquipmentIds },
+            status: 'AVAILABLE',
+            $or: [{ currentProject: { $exists: false } }, { currentProject: null }],
+          },
+          { $set: { status: 'IN_USE', currentProject: oldProject._id } }
+        );
 
-        if (notAvailable.length > 0) {
+        if ((reserveResult as any).modifiedCount !== addedEquipmentIds.length) {
+          // Rollback: bu update sırasında rezerve edilenleri geri al
+          await Equipment.updateMany(
+            { _id: { $in: addedEquipmentIds }, currentProject: oldProject._id },
+            { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+          ).catch(() => null);
+
+          const notAvailable = await Equipment.find({
+            _id: { $in: addedEquipmentIds },
+            $or: [
+              { status: { $ne: 'AVAILABLE' } },
+              { currentProject: { $exists: true, $ne: null } },
+            ],
+          })
+            .select('_id name status currentProject')
+            .lean()
+            .catch(() => []);
+
           return res.status(409).json({
             success: false,
-            message: 'Bazı ekipmanlar zaten kullanımda/bakımda. Başka projeye atanamaz.',
+            message: 'Bazı ekipmanlar zaten kullanımda/bakımda veya başka projeye atanmış. Başka projeye atanamaz.',
             code: 'EQUIPMENT_NOT_AVAILABLE',
             details: notAvailable,
           });
         }
+        reservedForThisUpdate = true;
       }
 
       updateData.equipment = validNewEquipmentIds;
@@ -348,6 +392,13 @@ export const updateProject = async (req: Request, res: Response) => {
       .populate('equipment', 'name type model status');
     
     if (!updatedProject) {
+      // Update başarısızsa bu update sırasında rezerve edilenleri geri al
+      if (reservedForThisUpdate && addedEquipmentIds.length > 0) {
+        await Equipment.updateMany(
+          { _id: { $in: addedEquipmentIds }, currentProject: oldProject._id },
+          { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+        ).catch(() => null);
+      }
       return res.status(404).json({
         success: false,
         message: 'Proje bulunamadı',
@@ -355,68 +406,40 @@ export const updateProject = async (req: Request, res: Response) => {
     }
 
     // Equipment status senkronizasyonu
-    // - yeni eklenenler -> IN_USE
-    // - çıkarılanlar -> AVAILABLE (başka aktif projede kullanılmıyorsa)
-    if (addedEquipmentIds.length > 0) {
-      await Equipment.updateMany(
-        { _id: { $in: addedEquipmentIds } },
-        { $set: { status: 'IN_USE' } }
-      ).catch((err: any) => logger.error('Ekipman status IN_USE update hatası:', err));
-    }
-
+    // - çıkarılanlar -> AVAILABLE + currentProject temizle (sadece bu projeye aitse)
     if (removedEquipmentIds.length > 0) {
-      const otherProjects = await Project.find({
-        _id: { $ne: updatedProject._id },
-        status: { $nin: ['COMPLETED', 'CANCELLED'] },
-        equipment: { $in: removedEquipmentIds },
-      })
-        .select('equipment')
-        .lean();
-
-      const stillUsed = new Set<string>();
-      otherProjects.forEach((p: any) => {
-        (p.equipment || []).forEach((eid: any) => stillUsed.add(eid.toString()));
-      });
-
-      const toAvailable = removedEquipmentIds.filter((eid) => !stillUsed.has(eid));
-      if (toAvailable.length > 0) {
-        await Equipment.updateMany(
-          { _id: { $in: toAvailable } },
-          { $set: { status: 'AVAILABLE' } }
-        ).catch((err: any) => logger.error('Ekipman status AVAILABLE update hatası:', err));
-      }
+      await Equipment.updateMany(
+        { _id: { $in: removedEquipmentIds }, currentProject: updatedProject._id },
+        { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+      ).catch((err: any) => logger.error('Ekipman status AVAILABLE update hatası:', err));
     }
 
-    // Proje COMPLETED/CANCELLED olduysa tüm ekipmanları AVAILABLE yap (başka projede kullanılmıyorsa)
+    let responseProject = updatedProject;
+
+    // Proje COMPLETED/CANCELLED olduysa bu projeye ait tüm ekipmanları serbest bırak
     if (updatedProject.status === 'COMPLETED' || updatedProject.status === 'CANCELLED') {
-      const updatedEquipIds = (updatedProject.equipment || []).map((x: any) => (typeof x === 'string' ? x : x._id?.toString?.() || x.toString?.()));
-      const otherProjects = await Project.find({
-        _id: { $ne: updatedProject._id },
-        status: { $nin: ['COMPLETED', 'CANCELLED'] },
-        equipment: { $in: updatedEquipIds },
-      })
-        .select('equipment')
-        .lean();
-      const stillUsed = new Set<string>();
-      otherProjects.forEach((p: any) => {
-        (p.equipment || []).forEach((eid: any) => stillUsed.add(eid.toString()));
-      });
-      const toAvailable = updatedEquipIds.filter((eid: string) => eid && !stillUsed.has(eid));
-      if (toAvailable.length > 0) {
-        await Equipment.updateMany(
-          { _id: { $in: toAvailable } },
-          { $set: { status: 'AVAILABLE' } }
-        ).catch((err: any) => logger.error('Ekipman status AVAILABLE update hatası:', err));
+      await Equipment.updateMany(
+        { currentProject: updatedProject._id },
+        { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+      ).catch((err: any) => logger.error('Ekipman status AVAILABLE (project close) update hatası:', err));
+
+      // Re-fetch: populate edilen equipment statüleri güncel olsun
+      const refreshedProject = await Project.findById(updatedProject._id)
+        .populate('client', 'name email phone')
+        .populate('team', 'name email role')
+        .populate('equipment', 'name type model status');
+      if (refreshedProject) {
+        responseProject = refreshedProject;
       }
     }
     
     // Durum değişikliği kontrolü ve bildirim gönderimi
-    if (oldProject && oldProject.status !== updatedProject.status) {
+    if (oldProject && oldProject.status !== responseProject.status) {
       const teamEmails: string[] = [];
       const teamIds: mongoose.Types.ObjectId[] = [];
       
-      if (Array.isArray(updatedProject.team)) {
-        updatedProject.team.forEach((member: any) => {
+      if (Array.isArray(responseProject.team)) {
+        responseProject.team.forEach((member: any) => {
           if (member.email) teamEmails.push(member.email);
           if (member._id) teamIds.push(member._id);
         });
@@ -426,18 +449,18 @@ export const updateProject = async (req: Request, res: Response) => {
       if (teamEmails.length > 0) {
         sendProjectStatusChangeEmail(
           teamEmails,
-          updatedProject.name,
+          responseProject.name,
           oldProject.status,
-          updatedProject.status,
-          updatedProject._id.toString()
+          responseProject.status,
+          responseProject._id.toString()
         ).catch(err => logger.error('Proje durum email gönderme hatası:', err));
       }
       
       // Bildirim gönder (async, hata olsa bile devam et)
       if (teamIds.length > 0) {
-        const notificationType = updatedProject.status === 'COMPLETED' 
+        const notificationType = responseProject.status === 'COMPLETED' 
           ? 'PROJECT_COMPLETED' 
-          : updatedProject.status === 'ACTIVE' && oldProject.status !== 'ACTIVE'
+          : responseProject.status === 'ACTIVE' && oldProject.status !== 'ACTIVE'
           ? 'PROJECT_STARTED'
           : 'PROJECT_UPDATED';
         
@@ -445,41 +468,42 @@ export const updateProject = async (req: Request, res: Response) => {
           teamIds,
           notificationType,
           'Proje Durumu Güncellendi',
-          `${updatedProject.name} projesinin durumu "${oldProject.status}" → "${updatedProject.status}" olarak güncellendi.`,
-          updatedProject._id.toString(),
+          `${responseProject.name} projesinin durumu "${oldProject.status}" → "${responseProject.status}" olarak güncellendi.`,
+          responseProject._id.toString(),
           false // Email zaten gönderildi
         ).catch(err => logger.error('Proje bildirim gönderme hatası:', err));
       }
       
       // Proje tamamlandıysa müşteriye de bildirim gönder
-      if (updatedProject.status === 'COMPLETED' && updatedProject.client && typeof updatedProject.client === 'object') {
-        const client = updatedProject.client as any;
+      if (responseProject.status === 'COMPLETED' && responseProject.client && typeof responseProject.client === 'object') {
+        const client = responseProject.client as any;
         if (client.email) {
           sendProjectStatusChangeEmail(
             [client.email],
-            updatedProject.name,
+            responseProject.name,
             oldProject.status,
-            updatedProject.status,
-            updatedProject._id.toString()
+            responseProject.status,
+            responseProject._id.toString()
           ).catch(err => logger.error('Müşteri email gönderme hatası:', err));
         }
       }
     }
     
     // Cache'i invalidate et
-    const { invalidateProjectCache, invalidateDashboardCache } = await import('../middleware/cache.middleware');
+    const { invalidateProjectCache, invalidateDashboardCache, invalidateEquipmentCache } = await import('../middleware/cache.middleware');
     await invalidateProjectCache().catch((err: any) => logger.error('Project cache invalidation hatası:', err));
     await invalidateDashboardCache().catch((err: any) => logger.error('Dashboard cache invalidation hatası:', err));
+    await invalidateEquipmentCache().catch((err: any) => logger.error('Equipment cache invalidation hatası:', err));
     
     // Audit log - değişiklikleri kaydet
     if (oldProject) {
-      const changes = extractChanges(oldProject.toObject(), updatedProject.toObject());
+      const changes = extractChanges(oldProject.toObject(), responseProject.toObject());
       await logAction(req, 'UPDATE', 'Project', id, changes);
     }
     
     res.status(200).json({
       success: true,
-      project: updatedProject,
+      project: responseProject,
     });
   } catch (error) {
     logger.error('Proje güncelleme hatası:', error);

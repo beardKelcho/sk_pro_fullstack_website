@@ -52,6 +52,27 @@ jobs:
           cd client && npm run build
           cd ../server && npm run build
 
+      # Render/Vercel tarafında en güvenilir yaklaşım: Git entegrasyonu (push ile otomatik deploy).
+      # İstersen ekstra güvence olarak Deploy Hook'ları da tetikleyebiliriz.
+      # Secret tanımlı değilse bu step'ler otomatik olarak SKIP edilir.
+      - name: Trigger Render deploy hook (staging)
+        if: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL != '' }}
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Render deploy hook (staging)..."
+          curl --fail --show-error --silent -X POST "$RENDER_DEPLOY_HOOK_URL" \
+            --retry 5 --retry-delay 2 --retry-all-errors
+
+      - name: Trigger Vercel deploy hook (staging)
+        if: ${{ secrets.VERCEL_STAGING_DEPLOY_HOOK_URL != '' }}
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_STAGING_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Vercel deploy hook (staging)..."
+          curl --fail --show-error --silent -X POST "$VERCEL_DEPLOY_HOOK_URL" \
+            --retry 5 --retry-delay 2 --retry-all-errors
+
       - name: Deploy notification
         run: |
           echo "✅ Staging deployment triggered for branch: ${{ github.ref }}"
@@ -112,6 +133,24 @@ jobs:
           cd client && npm run build
           cd ../server && npm run build
 
+      - name: Trigger Render deploy hook (production)
+        if: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL != '' }}
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Render deploy hook (production)..."
+          curl --fail --show-error --silent -X POST "$RENDER_DEPLOY_HOOK_URL" \
+            --retry 5 --retry-delay 2 --retry-all-errors
+
+      - name: Trigger Vercel deploy hook (production)
+        if: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL != '' }}
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Vercel deploy hook (production)..."
+          curl --fail --show-error --silent -X POST "$VERCEL_DEPLOY_HOOK_URL" \
+            --retry 5 --retry-delay 2 --retry-all-errors
+
       - name: Create release tag
         if: success()
         run: |
@@ -164,3 +203,21 @@ jobs:
           echo "🚨 Hotfix deployment: ${{ github.ref }}"
           echo "📦 Commit: ${{ github.sha }}"
           echo "⚠️  This is a hotfix - production deployment will be triggered"
+
+      - name: Trigger Render deploy hook (production)
+        if: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL != '' }}
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Render deploy hook (production)..."
+          curl --fail --show-error --silent -X POST "$RENDER_DEPLOY_HOOK_URL" \
+            --retry 5 --retry-delay 2 --retry-all-errors
+
+      - name: Trigger Vercel deploy hook (production)
+        if: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL != '' }}
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL }}
+        run: |
+          echo "Triggering Vercel deploy hook (production)..."
+          curl --fail --show-error --silent -X POST "$VERCEL_DEPLOY_HOOK_URL" \
+            --retry 5 --retry-delay 2 --retry-all-errors

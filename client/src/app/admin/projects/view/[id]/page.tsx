@@ -7,6 +7,8 @@ import Image from 'next/image';
 import { ProjectStatus } from '@/types/project';
 import VersionHistoryModal from '@/components/admin/VersionHistoryModal';
 import logger from '@/utils/logger';
+import { getStoredUserRole } from '@/utils/authStorage';
+import { hasRole, Role } from '@/config/permissions';
 
 // Müşteri tipi
 interface Customer {
@@ -559,6 +561,8 @@ export default function ViewProject() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
+  const [userRole, setUserRole] = useState<string>('');
+  const canViewBudget = hasRole(userRole, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI);
   
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -586,6 +590,7 @@ export default function ViewProject() {
     const fetchProject = async () => {
       try {
         setLoading(true);
+        setUserRole(getStoredUserRole());
         
         const { getProjectById } = await import('@/services/projectService');
         const projectData = await getProjectById(projectId);
@@ -832,10 +837,12 @@ export default function ViewProject() {
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Lokasyon</dt>
                     <dd className="mt-1 text-sm text-gray-900 dark:text-white">{project.location}</dd>
                   </div>
-                  <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Bütçe</dt>
-                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">{formatCurrency(project.budget || 0)}</dd>
-                  </div>
+                  {canViewBudget && (
+                    <div className="sm:col-span-1">
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Bütçe</dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">{formatCurrency(project.budget || 0)}</dd>
+                    </div>
+                  )}
                 </dl>
               </div>
 
@@ -873,10 +880,12 @@ export default function ViewProject() {
                       {Math.ceil((new Date(project.endDate).getTime() - new Date(project.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1)} gün
                     </p>
                   </div>
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Bütçe</p>
-                    <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{formatCurrency(project.budget || 0)}</p>
-                  </div>
+                  {canViewBudget && (
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Bütçe</p>
+                      <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{formatCurrency(project.budget || 0)}</p>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Son Güncelleme Bilgisi */}

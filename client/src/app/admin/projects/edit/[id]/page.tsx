@@ -11,6 +11,8 @@ import { getAllUsers, getRoleLabel, type User } from '@/services/userService';
 import { getAllEquipment, type Equipment as EquipmentItem } from '@/services/equipmentService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+import { getStoredUserRole } from '@/utils/authStorage';
+import { hasRole, Role } from '@/config/permissions';
 
 // Form verileri için arayüz
 interface FormData {
@@ -53,6 +55,8 @@ export default function EditProject() {
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
+  const [userRole, setUserRole] = useState<string>('');
+  const canViewBudget = hasRole(userRole, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI);
   
   // Form state'leri
   const [formData, setFormData] = useState<FormData>({
@@ -88,6 +92,8 @@ export default function EditProject() {
     const fetchProject = async () => {
       setLoading(true);
       try {
+        setUserRole(getStoredUserRole());
+
         const [project, customerRes, userRes, equipmentRes] = await Promise.all([
           getProjectById(projectId),
           getAllCustomers({ page: 1, limit: 1000 }),
@@ -452,25 +458,27 @@ export default function EditProject() {
             </div>
             
             {/* Bütçe */}
-            <div>
-              <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Bütçe (TL)
-              </label>
-              <input
-                type="text"
-                id="budget"
-                name="budget"
-                value={formData.budget === 0 ? '' : formData.budget.toString()}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white"
-                placeholder="Proje bütçesini girin"
-              />
-              {formData.budget > 0 && (
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  {formatCurrency(formData.budget)}
-                </p>
-              )}
-            </div>
+            {canViewBudget && (
+              <div>
+                <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Bütçe (TL)
+                </label>
+                <input
+                  type="text"
+                  id="budget"
+                  name="budget"
+                  value={formData.budget === 0 ? '' : formData.budget.toString()}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white"
+                  placeholder="Proje bütçesini girin"
+                />
+                {formData.budget > 0 && (
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {formatCurrency(formData.budget)}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

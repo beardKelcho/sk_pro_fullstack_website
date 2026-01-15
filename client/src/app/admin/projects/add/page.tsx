@@ -10,6 +10,8 @@ import { getAllUsers } from '@/services/userService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { useQueryClient } from '@tanstack/react-query';
+import { getStoredUserRole } from '@/utils/authStorage';
+import { hasRole, Role } from '@/config/permissions';
 
 // Proje durumları için tip tanımlaması
 type ProjectStatus = 'Onay Bekleyen' | 'Onaylanan' | 'Devam Ediyor' | 'Tamamlandı' | 'Ertelendi' | 'İptal Edildi';
@@ -47,6 +49,9 @@ export default function AddProject() {
   const createProjectMutation = useCreateProject();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [userRole, setUserRole] = useState<string>('');
+
+  const canViewBudget = hasRole(userRole, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI);
   
   // Dinamik veri state'leri
   const [customers, setCustomers] = useState<any[]>([]);
@@ -85,6 +90,8 @@ export default function AddProject() {
   
   // Dinamik verileri çek
   useEffect(() => {
+    setUserRole(getStoredUserRole());
+
     getAllCustomers().then(data => {
       const clients = data.clients || [];
       setCustomers(clients.map((client: any) => ({
@@ -589,7 +596,7 @@ export default function AddProject() {
               </div>
             </div>
             
-            {/* Durum ve Bütçe */}
+            {/* Durum */}
             <div>
               <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Durum <span className="text-red-500">*</span>
@@ -611,23 +618,25 @@ export default function AddProject() {
               </select>
             </div>
             
-            <div>
-              <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Bütçe
-              </label>
-              <input
-                type="text"
-                id="budget"
-                name="budget"
-                value={formData.budget ? formatCurrency(formData.budget) : ''}
-                onChange={handleBudgetChange}
-                className={`block w-full px-3 py-2 border ${errors.budget ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm`}
-                placeholder="Örn: ₺50.000"
-              />
-              {errors.budget && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.budget}</p>
-              )}
-            </div>
+            {canViewBudget && (
+              <div>
+                <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Bütçe
+                </label>
+                <input
+                  type="text"
+                  id="budget"
+                  name="budget"
+                  value={formData.budget ? formatCurrency(formData.budget) : ''}
+                  onChange={handleBudgetChange}
+                  className={`block w-full px-3 py-2 border ${errors.budget ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm`}
+                  placeholder="Örn: ₺50.000"
+                />
+                {errors.budget && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.budget}</p>
+                )}
+              </div>
+            )}
             
             {/* Proje Ekibi */}
             <div className="col-span-2">

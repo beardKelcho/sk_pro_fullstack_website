@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { Maintenance, Equipment } from '../models';
+import { Maintenance, Equipment, Task } from '../models';
 import { sendMaintenanceReminderEmail } from './emailService';
 import { startAllScheduledReports } from '../controllers/reportSchedule.controller';
 import logger from './logger';
@@ -90,8 +90,51 @@ export const scheduleEquipmentStatusCheck = () => {
   logger.info('Ekipman durum kontrolü zamanlandı (Her gün 10:00)');
 };
 
+// Süresi gelen görevleri otomatik tamamla (default: her 15 dakikada bir)
+export const scheduleAutoCompleteDueTasks = () => {
+  // Env ile override edilebilir: ör. "*/5 * * * *" (5 dk)
+  const cronExpr = process.env.TASK_AUTO_COMPLETE_CRON || '*/15 * * * *';
+
+  cron.schedule(cronExpr, async () => {
+    try {
+      const now = new Date();
+
+      const result = await Task.updateMany(
+        {
+          status: { $in: ['TODO', 'IN_PROGRESS'] },
+          dueDate: { $exists: true, $ne: null, $lte: now },
+        },
+        {
+          $set: {
+            status: 'COMPLETED',
+            completedDate: now, // updateMany pre-save hook çalıştırmaz; manuel set ediyoruz
+          },
+        }
+      );
+
+      // Mongoose 6/7 uyumluluğu: modifiedCount vs nModified
+      const modified = (result as any).modifiedCount ?? (result as any).nModified ?? 0;
+      const matched = (result as any).matchedCount ?? (result as any).n ?? 0;
+
+      if (modified > 0) {
+        logger.info(`Otomatik görev tamamlama: ${modified}/${matched} görev COMPLETED yapıldı`);
+      }
+    } catch (error) {
+      logger.error('Otomatik görev tamamlama hatası:', error);
+    }
+  });
+
+  logger.info(`Otomatik görev tamamlama zamanlandı (${cronExpr})`);
+};
+
 // Tüm zamanlanmış görevleri başlat
 export const startScheduledTasks = () => {
+  // Süresi dolan görevleri otomatik tamamla (prod/dev fark etmez)
+  // İstenirse TASK_AUTO_COMPLETE_ENABLED=false ile kapatılabilir.
+  if (process.env.TASK_AUTO_COMPLETE_ENABLED !== 'false') {
+    scheduleAutoCompleteDueTasks();
+  }
+
   if (process.env.NODE_ENV === 'production') {
     scheduleMaintenanceReminders();
     scheduleEquipmentStatusCheck();

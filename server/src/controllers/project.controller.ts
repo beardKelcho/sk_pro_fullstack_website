@@ -542,10 +542,17 @@ export const deleteProject = async (req: Request, res: Response) => {
       });
     }
 
-    // Proje silinmeden önce: bu projeye rezerve edilmiş ekipmanları boşa çıkar
-    // (status=AVAILABLE + currentProject unset)
+    // Proje silinmeden önce: bu projeye bağlı/rezerve edilmiş ekipmanları boşa çıkar
+    // Legacy data için: currentProject boş olsa bile proje.equipment üzerinden de release et
     await Equipment.updateMany(
-      { currentProject: project._id },
+      {
+        _id: { $in: (project.equipment || []) as any[] },
+        $or: [
+          { currentProject: project._id },
+          { currentProject: { $exists: false } },
+          { currentProject: null },
+        ],
+      },
       { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
     ).catch((err: any) => logger.error('Proje silme sırasında ekipman release hatası:', err));
 

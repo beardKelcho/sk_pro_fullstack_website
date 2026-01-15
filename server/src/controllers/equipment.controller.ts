@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Equipment, QRCode } from '../models';
+import { Equipment, QRCode, Project } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
@@ -52,18 +52,74 @@ export const getAllEquipment = async (req: Request, res: Response) => {
         .sort(sortOptions)
         .skip(skip)
         .limit(limitNumber)
-        .populate('responsibleUser', 'name email'),
+        .populate('responsibleUser', 'name email')
+        .populate('currentProject', 'name status')
+        .lean(),
         
       Equipment.countDocuments(filters)
     ]);
+
+    // --- Reconciliation (legacy/bozuk veri) ---
+    // A) currentProject dolu ama proje yoksa populate sonucu null gelir -> AVAILABLE'a çek
+    const danglingProjectEquipIds = equipment
+      .filter((e: any) => e?.status === 'IN_USE' && e?.currentProject === null)
+      .map((e: any) => e._id);
+
+    if (danglingProjectEquipIds.length > 0) {
+      await Equipment.updateMany(
+        { _id: { $in: danglingProjectEquipIds } },
+        { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+      ).catch((err: any) => logger.error('Dangling currentProject release hatası:', err));
+    }
+
+    // B) IN_USE ama currentProject yoksa: aktif projelerde kullanılıyor mu kontrol et; kullanılmıyorsa release et
+    const inUseNoProjectIds = equipment
+      .filter((e: any) => e?.status === 'IN_USE' && (e.currentProject === undefined || e.currentProject === null))
+      .map((e: any) => e._id);
+
+    let toRelease: any[] = [];
+    if (inUseNoProjectIds.length > 0) {
+      const activeProjects = await Project.find({
+        status: { $nin: ['COMPLETED', 'CANCELLED'] },
+        equipment: { $in: inUseNoProjectIds },
+      })
+        .select('equipment')
+        .lean()
+        .catch(() => []);
+
+      const used = new Set<string>();
+      (activeProjects as any[]).forEach((p: any) => {
+        (p.equipment || []).forEach((eid: any) => used.add(eid.toString()));
+      });
+
+      toRelease = inUseNoProjectIds.filter((eid: any) => !used.has(eid.toString()));
+      if (toRelease.length > 0) {
+        await Equipment.updateMany(
+          { _id: { $in: toRelease } },
+          { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+        ).catch((err: any) => logger.error('Legacy IN_USE release hatası:', err));
+      }
+    }
+
+    // Eğer release olduysa, response içindeki objeleri de düzelt (UI aynı response'da doğru görsün)
+    const releasedSet = new Set<string>([
+      ...danglingProjectEquipIds.map((x: any) => x.toString()),
+      ...toRelease.map((x: any) => x.toString()),
+    ]);
+    const patchedEquipment = equipment.map((e: any) => {
+      if (releasedSet.has(e._id?.toString?.() || '')) {
+        return { ...e, status: 'AVAILABLE', currentProject: null };
+      }
+      return e;
+    });
     
     res.status(200).json({
       success: true,
-      count: equipment.length,
+      count: patchedEquipment.length,
       total,
       page: pageNumber,
       totalPages: Math.ceil(total / limitNumber),
-      equipment,
+      equipment: patchedEquipment,
     });
   } catch (error) {
     logger.error('Ekipmanları listeleme hatası:', error);
@@ -86,8 +142,9 @@ export const getEquipmentById = async (req: Request, res: Response) => {
       });
     }
     
-    const equipment = await Equipment.findById(id)
+    let equipment: any = await Equipment.findById(id)
       .populate('responsibleUser', 'name email')
+      .populate('currentProject', 'name status')
       .populate({
         path: 'maintenances',
         options: { sort: { scheduledDate: -1 } }
@@ -98,6 +155,35 @@ export const getEquipmentById = async (req: Request, res: Response) => {
         success: false,
         message: 'Ekipman bulunamadı',
       });
+    }
+
+    // Detail sayfasında da legacy/dangling IN_USE düzeltmesi
+    // - currentProject set ama proje yoksa populate null gelir -> release
+    if (equipment.status === 'IN_USE' && equipment.currentProject === null) {
+      await Equipment.updateOne(
+        { _id: equipment._id },
+        { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+      ).catch((err: any) => logger.error('Equipment detail dangling release hatası:', err));
+      equipment = await Equipment.findById(id)
+        .populate('responsibleUser', 'name email')
+        .populate('currentProject', 'name status')
+        .populate({ path: 'maintenances', options: { sort: { scheduledDate: -1 } } });
+    } else if (equipment && equipment.status === 'IN_USE' && (equipment.currentProject === undefined || equipment.currentProject === null)) {
+      // - IN_USE ama currentProject yoksa ve aktif proje yoksa release
+      const usedByActive = await Project.countDocuments({
+        status: { $nin: ['COMPLETED', 'CANCELLED'] },
+        equipment: equipment._id,
+      }).catch(() => 0);
+      if (!usedByActive) {
+        await Equipment.updateOne(
+          { _id: equipment._id },
+          { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
+        ).catch((err: any) => logger.error('Equipment detail legacy release hatası:', err));
+        equipment = await Equipment.findById(id)
+          .populate('responsibleUser', 'name email')
+          .populate('currentProject', 'name status')
+          .populate({ path: 'maintenances', options: { sort: { scheduledDate: -1 } } });
+      }
     }
     
     res.status(200).json({

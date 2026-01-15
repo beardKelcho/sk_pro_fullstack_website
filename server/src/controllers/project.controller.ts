@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Project } from '../models';
+import { Project, Equipment } from '../models';
 import mongoose from 'mongoose';
 import { sendProjectStartEmail, sendProjectStatusChangeEmail } from '../utils/emailService';
 import { notifyProjectTeam } from '../utils/notificationService';
@@ -175,6 +175,34 @@ export const createProject = async (req: Request, res: Response) => {
     const normalizedStatus =
       status === 'PLANNING' ? 'PENDING_APPROVAL' : (status || 'PENDING_APPROVAL');
 
+    // Equipment assignment validation: IN_USE ekipman başka projeye atanamasın
+    const equipmentIds: string[] = Array.isArray(equipment) ? equipment : [];
+    const validEquipmentIds = equipmentIds.filter((x) => mongoose.Types.ObjectId.isValid(x));
+    if (equipmentIds.length !== validEquipmentIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz ekipman ID',
+      });
+    }
+
+    if (validEquipmentIds.length > 0) {
+      const notAvailable = await Equipment.find({
+        _id: { $in: validEquipmentIds },
+        status: { $ne: 'AVAILABLE' },
+      })
+        .select('_id name status')
+        .lean();
+
+      if (notAvailable.length > 0) {
+        return res.status(409).json({
+          success: false,
+          message: 'Bazı ekipmanlar zaten kullanımda/bakımda. Başka projeye atanamaz.',
+          code: 'EQUIPMENT_NOT_AVAILABLE',
+          details: notAvailable,
+        });
+      }
+    }
+
     const project = await Project.create({
       name,
       description,
@@ -184,7 +212,7 @@ export const createProject = async (req: Request, res: Response) => {
       location,
       client,
       team: team || [],
-      equipment: equipment || [],
+      equipment: validEquipmentIds,
     });
     
     const populatedProject = await Project.findById(project._id)
@@ -201,6 +229,14 @@ export const createProject = async (req: Request, res: Response) => {
         populatedProject.name,
         new Date(populatedProject.startDate)
       ).catch(err => logger.error('Email gönderme hatası:', err));
+    }
+
+    // Ekipmanlar projeye atanıyorsa depoda değil -> IN_USE (rezerv)
+    if (validEquipmentIds.length > 0) {
+      await Equipment.updateMany(
+        { _id: { $in: validEquipmentIds } },
+        { $set: { status: 'IN_USE' } }
+      ).catch((err: any) => logger.error('Ekipman status IN_USE update hatası:', err));
     }
     
     // Cache'i invalidate et
@@ -237,8 +273,14 @@ export const updateProject = async (req: Request, res: Response) => {
       });
     }
     
-    // Eski projeyi al (durum değişikliği kontrolü için)
+    // Eski projeyi al (durum değişikliği ve ekipman diff için)
     const oldProject = await Project.findById(id);
+    if (!oldProject) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proje bulunamadı',
+      });
+    }
 
     // Partial update: sadece gelen alanları güncelle (undefined alanlar DB'yi bozmasın)
     const updateData: any = {};
@@ -249,7 +291,46 @@ export const updateProject = async (req: Request, res: Response) => {
     if (location !== undefined) updateData.location = location;
     if (client !== undefined) updateData.client = client;
     if (team !== undefined) updateData.team = team;
-    if (equipment !== undefined) updateData.equipment = equipment;
+    // Equipment diff + availability validation
+    let addedEquipmentIds: string[] = [];
+    let removedEquipmentIds: string[] = [];
+    if (equipment !== undefined) {
+      const newEquipmentIds: string[] = Array.isArray(equipment) ? equipment : [];
+      const validNewEquipmentIds = newEquipmentIds.filter((x) => mongoose.Types.ObjectId.isValid(x));
+      if (newEquipmentIds.length !== validNewEquipmentIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz ekipman ID',
+        });
+      }
+
+      const oldIds = (oldProject.equipment || []).map((x: any) => x.toString());
+      const newIds = validNewEquipmentIds.map((x) => x.toString());
+
+      addedEquipmentIds = newIds.filter((x) => !oldIds.includes(x));
+      removedEquipmentIds = oldIds.filter((x) => !newIds.includes(x));
+
+      // Yeni eklenenler AVAILABLE olmalı
+      if (addedEquipmentIds.length > 0) {
+        const notAvailable = await Equipment.find({
+          _id: { $in: addedEquipmentIds },
+          status: { $ne: 'AVAILABLE' },
+        })
+          .select('_id name status')
+          .lean();
+
+        if (notAvailable.length > 0) {
+          return res.status(409).json({
+            success: false,
+            message: 'Bazı ekipmanlar zaten kullanımda/bakımda. Başka projeye atanamaz.',
+            code: 'EQUIPMENT_NOT_AVAILABLE',
+            details: notAvailable,
+          });
+        }
+      }
+
+      updateData.equipment = validNewEquipmentIds;
+    }
     if (status !== undefined) {
       updateData.status = status === 'PLANNING' ? 'PENDING_APPROVAL' : status;
     }
@@ -271,6 +352,62 @@ export const updateProject = async (req: Request, res: Response) => {
         success: false,
         message: 'Proje bulunamadı',
       });
+    }
+
+    // Equipment status senkronizasyonu
+    // - yeni eklenenler -> IN_USE
+    // - çıkarılanlar -> AVAILABLE (başka aktif projede kullanılmıyorsa)
+    if (addedEquipmentIds.length > 0) {
+      await Equipment.updateMany(
+        { _id: { $in: addedEquipmentIds } },
+        { $set: { status: 'IN_USE' } }
+      ).catch((err: any) => logger.error('Ekipman status IN_USE update hatası:', err));
+    }
+
+    if (removedEquipmentIds.length > 0) {
+      const otherProjects = await Project.find({
+        _id: { $ne: updatedProject._id },
+        status: { $nin: ['COMPLETED', 'CANCELLED'] },
+        equipment: { $in: removedEquipmentIds },
+      })
+        .select('equipment')
+        .lean();
+
+      const stillUsed = new Set<string>();
+      otherProjects.forEach((p: any) => {
+        (p.equipment || []).forEach((eid: any) => stillUsed.add(eid.toString()));
+      });
+
+      const toAvailable = removedEquipmentIds.filter((eid) => !stillUsed.has(eid));
+      if (toAvailable.length > 0) {
+        await Equipment.updateMany(
+          { _id: { $in: toAvailable } },
+          { $set: { status: 'AVAILABLE' } }
+        ).catch((err: any) => logger.error('Ekipman status AVAILABLE update hatası:', err));
+      }
+    }
+
+    // Proje COMPLETED/CANCELLED olduysa tüm ekipmanları AVAILABLE yap (başka projede kullanılmıyorsa)
+    if (updatedProject.status === 'COMPLETED' || updatedProject.status === 'CANCELLED') {
+      const updatedEquipIds = (updatedProject.equipment || []).map((x: any) => (typeof x === 'string' ? x : x._id?.toString?.() || x.toString?.()));
+      const otherProjects = await Project.find({
+        _id: { $ne: updatedProject._id },
+        status: { $nin: ['COMPLETED', 'CANCELLED'] },
+        equipment: { $in: updatedEquipIds },
+      })
+        .select('equipment')
+        .lean();
+      const stillUsed = new Set<string>();
+      otherProjects.forEach((p: any) => {
+        (p.equipment || []).forEach((eid: any) => stillUsed.add(eid.toString()));
+      });
+      const toAvailable = updatedEquipIds.filter((eid: string) => eid && !stillUsed.has(eid));
+      if (toAvailable.length > 0) {
+        await Equipment.updateMany(
+          { _id: { $in: toAvailable } },
+          { $set: { status: 'AVAILABLE' } }
+        ).catch((err: any) => logger.error('Ekipman status AVAILABLE update hatası:', err));
+      }
     }
     
     // Durum değişikliği kontrolü ve bildirim gönderimi

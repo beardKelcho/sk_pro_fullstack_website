@@ -113,6 +113,7 @@ export default function AddProject() {
         model: eq.model || '',
         serialNumber: eq.serialNumber || '',
         category: eq.category || '',
+        status: eq.status || 'AVAILABLE',
       })));
     }).catch(error => {
       logger.error('Ekipmanlar yüklenirken hata:', error);
@@ -793,20 +794,38 @@ export default function AddProject() {
                       {filteredEquipments.length > 0 ? (
                         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                           {filteredEquipments.map(equipment => (
-                            <li key={equipment.id} className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                              <label className="flex items-center">
+                            (() => {
+                              const isSelected = formData.equipment.includes(equipment.id);
+                              const isDisabled = !isSelected && equipment.status && equipment.status !== 'AVAILABLE';
+                              return (
+                              <li
+                                key={equipment.id}
+                                className={`p-2 ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
+                              >
+                              <label className={`flex items-center ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                                 <input
                                   type="checkbox"
                                   checked={formData.equipment.includes(equipment.id)}
-                                  onChange={() => toggleEquipment(equipment.id)}
+                                  onChange={() => {
+                                    if (isDisabled) return;
+                                    toggleEquipment(equipment.id);
+                                  }}
                                   className="h-4 w-4 text-green-600 dark:text-green-500 focus:ring-green-500 dark:focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
+                                  disabled={isDisabled}
                                 />
                                 <span className="ml-3 block">
                                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{equipment.name}</span>
                                   <span className="text-sm text-gray-500 dark:text-gray-400 block">{equipment.model} • {equipment.category}</span>
+                                  {isDisabled && (
+                                    <span className="text-xs text-red-600 dark:text-red-400 block mt-0.5">
+                                      Kullanımda/Bakımda olduğu için atanamaz
+                                    </span>
+                                  )}
                                 </span>
                               </label>
                             </li>
+                              );
+                            })()
                           ))}
                         </ul>
                       ) : (

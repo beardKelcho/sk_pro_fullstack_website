@@ -540,15 +540,22 @@ export default function EditProject() {
                     {equipmentList.map((eq) => {
                       const eid = (eq._id || eq.id || '').toString();
                       if (!eid) return null;
+                      const isSelected = formData.equipment.includes(eid);
+                      const backendStatus = (eq as any).status as string | undefined;
+                      const isDisabled = !isSelected && backendStatus !== undefined && backendStatus !== 'AVAILABLE';
                       return (
-                      <div key={eid} className="flex items-start">
+                      <div key={eid} className={`flex items-start ${isDisabled ? 'opacity-60' : ''}`}>
                         <div className="flex items-center h-5">
                           <input
                             id={`equipment-${eid}`}
                             type="checkbox"
                             checked={equipmentCheckboxes[eid] || false}
-                            onChange={() => handleEquipmentToggle(eid)}
+                            onChange={() => {
+                              if (isDisabled) return;
+                              handleEquipmentToggle(eid);
+                            }}
                             className="focus:ring-[#0066CC] dark:focus:ring-primary-light h-4 w-4 text-[#0066CC] dark:text-primary-light border-gray-300 dark:border-gray-600 rounded"
+                            disabled={isDisabled}
                           />
                         </div>
                         <div className="ml-3 text-sm">
@@ -556,6 +563,11 @@ export default function EditProject() {
                             {eq.name}
                           </label>
                           <p className="text-gray-500 dark:text-gray-400">{eq.type}</p>
+                          {isDisabled && (
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                              Kullanımda/Bakımda olduğu için atanamaz
+                            </p>
+                          )}
                         </div>
                       </div>
                       );

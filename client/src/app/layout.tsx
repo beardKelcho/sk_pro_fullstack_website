@@ -124,7 +124,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="SK Production" />
         <link rel="apple-touch-icon" href="/images/sk-logo.png" />
       </head>
-      <body className={`${montserrat.className} antialiased min-h-screen`} suppressHydrationWarning>
+      <body className={`${montserrat.className} antialiased min-h-screen transition-colors duration-300`} suppressHydrationWarning>
         <ErrorBoundary>
           <OfflineIndicator />
           <PWAInstallPrompt />

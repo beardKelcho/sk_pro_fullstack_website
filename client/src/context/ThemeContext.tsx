@@ -10,7 +10,13 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   return (
-    <NextThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <NextThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      enableColorScheme
+      storageKey="skpro-theme"
+    >
       {children}
     </NextThemeProvider>
   );

@@ -296,9 +296,9 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 
 **Yapılacaklar:**
 - [ ] Tüm component'lerde dark mode kontrolü
-- [ ] Smooth transition animasyonları
-- [ ] Kullanıcı tercihini kaydetme
-- [ ] Sistem tercihini algılama
+- [x] Smooth transition animasyonları ✅ (body `transition-colors`)
+- [x] Kullanıcı tercihini kaydetme ✅ (`next-themes` storageKey: `skpro-theme`)
+- [x] Sistem tercihini algılama ✅ (`defaultTheme=system`, `enableSystem`)
 
 ---
 

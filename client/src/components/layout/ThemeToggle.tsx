@@ -4,17 +4,37 @@ import React from 'react';
 import { useTheme } from '../../context/ThemeContext';
 
 const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+  const { theme, setTheme, resolvedTheme } = useTheme();
+
+  const effective = resolvedTheme || theme; // 'dark' | 'light'
+  const cycleTheme = () => {
+    // system -> light -> dark -> system
+    if (theme === 'system') return setTheme('light');
+    if (theme === 'light') return setTheme('dark');
+    return setTheme('system');
+  };
+
+  const label =
+    theme === 'system'
+      ? 'Tema: Sistem (değiştir)'
+      : theme === 'dark'
+        ? 'Tema: Karanlık (değiştir)'
+        : 'Tema: Açık (değiştir)';
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={cycleTheme}
       className="p-2 rounded-full bg-gray-200 dark:bg-dark-card text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary transition-colors duration-200 hover:bg-gray-300 dark:hover:bg-gray-700"
-      aria-label={theme === 'dark' ? 'Açık moda geç' : 'Karanlık moda geç'}
+      aria-label={label}
+      title={label}
     >
-      {theme === 'dark' ? (
-        // Güneş ikonu (Açık mod)
+      {theme === 'system' ? (
+        // Sistem ikonu
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 6h16v2H4V6zm0 10h16v2H4v-2zM7 9h10v6H7V9z" />
+        </svg>
+      ) : effective === 'dark' ? (
+        // Güneş ikonu (Açık moda geç)
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-5 w-5"
@@ -28,7 +48,7 @@ const ThemeToggle = () => {
           />
         </svg>
       ) : (
-        // Ay ikonu (Karanlık mod)
+        // Ay ikonu (Karanlık moda geç)
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-5 w-5"

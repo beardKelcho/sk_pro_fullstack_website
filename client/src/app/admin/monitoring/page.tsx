@@ -249,6 +249,64 @@ export default function MonitoringPage() {
         </div>
       )}
 
+      {/* Rate Limiting */}
+      {data.rateLimiting && (
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Rate Limit</h3>
+            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+              15dk pencere • {Math.round(data.rateLimiting.config.windowMs / 60000)} dk
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="p-4 rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-500 mb-1">Genel API</p>
+              <p className="text-2xl font-bold text-gray-900">{data.rateLimiting.config.generalMax}</p>
+            </div>
+            <div className="p-4 rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-500 mb-1">Auth</p>
+              <p className="text-2xl font-bold text-gray-900">{data.rateLimiting.config.authMax}</p>
+            </div>
+            <div className="p-4 rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-500 mb-1">Upload</p>
+              <p className="text-2xl font-bold text-gray-900">{data.rateLimiting.config.uploadMax}</p>
+            </div>
+            <div className="p-4 rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-500 mb-1">Export</p>
+              <p className="text-2xl font-bold text-gray-900">{data.rateLimiting.config.exportMax}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-gray-700">
+              Son aralıkta <span className="font-semibold">{data.rateLimiting.totalRateLimited}</span> adet 429 (rate limited)
+            </p>
+          </div>
+
+          {data.rateLimiting.topRateLimitedEndpoints.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b">
+                    <th className="py-2 pr-4">Endpoint</th>
+                    <th className="py-2">429 Adet</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.rateLimiting.topRateLimitedEndpoints.map((x) => (
+                    <tr key={x.endpoint} className="border-b last:border-b-0">
+                      <td className="py-2 pr-4 font-mono text-xs text-gray-700">{x.endpoint}</td>
+                      <td className="py-2">{x.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* User Activity Details */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Kullanıcı Aktivitesi</h3>

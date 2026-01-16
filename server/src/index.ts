@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { setupSwagger } from './config/swagger';
@@ -16,6 +15,7 @@ import { metricsMiddleware } from './middleware/metrics.middleware';
 import { mongoSanitize } from './middleware/mongoSanitize';
 import { csrfOriginCheck } from './middleware/csrfOriginCheck';
 import { requestIdMiddleware } from './middleware/requestId.middleware';
+import { authLimiter, exportLimiter, generalApiLimiter, uploadLimiter } from './middleware/rateLimiters';
 import fs from 'fs';
 import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
@@ -84,19 +84,10 @@ app.use(
   })
 );
 
-// Rate limiting (OPTIONS isteklerini ve auth endpoint'lerini hariç tut)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 dakika
-  max: 500, // Her IP'den 15 dakikada maksimum 500 istek (development için artırıldı)
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => {
-    // OPTIONS isteklerini, health check'i ve tüm auth endpoint'lerini atla
-    return req.method === 'OPTIONS' 
-      || req.path === '/api/health'
-      || req.path.startsWith('/api/auth');
-  },
-});
+// Rate limiting: endpoint bazlı limitler
+app.use('/api/auth', authLimiter);
+app.use('/api/upload', uploadLimiter);
+app.use('/api/export', exportLimiter);
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -194,7 +185,7 @@ if (fs.existsSync(uploadsDir)) {
 setupSwagger(app);
 
 // API Routeları (rate limiter burada uygulanır)
-app.use('/api', metricsMiddleware, requireDbConnection, limiter, routes);
+app.use('/api', metricsMiddleware, requireDbConnection, generalApiLimiter, routes);
 
 // 404 handler
 app.use('*', (req, res) => {

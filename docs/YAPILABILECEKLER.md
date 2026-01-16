@@ -352,11 +352,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: DDoS koruması, kaynak yönetimi
 
 **Yapılacaklar:**
-- [ ] Endpoint bazlı rate limiting
-- [ ] User bazlı rate limiting
-- [ ] IP bazlı rate limiting
-- [ ] Rate limit dashboard
-- [ ] Dynamic rate limit adjustment
+- [x] Endpoint bazlı rate limiting ✅ (auth/upload/export/genel ayrı limitler)
+- [x] User bazlı rate limiting ✅ (JWT içinden userId -> key)
+- [x] IP bazlı rate limiting ✅ (fallback key)
+- [x] Rate limit dashboard ✅ (Monitoring ekranında 429 ve top endpoint’ler)
+- [x] Dynamic rate limit adjustment ✅ (env: RATE_LIMIT_* değişkenleri)
 
 ---
 

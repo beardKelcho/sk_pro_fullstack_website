@@ -9,6 +9,7 @@ import {
   p95,
   TimeRange,
 } from '../utils/monitoring/monitoringStore';
+import { rateLimitConfig } from '../middleware/rateLimiters';
 
 const parseTimeRange = (raw: unknown): TimeRange => {
   const v = typeof raw === 'string' ? raw : '';
@@ -125,6 +126,17 @@ export const getMonitoringDashboard = async (req: Request, res: Response) => {
         lastOccurred: new Date(x.last || Date.now()).toISOString(),
       }));
 
+    const rateLimited = api.filter((m) => m.statusCode === 429);
+    const rateLimitedByEndpoint = new Map<string, number>();
+    for (const m of rateLimited) {
+      const key = `${m.method} ${m.path}`;
+      rateLimitedByEndpoint.set(key, (rateLimitedByEndpoint.get(key) || 0) + 1);
+    }
+    const topRateLimited = Array.from(rateLimitedByEndpoint.entries())
+      .map(([endpoint, count]) => ({ endpoint, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+
     // Performance: Şimdilik API sürelerinden türet (frontend ölçümü yoksa da gerçek bir sinyal)
     const pageLoadEstimateAvg = avgApi ? Math.min(5000, avgApi * 3) : 0;
     const pageLoadEstimateP95 = p95Api ? Math.min(8000, p95Api * 3) : 0;
@@ -153,6 +165,11 @@ export const getMonitoringDashboard = async (req: Request, res: Response) => {
         totalErrors: errorRequests,
         errorRate: totalRequests ? (errorRequests / totalRequests) * 100 : 0,
         topErrors,
+      },
+      rateLimiting: {
+        config: rateLimitConfig(),
+        totalRateLimited: rateLimited.length,
+        topRateLimitedEndpoints: topRateLimited,
       },
       database: {
         status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',

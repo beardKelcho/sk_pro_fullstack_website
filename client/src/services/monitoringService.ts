@@ -97,6 +97,17 @@ export interface MonitoringDashboardData {
       count: number;
     }>;
   };
+  rateLimiting?: {
+    config: {
+      windowMs: number;
+      generalMax: number;
+      authMax: number;
+      uploadMax: number;
+      exportMax: number;
+    };
+    totalRateLimited: number;
+    topRateLimitedEndpoints: Array<{ endpoint: string; count: number }>;
+  };
 }
 
 /**

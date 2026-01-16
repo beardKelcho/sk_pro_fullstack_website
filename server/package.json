@@ -9,6 +9,7 @@
     "seed": "ts-node src/scripts/seed.ts",
     "seed-images": "ts-node src/scripts/seedImages.ts",
     "reset-admin": "ts-node src/scripts/resetAdminPassword.ts",
+    "db:sync-indexes": "ts-node src/scripts/syncIndexes.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

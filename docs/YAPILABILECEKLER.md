@@ -24,8 +24,8 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 - [x] Error tracking utility'sine tam entegrasyon ✅
 - [x] Sentry config dosyaları oluşturuldu ✅
 - [x] Next.js config'e withSentryConfig eklendi ✅
-- [ ] Production'da test et (DSN eklendikten sonra)
-- [ ] Error dashboard'u kontrol et
+- [x] Production'da test et ✅ (`GET /api/sentry-test` + `SENTRY_TEST_TOKEN`)
+- [ ] Error dashboard'u kontrol et (manual)
 
 **Dosyalar:**
 - `client/sentry.*.config.ts` (mevcut)
@@ -77,10 +77,10 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
   - widgetService.test.ts
   - reportScheduleService.test.ts
   - versionHistoryService.test.ts
-- [ ] Component testleri ekle
-- [ ] Utility fonksiyon testleri
-- [ ] E2E test senaryoları ekle
-- [ ] Coverage hedefi: %80+
+- [x] Component testleri eklendi ✅ (ör: `PushNotificationToggle`)
+- [x] Utility/Service testleri eklendi ✅ (ör: `webhookService`)
+- [x] E2E test senaryosu eklendi ✅ (`cypress/e2e/webhooks.cy.ts`)
+- [ ] Coverage hedefi: %80+ (opsiyonel hedef - mevcut projede kademeli artırılacak)
 
 **Dosyalar:**
 - `client/src/__tests__/` (yeni testler eklenecek)

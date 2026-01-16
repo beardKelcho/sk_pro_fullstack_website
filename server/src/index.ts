@@ -15,6 +15,7 @@ import { requireDbConnection } from './middleware/requireDbConnection';
 import { metricsMiddleware } from './middleware/metrics.middleware';
 import { mongoSanitize } from './middleware/mongoSanitize';
 import { csrfOriginCheck } from './middleware/csrfOriginCheck';
+import { requestIdMiddleware } from './middleware/requestId.middleware';
 import fs from 'fs';
 import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
@@ -101,6 +102,8 @@ const limiter = rateLimit({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+// Request correlation id (log correlation)
+app.use(requestIdMiddleware);
 // NoSQL injection'e karşı request temizliği
 app.use(mongoSanitize);
 // CSRF mitigasyonu: state-changing isteklerde origin allowlist kontrolü

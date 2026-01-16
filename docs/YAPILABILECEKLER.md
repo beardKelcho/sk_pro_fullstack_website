@@ -366,11 +366,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Daha iyi debugging, production monitoring
 
 **Yapılacaklar:**
-- [ ] Structured logging (JSON format)
+- [x] Structured logging (JSON format) ✅ (Winston JSON + requestId meta)
 - [ ] Log aggregation (ELK stack veya CloudWatch)
-- [ ] Log level management
-- [ ] Performance logging
-- [ ] Error correlation
+- [x] Log level management ✅ (`LOG_LEVEL` ile)
+- [x] Performance logging ✅ (API request metrics middleware + monitoring dashboard)
+- [x] Error correlation ✅ (`X-Request-Id` + loglarda requestId)
 
 ---
 

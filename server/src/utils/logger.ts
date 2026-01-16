@@ -6,6 +6,7 @@
 
 import winston from 'winston';
 import path from 'path';
+import { getRequestId } from './requestContext';
 
 /**
  * Log formatı (JSON formatında structured logging)
@@ -14,6 +15,13 @@ const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
+  winston.format((info) => {
+    const rid = getRequestId();
+    if (rid) {
+      (info as any).requestId = rid;
+    }
+    return info;
+  })(),
   winston.format.json()
 );
 
@@ -25,7 +33,10 @@ const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.printf(({ timestamp, level, message, ...meta }) => {
-    let msg = `${timestamp} [${level}]: ${message}`;
+    const requestId = (meta as any).requestId ? ` rid=${(meta as any).requestId}` : '';
+    // requestId'yi meta içinden çıkartıp tekrar yazdırmayalım
+    if ((meta as any).requestId) delete (meta as any).requestId;
+    let msg = `${timestamp} [${level}]${requestId}: ${message}`;
     if (Object.keys(meta).length > 0) {
       msg += ` ${JSON.stringify(meta)}`;
     }

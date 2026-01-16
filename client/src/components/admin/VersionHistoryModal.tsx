@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useVersionHistory, useRollbackVersion, VersionHistory } from '@/services/versionHistoryService';
 import { toast } from 'react-toastify';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -41,6 +42,8 @@ export default function VersionHistoryModal({
   const [selectedVersion, setSelectedVersion] = useState<VersionHistory | null>(null);
   const { data, isLoading, error } = useVersionHistory(resource, resourceId, page, 20);
   const rollbackMutation = useRollbackVersion();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   const versions = data?.versions || [];
   const totalPages = data?.totalPages || 1;
@@ -59,6 +62,7 @@ export default function VersionHistoryModal({
     }
   };
 
+  useModalA11y({ isOpen, onClose, dialogRef, initialFocusRef: closeBtnRef });
   if (!isOpen) return null;
 
   return (
@@ -71,12 +75,19 @@ export default function VersionHistoryModal({
         ></div>
 
         {/* Modal */}
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="version-history-title"
+          tabIndex={-1}
+          className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full outline-none"
+        >
           {/* Header */}
           <div className="bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                <h3 id="version-history-title" className="text-lg font-medium text-gray-900 dark:text-white">
                   Versiyon Geçmişi
                 </h3>
                 {resourceName && (
@@ -88,6 +99,8 @@ export default function VersionHistoryModal({
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                aria-label="Kapat"
+                ref={closeBtnRef}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

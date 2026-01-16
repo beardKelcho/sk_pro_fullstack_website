@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface QRCodePrintModalProps {
   isOpen: boolean;
@@ -11,6 +12,10 @@ interface QRCodePrintModalProps {
 }
 
 export default function QRCodePrintModal({ isOpen, onClose, title, code, qrImage }: QRCodePrintModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  useModalA11y({ isOpen, onClose, dialogRef, initialFocusRef: closeBtnRef });
   if (!isOpen) return null;
 
   const handleDownload = () => {
@@ -63,15 +68,25 @@ export default function QRCodePrintModal({ isOpen, onClose, title, code, qrImage
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="qr-modal-title"
+        tabIndex={-1}
+        className="relative w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden outline-none"
+      >
         <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">QR Kod Hazır</p>
+            <p id="qr-modal-title" className="text-sm font-semibold text-gray-900 dark:text-white">
+              QR Kod Hazır
+            </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Etiket için indir veya yazdır</p>
           </div>
           <button
             type="button"
             onClick={onClose}
+            ref={closeBtnRef}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300"
             aria-label="Kapat"
           >

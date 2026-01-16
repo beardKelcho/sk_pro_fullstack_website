@@ -308,11 +308,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: WCAG 2.1 AA uyumluluğu
 
 **Yapılacaklar:**
-- [ ] Screen reader optimizasyonu
-- [ ] Keyboard navigation iyileştirmeleri
+- [x] Screen reader optimizasyonu ✅ (modal/dialog semantic + aria)
+- [x] Keyboard navigation iyileştirmeleri ✅ (Escape kapatma + Tab focus trap)
 - [ ] Color contrast kontrolü
-- [ ] ARIA labels iyileştirmeleri
-- [ ] Focus management
+- [x] ARIA labels iyileştirmeleri ✅ (header/menu butonları + modal kapatma)
+- [x] Focus management ✅ (modal açılış focus + focus restore)
 
 ---
 

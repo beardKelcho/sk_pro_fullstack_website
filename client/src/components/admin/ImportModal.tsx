@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { useImportEquipment, useImportProjects, downloadTemplate, ImportResult } from '@/services/importService';
 import { toast } from 'react-toastify';
 import Icon from '@/components/common/Icon';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -16,6 +17,8 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
   const [file, setFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
   
   const importEquipment = useImportEquipment();
   const importProjects = useImportProjects();
@@ -91,21 +94,31 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
     onClose();
   };
 
+  useModalA11y({ isOpen, onClose: handleClose, dialogRef, initialFocusRef: closeBtnRef });
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={handleClose}>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-modal-title"
+        tabIndex={-1}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto outline-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 id="import-modal-title" className="text-2xl font-bold text-gray-900 dark:text-white">
               {type === 'equipment' ? 'Ekipman' : 'Proje'} Import
             </h2>
             <button
               onClick={handleClose}
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               aria-label="Kapat"
+              ref={closeBtnRef}
             >
               <Icon name="close" className="h-6 w-6" />
             </button>
@@ -162,6 +175,7 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
                       }
                     }}
                     className="text-red-600 hover:text-red-700"
+                    aria-label="Seçilen dosyayı kaldır"
                   >
                     <Icon name="close" className="h-4 w-4" />
                   </button>

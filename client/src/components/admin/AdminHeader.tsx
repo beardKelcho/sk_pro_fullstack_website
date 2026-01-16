@@ -125,6 +125,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
           className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
             focus:outline-none transition-all duration-300 hover:scale-110 hover-glow"
           onClick={onToggleSidebar}
+          aria-label="Menüyü aç/kapat"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -144,6 +145,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
           className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
             relative group transition-all duration-300 hover:scale-110 hover-glow"
           title="Ara (Ctrl+K)"
+          aria-label="Arama"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -160,6 +162,8 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
             className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
               relative transition-all duration-300 hover:scale-110 hover-glow"
             onClick={() => setShowNotificationPanel(!showNotificationPanel)}
+            aria-label="Bildirimler"
+            aria-expanded={showNotificationPanel}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -249,6 +253,8 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
             className="flex items-center space-x-2 p-1 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 
               transition-all duration-300 hover:scale-105 hover-glow"
             onClick={() => setShowProfileMenu(!showProfileMenu)}
+            aria-label="Profil menüsü"
+            aria-expanded={showProfileMenu}
           >
             <div className="w-9 h-9 gradient-primary rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-lg">
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}

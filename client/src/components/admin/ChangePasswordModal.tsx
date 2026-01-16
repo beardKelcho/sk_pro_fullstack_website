@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import PasswordInput from '@/components/ui/PasswordInput';
 import logger from '@/utils/logger';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -23,7 +24,16 @@ export default function ChangePasswordModal({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  useModalA11y({
+    isOpen,
+    onClose: () => {
+      if (!loading) handleClose();
+    },
+    dialogRef,
+    initialFocusRef: closeBtnRef,
+  });
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,12 +105,19 @@ export default function ChangePasswordModal({
         ></div>
 
         {/* Modal */}
-        <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="change-password-title"
+          tabIndex={-1}
+          className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full outline-none"
+        >
           <form onSubmit={handleSubmit}>
             <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="sm:flex sm:items-start">
                 <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
+                  <h3 id="change-password-title" className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
                     Şifre Değiştir
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -179,6 +196,7 @@ export default function ChangePasswordModal({
                 type="button"
                 onClick={handleClose}
                 disabled={loading}
+                ref={closeBtnRef}
                 className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0066CC] dark:focus:ring-primary-light sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 İptal

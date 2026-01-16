@@ -1,7 +1,8 @@
-const CACHE_NAME = 'skproduction-v1';
-const STATIC_CACHE = 'static-v1';
-const DYNAMIC_CACHE = 'dynamic-v1';
-const API_CACHE = 'api-v1';
+const CACHE_PREFIX = 'skproduction';
+const CACHE_VERSION = 'v2';
+const STATIC_CACHE = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `${CACHE_PREFIX}-dynamic-${CACHE_VERSION}`;
+const API_CACHE = `${CACHE_PREFIX}-api-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
   '/',
@@ -10,40 +11,24 @@ const STATIC_ASSETS = [
   '/images/sk-logo.png',
 ];
 
-const API_ENDPOINTS = [
-  '/api/forms',
-  '/api/sync',
-  '/api/media/upload',
-];
+// Not: API endpoint'lerini install sırasında cache'lemiyoruz (auth/CSRF vb. sebebiyle).
 
 // Service Worker kurulumu
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)),
-      caches.open(API_CACHE).then((cache) => cache.addAll(API_ENDPOINTS)),
-    ])
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)).then(() => self.skipWaiting())
   );
 });
 
 // Service Worker aktivasyonu
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((cacheName) => {
-            return (
-              cacheName.startsWith('skproduction-') &&
-              cacheName !== CACHE_NAME &&
-              cacheName !== STATIC_CACHE &&
-              cacheName !== DYNAMIC_CACHE &&
-              cacheName !== API_CACHE
-            );
-          })
-          .map((cacheName) => caches.delete(cacheName))
-      );
-    })
+    caches
+      .keys()
+      .then((cacheNames) =>
+        Promise.all(cacheNames.filter((n) => n.startsWith(CACHE_PREFIX) && !n.endsWith(CACHE_VERSION)).map((n) => caches.delete(n)))
+      )
+      .then(() => self.clients.claim())
   );
 });
 
@@ -51,74 +36,173 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // API istekleri için özel strateji
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(handleApiRequest(event.request));
+  // Sadece same-origin handle edelim
+  if (url.origin !== self.location.origin) return;
+
+  // Navigation: offline fallback
+  if (event.request.mode === 'navigate') {
+    event.respondWith(handleNavigation(event.request));
     return;
   }
 
-  // Statik dosyalar için önbellek stratejisi
-  event.respondWith(handleStaticRequest(event.request));
+  // API
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(handleApi(event.request));
+    return;
+  }
+
+  // Statik içerik
+  event.respondWith(handleAsset(event.request));
 });
 
-// API isteklerini yönet
-async function handleApiRequest(request) {
+async function handleNavigation(request) {
   try {
-    // Önce ağdan dene
-    const networkResponse = await fetch(request);
-    const cache = await caches.open(API_CACHE);
-
-    // Başarılı yanıtı önbelleğe al
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
-    }
-
-    return networkResponse;
-  } catch (error) {
-    // Ağ hatası durumunda önbellekten yanıt ver
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-
-    // Önbellekte yoksa offline yanıtı döndür
-    return new Response(
-      JSON.stringify({
-        error: 'Offline mode',
-        message: 'You are currently offline. Your request will be synced when you are back online.',
-      }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    const res = await fetch(request);
+    const cache = await caches.open(DYNAMIC_CACHE);
+    cache.put(request, res.clone());
+    return res;
+  } catch (e) {
+    const cached = await caches.match(request);
+    return cached || caches.match('/offline.html');
   }
 }
 
-// Statik dosya isteklerini yönet
-async function handleStaticRequest(request) {
+async function handleAsset(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
   try {
-    // Önce önbellekten dene
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-
-    // Önbellekte yoksa ağdan al
-    const networkResponse = await fetch(request);
+    const res = await fetch(request);
     const cache = await caches.open(DYNAMIC_CACHE);
+    if (res.ok) cache.put(request, res.clone());
+    return res;
+  } catch (e) {
+    // asset yoksa boş dön
+    return cached || new Response('', { status: 504 });
+  }
+}
 
-    // Başarılı yanıtı önbelleğe al
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
+async function handleApi(request) {
+  const url = new URL(request.url);
+
+  // GET: network-first + cache fallback
+  if (request.method === 'GET') {
+    try {
+      const res = await fetch(request);
+      const cache = await caches.open(API_CACHE);
+      if (res.ok) cache.put(request, res.clone());
+      return res;
+    } catch (e) {
+      const cached = await caches.match(request);
+      return (
+        cached ||
+        new Response(JSON.stringify({ success: false, message: 'Offline' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    }
+  }
+
+  // Background sync: sadece same-origin contact form
+  if (request.method === 'POST' && url.pathname === '/api/contact') {
+    return queueOrSendContact(request);
+  }
+
+  // Diğer non-GET: network only
+  try {
+    return await fetch(request);
+  } catch (e) {
+    return new Response(JSON.stringify({ success: false, message: 'Offline' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+// -------------------------
+// Background queue (IDB)
+// -------------------------
+const DB_NAME = 'skpro-sw';
+const DB_VERSION = 1;
+const STORE = 'queue';
+
+function openDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function addToQueue(item) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).add(item);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getAllQueue() {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deleteFromQueue(id) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function queueOrSendContact(request) {
+  try {
+    // online ise direkt dene
+    const res = await fetch(request.clone());
+    return res;
+  } catch (e) {
+    // offline -> body'yi alıp kuyruğa koy
+    let bodyText = '';
+    try {
+      bodyText = await request.clone().text();
+    } catch {
+      bodyText = '';
+    }
+    await addToQueue({
+      url: request.url,
+      method: request.method,
+      headers: { 'Content-Type': request.headers.get('Content-Type') || 'application/json' },
+      body: bodyText,
+      ts: Date.now(),
+    });
+
+    if (self.registration.sync) {
+      try {
+        await self.registration.sync.register('skpro-sync-contact');
+      } catch {
+        // ignore
+      }
     }
 
-    return networkResponse;
-  } catch (error) {
-    // Ağ hatası durumunda offline sayfasını göster
-    if (request.mode === 'navigate') {
-      return caches.match('/offline.html');
-    }
-    throw error;
+    return new Response(JSON.stringify({ success: true, queued: true }), {
+      status: 202,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
 
@@ -209,26 +293,32 @@ self.addEventListener('notificationclick', (event) => {
 
 // Background sync olaylarını yönet
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-forms') {
-    event.waitUntil(syncForms());
+  if (event.tag === 'skpro-sync-contact') {
+    event.waitUntil(flushQueue());
   }
 });
 
-// Form senkronizasyonu
-async function syncForms() {
-  const cache = await caches.open(API_CACHE);
-  const requests = await cache.keys();
-  
-  for (const request of requests) {
-    if (request.method === 'POST' && request.url.includes('/api/forms')) {
-      try {
-        const response = await fetch(request.clone());
-        if (response.ok) {
-          await cache.delete(request);
-        }
-      } catch (error) {
-        console.error('Form sync failed:', error);
+// Sayfadan manuel flush tetikleme
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKPRO_FLUSH_QUEUE') {
+    event.waitUntil(flushQueue());
+  }
+});
+
+async function flushQueue() {
+  const items = await getAllQueue();
+  for (const item of items) {
+    try {
+      const res = await fetch(item.url, {
+        method: item.method,
+        headers: item.headers,
+        body: item.body,
+      });
+      if (res.ok) {
+        await deleteFromQueue(item.id);
       }
+    } catch (e) {
+      // offline devam ediyor: bırak
     }
   }
-} 
+}

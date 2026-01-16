@@ -57,6 +57,13 @@ export function registerServiceWorker() {
         });
     });
 
+    // Online olduğunda: queue flush tetikle (Background Sync yoksa bile çalışsın)
+    window.addEventListener('online', () => {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'SKPRO_FLUSH_QUEUE' });
+      }
+    });
+
     // Service Worker mesajlarını dinle
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (process.env.NODE_ENV === 'development') {

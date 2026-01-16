@@ -85,14 +85,13 @@
 </head>
 <body>
     <div class="container">
-        <img src="/images/logo.png" alt="SK Production Logo" class="icon">
+        <img src="/images/sk-logo.png" alt="SK Production Logo" class="icon">
         <h1>Çevrimdışı Mod</h1>
         <p>Şu anda internet bağlantınız yok. Lütfen bağlantınızı kontrol edip tekrar deneyin.</p>
         <a href="/" class="button">Ana Sayfaya Dön</a>
         <div class="status">Durum: Çevrimdışı</div>
         <div class="sync-status hidden">
-            <p>Bekleyen senkronizasyonlar:</p>
-            <ul id="sync-list"></ul>
+            <p>Bağlantı gelince bekleyen işlemler otomatik gönderilecektir.</p>
         </div>
     </div>
 
@@ -120,22 +119,9 @@
 
         // Senkronizasyon durumunu kontrol et
         async function checkSyncStatus() {
-            try {
-                const response = await fetch('/api/sync/status');
-                const data = await response.json();
-                
-                const syncList = document.getElementById('sync-list');
-                syncList.innerHTML = '';
-                
-                if (data.pending > 0) {
-                    syncList.innerHTML += `<li>${data.pending} form bekliyor</li>`;
-                }
-                if (data.failed > 0) {
-                    syncList.innerHTML += `<li>${data.failed} form başarısız</li>`;
-                }
-            } catch (error) {
-                console.error('Senkronizasyon durumu alınamadı:', error);
-            }
+            // Bu sayfa statik bir fallback; detay senkronizasyon listesi opsiyonel.
+            // Gerekirse service worker message API ile zenginleştirilebilir.
+            return;
         }
 
         // Event listener'ları ekle

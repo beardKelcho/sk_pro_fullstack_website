@@ -14,7 +14,7 @@ const ContactForm: React.FC = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'queued' | 'error'>('idle');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -39,11 +39,16 @@ const ContactForm: React.FC = () => {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        throw new Error('Form gönderilemedi');
-      }
+      const data = await response.json().catch(() => ({}));
 
-      setSubmitStatus('success');
+      // Offline queue: SW 202 döndürebilir
+      if (response.status === 202 && data?.queued) {
+        setSubmitStatus('queued');
+      } else if (!response.ok) {
+        throw new Error(data?.message || 'Form gönderilemedi');
+      } else {
+        setSubmitStatus('success');
+      }
       setFormData({ name: '', email: '', message: '' });
     } catch (error) {
       setSubmitStatus('error');
@@ -116,6 +121,11 @@ const ContactForm: React.FC = () => {
       {submitStatus === 'success' && (
         <div className="p-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-100 rounded-lg">
           Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.
+        </div>
+      )}
+      {submitStatus === 'queued' && (
+        <div className="p-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 rounded-lg">
+          Şu an çevrimdışısınız. Mesajınız kuyruğa alındı; bağlantı gelince otomatik gönderilecektir.
         </div>
       )}
       {submitStatus === 'error' && (

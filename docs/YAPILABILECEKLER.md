@@ -234,11 +234,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Daha iyi offline deneyim, app-like hissi
 
 **Yapılacaklar:**
-- [ ] Service Worker iyileştirmeleri
-- [ ] Offline mode geliştirmeleri
-- [ ] Background sync
+- [x] Service Worker iyileştirmeleri ✅ (cache stratejileri + v2 SW)
+- [x] Offline mode geliştirmeleri ✅ (navigation offline fallback + offline.html düzeltmeleri)
+- [x] Background sync ✅ (same-origin `/api/contact` POST kuyruğu + online flush)
 - [ ] Push notification iyileştirmeleri
-- [ ] Install prompt optimizasyonu
+- [x] Install prompt optimizasyonu ✅ (PWAInstallPrompt + 24h dismiss)
 
 ---
 

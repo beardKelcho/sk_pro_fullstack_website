@@ -30,6 +30,9 @@ import calendarRoutes from './calendar.routes';
 import mongoose from 'mongoose';
 import webhookRoutes from './webhook.routes';
 import commentRoutes from './comment.routes';
+import emailTemplateRoutes from './emailTemplate.routes';
+import realtimeRoutes from './realtime.routes';
+import analyticsRoutes from './analytics.routes';
 
 const router = express.Router();
 
@@ -86,5 +89,8 @@ router.use('/monitoring', monitoringRoutes);
 router.use('/calendar', calendarRoutes);
 router.use('/webhooks', webhookRoutes);
 router.use('/comments', commentRoutes);
+router.use('/email-templates', emailTemplateRoutes);
+router.use('/realtime', realtimeRoutes);
+router.use('/analytics', analyticsRoutes);
 
-export default router; 
+export default router;

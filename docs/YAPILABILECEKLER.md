@@ -188,11 +188,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Gerçek zamanlı işbirliği, daha iyi UX
 
 **Yapılacaklar:**
-- [ ] WebSocket server kurulumu (Socket.io)
-- [ ] Real-time bildirimler
-- [ ] Canlı düzenleme (collaborative editing)
-- [ ] Online kullanıcı listesi
-- [ ] Real-time dashboard güncellemeleri
+- [ ] WebSocket server kurulumu (Socket.io) *(paket kurulumu gerekiyor)*
+- [x] Real-time bildirimler ✅ *(SSE v1: `/api/realtime/stream` + `notification:new`)*
+- [ ] Canlı düzenleme (collaborative editing) *(SSE tek yönlü; iki yönlü için WS önerilir)*
+- [x] Online kullanıcı listesi ✅ *(SSE presence: `presence:update` — sadece ADMIN/FIRMA_SAHIBI)*
+- [x] Real-time dashboard güncellemeleri ✅ *(SSE: `monitoring:update` broadcast + client query invalidate)*
 
 **Teknolojiler:**
 - Socket.io
@@ -206,11 +206,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Daha detaylı analiz, karar verme
 
 **Yapılacaklar:**
-- [ ] Gelişmiş grafikler ve metrikler
-- [ ] Trend analizi
-- [ ] Tahminleme (forecasting)
-- [ ] Karşılaştırmalı analizler
-- [ ] Export edilebilir raporlar
+- [x] Gelişmiş grafikler ve metrikler ✅ (`/api/analytics/dashboard` + `/admin/analytics`)
+- [x] Trend analizi ✅ (projeler aylık trend, görev tamamlanma günlük trend)
+- [x] Tahminleme (forecasting) ✅ (basit: son 14 gün ortalamasına göre 7 gün tahmini)
+- [x] Karşılaştırmalı analizler ✅ (önceki dönem ile % değişim)
+- [x] Export edilebilir raporlar ✅ (JSON export)
 
 ---
 
@@ -295,7 +295,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Daha iyi kullanıcı deneyimi
 
 **Yapılacaklar:**
-- [ ] Tüm component'lerde dark mode kontrolü
+- [x] Tüm component'lerde dark mode kontrolü ✅ (çekirdek UI + admin layout + kritik bileşenler)
 - [x] Smooth transition animasyonları ✅ (body `transition-colors`)
 - [x] Kullanıcı tercihini kaydetme ✅ (`next-themes` storageKey: `skpro-theme`)
 - [x] Sistem tercihini algılama ✅ (`defaultTheme=system`, `enableSystem`)
@@ -322,11 +322,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Daha modern ve akıcı UX
 
 **Yapılacaklar:**
-- [ ] Page transition animasyonları
-- [ ] Loading state animasyonları
-- [ ] Hover effects iyileştirmeleri
-- [ ] Micro-interactions
-- [ ] Framer Motion entegrasyonu
+- [x] Page transition animasyonları ✅ (Admin route transition: `AnimatePresence` + `motion.div`)
+- [x] Loading state animasyonları ✅ (`app/loading.tsx`, `app/admin/loading.tsx`)
+- [x] Hover effects iyileştirmeleri ✅ (UI `Button` transition/hover)
+- [x] Micro-interactions ✅ (aktif state scale + daha akıcı etkileşimler)
+- [x] Framer Motion entegrasyonu ✅ (admin layout'ta aktif)
 
 ---
 
@@ -424,11 +424,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Profesyonel email tasarımları
 
 **Yapılacaklar:**
-- [ ] HTML email template'leri
-- [ ] Template editor
-- [ ] Multi-language email support
-- [ ] Email preview
-- [ ] A/B testing için email variants
+- [x] HTML email template'leri ✅ (DB tabanlı `EmailTemplate`)
+- [x] Template editor ✅ (Admin UI: `/admin/email-templates`)
+- [x] Multi-language email support ✅ (TR/EN locale desteği)
+- [x] Email preview ✅ (`POST /api/email-templates/preview` + canlı önizleme)
+- [x] A/B testing için email variants ✅ (weight bazlı variant seçimi)
 
 ---
 

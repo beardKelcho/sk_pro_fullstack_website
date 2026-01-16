@@ -30,12 +30,15 @@ import logger from '@/utils/logger';
 // Video Background Player Component
 const VideoBackgroundPlayer = ({ videoUrl, poster }: { videoUrl: string; poster?: string }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (failed) return;
     const video = videoRef.current;
     if (!video) return;
 
     const handleError = (e: Event) => {
+      setFailed(true);
       if (process.env.NODE_ENV === 'development') {
         logger.error('Video yükleme hatası:', {
           videoUrl,
@@ -46,9 +49,9 @@ const VideoBackgroundPlayer = ({ videoUrl, poster }: { videoUrl: string; poster?
 
     video.addEventListener('error', handleError);
     return () => video.removeEventListener('error', handleError);
-  }, [videoUrl]);
+  }, [videoUrl, failed]);
 
-  if (!videoUrl) return null;
+  if (!videoUrl || failed) return null;
 
   return (
     <video 

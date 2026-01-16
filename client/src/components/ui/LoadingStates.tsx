@@ -67,7 +67,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
         <div
           key={index}
           role="status"
-          className={`animate-pulse bg-gray-200 rounded ${className}`}
+          className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`}
         />
       ))}
     </>
@@ -150,7 +150,7 @@ export const LoadingCard: React.FC<LoadingCardProps> = ({
   if (!isLoading) return <div className={className}>{children}</div>;
 
   return (
-    <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 ${className}`}>
       <div className="space-y-4">
         <LoadingSkeleton className="h-4 w-3/4" />
         <LoadingSkeleton className="h-4 w-1/2" />

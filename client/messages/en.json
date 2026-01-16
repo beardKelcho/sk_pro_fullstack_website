@@ -1,0 +1,296 @@
+{
+  "common": {
+    "language": "Language",
+    "languages": {
+      "tr": "Türkçe",
+      "en": "English",
+      "fr": "Français",
+      "es": "Español"
+    }
+  },
+  "site": {
+    "meta": {
+      "brand": "SK Production",
+      "title": "SK Production - Professional vision mixing & media server solutions",
+      "description": "We deliver professional vision mixing and media server solutions for events. Analog Way Aquilon, Dataton Watchpax and more."
+    },
+    "errorBoundary": {
+      "title": "Something went wrong",
+      "defaultMessage": "An unexpected error occurred.",
+      "reload": "Reload",
+      "goHome": "Go to home",
+      "goDashboard": "Go to dashboard"
+    },
+    "heroUi": {
+      "fallbackRotatingTexts": ["Vision mixing experts", "Professional solutions for your events", "Media server & show control solutions"],
+      "fallbackDescription": "At SK Production, we provide professional vision mixing and media server solutions for corporate events and large-scale productions.",
+      "fallbackPrimaryCta": "Get in touch",
+      "secondaryCta": "View our projects"
+    },
+    "contactForm": {
+      "fields": {
+        "name": { "label": "Full name", "placeholder": "Full name" },
+        "email": { "label": "Email", "placeholder": "Your email address" },
+        "message": { "label": "Message", "placeholder": "Write your message..." }
+      },
+      "button": { "submit": "Send", "submitting": "Sending..." },
+      "status": {
+        "success": "Your message has been sent successfully. We'll get back to you soon.",
+        "queued": "You're currently offline. Your message has been queued and will be sent automatically once you're back online.",
+        "error": "An error occurred while sending your message. Please try again later."
+      },
+      "errors": { "submitFailed": "Unable to send the form" }
+    },
+    "header": {
+      "projects": "Projects",
+      "servicesEquipment": "Services & Equipment",
+      "about": "About",
+      "contact": "Contact"
+    },
+    "footer": {
+      "companyDescription": "We add value to your events with professional vision mixing and media server solutions.",
+      "quickLinks": "Quick Links",
+      "contact": "Contact",
+      "workingHours": "Working Hours",
+      "workingHoursItems": {
+        "weekday": "Mon – Fri: 09:00 – 18:00",
+        "saturday": "Saturday: 10:00 – 14:00",
+        "sunday": "Sunday: Closed"
+      },
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use",
+      "copyright": "All rights reserved."
+    },
+    "legal": {
+      "backToHome": "← Back to Home",
+      "lastUpdated": "Last updated"
+    },
+    "privacy": {
+      "metaTitle": "Privacy Policy | SK Production",
+      "metaDescription": "Information about SK Production’s privacy policy and the protection of personal data.",
+      "title": "Privacy Policy",
+      "sections": [
+        {
+          "title": "1. General Information",
+          "paragraphs": [
+            "At SK Production, protecting the privacy of our visitors and users is important to us. This privacy policy explains how the information we collect is used when you visit our website or use our services."
+          ]
+        },
+        {
+          "title": "2. Information We Collect",
+          "paragraphs": ["We may collect the following information on our website:"],
+          "list": [
+            "Personal information you provide via the contact form such as name, email, and phone number",
+            "Website usage data (IP address, browser type, pages visited)",
+            "Data collected via cookies"
+          ]
+        },
+        {
+          "title": "3. Use of Information",
+          "paragraphs": ["The information we collect may be used for the following purposes:"],
+          "list": [
+            "To provide and improve our services",
+            "To respond to your contact requests",
+            "To enhance the website experience",
+            "To comply with legal obligations"
+          ]
+        },
+        {
+          "title": "4. Cookies",
+          "paragraphs": [
+            "Our website uses cookies to improve the user experience. Cookies are small text files stored in your browser when you visit a website. You can manage cookies via your browser settings."
+          ]
+        },
+        {
+          "title": "5. Data Security",
+          "paragraphs": [
+            "We take appropriate technical and administrative measures to ensure the security of your personal data. However, data transmission over the internet cannot be guaranteed to be 100% secure."
+          ]
+        },
+        {
+          "title": "6. Your Rights",
+          "paragraphs": ["You have the following rights regarding the processing of your personal data:"],
+          "list": [
+            "To learn whether your personal data is processed",
+            "To request information about your processed personal data",
+            "To request deletion or destruction of your personal data",
+            "To object to outcomes produced solely by automated systems that may be to your detriment"
+          ]
+        },
+        {
+          "title": "7. Contact",
+          "paragraphs": [
+            "If you have questions about our privacy policy, you can contact us:",
+            "Email: info@skpro.com.tr • Phone: +90 532 123 4567 • Address: Zincirlidere Caddesi No:52/C Şişli/İstanbul"
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "metaTitle": "Terms of Use | SK Production",
+      "metaDescription": "Terms and conditions for using the SK Production website.",
+      "title": "Terms of Use",
+      "sections": [
+        {
+          "title": "1. General Terms",
+          "paragraphs": [
+            "By using the SK Production website, you are deemed to accept the following terms of use. If you do not accept these terms, please do not use the website."
+          ]
+        },
+        {
+          "title": "2. Use of the Website",
+          "paragraphs": ["You may use our website only for lawful purposes. The following activities are prohibited:"],
+          "list": [
+            "Compromising the security of the website",
+            "Uploading malicious software or code",
+            "Collecting others’ personal information without permission",
+            "Copying or distributing the website content without authorization"
+          ]
+        },
+        {
+          "title": "3. Intellectual Property",
+          "paragraphs": [
+            "All content on the website (texts, images, logos, designs) belongs to SK Production and is protected by copyright laws. Unauthorized use of the content is prohibited."
+          ]
+        },
+        {
+          "title": "4. Services",
+          "paragraphs": [
+            "Information provided on our website is for general informational purposes only. For detailed information about our services, please contact us."
+          ]
+        },
+        {
+          "title": "5. Disclaimer",
+          "paragraphs": [
+            "We do not guarantee the accuracy, timeliness, or completeness of the information on the website. We are not responsible for any damages arising from your use of the website."
+          ]
+        },
+        {
+          "title": "6. Changes",
+          "paragraphs": [
+            "We reserve the right to change these terms of use at any time. Changes take effect when published on the website."
+          ]
+        },
+        {
+          "title": "7. Contact",
+          "paragraphs": [
+            "If you have questions about the terms of use, you can contact us:",
+            "Email: info@skpro.com.tr • Phone: +90 532 123 4567 • Address: Zincirlidere Caddesi No:52/C Şişli/İstanbul"
+          ]
+        }
+      ]
+    },
+    "home": {
+      "servicesSection": {
+        "title": "Our Services & Equipment",
+        "subtitle": "Professional solutions and cutting-edge equipment for your events",
+        "tabs": {
+          "services": "Services",
+          "equipment": "Equipment"
+        },
+        "fallbackServices": [
+          {
+            "title": "Vision Mixing",
+            "description": "We provide flawless vision mixing for your events with professional equipment and an expert team.",
+            "icon": "video",
+            "order": 0
+          },
+          {
+            "title": "Media Server Systems",
+            "description": "High-performance media server systems for uninterrupted, high-quality playback during your events.",
+            "icon": "screen",
+            "order": 1
+          },
+          {
+            "title": "LED Screen Management",
+            "description": "Content preparation and professional management for LED screens in various sizes and resolutions.",
+            "icon": "led",
+            "order": 2
+          }
+        ],
+        "fallbackEquipment": [
+          {
+            "title": "Vision Mixing Systems",
+            "items": [
+              { "name": "Analog Way Aquilon RS4", "description": "Video processing with 4K/8K resolution support" },
+              { "name": "Barco E2 Gen 2", "description": "True 4K, expandable inputs/outputs" },
+              { "name": "Blackmagic ATEM 4 M/E Constellation HD", "description": "40 inputs, 24 outputs, advanced transitions" }
+            ],
+            "order": 0
+          },
+          {
+            "title": "Media Server Systems",
+            "items": [
+              { "name": "Dataton WATCHPAX 60", "description": "6 outputs, high performance" },
+              { "name": "Disguise 4x4pro", "description": "Real-time rendering, AR/VR support" },
+              { "name": "Resolume Arena 7", "description": "Video loops and effects for live performances" }
+            ],
+            "order": 1
+          }
+        ]
+      },
+      "aboutSection": {
+        "title": "About SK Production",
+        "paragraphs": [
+          "SK Production is a specialized team providing vision mixing and media server solutions for professional events. We work with state-of-the-art equipment such as Analog Way Aquilon, Dataton Watchpax and Resolume Arena 7.",
+          "With over 10 years of experience, our team has delivered hundreds of projects across corporate events, concerts, product launches, stage shows and more."
+        ],
+        "fallbackStats": [
+          { "value": "250+", "label": "Completed Projects" },
+          { "value": "12+", "label": "Years of Experience" },
+          { "value": "50+", "label": "Professional Equipment" }
+        ]
+      },
+      "contactSection": {
+        "title": "Get in Touch",
+        "subtitle": "Let’s work together on your projects",
+        "labels": {
+          "address": "Address",
+          "phone": "Phone",
+          "email": "Email"
+        },
+        "fallback": {
+          "address": "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
+          "phone": "+90 532 123 4567",
+          "email": "info@skpro.com.tr"
+        }
+      },
+      "a11y": {
+        "skipToContent": "Skip to main content"
+      },
+      "projectsSection": {
+        "title": "Our stage experiences",
+        "subtitle": "Visual moments from the events we delivered"
+      },
+      "lightbox": {
+        "imageFailed": "Image could not be loaded",
+        "urlLabel": "URL",
+        "idLabel": "ID",
+        "generatedUrlLabel": "Generated URL",
+        "none": "None",
+        "projectImageAlt": "Project image"
+      },
+      "structuredData": {
+        "organizationDescription": "A technology company delivering professional vision mixing and media server solutions",
+        "areaServed": "Turkey"
+      },
+      "video": {
+        "fallbackText": "Video could not be loaded. Your browser may not support the video format."
+      }
+    },
+    "contentOverrides": {
+      "hero": {
+        "title": "Visual excellence for your events",
+        "subtitle": "Vision mixing & media server solutions",
+        "description": "From corporate events to large-scale shows, we deliver reliable, high-quality visual control with industry-grade systems and an experienced team.",
+        "buttonText": "Get in touch",
+        "rotatingTexts": ["Vision mixing", "Media server", "LED control"]
+      },
+      "servicesEquipment": {},
+      "about": {},
+      "contact": {},
+      "social": []
+    }
+  }
+}
+

@@ -2,11 +2,25 @@ import { createClient, RedisClientType } from 'redis';
 import logger from '../utils/logger';
 
 let redisClient: RedisClientType | null = null;
+let redisDisabledLogged = false;
 
 export const connectRedis = async (): Promise<RedisClientType | null> => {
   try {
-    // Redis URL'i environment variable'dan al, yoksa default kullan
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    // Dev ortamında Redis opsiyonel: REDIS_URL yoksa default olarak bağlanmayı deneme (log spam + ECONNREFUSED)
+    const hasRedisUrl = Boolean(process.env.REDIS_URL);
+    const redisEnabled =
+      process.env.REDIS_ENABLED !== 'false' && (hasRedisUrl || process.env.NODE_ENV === 'production');
+
+    if (!redisEnabled) {
+      if (!redisDisabledLogged) {
+        redisDisabledLogged = true;
+        logger.warn('Redis devre dışı (REDIS_URL yok veya REDIS_ENABLED=false). Cache kapalı devam ediliyor.');
+      }
+      return null;
+    }
+
+    // Redis URL'i environment variable'dan al (prod'da zorunlu gibi davranıyoruz)
+    const redisUrl = process.env.REDIS_URL as string;
     
     // Redis client oluştur
     redisClient = createClient({
@@ -24,7 +38,8 @@ export const connectRedis = async (): Promise<RedisClientType | null> => {
 
     // Hata yönetimi
     redisClient.on('error', (err) => {
-      logger.error('Redis Client Error:', err);
+      // Redis down senaryolarında log spam'i azaltmak için warn seviyesinde tutuyoruz
+      logger.warn('Redis Client Error:', err);
     });
 
     redisClient.on('connect', () => {

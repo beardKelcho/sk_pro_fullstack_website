@@ -30,16 +30,29 @@ import { getImageUrl } from '@/utils/imageUrl';
 import LazyImage from '@/components/common/LazyImage';
 import logger from '@/utils/logger';
 import Carousel, { CarouselRef } from '@/components/common/Carousel';
+import { useLocale, useTranslations } from 'next-intl';
+import type { AppLocale } from '@/i18n/locales';
 
 // Video Background Player Component - React DOM hatalarını önlemek için ayrı component
-const VideoBackgroundPlayer = ({ videoUrl, poster }: { videoUrl: string; poster?: string }) => {
+const VideoBackgroundPlayer = ({
+  videoUrl,
+  poster,
+  fallbackText,
+}: {
+  videoUrl: string;
+  poster?: string;
+  fallbackText: string;
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (failed) return;
     const video = videoRef.current;
     if (!video) return;
 
     const handleError = (e: Event) => {
+      setFailed(true);
       if (process.env.NODE_ENV === 'development') {
         const video = e.target as HTMLVideoElement;
         const error = video.error;
@@ -72,9 +85,9 @@ const VideoBackgroundPlayer = ({ videoUrl, poster }: { videoUrl: string; poster?
       video.removeEventListener('loadeddata', handleLoadedData);
       video.removeEventListener('canplaythrough', handleCanPlayThrough);
     };
-  }, [videoUrl]);
+  }, [videoUrl, failed]);
 
-  if (!videoUrl) {
+  if (!videoUrl || failed) {
     return null;
   }
 
@@ -94,12 +107,37 @@ const VideoBackgroundPlayer = ({ videoUrl, poster }: { videoUrl: string; poster?
       crossOrigin="anonymous"
     >
       <source src={videoUrl} type="video/mp4" />
-      Video yüklenemedi. Tarayıcınız video formatını desteklemiyor.
+      {fallbackText}
     </video>
   );
 };
 
 export default function Home() {
+  const locale = useLocale() as AppLocale;
+  const tHome = useTranslations('site.home');
+  const tOverrides = useTranslations('site.contentOverrides');
+  const tMeta = useTranslations('site.meta');
+
+  const safeRaw = useCallback(
+    (key: string) => {
+      try {
+        return tOverrides.raw(key) as unknown;
+      } catch {
+        return undefined;
+      }
+    },
+    [tOverrides]
+  );
+
+  const safeArray = useCallback(<T,>(value: unknown): T[] | undefined => {
+    if (Array.isArray(value)) return value as T[];
+    return undefined;
+  }, []);
+
+  const safeObject = useCallback(<T extends object>(value: unknown): Partial<T> | undefined => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) return value as Partial<T>;
+    return undefined;
+  }, []);
   // Site içeriği state'leri
   const [heroContent, setHeroContent] = useState<HeroContent | null>(null);
   const [servicesEquipment, setServicesEquipment] = useState<ServicesEquipmentContent | null>(null);
@@ -244,6 +282,7 @@ export default function Home() {
       try {
         setLoading(true);
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+        const isTr = locale === 'tr';
         
         const [heroRes, servicesEquipmentRes, aboutRes, contactRes, socialRes] = await Promise.allSettled([
           fetch(`${API_URL}/site-content/public/hero?_t=${Date.now()}`, { cache: 'no-store' }),
@@ -257,7 +296,12 @@ export default function Home() {
           const heroData = await heroRes.value.json();
           if (heroData.content) {
             const content = heroData.content.content as HeroContent;
-            setHeroContent(content);
+            if (!isTr) {
+              const override = safeObject<HeroContent>(safeRaw('hero')) || {};
+              setHeroContent({ ...content, ...override });
+            } else {
+              setHeroContent(content);
+            }
           }
         }
 
@@ -266,28 +310,82 @@ export default function Home() {
           const servicesEquipmentData = await servicesEquipmentRes.value.json();
           if (servicesEquipmentData.content) {
             const content = servicesEquipmentData.content.content as ServicesEquipmentContent;
-            setServicesEquipment(content);
+            if (!isTr) {
+              // Non-TR için: metin alanlarını i18n’den türet, medya/arka plan DB’den gelsin
+              const baseOverride: Partial<ServicesEquipmentContent> = {
+                title: tHome('servicesSection.title'),
+                subtitle: tHome('servicesSection.subtitle'),
+                services:
+                  (safeArray<ServiceItem>(tHome.raw('servicesSection.fallbackServices')) as ServiceItem[]) || content.services,
+                equipment:
+                  (safeArray<EquipmentCategory>(tHome.raw('servicesSection.fallbackEquipment')) as EquipmentCategory[]) ||
+                  content.equipment,
+              };
+
+              // İsteğe bağlı manuel override (messages/* -> site.contentOverrides.servicesEquipment)
+              const manualOverride =
+                safeObject<ServicesEquipmentContent>(safeRaw('servicesEquipment')) || ({} as Partial<ServicesEquipmentContent>);
+
+              setServicesEquipment({
+                ...content,
+                ...baseOverride,
+                ...manualOverride,
+              });
+            } else {
+              setServicesEquipment(content);
+            }
           }
         }
 
         if (aboutRes.status === 'fulfilled' && aboutRes.value.ok) {
           const aboutData = await aboutRes.value.json();
           if (aboutData.content) {
-            setAboutContent(aboutData.content.content as AboutContent);
+            const content = aboutData.content.content as AboutContent;
+            if (!isTr) {
+              const stats =
+                safeArray<{ value: string; label: string }>(tHome.raw('aboutSection.fallbackStats')) || content.stats;
+
+              const baseOverride: Partial<AboutContent> = {
+                title: tHome('aboutSection.title'),
+                description: [tHome('aboutSection.paragraphs.0'), tHome('aboutSection.paragraphs.1')].join('\n\n'),
+                stats,
+              };
+
+              const manualOverride = safeObject<AboutContent>(safeRaw('about')) || ({} as Partial<AboutContent>);
+              setAboutContent({
+                ...content,
+                ...baseOverride,
+                ...manualOverride,
+              });
+            } else {
+              setAboutContent(content);
+            }
           }
         }
 
         if (contactRes.status === 'fulfilled' && contactRes.value.ok) {
           const contactData = await contactRes.value.json();
           if (contactData.content) {
-            setContactInfo(contactData.content.content as ContactInfo);
+            const content = contactData.content.content as ContactInfo;
+            if (!isTr) {
+              const override = safeObject<ContactInfo>(safeRaw('contact')) || {};
+              setContactInfo({ ...content, ...override });
+            } else {
+              setContactInfo(content);
+            }
           }
         }
 
         if (socialRes.status === 'fulfilled' && socialRes.value.ok) {
           const socialData = await socialRes.value.json();
           if (socialData.content) {
-            setSocialMedia(socialData.content.content as SocialMedia[]);
+            const content = socialData.content.content as SocialMedia[];
+            if (!isTr) {
+              const override = safeArray<SocialMedia>(safeRaw('social'));
+              setSocialMedia(override || content);
+            } else {
+              setSocialMedia(content);
+            }
           }
         }
         } catch (error) {
@@ -300,7 +398,7 @@ export default function Home() {
     };
 
     fetchSiteContent();
-  }, []);
+  }, [locale, tHome, safeArray, safeObject, safeRaw]);
 
   // Hero rotating texts için effect
   useEffect(() => {
@@ -384,7 +482,7 @@ export default function Home() {
     name: 'SK Production',
     url: 'https://skproduction.com',
     logo: 'https://skproduction.com/images/sk-logo.png',
-    description: 'Profesyonel görüntü rejisi ve medya server çözümleri sunan teknoloji firması',
+    description: tHome('structuredData.organizationDescription'),
     address: {
       streetAddress: contactInfo?.address || 'Zincirlidere Caddesi No:52/C',
       addressLocality: 'Şişli',
@@ -397,17 +495,17 @@ export default function Home() {
       email: contactInfo?.email || 'info@skpro.com.tr',
     },
     sameAs: socialMedia.map(social => social.url).filter(url => url && url !== '#'),
-  }), [contactInfo, socialMedia]);
+  }), [contactInfo, socialMedia, tHome]);
 
   const serviceSchemas = useMemo(() => {
     if (!servicesEquipment?.services || servicesEquipment.services.length === 0) return [];
     return servicesEquipment.services.map(service => createServiceSchema({
       serviceType: service.title,
       providerName: 'SK Production',
-      areaServed: 'Türkiye',
+      areaServed: tHome('structuredData.areaServed'),
       description: service.description,
     }));
-  }, [servicesEquipment]);
+  }, [servicesEquipment, tHome]);
 
   const localBusinessSchema = useMemo(() => createLocalBusinessSchema({
     name: 'SK Production',
@@ -443,9 +541,9 @@ export default function Home() {
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-md"
-        aria-label="Ana içeriğe geç"
+        aria-label={tHome('a11y.skipToContent')}
       >
-        Ana içeriğe geç
+        {tHome('a11y.skipToContent')}
       </a>
       {/* Structured Data */}
       <StructuredData type="organization" data={organizationSchema} />
@@ -458,7 +556,7 @@ export default function Home() {
             '@type': 'WebSite',
             name: 'SK Production',
             url: 'https://skproduction.com',
-            description: 'Profesyonel görüntü rejisi ve medya server çözümleri',
+            description: tMeta('description'),
             potentialAction: {
               '@type': 'SearchAction',
               target: {
@@ -509,7 +607,11 @@ export default function Home() {
             }
             
             return (
-              <VideoBackgroundPlayer videoUrl={fullVideoUrl} poster={heroContent?.backgroundImage || undefined} />
+              <VideoBackgroundPlayer
+                videoUrl={fullVideoUrl}
+                poster={heroContent?.backgroundImage || undefined}
+                fallbackText={tHome('video.fallbackText')}
+              />
             );
           } else {
             return null;
@@ -530,8 +632,8 @@ export default function Home() {
         <section id="projects" className="relative py-32 bg-gradient-to-b from-black/90 via-black/80 to-black/90 overflow-hidden" style={{ position: 'relative', scrollMarginTop: '100px', marginTop: '6rem', marginBottom: '6rem' }}>
           <div className="container mx-auto px-6">
             <StageSectionTitle
-              title="Sahne Deneyimlerimiz"
-              subtitle="Gerçekleştirdiğimiz etkinliklerde yarattığımız görsel şölenler"
+              title={tHome('projectsSection.title')}
+              subtitle={tHome('projectsSection.subtitle')}
             />
             
             {/* Üst Container - Sağdan Sola */}
@@ -651,10 +753,16 @@ export default function Home() {
                     });
                     return (
                       <div className="text-white text-center">
-                        <p className="text-lg mb-2">Resim yüklenemedi</p>
-                        <p className="text-sm text-gray-400">URL: {selectedImage.url || selectedImage.path || 'Yok'}</p>
-                        <p className="text-sm text-gray-400">ID: {imageId || 'Yok'}</p>
-                        <p className="text-sm text-gray-400">Oluşturulan URL: {imageUrl || 'Yok'}</p>
+                        <p className="text-lg mb-2">{tHome('lightbox.imageFailed')}</p>
+                        <p className="text-sm text-gray-400">
+                          {tHome('lightbox.urlLabel')}: {selectedImage.url || selectedImage.path || tHome('lightbox.none')}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {tHome('lightbox.idLabel')}: {imageId || tHome('lightbox.none')}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {tHome('lightbox.generatedUrlLabel')}: {imageUrl || tHome('lightbox.none')}
+                        </p>
                       </div>
                     );
                   }
@@ -666,7 +774,7 @@ export default function Home() {
                     >
                       <LazyImage
                         src={imageUrl}
-                        alt={selectedImage.originalName || selectedImage.filename || 'Proje görseli'}
+                        alt={selectedImage.originalName || selectedImage.filename || tHome('lightbox.projectImageAlt')}
                         className="rounded-lg shadow-2xl"
                         fill={true}
                         priority={true}
@@ -697,8 +805,8 @@ export default function Home() {
             <section id="services" className="relative py-32 bg-gradient-to-b from-black/80 via-[#0A1128]/90 to-black/80" style={{ position: 'relative', scrollMarginTop: '100px', paddingBottom: '8rem', minHeight: 'auto' }}>
             <div className="container mx-auto px-6">
               <StageSectionTitle
-                title={servicesEquipment?.title || "Hizmetlerimiz & Ekipmanlarımız"}
-                subtitle={servicesEquipment?.subtitle || "Etkinlikleriniz için profesyonel çözümler ve son teknoloji ekipmanlar"}
+                title={servicesEquipment?.title || tHome('servicesSection.title')}
+                subtitle={servicesEquipment?.subtitle || tHome('servicesSection.subtitle')}
               />
               
               {/* Tab Navigation */}
@@ -712,7 +820,7 @@ export default function Home() {
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    Hizmetlerimiz
+                    {tHome('servicesSection.tabs.services')}
                   </button>
                   <button
                     onClick={() => setActiveTab('equipment')}
@@ -722,7 +830,7 @@ export default function Home() {
                         : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    Ekipmanlarımız
+                    {tHome('servicesSection.tabs.equipment')}
                   </button>
                 </div>
               </div>
@@ -739,11 +847,9 @@ export default function Home() {
                     className="pb-16 min-h-[400px]"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {(servicesEquipment?.services && servicesEquipment.services.length > 0 ? servicesEquipment.services : [
-                        { title: 'Görüntü Rejisi', description: 'Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz.', icon: 'video', order: 0 },
-                        { title: 'Medya Server Sistemleri', description: 'Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını.', icon: 'screen', order: 1 },
-                        { title: 'LED Ekran Yönetimi', description: 'Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri.', icon: 'led', order: 2 },
-                      ]).sort((a, b) => (a.order || 0) - (b.order || 0)).map((service, index) => (
+                      {(servicesEquipment?.services && servicesEquipment.services.length > 0
+                        ? servicesEquipment.services
+                        : (tHome.raw('servicesSection.fallbackServices') as Array<{ title: string; description: string; icon: string; order: number }>)).sort((a, b) => (a.order || 0) - (b.order || 0)).map((service, index) => (
                         <motion.div
                           key={index}
                           initial={{ opacity: 0, y: 30 }}
@@ -771,26 +877,9 @@ export default function Home() {
                     className="pb-20 min-h-[500px]"
                   >
                     <div className="space-y-6">
-                      {(servicesEquipment?.equipment && servicesEquipment.equipment.length > 0 ? servicesEquipment.equipment : [
-                        {
-                          title: 'Görüntü Rejisi Sistemleri',
-                          items: [
-                            { name: 'Analog Way Aquilon RS4', description: '4K/8K çözünürlük desteği ile görüntü işleme' },
-                            { name: 'Barco E2 Gen 2', description: 'Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış' },
-                            { name: 'Blackmagic ATEM 4 M/E Constellation HD', description: '40 giriş, 24 çıkış, gelişmiş geçiş efektleri' }
-                          ],
-                          order: 0
-                        },
-                        {
-                          title: 'Medya Server Sistemleri',
-                          items: [
-                            { name: 'Dataton WATCHPAX 60', description: '6 çıkışlı, yüksek performanslı' },
-                            { name: 'Disguise 4x4pro', description: 'Gerçek zamanlı render, AR/VR desteği' },
-                            { name: 'Resolume Arena 7', description: 'Canlı performans için video loop ve efektler' }
-                          ],
-                          order: 1
-                        },
-                      ]).sort((a, b) => (a.order || 0) - (b.order || 0)).map((category, index) => (
+                      {(servicesEquipment?.equipment && servicesEquipment.equipment.length > 0
+                        ? servicesEquipment.equipment
+                        : (tHome.raw('servicesSection.fallbackEquipment') as Array<{ title: string; items: Array<{ name: string; description: string }>; order: number }>)).sort((a, b) => (a.order || 0) - (b.order || 0)).map((category, index) => (
                         <motion.div
                           key={index}
                           initial={{ opacity: 0, x: -30 }}
@@ -828,7 +917,7 @@ export default function Home() {
                 transition={{ duration: 0.8 }}
               >
                 <StageSectionTitle
-                  title={aboutContent?.title || 'SK Production Hakkında'}
+                  title={aboutContent?.title || tHome('aboutSection.title')}
                   subtitle=""
                 />
                 {aboutContent?.description ? (
@@ -838,21 +927,17 @@ export default function Home() {
                 ) : (
                   <>
                     <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                      SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.
-                      Analog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.
+                      {tHome('aboutSection.paragraphs.0')}
                     </p>
                     <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                      10 yılı aşkın deneyime sahip ekibimiz, kurumsal etkinlikler, konserler, ürün lansmanları, 
-                      sahne gösterileri ve daha birçok alanda yüzlerce projeye imza atmıştır.
+                      {tHome('aboutSection.paragraphs.1')}
                     </p>
                   </>
                 )}
                 <div className="flex gap-8">
-                  {(aboutContent?.stats && aboutContent.stats.length > 0 ? aboutContent.stats : [
-                    { value: '250+', label: 'Tamamlanan Proje' },
-                    { value: '12+', label: 'Yıllık Deneyim' },
-                    { value: '50+', label: 'Profesyonel Ekipman' },
-                  ]).map((stat, index) => (
+                  {(aboutContent?.stats && aboutContent.stats.length > 0
+                    ? aboutContent.stats
+                    : (tHome.raw('aboutSection.fallbackStats') as Array<{ value: string; label: string }>)).map((stat, index) => (
                     <motion.div
                       key={index}
                       className="text-center"
@@ -944,8 +1029,8 @@ export default function Home() {
         <section id="contact" className="relative py-32 bg-gradient-to-b from-black/90 to-black overflow-hidden" style={{ position: 'relative', scrollMarginTop: '100px', marginTop: '6rem', marginBottom: '6rem' }}>
           <div className="container mx-auto px-6">
             <StageSectionTitle
-              title="İletişime Geçin"
-              subtitle="Projeleriniz için birlikte çalışalım"
+              title={tHome('contactSection.title')}
+              subtitle={tHome('contactSection.subtitle')}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <motion.div
@@ -956,9 +1041,9 @@ export default function Home() {
                 transition={{ duration: 0.8 }}
               >
                 {[
-                  { icon: 'location', title: 'Adres', content: contactInfo?.address || 'Zincirlidere Caddesi No:52/C Şişli/İstanbul' },
-                  { icon: 'phone', title: 'Telefon', content: contactInfo?.phone || '+90 532 123 4567' },
-                  { icon: 'email', title: 'E-posta', content: contactInfo?.email || 'info@skpro.com.tr' },
+                  { icon: 'location', title: tHome('contactSection.labels.address'), content: contactInfo?.address || tHome('contactSection.fallback.address') },
+                  { icon: 'phone', title: tHome('contactSection.labels.phone'), content: contactInfo?.phone || tHome('contactSection.fallback.phone') },
+                  { icon: 'email', title: tHome('contactSection.labels.email'), content: contactInfo?.email || tHome('contactSection.fallback.email') },
                 ].map((item, index) => (
                   <motion.div
                     key={index}

@@ -10,6 +10,7 @@
     "seed-images": "ts-node src/scripts/seedImages.ts",
     "reset-admin": "ts-node src/scripts/resetAdminPassword.ts",
     "db:sync-indexes": "ts-node src/scripts/syncIndexes.ts",
+    "db:seed-email-templates": "ts-node src/scripts/seedEmailTemplates.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

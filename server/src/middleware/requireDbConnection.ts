@@ -11,10 +11,11 @@ const isDbConnected = () => mongoose.connection.readyState === 1;
  * - /api (root)
  * - /api/health
  * - /api/monitoring (monitoring dashboard DB olmadan da kısmen çalışabilsin)
+ * - /api/realtime (SSE stream: DB down olsa bile hızlı 503 yerine auth ile fail etsin)
  */
 export const requireDbConnection = (req: Request, res: Response, next: NextFunction) => {
   const path = req.path || '';
-  if (path === '/' || path === '/health' || path.startsWith('/monitoring')) return next();
+  if (path === '/' || path === '/health' || path.startsWith('/monitoring') || path.startsWith('/realtime')) return next();
 
   if (!isDbConnected()) {
     return res.status(503).json({

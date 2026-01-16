@@ -10,13 +10,18 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, icon, children, disabled, ...props }, ref) => {
-    const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2';
+    const baseClasses =
+      'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-out active:scale-[0.98]';
 
     const variantClasses = {
-      primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-      secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
-      outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-blue-500',
-      ghost: 'text-gray-600 hover:bg-gray-100 focus:ring-gray-500'
+      primary:
+        'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-white dark:focus:ring-offset-gray-900',
+      secondary:
+        'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500 focus:ring-offset-white dark:focus:ring-offset-gray-900',
+      outline:
+        'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-blue-500 focus:ring-offset-white dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-900',
+      ghost:
+        'text-gray-600 hover:bg-gray-100 focus:ring-gray-500 focus:ring-offset-white dark:text-gray-200 dark:hover:bg-gray-800 dark:focus:ring-offset-gray-900'
     };
 
     const sizeClasses = {

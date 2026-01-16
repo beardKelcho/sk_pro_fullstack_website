@@ -1099,12 +1099,14 @@ const VideoThumbnail = ({
 }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     setLoading(true);
     setThumbnail(null);
+    setFailed(false);
 
     const videoEl = videoRef.current;
     const canvas = canvasRef.current;
@@ -1158,6 +1160,7 @@ const VideoThumbnail = ({
 
     const handleError = () => {
       window.clearTimeout(timeoutId);
+      setFailed(true);
       setLoading(false);
     };
 
@@ -1220,22 +1223,24 @@ const VideoThumbnail = ({
             <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
-            <p className="text-xs">Önizleme yok</p>
+            <p className="text-xs">{failed ? 'Video bulunamadı' : 'Önizleme yok'}</p>
           </div>
         )}
         
         {/* Video element (gizli, sadece thumbnail için) */}
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          // `hidden` (display:none) bazı tarayıcılarda video yüklemeyi engelleyebiliyor.
-          // Görünmez ama DOM'da kalsın ki `loadedmetadata/seeked` event'leri çalışsın.
-          className="absolute left-0 top-0 w-px h-px opacity-0 pointer-events-none"
-          preload="metadata"
-          muted
-          playsInline
-          crossOrigin="anonymous"
-        />
+        {!failed && (
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            // `hidden` (display:none) bazı tarayıcılarda video yüklemeyi engelleyebiliyor.
+            // Görünmez ama DOM'da kalsın ki `loadedmetadata/seeked` event'leri çalışsın.
+            className="absolute left-0 top-0 w-px h-px opacity-0 pointer-events-none"
+            preload="metadata"
+            muted
+            playsInline
+            crossOrigin="anonymous"
+          />
+        )}
         <canvas ref={canvasRef} className="hidden" />
         
         {/* Play icon overlay */}
@@ -1297,6 +1302,7 @@ function VideoSelector({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewFailedUrl, setPreviewFailedUrl] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
   // baseUrl'i doğru oluştur - http://localhost:5001 formatında olmalı
@@ -1568,6 +1574,17 @@ function VideoSelector({
                       : selectedVideo.startsWith('/')
                           ? `${baseUrl}${selectedVideo}`
                           : `${baseUrl}/uploads/${selectedVideo}`);
+
+          // 404/failed durumda tekrar tekrar istek atmasın
+          if (previewFailedUrl === previewUrl) {
+            return (
+              <div className="p-8 text-center bg-gray-50 dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Video önizlemesi yüklenemedi (404 / erişim yok).
+                </p>
+              </div>
+            );
+          }
           
           return (
             <div className="bg-white dark:bg-gray-900 rounded-xl border-2 border-[#0066CC] dark:border-primary-light shadow-lg overflow-hidden">
@@ -1580,9 +1597,11 @@ function VideoSelector({
                   playsInline
                   preload="metadata"
                   onError={(e) => {
-                    logger.error('Video önizleme hatası:', previewUrl, e);
-                    const target = e.target as HTMLVideoElement;
-                    target.style.display = 'none';
+                    // Log spam'i engelle: aynı URL için bir kere fail state'e düşür
+                    if (previewFailedUrl !== previewUrl) {
+                      logger.warn('Video önizleme yüklenemedi:', previewUrl);
+                      setPreviewFailedUrl(previewUrl);
+                    }
                   }}
                   onLoadedMetadata={(e) => {
                     const target = e.target as HTMLVideoElement;

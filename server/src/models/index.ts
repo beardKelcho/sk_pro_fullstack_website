@@ -22,6 +22,7 @@ import { Session } from './Session';
 import Webhook from './Webhook';
 import WebhookDelivery from './WebhookDelivery';
 import Comment from './Comment';
+import EmailTemplate from './EmailTemplate';
 
 export {
   User,
@@ -46,5 +47,6 @@ export {
   Session,
   Webhook,
   WebhookDelivery,
-  Comment
-}; 
+  Comment,
+  EmailTemplate
+};

@@ -7,6 +7,9 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
+// Mongoose'ın Jest fake timer uyarılarını bastır (özellikle bazı unit testlerde fake timers kullanıyoruz)
+process.env.SUPPRESS_JEST_WARNINGS = process.env.SUPPRESS_JEST_WARNINGS || 'true';
+
 let mongoServer: MongoMemoryServer;
 
 // MongoMemoryServer ilk çalıştırmada binary indirdiği için hook timeout'larını yükselt

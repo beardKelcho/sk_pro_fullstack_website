@@ -73,6 +73,18 @@ const PlugIcon = () => (
   </svg>
 );
 
+const MailIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+  </svg>
+);
+
+const ChartIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 3v18m4-14v14m4-10v10M5 12v9" />
+  </svg>
+);
+
 const LogoutIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
@@ -279,6 +291,16 @@ const menuItems: MenuItem[] = [
     title: 'Webhooklar',
     path: '/admin/webhooks',
     icon: <PlugIcon />,
+  },
+  {
+    title: 'Analytics',
+    path: '/admin/analytics',
+    icon: <ChartIcon />,
+  },
+  {
+    title: 'Email Şablonları',
+    path: '/admin/email-templates',
+    icon: <MailIcon />,
   },
   {
     title: '2FA Ayarları',

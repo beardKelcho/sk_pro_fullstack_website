@@ -3,6 +3,7 @@ import { sendEmail } from './emailService';
 import logger from './logger';
 import mongoose from 'mongoose';
 import { sendPushNotification } from './pushNotificationService';
+import { sendToUser } from './realtime/realtimeHub';
 
 export interface CreateNotificationParams {
   userId: mongoose.Types.ObjectId | string;
@@ -25,6 +26,21 @@ export const createNotification = async (params: CreateNotificationParams): Prom
       data: params.data || {},
       read: false,
     });
+
+    // Real-time (SSE) bildirim (web/panel için)
+    try {
+      sendToUser(String(params.userId), 'notification:new', {
+        _id: notification._id?.toString?.() || undefined,
+        userId: String(params.userId),
+        type: params.type,
+        title: params.title,
+        message: params.message,
+        data: params.data || {},
+        createdAt: (notification as any)?.createdAt || new Date().toISOString(),
+      });
+    } catch {
+      // realtime hatası bildirimi engellemez
+    }
 
     // Push notification gönder (kullanıcı ayarlarına göre)
     try {

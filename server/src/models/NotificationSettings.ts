@@ -43,7 +43,6 @@ const NotificationSettingsSchema: Schema = new Schema(
       ref: 'User',
       required: [true, 'Kullanıcı ID gereklidir'],
       unique: true,
-      index: true,
     },
     pushEnabled: {
       type: Boolean,
@@ -86,9 +85,6 @@ const NotificationSettingsSchema: Schema = new Schema(
     timestamps: true,
   }
 );
-
-// Index
-NotificationSettingsSchema.index({ userId: 1 }, { unique: true });
 
 export default mongoose.model<INotificationSettings>('NotificationSettings', NotificationSettingsSchema);
 

@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { defaultLocale, locales } from './i18n/locales';
+
+const intlMiddleware = createIntlMiddleware({
+  locales: [...locales],
+  defaultLocale,
+  // SEO + sağlıklı yaklaşım: her dil prefix'li olsun (/tr, /en, /fr, /es)
+  localePrefix: 'always',
+});
 
 export function middleware(request: NextRequest) {
   // Static dosyalar ve Next.js internal dosyaları için middleware'i bypass et
@@ -17,6 +26,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/next/') ||
     pathname.startsWith('/static/') ||
+    pathname.startsWith('/uploads/') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.match(/\.(ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|css|js|json|map|webp|avif)$/i) ||
     isHexHash ||
@@ -27,8 +37,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Response nesnesini al
-  const response = NextResponse.next();
+  // next-intl routing (admin paneli i18n dışında kalmalı)
+  const response = pathname.startsWith('/admin') ? NextResponse.next() : intlMiddleware(request);
 
   // Content Security Policy - Google Analytics için 'unsafe-eval' gerekli
   // Development modunda daha esnek CSP kullan

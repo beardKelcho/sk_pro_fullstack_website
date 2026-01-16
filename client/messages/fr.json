@@ -1,0 +1,296 @@
+{
+  "common": {
+    "language": "Langue",
+    "languages": {
+      "tr": "Türkçe",
+      "en": "English",
+      "fr": "Français",
+      "es": "Español"
+    }
+  },
+  "site": {
+    "meta": {
+      "brand": "SK Production",
+      "title": "SK Production - Régie vidéo & solutions media server",
+      "description": "Nous proposons des solutions professionnelles de régie vidéo et de media server pour vos événements. Analog Way Aquilon, Dataton Watchpax et plus."
+    },
+    "errorBoundary": {
+      "title": "Une erreur est survenue",
+      "defaultMessage": "Une erreur inattendue s’est produite.",
+      "reload": "Recharger",
+      "goHome": "Aller à l’accueil",
+      "goDashboard": "Aller au tableau de bord"
+    },
+    "heroUi": {
+      "fallbackRotatingTexts": ["Experts en régie vidéo", "Solutions professionnelles pour vos événements", "Media server & contrôle de show"],
+      "fallbackDescription": "Chez SK Production, nous proposons des solutions professionnelles de régie vidéo et de media server pour les événements corporate et les grandes productions.",
+      "fallbackPrimaryCta": "Nous contacter",
+      "secondaryCta": "Voir nos projets"
+    },
+    "contactForm": {
+      "fields": {
+        "name": { "label": "Nom complet", "placeholder": "Nom complet" },
+        "email": { "label": "E-mail", "placeholder": "Votre adresse e-mail" },
+        "message": { "label": "Message", "placeholder": "Écrivez votre message..." }
+      },
+      "button": { "submit": "Envoyer", "submitting": "Envoi..." },
+      "status": {
+        "success": "Votre message a bien été envoyé. Nous vous répondrons au plus vite.",
+        "queued": "Vous êtes actuellement hors ligne. Votre message a été mis en file d’attente et sera envoyé automatiquement dès que vous serez reconnecté.",
+        "error": "Une erreur est survenue lors de l’envoi. Veuillez réessayer plus tard."
+      },
+      "errors": { "submitFailed": "Impossible d’envoyer le formulaire" }
+    },
+    "header": {
+      "projects": "Projets",
+      "servicesEquipment": "Services & Équipements",
+      "about": "À propos",
+      "contact": "Contact"
+    },
+    "footer": {
+      "companyDescription": "Nous valorisons vos événements grâce à des solutions professionnelles de vision mixée et de media server.",
+      "quickLinks": "Liens rapides",
+      "contact": "Contact",
+      "workingHours": "Horaires",
+      "workingHoursItems": {
+        "weekday": "Lun – Ven : 09:00 – 18:00",
+        "saturday": "Samedi : 10:00 – 14:00",
+        "sunday": "Dimanche : Fermé"
+      },
+      "privacy": "Politique de confidentialité",
+      "terms": "Conditions d’utilisation",
+      "copyright": "Tous droits réservés."
+    },
+    "legal": {
+      "backToHome": "← Retour à l’accueil",
+      "lastUpdated": "Dernière mise à jour"
+    },
+    "privacy": {
+      "metaTitle": "Politique de confidentialité | SK Production",
+      "metaDescription": "Informations sur la politique de confidentialité de SK Production et la protection des données personnelles.",
+      "title": "Politique de confidentialité",
+      "sections": [
+        {
+          "title": "1. Informations générales",
+          "paragraphs": [
+            "Chez SK Production, la protection de la vie privée de nos visiteurs et utilisateurs est importante. Cette politique explique comment les informations collectées sont utilisées lorsque vous visitez notre site ou utilisez nos services."
+          ]
+        },
+        {
+          "title": "2. Données collectées",
+          "paragraphs": ["Nous pouvons collecter les informations suivantes sur notre site :"],
+          "list": [
+            "Les informations personnelles fournies via le formulaire de contact (nom, e-mail, téléphone, etc.)",
+            "Les données d’usage du site (adresse IP, type de navigateur, pages consultées)",
+            "Les données collectées via les cookies"
+          ]
+        },
+        {
+          "title": "3. Utilisation des informations",
+          "paragraphs": ["Les informations collectées peuvent être utilisées aux fins suivantes :"],
+          "list": [
+            "Fournir et améliorer nos services",
+            "Répondre à vos demandes de contact",
+            "Améliorer l’expérience du site",
+            "Respecter nos obligations légales"
+          ]
+        },
+        {
+          "title": "4. Cookies",
+          "paragraphs": [
+            "Notre site utilise des cookies pour améliorer l’expérience utilisateur. Les cookies sont de petits fichiers texte stockés dans votre navigateur. Vous pouvez gérer les cookies dans les paramètres de votre navigateur."
+          ]
+        },
+        {
+          "title": "5. Sécurité des données",
+          "paragraphs": [
+            "Nous mettons en œuvre des mesures techniques et organisationnelles appropriées afin de protéger vos données personnelles. Cependant, la transmission de données via internet ne peut pas être garantie comme 100 % sécurisée."
+          ]
+        },
+        {
+          "title": "6. Vos droits",
+          "paragraphs": ["Vous disposez notamment des droits suivants concernant vos données personnelles :"],
+          "list": [
+            "Savoir si vos données personnelles sont traitées",
+            "Demander des informations concernant vos données traitées",
+            "Demander la suppression ou la destruction de vos données",
+            "Vous opposer à une décision produite exclusivement par un traitement automatisé susceptible de vous porter préjudice"
+          ]
+        },
+        {
+          "title": "7. Contact",
+          "paragraphs": [
+            "Pour toute question concernant cette politique, vous pouvez nous contacter :",
+            "E-mail : info@skpro.com.tr • Téléphone : +90 532 123 4567 • Adresse : Zincirlidere Caddesi No:52/C Şişli/İstanbul"
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "metaTitle": "Conditions d’utilisation | SK Production",
+      "metaDescription": "Conditions et règles d’utilisation du site web SK Production.",
+      "title": "Conditions d’utilisation",
+      "sections": [
+        {
+          "title": "1. Conditions générales",
+          "paragraphs": [
+            "En utilisant le site SK Production, vous acceptez les présentes conditions d’utilisation. Si vous n’acceptez pas ces conditions, veuillez ne pas utiliser le site."
+          ]
+        },
+        {
+          "title": "2. Utilisation du site",
+          "paragraphs": ["Vous ne pouvez utiliser notre site qu’à des fins légales. Les activités suivantes sont interdites :"],
+          "list": [
+            "Porter atteinte à la sécurité du site",
+            "Téléverser des logiciels ou du code malveillants",
+            "Collecter des informations personnelles sans autorisation",
+            "Copier ou distribuer le contenu du site sans autorisation"
+          ]
+        },
+        {
+          "title": "3. Propriété intellectuelle",
+          "paragraphs": [
+            "L’ensemble du contenu du site (textes, images, logos, designs) appartient à SK Production et est protégé par le droit d’auteur. Toute utilisation non autorisée est interdite."
+          ]
+        },
+        {
+          "title": "4. Services",
+          "paragraphs": [
+            "Les informations présentées sur notre site sont fournies à titre indicatif. Pour des informations détaillées sur nos services, veuillez nous contacter."
+          ]
+        },
+        {
+          "title": "5. Limitation de responsabilité",
+          "paragraphs": [
+            "Nous ne garantissons pas l’exactitude, l’actualité ou l’exhaustivité des informations présentes sur le site. Nous déclinons toute responsabilité en cas de dommages résultant de l’utilisation du site."
+          ]
+        },
+        {
+          "title": "6. Modifications",
+          "paragraphs": [
+            "Nous nous réservons le droit de modifier ces conditions à tout moment. Les modifications prennent effet dès leur publication sur le site."
+          ]
+        },
+        {
+          "title": "7. Contact",
+          "paragraphs": [
+            "Pour toute question concernant les conditions d’utilisation, vous pouvez nous contacter :",
+            "E-mail : info@skpro.com.tr • Téléphone : +90 532 123 4567 • Adresse : Zincirlidere Caddesi No:52/C Şişli/İstanbul"
+          ]
+        }
+      ]
+    },
+    "home": {
+      "servicesSection": {
+        "title": "Nos services & équipements",
+        "subtitle": "Des solutions professionnelles et des équipements de pointe pour vos événements",
+        "tabs": {
+          "services": "Services",
+          "equipment": "Équipements"
+        },
+        "fallbackServices": [
+          {
+            "title": "Régie vidéo",
+            "description": "Nous assurons une régie vidéo irréprochable grâce à un matériel professionnel et une équipe experte.",
+            "icon": "video",
+            "order": 0
+          },
+          {
+            "title": "Systèmes de media server",
+            "description": "Des media servers haute performance pour une diffusion fluide et de haute qualité lors de vos événements.",
+            "icon": "screen",
+            "order": 1
+          },
+          {
+            "title": "Gestion d’écrans LED",
+            "description": "Préparation de contenu et gestion professionnelle pour des écrans LED de différentes tailles et résolutions.",
+            "icon": "led",
+            "order": 2
+          }
+        ],
+        "fallbackEquipment": [
+          {
+            "title": "Systèmes de régie vidéo",
+            "items": [
+              { "name": "Analog Way Aquilon RS4", "description": "Traitement vidéo avec support 4K/8K" },
+              { "name": "Barco E2 Gen 2", "description": "Véritable 4K, entrées/sorties extensibles" },
+              { "name": "Blackmagic ATEM 4 M/E Constellation HD", "description": "40 entrées, 24 sorties, transitions avancées" }
+            ],
+            "order": 0
+          },
+          {
+            "title": "Systèmes de media server",
+            "items": [
+              { "name": "Dataton WATCHPAX 60", "description": "6 sorties, haute performance" },
+              { "name": "Disguise 4x4pro", "description": "Rendu temps réel, support AR/VR" },
+              { "name": "Resolume Arena 7", "description": "Boucles vidéo et effets pour performances live" }
+            ],
+            "order": 1
+          }
+        ]
+      },
+      "aboutSection": {
+        "title": "À propos de SK Production",
+        "paragraphs": [
+          "SK Production est une équipe spécialisée proposant des solutions de régie vidéo et de media server pour des événements professionnels. Nous travaillons avec des équipements de pointe comme Analog Way Aquilon, Dataton Watchpax et Resolume Arena 7.",
+          "Avec plus de 10 ans d’expérience, notre équipe a réalisé des centaines de projets : événements corporate, concerts, lancements de produits, spectacles et bien plus."
+        ],
+        "fallbackStats": [
+          { "value": "250+", "label": "Projets réalisés" },
+          { "value": "12+", "label": "Années d’expérience" },
+          { "value": "50+", "label": "Équipements professionnels" }
+        ]
+      },
+      "contactSection": {
+        "title": "Contactez-nous",
+        "subtitle": "Travaillons ensemble sur vos projets",
+        "labels": {
+          "address": "Adresse",
+          "phone": "Téléphone",
+          "email": "E-mail"
+        },
+        "fallback": {
+          "address": "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
+          "phone": "+90 532 123 4567",
+          "email": "info@skpro.com.tr"
+        }
+      },
+      "a11y": {
+        "skipToContent": "Aller au contenu principal"
+      },
+      "projectsSection": {
+        "title": "Nos expériences scéniques",
+        "subtitle": "Moments visuels issus des événements que nous avons réalisés"
+      },
+      "lightbox": {
+        "imageFailed": "L’image n’a pas pu être chargée",
+        "urlLabel": "URL",
+        "idLabel": "ID",
+        "generatedUrlLabel": "URL générée",
+        "none": "Aucun",
+        "projectImageAlt": "Image de projet"
+      },
+      "structuredData": {
+        "organizationDescription": "Entreprise technologique proposant des solutions professionnelles de régie vidéo et de media server",
+        "areaServed": "Turquie"
+      },
+      "video": {
+        "fallbackText": "La vidéo n’a pas pu être chargée. Votre navigateur ne prend peut-être pas en charge ce format."
+      }
+    },
+    "contentOverrides": {
+      "hero": {
+        "title": "L’excellence visuelle pour vos événements",
+        "subtitle": "Régie vidéo & solutions media server",
+        "description": "Des événements corporate aux grandes productions, nous assurons un contrôle visuel fiable et de haute qualité grâce à des systèmes professionnels et une équipe expérimentée.",
+        "buttonText": "Nous contacter",
+        "rotatingTexts": ["Régie vidéo", "Media server", "Contrôle LED"]
+      },
+      "servicesEquipment": {},
+      "about": {},
+      "contact": {},
+      "social": []
+    }
+  }
+}
+

@@ -92,5 +92,56 @@ describe('Monitoring Controller', () => {
     expect(Array.isArray(payload.database.slowestQueries)).toBe(true);
     expect(payload.database.slowestQueries[0].query).toContain('Project.find');
   });
+
+  it('hiç metrik yokken 200 dönmeli ve oranlar default olmalı', async () => {
+    (mongoose.connection as any).readyState = 0;
+    (Session.find as jest.Mock).mockResolvedValue([]);
+
+    await getMonitoringDashboard(mockRequest as Request, mockResponse as Response);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    const payload = (mockResponse.json as jest.Mock).mock.calls[0][0];
+    expect(payload.apiMetrics.totalRequests).toBe(0);
+    expect(payload.apiMetrics.successRate).toBe(100);
+    expect(payload.apiMetrics.errorRate).toBe(0);
+    expect(payload.errors.totalErrors).toBe(0);
+    expect(payload.database.status).toBe('disconnected');
+  });
+
+  it('sadece rate limit (429) metrikleri varken rateLimiting toplamını doğru hesaplamalı', async () => {
+    (mongoose.connection as any).readyState = 0;
+    (Session.find as jest.Mock).mockResolvedValue([]);
+
+    recordApiMetric({
+      ts: Date.now(),
+      method: 'GET',
+      path: '/api/projects',
+      statusCode: 429,
+      durationMs: 50,
+    });
+    recordApiMetric({
+      ts: Date.now(),
+      method: 'GET',
+      path: '/api/projects',
+      statusCode: 429,
+      durationMs: 60,
+    });
+
+    await getMonitoringDashboard(mockRequest as Request, mockResponse as Response);
+
+    const payload = (mockResponse.json as jest.Mock).mock.calls[0][0];
+    expect(payload.apiMetrics.totalRequests).toBe(2);
+    expect(payload.rateLimiting.totalRateLimited).toBe(2);
+    expect(payload.rateLimiting.topRateLimitedEndpoints[0].endpoint).toContain('GET /api/projects');
+  });
+
+  it('DB disconnected iken Session.find çağırmamalı', async () => {
+    (mongoose.connection as any).readyState = 0;
+    (Session.find as jest.Mock).mockResolvedValue([]);
+
+    await getMonitoringDashboard(mockRequest as Request, mockResponse as Response);
+
+    expect(Session.find).not.toHaveBeenCalled();
+  });
 });
 

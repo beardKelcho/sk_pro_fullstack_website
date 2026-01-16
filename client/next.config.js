@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const { withSentryConfig } = require('@sentry/nextjs');
+const createNextIntlPlugin = require('next-intl/plugin');
+
+const withNextIntl = createNextIntlPlugin();
 
 const nextConfig = {
   reactStrictMode: true,
@@ -166,6 +169,8 @@ const nextConfig = {
   },
 }
 
+const configWithIntl = withNextIntl(nextConfig);
+
 // Sentry config (sadece production'da ve DSN varsa)
 // SENTRY_ORG ve SENTRY_PROJECT source map upload için gerekli ama opsiyonel
 const hasSentryDSN = 
@@ -211,13 +216,13 @@ const sentryWebpackPluginOptions = {
 // - DSN + Org + Project varsa: Sentry aktif + source map upload çalışır
 // - Hiçbiri yoksa: Sentry devre dışı
 module.exports = hasSentryDSN && hasSentrySourceMapConfig
-  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+  ? withSentryConfig(configWithIntl, sentryWebpackPluginOptions)
   : hasSentryDSN && !hasSentrySourceMapConfig
   ? (() => {
       // DSN var ama org/project yok - sadece error tracking, source map upload yok
       if (process.env.NODE_ENV === 'production') {
         console.warn('⚠️  Sentry: DSN found but SENTRY_ORG/SENTRY_PROJECT missing or empty. Source map upload disabled.');
       }
-      return nextConfig;
+      return configWithIntl;
     })()
-  : nextConfig; 
+  : configWithIntl; 

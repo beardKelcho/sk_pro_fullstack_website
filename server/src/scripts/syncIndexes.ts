@@ -23,6 +23,7 @@ import {
   SavedSearch,
   SearchHistory,
   Session,
+  EmailTemplate,
 } from '../models';
 
 dotenv.config();
@@ -48,6 +49,7 @@ const models = [
   SavedSearch,
   SearchHistory,
   Session,
+  EmailTemplate,
 ];
 
 const main = async () => {

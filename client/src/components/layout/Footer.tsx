@@ -3,11 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/common/Icon';
-import { getContentBySection, SocialMedia } from '@/services/siteContentService';
+import { SocialMedia } from '@/services/siteContentService';
 import logger from '@/utils/logger';
+import { useLocale, useTranslations } from 'next-intl';
 
 const Footer: React.FC = () => {
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
+  const tFooter = useTranslations('site.footer');
+  const tHeader = useTranslations('site.header');
+  const locale = useLocale();
+  const prefix = `/${locale}`;
 
   useEffect(() => {
     const fetchSocialMedia = async () => {
@@ -46,7 +51,7 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-xl font-bold mb-4">SK Production</h3>
             <p className="text-gray-400 mb-4">
-              Profesyonel görüntü rejisi ve medya server çözümleri ile etkinliklerinize değer katıyoruz.
+              {tFooter('companyDescription')}
             </p>
             <div className="flex space-x-4">
               {socialMedia.length > 0 ? (
@@ -84,21 +89,21 @@ const Footer: React.FC = () => {
 
           {/* Hızlı Linkler */}
           <div>
-            <h3 className="text-xl font-bold mb-4">Hızlı Linkler</h3>
+            <h3 className="text-xl font-bold mb-4">{tFooter('quickLinks')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="#projects" className="text-gray-400 hover:text-white transition-colors">
-                  Projeler
+                <Link href={`${prefix}#projects`} className="text-gray-400 hover:text-white transition-colors">
+                  {tHeader('projects')}
                 </Link>
               </li>
               <li>
-                <Link href="#services" className="text-gray-400 hover:text-white transition-colors">
-                  Hizmetler & Ekipmanlar
+                <Link href={`${prefix}#services`} className="text-gray-400 hover:text-white transition-colors">
+                  {tHeader('servicesEquipment')}
                 </Link>
               </li>
               <li>
-                <Link href="#about" className="text-gray-400 hover:text-white transition-colors">
-                  Hakkımızda
+                <Link href={`${prefix}#about`} className="text-gray-400 hover:text-white transition-colors">
+                  {tHeader('about')}
                 </Link>
               </li>
             </ul>
@@ -106,7 +111,7 @@ const Footer: React.FC = () => {
 
           {/* İletişim */}
           <div>
-            <h3 className="text-xl font-bold mb-4">İletişim</h3>
+            <h3 className="text-xl font-bold mb-4">{tFooter('contact')}</h3>
             <ul className="space-y-2">
               <li className="flex items-center text-gray-400">
                 <Icon name="location" className="h-5 w-5 mr-2" />
@@ -125,11 +130,11 @@ const Footer: React.FC = () => {
 
           {/* Çalışma Saatleri */}
           <div>
-            <h3 className="text-xl font-bold mb-4">Çalışma Saatleri</h3>
+            <h3 className="text-xl font-bold mb-4">{tFooter('workingHours')}</h3>
             <ul className="space-y-2 text-gray-400">
-              <li>Pazartesi - Cuma: 09:00 - 18:00</li>
-              <li>Cumartesi: 10:00 - 14:00</li>
-              <li>Pazar: Kapalı</li>
+              <li>{tFooter('workingHoursItems.weekday')}</li>
+              <li>{tFooter('workingHoursItems.saturday')}</li>
+              <li>{tFooter('workingHoursItems.sunday')}</li>
             </ul>
           </div>
         </div>
@@ -137,13 +142,15 @@ const Footer: React.FC = () => {
         {/* Alt Bilgi */}
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} SK Production. Tüm hakları saklıdır.</p>
+            <p>
+              &copy; {new Date().getFullYear()} SK Production. {tFooter('copyright')}
+            </p>
             <div className="flex space-x-4 mt-4 md:mt-0">
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Gizlilik Politikası
+              <Link href={`${prefix}/privacy`} className="hover:text-white transition-colors">
+                {tFooter('privacy')}
               </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Kullanım Şartları
+              <Link href={`${prefix}/terms`} className="hover:text-white transition-colors">
+                {tFooter('terms')}
               </Link>
             </div>
           </div>

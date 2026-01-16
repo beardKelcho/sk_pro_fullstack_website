@@ -48,7 +48,6 @@ const PushSubscriptionSchema: Schema = new Schema(
 
 // Indexes
 PushSubscriptionSchema.index({ userId: 1, createdAt: -1 });
-PushSubscriptionSchema.index({ endpoint: 1 }, { unique: true });
 
 export default mongoose.model<IPushSubscription>('PushSubscription', PushSubscriptionSchema);
 

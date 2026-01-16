@@ -56,6 +56,12 @@ export enum Permission {
 
   // Integrations
   WEBHOOK_MANAGE = 'webhook:manage',
+
+  // Email Templates
+  EMAIL_TEMPLATE_MANAGE = 'email_template:manage',
+
+  // Analytics
+  ANALYTICS_VIEW = 'analytics:view',
 }
 
 // Rol tanımlamaları
@@ -106,6 +112,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.QR_SCAN,
     Permission.VIEW_AUDIT_LOGS,
     Permission.WEBHOOK_MANAGE,
+    Permission.EMAIL_TEMPLATE_MANAGE,
+    Permission.ANALYTICS_VIEW,
   ],
   
   [Role.FIRMA_SAHIBI]: [
@@ -145,6 +153,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.QR_SCAN,
     Permission.VIEW_AUDIT_LOGS,
     Permission.WEBHOOK_MANAGE,
+    Permission.EMAIL_TEMPLATE_MANAGE,
+    Permission.ANALYTICS_VIEW,
   ],
   
   [Role.PROJE_YONETICISI]: [

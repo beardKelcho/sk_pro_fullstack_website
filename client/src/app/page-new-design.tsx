@@ -31,12 +31,15 @@ import logger from '@/utils/logger';
 // Video Background Player Component - React DOM hatalarını önlemek için ayrı component
 const VideoBackgroundPlayer = ({ videoUrl, poster }: { videoUrl: string; poster?: string }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (failed) return;
     const video = videoRef.current;
     if (!video) return;
 
     const handleError = (e: Event) => {
+      setFailed(true);
       if (process.env.NODE_ENV === 'development') {
         const video = e.target as HTMLVideoElement;
         const error = video.error;
@@ -69,9 +72,9 @@ const VideoBackgroundPlayer = ({ videoUrl, poster }: { videoUrl: string; poster?
       video.removeEventListener('loadeddata', handleLoadedData);
       video.removeEventListener('canplaythrough', handleCanPlayThrough);
     };
-  }, [videoUrl]);
+  }, [videoUrl, failed]);
 
-  if (!videoUrl) {
+  if (!videoUrl || failed) {
     return null;
   }
 

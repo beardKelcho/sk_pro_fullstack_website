@@ -10,12 +10,14 @@ import { ErrorProvider } from '@/components/providers/ErrorProvider';
 import { Analytics } from '@vercel/analytics/react';
 // import { SpeedInsights } from '@vercel/speed-insights/next'; // Paket yüklü değil, opsiyonel
 import { WebVitals } from '@/components/common/WebVitals';
-import ErrorBoundary from '@/components/common/ErrorBoundary';
+import LocalizedErrorBoundary from '@/components/common/LocalizedErrorBoundary';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
 import PWAInstallPrompt from '@/components/common/PWAInstallPrompt';
 import Script from 'next/script';
 import { errorTracker } from '@/utils/errorTracking';
 import { registerServiceWorker } from '@/utils/serviceWorker';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getLocale } from 'next-intl/server';
 
 const montserrat = Montserrat({ 
   subsets: ['latin'],
@@ -53,6 +55,8 @@ export const metadata: Metadata = {
     languages: {
       'tr-TR': '/tr',
       'en-US': '/en',
+      'fr-FR': '/fr',
+      'es-ES': '/es',
     },
   },
   openGraph: {
@@ -100,11 +104,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale().catch(() => 'tr');
+  const messages = await getMessages().catch(() => ({} as any));
+
   // Global error handlers (sadece client-side)
   if (typeof window !== 'undefined') {
     // Error tracking'i başlat
@@ -114,7 +121,7 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="tr" suppressHydrationWarning dir="ltr">
+    <html lang={locale || 'tr'} suppressHydrationWarning dir="ltr">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
@@ -125,50 +132,52 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/images/sk-logo.png" />
       </head>
       <body className={`${montserrat.className} antialiased min-h-screen transition-colors duration-300`} suppressHydrationWarning>
-        <ErrorBoundary>
-          <OfflineIndicator />
-          <PWAInstallPrompt />
-        {process.env.NEXT_PUBLIC_GA_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="gtag-init" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
-                  page_path: window.location.pathname,
-                });
-              `}
-            </Script>
-          </>
-        )}
-        <Providers>
-          <ErrorProvider>
-            {children}
-            <FooterWrapper />
-            <ToastContainer 
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-            />
-          </ErrorProvider>
-        </Providers>
-          <Analytics />
-          {/* <SpeedInsights /> - Paket yüklü değil, opsiyonel */}
-          {process.env.NEXT_PUBLIC_GA_ID && (
-            <WebVitals analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
-          )}
-        </ErrorBoundary>
+        <NextIntlClientProvider locale={locale || 'tr'} messages={messages}>
+          <LocalizedErrorBoundary>
+            <OfflineIndicator />
+            <PWAInstallPrompt />
+            {process.env.NEXT_PUBLIC_GA_ID && (
+              <>
+                <Script
+                  src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+                  strategy="afterInteractive"
+                />
+                <Script id="gtag-init" strategy="afterInteractive">
+                  {`
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments);}
+                    gtag('js', new Date());
+                    gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
+                      page_path: window.location.pathname,
+                    });
+                  `}
+                </Script>
+              </>
+            )}
+            <Providers>
+              <ErrorProvider>
+                {children}
+                <FooterWrapper />
+                <ToastContainer 
+                  position="top-right"
+                  autoClose={5000}
+                  hideProgressBar={false}
+                  newestOnTop
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                />
+              </ErrorProvider>
+            </Providers>
+            <Analytics />
+            {/* <SpeedInsights /> - Paket yüklü değil, opsiyonel */}
+            {process.env.NEXT_PUBLIC_GA_ID && (
+              <WebVitals analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
+            )}
+          </LocalizedErrorBoundary>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

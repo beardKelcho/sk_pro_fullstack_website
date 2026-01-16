@@ -39,7 +39,7 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
     return (
       <div ref={ref} className={cn('space-y-2', className)} role="group" {...props}>
         {label && (
-          <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700">
+          <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {label}
           </label>
         )}

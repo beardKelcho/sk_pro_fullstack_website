@@ -43,6 +43,12 @@ export enum Permission {
   // Upload/File
   FILE_UPLOAD = 'file:upload',
   FILE_DELETE = 'file:delete',
+
+  // Integrations
+  EMAIL_TEMPLATE_MANAGE = 'email_template:manage',
+
+  // Analytics
+  ANALYTICS_VIEW = 'analytics:view',
 }
 
 export enum Role {
@@ -84,6 +90,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.EXPORT_DATA,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
+    Permission.EMAIL_TEMPLATE_MANAGE,
+    Permission.ANALYTICS_VIEW,
   ],
   
   [Role.FIRMA_SAHIBI]: [
@@ -115,6 +123,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.EXPORT_DATA,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
+    Permission.EMAIL_TEMPLATE_MANAGE,
+    Permission.ANALYTICS_VIEW,
   ],
   
   [Role.PROJE_YONETICISI]: [
@@ -378,6 +388,13 @@ export const permissionDetails: PermissionDetail[] = [
     description: 'Yüklenen dosyaları silme yetkisi',
     category: 'Dosya Yönetimi',
     examples: ['Yüklenen dosyayı silme', 'Dosya arşivinden çıkarma']
+  },
+  {
+    id: Permission.EMAIL_TEMPLATE_MANAGE,
+    name: 'Email Şablon Yönetimi',
+    description: 'Email şablonlarını oluşturma, düzenleme ve silme yetkisi',
+    category: 'Entegrasyonlar',
+    examples: ['Email template oluşturma', 'Email HTML şablonunu düzenleme', 'A/B variant yönetimi']
   },
 ];
 

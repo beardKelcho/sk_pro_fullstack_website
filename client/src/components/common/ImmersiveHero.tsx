@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic';
 import LazyImage from './LazyImage';
 import { getImageUrl } from '@/utils/imageUrl';
+import { useTranslations } from 'next-intl';
 
 // React Three Fiber'i dynamic import ile yükle (SSR sorunlarını önlemek için)
 const Interactive3DScene = dynamic(() => import('./Interactive3DScene'), {
@@ -33,6 +34,7 @@ interface ImmersiveHeroProps {
  * Kullanıcıyı sahne içine çeken, interaktif hero bölümü
  */
 export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroProps) {
+  const t = useTranslations('site.heroUi');
   const [textIndex, setTextIndex] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,12 +69,9 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
     if (content?.rotatingTexts && content.rotatingTexts.length > 0) {
       return content.rotatingTexts;
     }
-    return [
-      'Görsel Mükemmellikte Uzman Ekip',
-      'Etkinliklerinizde Profesyonel Çözümler',
-      'Medya Server ve Görüntü Rejisi Çözümleri',
-    ];
-  }, [content?.rotatingTexts]);
+    const fallback = t.raw('fallbackRotatingTexts') as unknown;
+    return Array.isArray(fallback) ? (fallback as string[]) : [];
+  }, [content?.rotatingTexts, t]);
 
   // Rotating texts için effect
   useEffect(() => {
@@ -189,7 +188,7 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
               className="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed"
             >
               {content?.description ||
-                'SK Production olarak, kurumsal etkinlikleriniz için profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz. 10 yılı aşkın deneyimimizle etkinliklerinize değer katıyoruz.'}
+                t('fallbackDescription')}
             </motion.p>
 
             {/* CTA Butonları - 3D Efekt */}
@@ -217,7 +216,7 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
                   }}
                 />
                 <div className="relative bg-[#0066CC] text-white px-10 py-5 rounded-xl text-lg font-semibold shadow-2xl transform transition-all duration-300 group-hover:shadow-[0_0_30px_rgba(0,102,204,0.6)]">
-                  {content?.buttonText || 'İletişime Geçin'}
+                  {content?.buttonText || t('fallbackPrimaryCta')}
                   <motion.span
                     className="inline-block ml-2"
                     animate={{ x: [0, 5, 0] }}
@@ -235,7 +234,7 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
                 whileTap={{ scale: 0.95 }}
               >
                 <div className="relative bg-transparent border-2 border-white/30 text-white px-10 py-5 rounded-xl text-lg font-semibold backdrop-blur-sm hover:border-white/60 hover:bg-white/10 transition-all duration-300">
-                  Projelerimizi İnceleyin
+                  {t('secondaryCta')}
                 </div>
               </motion.a>
             </motion.div>

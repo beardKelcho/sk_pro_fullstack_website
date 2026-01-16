@@ -34,17 +34,26 @@ const generateToken = (user: IUser) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    const identifierRaw = typeof email === 'string' ? email.trim() : '';
+    const isEmail = identifierRaw.includes('@');
+    const identifierEmail = isEmail ? identifierRaw.toLowerCase() : '';
+    const identifierPhone = !isEmail ? identifierRaw.replace(/[^\d+]/g, '') : '';
 
     // Gerekli alanları kontrol et
-    if (!email || !password) {
+    if (!identifierRaw || !password) {
       return res.status(400).json({
         success: false,
         message: 'Email ve şifre gereklidir',
       });
     }
 
-    // Email ile kullanıcıyı bul
-    const user = await User.findOne({ email });
+    // Email veya telefon ile kullanıcıyı bul
+    const user = await User.findOne({
+      $or: [
+        ...(identifierEmail ? [{ email: identifierEmail }] : []),
+        ...(identifierPhone ? [{ phone: identifierPhone }, { phone: identifierRaw }] : []),
+      ],
+    });
     if (!user) {
       return res.status(401).json({
         success: false,

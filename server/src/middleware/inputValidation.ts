@@ -51,9 +51,24 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction) =
 // Kullanıcı girişi validasyonu
 export const validateLogin = [
   body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Geçerli bir e-posta adresi giriniz'),
+    .trim()
+    .notEmpty()
+    .withMessage('E-posta veya telefon gereklidir')
+    .bail()
+    .custom((value) => {
+      const v = String(value || '').trim();
+      const isEmail = /^\S+@\S+\.\S+$/.test(v);
+      const normalizedPhone = v.replace(/[^\d+]/g, '');
+      const isPhone = /^\+?[0-9]{10,15}$/.test(normalizedPhone);
+      return isEmail || isPhone;
+    })
+    .withMessage('Geçerli bir e-posta veya telefon giriniz')
+    .bail()
+    .customSanitizer((value) => {
+      const v = String(value || '').trim();
+      if (v.includes('@')) return v.toLowerCase();
+      return v.replace(/[^\d+]/g, '');
+    }),
   body('password')
     .isLength({ min: 6 })
     .withMessage('Şifre en az 6 karakter olmalıdır'),

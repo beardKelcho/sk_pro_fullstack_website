@@ -4,6 +4,29 @@ import { sendMaintenanceReminderEmail } from './emailService';
 import { startAllScheduledReports } from '../controllers/reportSchedule.controller';
 import logger from './logger';
 import { deliverPendingWebhooks } from '../services/webhook.service';
+import { broadcast } from './realtime/realtimeHub';
+
+let monitoringRealtimeInterval: NodeJS.Timeout | null = null;
+
+// Monitoring dashboard için SSE tetikleyicisi (default: 15sn)
+export const startMonitoringRealtimePush = () => {
+  if (process.env.MONITORING_SSE_ENABLED === 'false') return;
+  if (monitoringRealtimeInterval) return;
+
+  const intervalMsRaw = Number(process.env.MONITORING_SSE_INTERVAL_MS || 15_000);
+  const intervalMs = Number.isFinite(intervalMsRaw) ? Math.max(2_000, intervalMsRaw) : 15_000;
+
+  monitoringRealtimeInterval = setInterval(() => {
+    try {
+      // Veri taşımıyoruz; sadece client tarafında refetch tetikleniyor
+      broadcast('monitoring:update', { ts: Date.now() });
+    } catch (err) {
+      logger.warn('Monitoring realtime publish hatası', err);
+    }
+  }, intervalMs);
+
+  logger.info(`Monitoring realtime push aktif (interval: ${intervalMs}ms)`);
+};
 
 // Bakım hatırlatma görevini çalıştır (her gün saat 09:00'da)
 export const scheduleMaintenanceReminders = () => {
@@ -130,6 +153,9 @@ export const scheduleAutoCompleteDueTasks = () => {
 
 // Tüm zamanlanmış görevleri başlat
 export const startScheduledTasks = () => {
+  // Monitoring realtime push (prod/dev). Env ile kapatılabilir.
+  startMonitoringRealtimePush();
+
   // Süresi dolan görevleri otomatik tamamla (prod/dev fark etmez)
   // İstenirse TASK_AUTO_COMPLETE_ENABLED=false ile kapatılabilir.
   if (process.env.TASK_AUTO_COMPLETE_ENABLED !== 'false') {

@@ -1,0 +1,290 @@
+{
+  "common": {
+    "language": "Dil",
+    "languages": {
+      "tr": "Türkçe",
+      "en": "English",
+      "fr": "Français",
+      "es": "Español"
+    }
+  },
+  "site": {
+    "meta": {
+      "brand": "SK Production",
+      "title": "SK Production - Profesyonel Görüntü Rejisi ve Medya Server Çözümleri",
+      "description": "SK Production ile etkinliklerinize profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz. Analog Way Aquilon, Dataton Watchpax ve daha fazlası."
+    },
+    "errorBoundary": {
+      "title": "Bir hata oluştu",
+      "defaultMessage": "Beklenmeyen bir hata oluştu.",
+      "reload": "Sayfayı yenile",
+      "goHome": "Ana sayfaya dön",
+      "goDashboard": "Panele dön"
+    },
+    "heroUi": {
+      "fallbackRotatingTexts": ["Görsel mükemmellikte uzman ekip", "Etkinliklerinizde profesyonel çözümler", "Medya server ve görüntü rejisi çözümleri"],
+      "fallbackDescription": "SK Production olarak, kurumsal etkinlikleriniz için profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz. 10 yılı aşkın deneyimimizle etkinliklerinize değer katıyoruz.",
+      "fallbackPrimaryCta": "İletişime geçin",
+      "secondaryCta": "Projelerimizi inceleyin"
+    },
+    "contactForm": {
+      "fields": {
+        "name": { "label": "İsim Soyisim", "placeholder": "İsim Soyisim" },
+        "email": { "label": "E-posta", "placeholder": "E-posta adresiniz" },
+        "message": { "label": "Mesajınız", "placeholder": "Mesajınızı buraya yazın..." }
+      },
+      "button": { "submit": "Gönder", "submitting": "Gönderiliyor..." },
+      "status": {
+        "success": "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.",
+        "queued": "Şu an çevrimdışısınız. Mesajınız kuyruğa alındı; bağlantı gelince otomatik gönderilecektir.",
+        "error": "Mesajınız gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
+      },
+      "errors": { "submitFailed": "Form gönderilemedi" }
+    },
+    "header": {
+      "projects": "Projeler",
+      "servicesEquipment": "Hizmetler & Ekipmanlar",
+      "about": "Hakkımızda",
+      "contact": "İletişim"
+    },
+    "footer": {
+      "companyDescription": "Profesyonel görüntü rejisi ve medya server çözümleri ile etkinliklerinize değer katıyoruz.",
+      "quickLinks": "Hızlı Linkler",
+      "contact": "İletişim",
+      "workingHours": "Çalışma Saatleri",
+      "workingHoursItems": {
+        "weekday": "Pazartesi - Cuma: 09:00 - 18:00",
+        "saturday": "Cumartesi: 10:00 - 14:00",
+        "sunday": "Pazar: Kapalı"
+      },
+      "privacy": "Gizlilik Politikası",
+      "terms": "Kullanım Şartları",
+      "copyright": "Tüm hakları saklıdır."
+    },
+    "legal": {
+      "backToHome": "← Ana Sayfaya Dön",
+      "lastUpdated": "Son Güncelleme"
+    },
+    "privacy": {
+      "metaTitle": "Gizlilik Politikası | SK Production",
+      "metaDescription": "SK Production gizlilik politikası ve kişisel verilerin korunması hakkında bilgiler.",
+      "title": "Gizlilik Politikası",
+      "sections": [
+        {
+          "title": "1. Genel Bilgiler",
+          "paragraphs": [
+            "SK Production olarak, ziyaretçilerimizin ve kullanıcılarımızın gizliliğini korumak bizim için önemlidir. Bu gizlilik politikası, web sitemizi ziyaret ettiğinizde veya hizmetlerimizi kullandığınızda topladığımız bilgilerin nasıl kullanıldığını açıklar."
+          ]
+        },
+        {
+          "title": "2. Toplanan Bilgiler",
+          "paragraphs": ["Web sitemizde aşağıdaki bilgileri toplayabiliriz:"],
+          "list": [
+            "İletişim formu aracılığıyla sağladığınız ad, e-posta, telefon numarası gibi kişisel bilgiler",
+            "Web sitesi kullanım verileri (IP adresi, tarayıcı türü, ziyaret edilen sayfalar)",
+            "Çerezler (cookies) aracılığıyla toplanan veriler"
+          ]
+        },
+        {
+          "title": "3. Bilgilerin Kullanımı",
+          "paragraphs": ["Topladığımız bilgiler aşağıdaki amaçlarla kullanılabilir:"],
+          "list": [
+            "Hizmetlerimizi sunmak ve iyileştirmek",
+            "İletişim taleplerinize yanıt vermek",
+            "Web sitesi deneyimini geliştirmek",
+            "Yasal yükümlülüklerimizi yerine getirmek"
+          ]
+        },
+        {
+          "title": "4. Çerezler (Cookies)",
+          "paragraphs": [
+            "Web sitemiz, kullanıcı deneyimini iyileştirmek için çerezler kullanır. Çerezler, web sitesini ziyaret ettiğinizde tarayıcınızda saklanan küçük metin dosyalarıdır. Çerezleri tarayıcı ayarlarınızdan yönetebilirsiniz."
+          ]
+        },
+        {
+          "title": "5. Veri Güvenliği",
+          "paragraphs": [
+            "Kişisel verilerinizin güvenliğini sağlamak için uygun teknik ve idari önlemler almaktayız. Ancak internet üzerinden veri iletiminin %100 güvenli olduğu garanti edilemez."
+          ]
+        },
+        {
+          "title": "6. KVKK Haklarınız",
+          "paragraphs": ["6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında aşağıdaki haklara sahipsiniz:"],
+          "list": [
+            "Kişisel verilerinizin işlenip işlenmediğini öğrenme",
+            "İşlenen kişisel verileriniz hakkında bilgi talep etme",
+            "Kişisel verilerinizin silinmesini veya yok edilmesini isteme",
+            "İşlenen verilerin münhasıran otomatik sistemler ile analiz edilmesi suretiyle aleyhinize bir sonucun ortaya çıkmasına itiraz etme"
+          ]
+        },
+        {
+          "title": "7. İletişim",
+          "paragraphs": [
+            "Gizlilik politikamız hakkında sorularınız için bizimle iletişime geçebilirsiniz:",
+            "E-posta: info@skpro.com.tr • Telefon: +90 532 123 4567 • Adres: Zincirlidere Caddesi No:52/C Şişli/İstanbul"
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "metaTitle": "Kullanım Şartları | SK Production",
+      "metaDescription": "SK Production web sitesi kullanım şartları ve koşulları.",
+      "title": "Kullanım Şartları",
+      "sections": [
+        {
+          "title": "1. Genel Koşullar",
+          "paragraphs": [
+            "SK Production web sitesini kullanarak, aşağıdaki kullanım şartlarını kabul etmiş sayılırsınız. Bu şartları kabul etmiyorsanız lütfen web sitesini kullanmayın."
+          ]
+        },
+        {
+          "title": "2. Web Sitesi Kullanımı",
+          "paragraphs": ["Web sitemizi yalnızca yasal amaçlar için kullanabilirsiniz. Aşağıdaki faaliyetler yasaktır:"],
+          "list": [
+            "Web sitesinin güvenliğini ihlal etmek",
+            "Zararlı yazılım veya kod yüklemek",
+            "Başkalarının kişisel bilgilerini izinsiz toplamak",
+            "Web sitesinin içeriğini izinsiz kopyalamak veya dağıtmak"
+          ]
+        },
+        {
+          "title": "3. Fikri Mülkiyet Hakları",
+          "paragraphs": [
+            "Web sitesindeki tüm içerik (metinler, görseller, logolar, tasarımlar) SK Production'a aittir ve telif hakkı yasaları ile korunmaktadır. İçeriği izinsiz kullanmak yasaktır."
+          ]
+        },
+        {
+          "title": "4. Hizmetler",
+          "paragraphs": [
+            "Web sitemizde sunulan bilgiler genel bilgilendirme amaçlıdır. Hizmetlerimiz hakkında detaylı bilgi almak için bizimle iletişime geçmeniz gerekmektedir."
+          ]
+        },
+        {
+          "title": "5. Sorumluluk Reddi",
+          "paragraphs": [
+            "Web sitesinde yer alan bilgilerin doğruluğu, güncelliği veya eksiksizliği konusunda garanti vermemekteyiz. Web sitesini kullanımınızdan kaynaklanan herhangi bir zarardan sorumlu değiliz."
+          ]
+        },
+        {
+          "title": "6. Değişiklikler",
+          "paragraphs": [
+            "Bu kullanım şartlarını istediğimiz zaman değiştirme hakkını saklı tutarız. Değişiklikler web sitesinde yayınlandığında yürürlüğe girer."
+          ]
+        },
+        {
+          "title": "7. İletişim",
+          "paragraphs": [
+            "Kullanım şartları hakkında sorularınız için bizimle iletişime geçebilirsiniz:",
+            "E-posta: info@skpro.com.tr • Telefon: +90 532 123 4567 • Adres: Zincirlidere Caddesi No:52/C Şişli/İstanbul"
+          ]
+        }
+      ]
+    },
+    "home": {
+      "servicesSection": {
+        "title": "Hizmetlerimiz & Ekipmanlarımız",
+        "subtitle": "Etkinlikleriniz için profesyonel çözümler ve son teknoloji ekipmanlar",
+        "tabs": {
+          "services": "Hizmetlerimiz",
+          "equipment": "Ekipmanlarımız"
+        },
+        "fallbackServices": [
+          {
+            "title": "Görüntü Rejisi",
+            "description": "Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz.",
+            "icon": "video",
+            "order": 0
+          },
+          {
+            "title": "Medya Server Sistemleri",
+            "description": "Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını.",
+            "icon": "screen",
+            "order": 1
+          },
+          {
+            "title": "LED Ekran Yönetimi",
+            "description": "Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri.",
+            "icon": "led",
+            "order": 2
+          }
+        ],
+        "fallbackEquipment": [
+          {
+            "title": "Görüntü Rejisi Sistemleri",
+            "items": [
+              { "name": "Analog Way Aquilon RS4", "description": "4K/8K çözünürlük desteği ile görüntü işleme" },
+              { "name": "Barco E2 Gen 2", "description": "Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış" },
+              { "name": "Blackmagic ATEM 4 M/E Constellation HD", "description": "40 giriş, 24 çıkış, gelişmiş geçiş efektleri" }
+            ],
+            "order": 0
+          },
+          {
+            "title": "Medya Server Sistemleri",
+            "items": [
+              { "name": "Dataton WATCHPAX 60", "description": "6 çıkışlı, yüksek performanslı" },
+              { "name": "Disguise 4x4pro", "description": "Gerçek zamanlı render, AR/VR desteği" },
+              { "name": "Resolume Arena 7", "description": "Canlı performans için video loop ve efektler" }
+            ],
+            "order": 1
+          }
+        ]
+      },
+      "aboutSection": {
+        "title": "SK Production Hakkında",
+        "paragraphs": [
+          "SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir. Analog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.",
+          "10 yılı aşkın deneyime sahip ekibimiz; kurumsal etkinlikler, konserler, ürün lansmanları, sahne gösterileri ve daha birçok alanda yüzlerce projeye imza atmıştır."
+        ],
+        "fallbackStats": [
+          { "value": "250+", "label": "Tamamlanan Proje" },
+          { "value": "12+", "label": "Yıllık Deneyim" },
+          { "value": "50+", "label": "Profesyonel Ekipman" }
+        ]
+      },
+      "contactSection": {
+        "title": "İletişime Geçin",
+        "subtitle": "Projeleriniz için birlikte çalışalım",
+        "labels": {
+          "address": "Adres",
+          "phone": "Telefon",
+          "email": "E-posta"
+        },
+        "fallback": {
+          "address": "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
+          "phone": "+90 532 123 4567",
+          "email": "info@skpro.com.tr"
+        }
+      },
+      "a11y": {
+        "skipToContent": "Ana içeriğe geç"
+      },
+      "projectsSection": {
+        "title": "Sahne Deneyimlerimiz",
+        "subtitle": "Gerçekleştirdiğimiz etkinliklerde yarattığımız görsel şölenler"
+      },
+      "lightbox": {
+        "imageFailed": "Resim yüklenemedi",
+        "urlLabel": "URL",
+        "idLabel": "ID",
+        "generatedUrlLabel": "Oluşturulan URL",
+        "none": "Yok",
+        "projectImageAlt": "Proje görseli"
+      },
+      "structuredData": {
+        "organizationDescription": "Profesyonel görüntü rejisi ve medya server çözümleri sunan teknoloji firması",
+        "areaServed": "Türkiye"
+      },
+      "video": {
+        "fallbackText": "Video yüklenemedi. Tarayıcınız video formatını desteklemiyor."
+      }
+    },
+    "contentOverrides": {
+      "hero": {},
+      "servicesEquipment": {},
+      "about": {},
+      "contact": {},
+      "social": []
+    }
+  }
+}
+

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ContactFormData {
   name: string;
@@ -7,6 +8,7 @@ interface ContactFormData {
 }
 
 const ContactForm: React.FC = () => {
+  const t = useTranslations('site.contactForm');
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
@@ -45,7 +47,7 @@ const ContactForm: React.FC = () => {
       if (response.status === 202 && data?.queued) {
         setSubmitStatus('queued');
       } else if (!response.ok) {
-        throw new Error(data?.message || 'Form gönderilemedi');
+        throw new Error(data?.message || t('errors.submitFailed'));
       } else {
         setSubmitStatus('success');
       }
@@ -62,7 +64,7 @@ const ContactForm: React.FC = () => {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="name" className="block text-gray-700 dark:text-gray-300 mb-1">
-          İsim Soyisim
+          {t('fields.name.label')}
         </label>
         <input 
           type="text" 
@@ -73,12 +75,12 @@ const ContactForm: React.FC = () => {
           required
           autoComplete="name"
           className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-          placeholder="İsim Soyisim"
+          placeholder={t('fields.name.placeholder')}
         />
       </div>
       <div>
         <label htmlFor="email" className="block text-gray-700 dark:text-gray-300 mb-1">
-          E-posta
+          {t('fields.email.label')}
         </label>
         <input 
           type="email" 
@@ -89,12 +91,12 @@ const ContactForm: React.FC = () => {
           required
           autoComplete="email"
           className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-          placeholder="E-posta adresiniz"
+          placeholder={t('fields.email.placeholder')}
         />
       </div>
       <div>
         <label htmlFor="message" className="block text-gray-700 dark:text-gray-300 mb-1">
-          Mesajınız
+          {t('fields.message.label')}
         </label>
         <textarea 
           id="message"
@@ -104,7 +106,7 @@ const ContactForm: React.FC = () => {
           required
           rows={5}
           className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-          placeholder="Mesajınızı buraya yazın..."
+          placeholder={t('fields.message.placeholder')}
         ></textarea>
       </div>
       <button 
@@ -114,23 +116,23 @@ const ContactForm: React.FC = () => {
           isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
         }`}
       >
-        {isSubmitting ? 'Gönderiliyor...' : 'Gönder'}
+        {isSubmitting ? t('button.submitting') : t('button.submit')}
       </button>
 
       {/* Form Durumu */}
       {submitStatus === 'success' && (
         <div className="p-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-100 rounded-lg">
-          Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.
+          {t('status.success')}
         </div>
       )}
       {submitStatus === 'queued' && (
         <div className="p-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 rounded-lg">
-          Şu an çevrimdışısınız. Mesajınız kuyruğa alındı; bağlantı gelince otomatik gönderilecektir.
+          {t('status.queued')}
         </div>
       )}
       {submitStatus === 'error' && (
         <div className="p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 rounded-lg">
-          Mesajınız gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.
+          {t('status.error')}
         </div>
       )}
     </form>

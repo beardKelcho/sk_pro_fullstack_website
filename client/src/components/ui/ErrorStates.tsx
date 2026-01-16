@@ -68,7 +68,7 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-lg border border-red-200 bg-white p-6 shadow-sm ${className}`}
+      className={`rounded-lg border border-red-200 bg-white dark:bg-gray-800 p-6 shadow-sm ${className}`}
       role="alert"
     >
       <div className="flex items-center">

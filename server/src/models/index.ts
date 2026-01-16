@@ -21,6 +21,7 @@ import { SearchHistory } from './SearchHistory';
 import { Session } from './Session';
 import Webhook from './Webhook';
 import WebhookDelivery from './WebhookDelivery';
+import Comment from './Comment';
 
 export {
   User,
@@ -44,5 +45,6 @@ export {
   SearchHistory,
   Session,
   Webhook,
-  WebhookDelivery
+  WebhookDelivery,
+  Comment
 }; 

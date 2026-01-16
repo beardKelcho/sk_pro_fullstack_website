@@ -397,11 +397,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: İşbirliği, iletişim
 
 **Yapılacaklar:**
-- [ ] Proje yorumları
-- [ ] Görev yorumları
-- [ ] @mention sistemi
-- [ ] Bildirim entegrasyonu
-- [ ] Rich text editor
+- [x] Proje yorumları ✅ (Admin proje detay: Yorumlar sekmesi)
+- [x] Görev yorumları ✅ (Admin görev detay: Yorumlar sekmesi)
+- [x] @mention sistemi ✅ (seçili kullanıcılar + backend `mentions[]`)
+- [x] Bildirim entegrasyonu ✅ (mention -> Notification `SYSTEM`)
+- [ ] Rich text editor (opsiyonel; harici editor/lib seçimi gerektirir)
 
 ---
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import CommentsPanel from '@/components/admin/CommentsPanel';
 
 // Görev, Kullanıcı ve Proje türleri
 interface Task {
@@ -349,6 +350,16 @@ export default function ViewTask() {
           >
             Notlar ve Ekler
           </button>
+          <button
+            onClick={() => setActiveTab('comments')}
+            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'comments'
+                ? 'border-[#0066CC] dark:border-primary-light text-[#0066CC] dark:text-primary-light'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            Yorumlar
+          </button>
         </nav>
       </div>
       
@@ -461,7 +472,7 @@ export default function ViewTask() {
               </div>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'notes' ? (
           <div className="p-6">
             {/* Notlar ve ekler sekmesi */}
             <div className="space-y-6">
@@ -514,6 +525,14 @@ export default function ViewTask() {
                 )}
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="p-6">
+            <CommentsPanel
+              resourceType="TASK"
+              resourceId={task.id}
+              mentionableUsers={assignedUser ? [{ id: assignedUser.id, name: assignedUser.name }] : []}
+            />
           </div>
         )}
       </div>

@@ -29,6 +29,7 @@ import monitoringRoutes from './monitoring.routes';
 import calendarRoutes from './calendar.routes';
 import mongoose from 'mongoose';
 import webhookRoutes from './webhook.routes';
+import commentRoutes from './comment.routes';
 
 const router = express.Router();
 
@@ -84,5 +85,6 @@ router.use('/two-factor', twoFactorRoutes);
 router.use('/monitoring', monitoringRoutes);
 router.use('/calendar', calendarRoutes);
 router.use('/webhooks', webhookRoutes);
+router.use('/comments', commentRoutes);
 
 export default router; 

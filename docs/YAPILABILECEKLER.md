@@ -380,10 +380,10 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Daha güvenli uygulama
 
 **Yapılacaklar:**
-- [ ] Security headers iyileştirmeleri
-- [ ] CSRF protection
-- [ ] SQL injection prevention (MongoDB için NoSQL injection)
-- [ ] XSS protection iyileştirmeleri
+- [x] Security headers iyileştirmeleri ✅ (CSP/HSTS/Frameguard/Referrer-Policy)
+- [x] CSRF protection ✅ (state-changing isteklerde Origin allowlist kontrolü)
+- [x] SQL injection prevention (MongoDB için NoSQL injection) ✅ (request mongo sanitize)
+- [x] XSS protection iyileştirmeleri ✅ (CSP + input sanitize temel koruma)
 - [ ] Security audit
 - [ ] Penetration testing
 

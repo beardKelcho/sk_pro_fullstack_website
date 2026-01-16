@@ -13,6 +13,8 @@ import connectDB from './config/database';
 import { connectRedis } from './config/redis';
 import { requireDbConnection } from './middleware/requireDbConnection';
 import { metricsMiddleware } from './middleware/metrics.middleware';
+import { mongoSanitize } from './middleware/mongoSanitize';
+import { csrfOriginCheck } from './middleware/csrfOriginCheck';
 import fs from 'fs';
 import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
@@ -54,10 +56,32 @@ app.use(cors({
 }));
 
 // Security Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false,
-}));
+app.use(
+  helmet({
+    // API servisi olduğu için CSP'yi prod'da sıkı, dev'de kapalı tutuyoruz (swagger/dev tooling kırılmasın)
+    contentSecurityPolicy:
+      process.env.NODE_ENV === 'production'
+        ? {
+            directives: {
+              defaultSrc: ["'none'"],
+              frameAncestors: ["'none'"],
+              baseUri: ["'none'"],
+              formAction: ["'none'"],
+            },
+          }
+        : false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    frameguard: { action: 'deny' },
+    noSniff: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    // HTTPS prod'da HSTS
+    hsts:
+      process.env.NODE_ENV === 'production'
+        ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+        : false,
+  })
+);
 
 // Rate limiting (OPTIONS isteklerini ve auth endpoint'lerini hariç tut)
 const limiter = rateLimit({
@@ -77,6 +101,10 @@ const limiter = rateLimit({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+// NoSQL injection'e karşı request temizliği
+app.use(mongoSanitize);
+// CSRF mitigasyonu: state-changing isteklerde origin allowlist kontrolü
+app.use(csrfOriginCheck(allowedOrigins as string[]));
 
 // Uploads klasörünü static olarak serve et - Optimized
 const uploadsDir = path.join(process.cwd(), 'uploads');

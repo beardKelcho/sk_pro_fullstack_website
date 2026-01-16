@@ -310,7 +310,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Yapılacaklar:**
 - [x] Screen reader optimizasyonu ✅ (modal/dialog semantic + aria)
 - [x] Keyboard navigation iyileştirmeleri ✅ (Escape kapatma + Tab focus trap)
-- [ ] Color contrast kontrolü
+- [x] Color contrast kontrolü ✅ (Cypress + axe-core / cypress-axe ile otomatik kontrol)
 - [x] ARIA labels iyileştirmeleri ✅ (header/menu butonları + modal kapatma)
 - [x] Focus management ✅ (modal açılış focus + focus restore)
 

@@ -22,6 +22,21 @@ declare global {
        * Resim yükle
        */
       uploadImage(filePath: string): Chainable<void>;
+
+      /**
+       * cypress-axe: sayfaya axe enjekte eder
+       */
+      injectAxe(): Chainable<void>;
+
+      /**
+       * cypress-axe: erişilebilirlik kontrolü çalıştırır
+       */
+      checkA11y(
+        context?: any,
+        options?: any,
+        violationCallback?: any,
+        skipFailures?: boolean
+      ): Chainable<void>;
     }
   }
 }

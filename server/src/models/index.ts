@@ -19,6 +19,8 @@ import { VersionHistory } from './VersionHistory';
 import { SavedSearch } from './SavedSearch';
 import { SearchHistory } from './SearchHistory';
 import { Session } from './Session';
+import Webhook from './Webhook';
+import WebhookDelivery from './WebhookDelivery';
 
 export {
   User,
@@ -40,5 +42,7 @@ export {
   VersionHistory,
   SavedSearch,
   SearchHistory,
-  Session
+  Session,
+  Webhook,
+  WebhookDelivery
 }; 

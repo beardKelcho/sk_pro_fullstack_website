@@ -28,6 +28,7 @@ import fileCleanupRoutes from './fileCleanup.routes';
 import monitoringRoutes from './monitoring.routes';
 import calendarRoutes from './calendar.routes';
 import mongoose from 'mongoose';
+import webhookRoutes from './webhook.routes';
 
 const router = express.Router();
 
@@ -82,5 +83,6 @@ router.use('/file-cleanup', fileCleanupRoutes);
 router.use('/two-factor', twoFactorRoutes);
 router.use('/monitoring', monitoringRoutes);
 router.use('/calendar', calendarRoutes);
+router.use('/webhooks', webhookRoutes);
 
 export default router; 

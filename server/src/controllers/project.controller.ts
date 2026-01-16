@@ -5,6 +5,7 @@ import { sendProjectStartEmail, sendProjectStatusChangeEmail } from '../utils/em
 import { notifyProjectTeam } from '../utils/notificationService';
 import logger from '../utils/logger';
 import { logAction, extractChanges } from '../utils/auditLogger';
+import { emitWebhookEvent } from '../services/webhook.service';
 
 // Tüm projeleri listele
 export const getAllProjects = async (req: Request, res: Response) => {
@@ -487,6 +488,18 @@ export const updateProject = async (req: Request, res: Response) => {
           ).catch(err => logger.error('Müşteri email gönderme hatası:', err));
         }
       }
+
+      // Webhook event (async)
+      emitWebhookEvent(
+        'PROJECT_STATUS_CHANGED',
+        {
+          projectId: responseProject._id?.toString(),
+          name: responseProject.name,
+          oldStatus: oldProject.status,
+          newStatus: responseProject.status,
+        },
+        { source: 'api' }
+      ).catch((err) => logger.error('Webhook emit hatası (PROJECT_STATUS_CHANGED):', err));
     }
     
     // Cache'i invalidate et

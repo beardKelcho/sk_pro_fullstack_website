@@ -438,11 +438,11 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Dış sistemlere bildirimler
 
 **Yapılacaklar:**
-- [ ] Webhook endpoint'leri
-- [ ] Event-based webhooks
-- [ ] Webhook management UI
-- [ ] Retry mechanism
-- [ ] Webhook testing
+- [x] Webhook endpoint'leri ✅ (`/api/webhooks`)
+- [x] Event-based webhooks ✅ (PROJECT_STATUS_CHANGED, TASK_ASSIGNED, TASK_UPDATED)
+- [x] Webhook management UI ✅ (`/admin/webhooks`)
+- [x] Retry mechanism ✅ (WebhookDelivery + cron processor)
+- [x] Webhook testing ✅ (`POST /api/webhooks/:id/test`)
 
 ---
 
@@ -452,10 +452,10 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Backward compatibility, smooth updates
 
 **Yapılacaklar:**
-- [ ] API versioning stratejisi
-- [ ] Version header support
-- [ ] Deprecation warnings
-- [ ] Version documentation
+- [x] API versioning stratejisi ✅ (default v1, geleceğe hazır)
+- [x] Version header support ✅ (`X-API-Version` veya `Accept: application/vnd.skpro.v1+json`)
+- [x] Deprecation warnings ✅ (`API_V1_DEPRECATED`, `API_V1_SUNSET` ile header)
+- [x] Version documentation ✅ (server middleware + header sözleşmesi)
 
 ---
 

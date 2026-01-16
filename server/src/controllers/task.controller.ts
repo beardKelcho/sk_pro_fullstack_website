@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { sendTaskAssignedEmail, sendTaskUpdatedEmail } from '../utils/emailService';
 import { notifyUser } from '../utils/notificationService';
 import logger from '../utils/logger';
+import { emitWebhookEvent } from '../services/webhook.service';
 
 // Tüm görevleri listele
 export const getAllTasks = async (req: Request, res: Response) => {
@@ -166,6 +167,21 @@ export const createTask = async (req: Request, res: Response) => {
         false // Email zaten gönderildi
       ).catch(err => logger.error('Bildirim gönderme hatası:', err));
     }
+
+    // Webhook event (async)
+    emitWebhookEvent(
+      'TASK_ASSIGNED',
+      {
+        taskId: populatedTask?._id?.toString(),
+        title: populatedTask?.title,
+        assignedTo: (populatedTask?.assignedTo as any)?._id?.toString?.() || assignedTo,
+        projectId: (populatedTask?.project as any)?._id?.toString?.() || project,
+        status: populatedTask?.status,
+        priority: populatedTask?.priority,
+        dueDate: populatedTask?.dueDate,
+      },
+      { source: 'api' }
+    ).catch((err) => logger.error('Webhook emit hatası (TASK_ASSIGNED):', err));
     
     res.status(201).json({
       success: true,
@@ -272,6 +288,22 @@ export const updateTask = async (req: Request, res: Response) => {
           { taskId: updatedTask._id.toString(), changes },
           false // Email zaten gönderildi
         ).catch(err => logger.error('Görev güncelleme bildirim gönderme hatası:', err));
+
+        // Webhook event (async)
+        emitWebhookEvent(
+          'TASK_UPDATED',
+          {
+            taskId: updatedTask._id?.toString(),
+            title: updatedTask.title,
+            assignedTo: assignedUser._id?.toString?.(),
+            projectId: (updatedTask.project as any)?._id?.toString?.(),
+            changes,
+            status: updatedTask.status,
+            priority: updatedTask.priority,
+            dueDate: updatedTask.dueDate,
+          },
+          { source: 'api' }
+        ).catch((err) => logger.error('Webhook emit hatası (TASK_UPDATED):', err));
       }
     }
     

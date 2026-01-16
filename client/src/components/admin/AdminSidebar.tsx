@@ -67,6 +67,12 @@ const MonitoringIcon = () => (
   </svg>
 );
 
+const PlugIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7v4a3 3 0 006 0V7m-6 4H7a2 2 0 00-2 2v2a4 4 0 004 4h6a4 4 0 004-4v-2a2 2 0 00-2-2h-2m-6-4V5m6 2V5"></path>
+  </svg>
+);
+
 const LogoutIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
@@ -268,6 +274,11 @@ const menuItems: MenuItem[] = [
     title: 'Ayarlar',
     path: '/admin/settings',
     icon: <SettingsIcon />,
+  },
+  {
+    title: 'Webhooklar',
+    path: '/admin/webhooks',
+    icon: <PlugIcon />,
   },
   {
     title: '2FA Ayarları',

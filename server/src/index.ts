@@ -15,6 +15,7 @@ import { metricsMiddleware } from './middleware/metrics.middleware';
 import { mongoSanitize } from './middleware/mongoSanitize';
 import { csrfOriginCheck } from './middleware/csrfOriginCheck';
 import { requestIdMiddleware } from './middleware/requestId.middleware';
+import { apiVersioning } from './middleware/apiVersioning';
 import { authLimiter, exportLimiter, generalApiLimiter, uploadLimiter } from './middleware/rateLimiters';
 import fs from 'fs';
 import path from 'path';
@@ -99,6 +100,9 @@ app.use(requestIdMiddleware);
 app.use(mongoSanitize);
 // CSRF mitigasyonu: state-changing isteklerde origin allowlist kontrolü
 app.use(csrfOriginCheck(allowedOrigins as string[]));
+
+// API versioning (header/accept tabanlı; default v1)
+app.use('/api', apiVersioning);
 
 // Uploads klasörünü static olarak serve et - Optimized
 const uploadsDir = path.join(process.cwd(), 'uploads');

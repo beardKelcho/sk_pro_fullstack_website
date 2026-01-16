@@ -53,6 +53,9 @@ export enum Permission {
   
   // Audit Log
   VIEW_AUDIT_LOGS = 'audit:view',
+
+  // Integrations
+  WEBHOOK_MANAGE = 'webhook:manage',
 }
 
 // Rol tanımlamaları
@@ -102,6 +105,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.QR_DELETE,
     Permission.QR_SCAN,
     Permission.VIEW_AUDIT_LOGS,
+    Permission.WEBHOOK_MANAGE,
   ],
   
   [Role.FIRMA_SAHIBI]: [
@@ -140,6 +144,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.QR_DELETE,
     Permission.QR_SCAN,
     Permission.VIEW_AUDIT_LOGS,
+    Permission.WEBHOOK_MANAGE,
   ],
   
   [Role.PROJE_YONETICISI]: [

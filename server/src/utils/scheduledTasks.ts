@@ -3,6 +3,7 @@ import { Maintenance, Equipment, Task } from '../models';
 import { sendMaintenanceReminderEmail } from './emailService';
 import { startAllScheduledReports } from '../controllers/reportSchedule.controller';
 import logger from './logger';
+import { deliverPendingWebhooks } from '../services/webhook.service';
 
 // Bakım hatırlatma görevini çalıştır (her gün saat 09:00'da)
 export const scheduleMaintenanceReminders = () => {
@@ -142,6 +143,19 @@ export const startScheduledTasks = () => {
     startAllScheduledReports().catch((error) => {
       logger.error('Rapor zamanlamaları başlatma hatası:', error);
     });
+  }
+
+  // Webhook retry processor (prod/dev). Env ile kapatılabilir.
+  if (process.env.WEBHOOKS_ENABLED !== 'false') {
+    const cronExpr = process.env.WEBHOOKS_PROCESSOR_CRON || '*/1 * * * *';
+    cron.schedule(cronExpr, async () => {
+      try {
+        await deliverPendingWebhooks(Number(process.env.WEBHOOKS_PROCESSOR_BATCH || 50));
+      } catch (error) {
+        logger.error('Webhook processor hatası:', error);
+      }
+    });
+    logger.info(`Webhook processor zamanlandı (${cronExpr})`);
   }
 };
 

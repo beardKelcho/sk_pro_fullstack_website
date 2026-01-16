@@ -745,6 +745,17 @@ export default function Calendar() {
       </div>
     );
   }
+
+  const handleDownloadIcs = () => {
+    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    const params = new URLSearchParams({
+      startDate: startOfMonth.toISOString(),
+      endDate: endOfMonth.toISOString(),
+      status: selectedProjectStatuses.join(','),
+    });
+    window.location.href = `/api/calendar/ics?${params.toString()}`;
+  };
   
   return (
     <div className="space-y-6">
@@ -755,7 +766,14 @@ export default function Calendar() {
           <p className="mt-1 text-gray-600 dark:text-gray-300">Planlanan ve devam eden tüm projelerinizi görüntüleyin</p>
         </div>
         
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleDownloadIcs}
+            className="px-3 py-1 text-sm rounded-md bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            aria-label="iCal indir"
+          >
+            iCal İndir
+          </button>
           <button
             onClick={() => setView('month')}
             className={`px-3 py-1 text-sm rounded-md ${

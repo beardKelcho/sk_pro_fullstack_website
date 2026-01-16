@@ -413,7 +413,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Yapılacaklar:**
 - [ ] Google Calendar sync
 - [ ] Outlook Calendar sync
-- [ ] iCal export
+- [x] iCal export ✅ (`GET /api/calendar/ics` + Admin takvimde “iCal İndir”)
 - [ ] Calendar import
 
 ---

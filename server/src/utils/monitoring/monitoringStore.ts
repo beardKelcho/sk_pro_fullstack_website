@@ -56,6 +56,12 @@ export const recordDbMetric = (metric: DbQueryMetric) => {
   trimToMax(dbMetrics, MAX_DB_METRICS);
 };
 
+// Test helpers (unit test izolasyonu için)
+export const __resetMonitoringStoreForTests = () => {
+  apiMetrics.splice(0, apiMetrics.length);
+  dbMetrics.splice(0, dbMetrics.length);
+};
+
 export const getApiMetricsInRange = (range: TimeRange): ApiRequestMetric[] => {
   const cutoff = Date.now() - timeRangeToMs(range);
   return apiMetrics.filter((m) => m.ts >= cutoff);

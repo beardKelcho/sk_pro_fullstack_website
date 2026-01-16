@@ -119,18 +119,21 @@ export default function Home() {
   const [isTopCarousel, setIsTopCarousel] = useState(true);
   const modalRef = useRef<HTMLDivElement>(null);
   
-  // Konum bilgileri (fallback)
-  const defaultLocation = {
-    address: "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
+  // Konum bilgileri (fallback) - stable deps
+  const defaultLocation = useMemo(() => ({
+    address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
     lat: 41.057984,
-    lng: 28.987117
-  };
+    lng: 28.987117,
+  }), []);
   
-  const location = contactInfo ? {
-    address: contactInfo.address,
-    lat: contactInfo.latitude || defaultLocation.lat,
-    lng: contactInfo.longitude || defaultLocation.lng
-  } : defaultLocation;
+  const location = useMemo(() => {
+    if (!contactInfo) return defaultLocation;
+    return {
+      address: contactInfo.address,
+      lat: contactInfo.latitude || defaultLocation.lat,
+      lng: contactInfo.longitude || defaultLocation.lng,
+    };
+  }, [contactInfo, defaultLocation]);
 
   // Navigasyon fonksiyonu
   const openMobileNavigation = () => {
@@ -310,10 +313,10 @@ export default function Home() {
   };
   
   // Modal kapatma işleyicisi
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedImage(null);
-  };
+  }, []);
   
   // Modal dışına tıklandığında kapatma
   const handleModalBackdropClick = (e: React.MouseEvent) => {

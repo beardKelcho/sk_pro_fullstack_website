@@ -5,6 +5,10 @@ import ExportMenu from '@/components/admin/ExportMenu';
 import apiClient from '@/services/api/axios';
 import { toast } from 'react-toastify';
 
+/**
+ * @jest-environment jsdom
+ */
+
 // Mock dependencies
 jest.mock('@/services/api/axios');
 jest.mock('react-toastify', () => ({
@@ -18,19 +22,15 @@ jest.mock('react-toastify', () => ({
 global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
 global.URL.revokeObjectURL = jest.fn();
 
-// Mock document.createElement
-const mockLink = {
-  href: '',
-  download: '',
-  click: jest.fn(),
-  remove: jest.fn(),
-};
-
+// Mock document.createElement (anchor element valid DOM olmalı, yoksa appendChild patlar)
+const originalCreateElement = document.createElement.bind(document);
 document.createElement = jest.fn((tagName: string) => {
+  const el = originalCreateElement(tagName) as any;
   if (tagName === 'a') {
-    return mockLink as any;
+    el.click = jest.fn();
+    el.remove = jest.fn();
   }
-  return document.createElement(tagName);
+  return el;
 });
 
 describe('ExportMenu Component', () => {
@@ -43,8 +43,6 @@ describe('ExportMenu Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    document.body.appendChild = jest.fn();
-    document.body.removeChild = jest.fn();
   });
 
   it('should render export button', () => {

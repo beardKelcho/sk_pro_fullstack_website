@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { getAllImages, createImage, deleteImage, deleteMultipleImages, updateImage, SiteImage } from '@/services/siteImageService';
 import { toast } from 'react-toastify';
@@ -20,11 +20,7 @@ export default function SiteImagesPage() {
   const [imageCategory, setImageCategory] = useState<'project' | 'gallery' | 'hero' | 'other'>('project');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchImages();
-  }, [selectedCategory]);
-
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       setLoading(true);
       const params: any = {};
@@ -39,7 +35,11 @@ export default function SiteImagesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    fetchImages();
+  }, [fetchImages]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);

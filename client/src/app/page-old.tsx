@@ -85,17 +85,20 @@ export default function Home() {
   const [isTopCarousel, setIsTopCarousel] = useState(true);
   const modalRef = useRef<HTMLDivElement>(null);
   
-  const defaultLocation = {
-    address: "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
+  const defaultLocation = useMemo(() => ({
+    address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
     lat: 41.057984,
-    lng: 28.987117
-  };
+    lng: 28.987117,
+  }), []);
   
-  const location = contactInfo ? {
-    address: contactInfo.address,
-    lat: contactInfo.latitude || defaultLocation.lat,
-    lng: contactInfo.longitude || defaultLocation.lng
-  } : defaultLocation;
+  const location = useMemo(() => {
+    if (!contactInfo) return defaultLocation;
+    return {
+      address: contactInfo.address,
+      lat: contactInfo.latitude || defaultLocation.lat,
+      lng: contactInfo.longitude || defaultLocation.lng
+    };
+  }, [contactInfo, defaultLocation]);
 
   const openMobileNavigation = () => {
     if (typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {

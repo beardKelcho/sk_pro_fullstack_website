@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import LazyImage from './LazyImage';
@@ -62,14 +62,17 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Rotating texts - fallback metinler
-  const rotatingTexts = content?.rotatingTexts && content.rotatingTexts.length > 0
-    ? content.rotatingTexts
-    : [
-        'Görsel Mükemmellikte Uzman Ekip',
-        'Etkinliklerinizde Profesyonel Çözümler',
-        'Medya Server ve Görüntü Rejisi Çözümleri',
-      ];
+  // Rotating texts - fallback metinler (stable deps)
+  const rotatingTexts = useMemo(() => {
+    if (content?.rotatingTexts && content.rotatingTexts.length > 0) {
+      return content.rotatingTexts;
+    }
+    return [
+      'Görsel Mükemmellikte Uzman Ekip',
+      'Etkinliklerinizde Profesyonel Çözümler',
+      'Medya Server ve Görüntü Rejisi Çözümleri',
+    ];
+  }, [content?.rotatingTexts]);
 
   // Rotating texts için effect
   useEffect(() => {

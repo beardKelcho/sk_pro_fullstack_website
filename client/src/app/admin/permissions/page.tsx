@@ -55,9 +55,11 @@ export default function PermissionsPage() {
       if (roleObj) {
         const rolePermissionsList = rolePermissions[roleObj.backendValue as Role] || [];
         // Rol yetkilerini ekle (kullanıcının özel yetkilerini koru)
-        const newPermissions = new Set(userPermissions);
-        rolePermissionsList.forEach(perm => newPermissions.add(perm));
-        setUserPermissions(newPermissions);
+        setUserPermissions((prev) => {
+          const next = new Set(prev);
+          rolePermissionsList.forEach((perm) => next.add(perm));
+          return next;
+        });
       }
     }
   }, [selectedRole]);

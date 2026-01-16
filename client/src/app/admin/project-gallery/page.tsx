@@ -428,14 +428,12 @@ export default function ProjectGalleryPage() {
                         
                         return (
                           <>
-                            <img
+                            <LazyImage
                               src={imageUrl}
                               alt={image.originalName}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const imgElement = e.currentTarget;
-                                imgElement.style.display = 'none';
-                              }}
+                              className="absolute inset-0 w-full h-full"
+                              fill
+                              objectFit="cover"
                             />
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                               <span className="text-white text-sm font-medium">Pasif</span>

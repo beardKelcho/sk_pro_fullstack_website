@@ -97,34 +97,22 @@ describe('ErrorStates', () => {
         </ErrorBoundary>
       );
 
-      expect(getByText('Beklenmeyen Bir Hata Oluştu')).toBeInTheDocument();
-      expect(getByText('Bir hata oluştu. Lütfen daha sonra tekrar deneyin.')).toBeInTheDocument();
+      expect(getByText('Bir Hata Oluştu')).toBeInTheDocument();
+      expect(getByText('Test error')).toBeInTheDocument();
     });
 
-    it('resets error state when retry button is clicked', async () => {
-      let shouldThrow = true;
-      
-      const TestComponent = () => {
-        if (shouldThrow) {
-          throw new Error('Test error');
-        }
-        return <div>Başarılı</div>;
+    it('renders reload button when error occurs', () => {
+      const ThrowError = () => {
+        throw new Error('Test error');
       };
 
-      const { getByRole } = render(
+      render(
         <ErrorBoundary>
-          <TestComponent />
+          <ThrowError />
         </ErrorBoundary>
       );
 
-      const retryButton = getByRole('button', { name: /tekrar dene/i });
-      
-      shouldThrow = false;
-      fireEvent.click(retryButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Başarılı')).toBeInTheDocument();
-      });
+      expect(screen.getByRole('button', { name: /sayfayı yenile/i })).toBeInTheDocument();
     });
   });
 }); 

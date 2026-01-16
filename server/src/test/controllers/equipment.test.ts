@@ -1,13 +1,40 @@
 import { Request, Response } from 'express';
 import * as equipmentController from '../../controllers/equipment.controller';
-import { Equipment } from '../../models';
+import { Equipment, QRCode, Project } from '../../models';
+import { invalidateEquipmentCache } from '../../middleware/cache.middleware';
+
+// uuid ESM parse hatasını engelle (qrGenerator import zinciri)
+jest.mock('uuid', () => ({
+  v4: () => 'test-uuid',
+}));
+
+jest.mock('../../utils/qrGenerator', () => ({
+  generateQRCodeContent: () => 'SKPRO-EQU-TESTCODE',
+  generateQRCodeImage: async () => 'data:image/png;base64,TEST',
+}));
+
+jest.mock('../../middleware/cache.middleware', () => ({
+  invalidateEquipmentCache: jest.fn().mockResolvedValue(undefined),
+}));
 
 // Mock mongoose
 jest.mock('../../models', () => ({
   Equipment: {
     find: jest.fn(),
-    countDocuments: jest.fn(),
     create: jest.fn(),
+    findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    findByIdAndDelete: jest.fn(),
+    updateMany: jest.fn(),
+    updateOne: jest.fn(),
+    countDocuments: jest.fn(),
+  },
+  QRCode: {
+    create: jest.fn(),
+  },
+  Project: {
+    find: jest.fn(),
+    countDocuments: jest.fn(),
   },
 }));
 
@@ -47,7 +74,11 @@ describe('Equipment Controller', () => {
         sort: jest.fn().mockReturnValue({
           skip: jest.fn().mockReturnValue({
             limit: jest.fn().mockReturnValue({
-              populate: jest.fn().mockResolvedValue(mockEquipment),
+              populate: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnValue({
+                  lean: jest.fn().mockResolvedValue(mockEquipment),
+                }),
+              }),
             }),
           }),
         }),
@@ -86,8 +117,15 @@ describe('Equipment Controller', () => {
         type: 'VideoSwitcher',
         status: 'AVAILABLE',
       };
+      (mockRequest as any).user = { _id: 'u1' };
 
       (Equipment.create as jest.Mock).mockResolvedValue(mockEquipment);
+      (QRCode.create as jest.Mock).mockResolvedValue({ _id: 'q1', code: 'SKPRO-EQU-TESTCODE' });
+      (Equipment.findByIdAndUpdate as jest.Mock).mockResolvedValue(null);
+      (Equipment.findById as jest.Mock).mockReturnValue({
+        populate: jest.fn().mockResolvedValue(mockEquipment),
+      });
+      (invalidateEquipmentCache as jest.Mock).mockResolvedValue(undefined);
 
       await equipmentController.createEquipment(
         mockRequest as Request,
@@ -95,10 +133,14 @@ describe('Equipment Controller', () => {
       );
 
       expect(mockStatus).toHaveBeenCalledWith(201);
-      expect(mockJson).toHaveBeenCalledWith({
-        success: true,
-        equipment: mockEquipment,
-      });
+      expect(mockJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          equipment: expect.anything(),
+          qrCode: expect.anything(),
+          qrImage: expect.anything(),
+        })
+      );
     });
 
     it('should return error if name is missing', async () => {

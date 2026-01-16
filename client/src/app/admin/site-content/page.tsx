@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getAllImages, createImage, deleteImage, SiteImage } from '@/services/siteImageService';
 import { 
   getAllContents, 
@@ -19,6 +19,7 @@ import {
 import { toast } from 'react-toastify';
 import { getImageUrl } from '@/utils/imageUrl';
 import LazyImage from '@/components/common/LazyImage';
+import Image from 'next/image';
 import logger from '@/utils/logger';
 
 export default function SiteContentPage() {
@@ -1207,10 +1208,12 @@ const VideoThumbnail = ({
             </div>
           </div>
         ) : thumbnail ? (
-          <img 
-            src={thumbnail} 
+          <Image
+            src={thumbnail}
             alt={video.originalName || video.filename}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 33vw"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
@@ -1306,12 +1309,7 @@ function VideoSelector({
     baseUrl = API_URL.startsWith('localhost') ? `http://${API_URL.replace(/\/api\/?$/, '')}` : API_URL.replace(/\/api\/?$/, '');
   }
 
-  // Sayfa yüklendiğinde videoları çek
-  useEffect(() => {
-    fetchVideos();
-  }, []);
-
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async () => {
     try {
       setLoading(true);
       // Veritabanından video kategorisindeki tüm aktif videoları çek
@@ -1345,7 +1343,12 @@ function VideoSelector({
     } finally {
       setLoading(false);
     }
-  };
+  }, [baseUrl, onVideoSelect, selectedVideo]);
+
+  // Sayfa yüklendiğinde videoları çek
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1516,11 +1519,6 @@ function VideoSelector({
       toast.error(error.message || 'Video silinirken bir hata oluştu');
     }
   };
-
-  // Sayfa yüklendiğinde videoları çek
-  useEffect(() => {
-    fetchVideos();
-  }, []);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">

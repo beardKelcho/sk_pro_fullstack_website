@@ -299,6 +299,7 @@ export default function EquipmentList() {
           serialNumber: item.serialNumber || '',
           category: item.type || item.category,
           status: normalizeStatus(item.status),
+          currentProject: item.currentProject?.name || item.currentProject || '',
           purchaseDate: item.purchaseDate,
           lastMaintenanceDate: item.lastMaintenanceDate,
           nextMaintenanceDate: item.nextMaintenanceDate,
@@ -460,6 +461,7 @@ export default function EquipmentList() {
         serialNumber: item.serialNumber || '',
         category: item.type || item.category,
         status: normalizeStatus(item.status),
+        currentProject: item.currentProject?.name || item.currentProject || '',
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
         nextMaintenanceDate: item.nextMaintenanceDate,
@@ -496,6 +498,7 @@ export default function EquipmentList() {
         serialNumber: item.serialNumber || '',
         category: item.type || item.category,
         status: normalizeStatus(item.status),
+        currentProject: item.currentProject?.name || item.currentProject || '',
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
         nextMaintenanceDate: item.nextMaintenanceDate,
@@ -729,9 +732,16 @@ export default function EquipmentList() {
                       {getCategoryLabel(item.category)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full ${statusColors[item.status]}`}>
-                        {statusLabels[item.status]}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full ${statusColors[item.status]}`}>
+                          {statusLabels[item.status]}
+                        </span>
+                        {item.status === 'InUse' && item.currentProject && (
+                          <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[220px]">
+                            Proje: {item.currentProject}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 dark:text-white">

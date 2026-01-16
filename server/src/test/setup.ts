@@ -9,12 +9,15 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 
 let mongoServer: MongoMemoryServer;
 
+// MongoMemoryServer ilk çalıştırmada binary indirdiği için hook timeout'larını yükselt
+jest.setTimeout(60000);
+
 // Test veritabanı bağlantısı
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
   await mongoose.connect(mongoUri);
-});
+}, 60000);
 
 // Her test sonrası veritabanını temizle
 afterEach(async () => {
@@ -29,7 +32,7 @@ afterAll(async () => {
   await mongoose.connection.dropDatabase();
   await mongoose.connection.close();
   await mongoServer.stop();
-});
+}, 60000);
 
 // Console log'ları test sırasında gizle
 global.console = {

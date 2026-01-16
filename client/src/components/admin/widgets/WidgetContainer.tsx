@@ -74,7 +74,7 @@ export default function WidgetContainer({
         maxH: 12,
         static: !isEditable, // Normal modda statik (sürüklenemez)
       }));
-  }, [widgetsKey, isEditable]);
+  }, [widgets, isEditable]);
 
   // Layout'u sadece gerçekten değiştiğinde güncelle - useRef ile önceki değeri takip et
   const prevLayoutKeyRef = useRef<string>('');
@@ -211,7 +211,7 @@ export default function WidgetContainer({
         }
         return (a.position?.x ?? 0) - (b.position?.x ?? 0);
       });
-  }, [widgetsKey]);
+  }, [widgets]);
 
   return (
     <div className="widget-container" style={{ position: 'relative', width: '100%' }}>

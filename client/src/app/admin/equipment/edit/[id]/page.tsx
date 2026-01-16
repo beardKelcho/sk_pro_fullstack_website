@@ -7,6 +7,24 @@ import { updateEquipment, getEquipmentById } from '@/services/equipmentService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 
+// Type'dan category'ye mapping - Backend enum değerlerini frontend category'ye çevir (stable)
+const TYPE_TO_CATEGORY_MAP: Record<string, string> = {
+  VIDEO_SWITCHER: 'VideoSwitcher',
+  MEDIA_SERVER: 'MediaServer',
+  MONITOR: 'Display',
+  CABLE: 'Cable',
+  AUDIO_EQUIPMENT: 'Audio',
+  OTHER: 'Accessory',
+};
+
+// Status mapping - Backend'den frontend'e (stable)
+const STATUS_MAP: Record<string, string> = {
+  AVAILABLE: 'Available',
+  IN_USE: 'InUse',
+  MAINTENANCE: 'Maintenance',
+  DAMAGED: 'Broken',
+};
+
 // Ekipman türü tanımlama
 interface Equipment {
   id: string;
@@ -169,23 +187,7 @@ export default function EditEquipment() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Type'dan category'ye mapping - Backend enum değerlerini frontend category'ye çevir
-  const typeToCategoryMap: Record<string, string> = {
-    'VIDEO_SWITCHER': 'VideoSwitcher',
-    'MEDIA_SERVER': 'MediaServer',
-    'MONITOR': 'Display',
-    'CABLE': 'Cable',
-    'AUDIO_EQUIPMENT': 'Audio',
-    'OTHER': 'Accessory'
-  };
-  
-  // Status mapping - Backend'den frontend'e
-  const statusMap: Record<string, string> = {
-    'AVAILABLE': 'Available',
-    'IN_USE': 'InUse',
-    'MAINTENANCE': 'Maintenance',
-    'DAMAGED': 'Broken'
-  };
+  // Type/status mapping'ler module scope'ta (lint: stable deps)
   
   // Ekipman verisini yükle
   useEffect(() => {
@@ -196,8 +198,8 @@ export default function EditEquipment() {
         const equipment = await getEquipmentById(equipmentId);
         
         // Backend'den gelen type'ı category'ye çevir
-        const category = equipment.type ? (typeToCategoryMap[equipment.type] || 'Accessory') : '';
-        const status = equipment.status ? (statusMap[equipment.status] || 'Available') : 'Available';
+        const category = equipment.type ? (TYPE_TO_CATEGORY_MAP[equipment.type] || 'Accessory') : '';
+        const status = equipment.status ? (STATUS_MAP[equipment.status] || 'Available') : 'Available';
         
         // Specs varsa object'ten array'e çevir, yoksa boş array
         const specsArray = equipment.specs && typeof equipment.specs === 'object' 

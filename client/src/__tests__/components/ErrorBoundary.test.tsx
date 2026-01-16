@@ -71,22 +71,14 @@ describe('ErrorBoundary Component Testleri', () => {
     expect(screen.getByText('Custom fallback')).toBeInTheDocument();
   });
 
-  it('Sayfayı Yenile butonu çalışmalı', () => {
-    const reloadSpy = jest.spyOn(window.location, 'reload').mockImplementation(() => {});
-
+  it('Sayfayı Yenile butonu render edilmeli', () => {
     render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>
     );
 
-    const reloadButton = screen.getByText('Sayfayı Yenile');
-    reloadButton.click();
-
-    // Not: window.location.reload mock'lanamaz, bu yüzden sadece butonun render edildiğini kontrol ediyoruz
-    expect(reloadButton).toBeInTheDocument();
-
-    reloadSpy.mockRestore();
+    expect(screen.getByText('Sayfayı Yenile')).toBeInTheDocument();
   });
 });
 

@@ -127,18 +127,21 @@ export default function Home() {
   const topCarouselRef = useRef<CarouselRef | null>(null);
   const bottomCarouselRef = useRef<CarouselRef | null>(null);
   
-  // Konum bilgileri (fallback)
-  const defaultLocation = {
-    address: "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
+  // Konum bilgileri (fallback) - stable deps
+  const defaultLocation = useMemo(() => ({
+    address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
     lat: 41.057984,
-    lng: 28.987117
-  };
+    lng: 28.987117,
+  }), []);
   
-  const location = contactInfo ? {
-    address: contactInfo.address,
-    lat: contactInfo.latitude || defaultLocation.lat,
-    lng: contactInfo.longitude || defaultLocation.lng
-  } : defaultLocation;
+  const location = useMemo(() => {
+    if (!contactInfo) return defaultLocation;
+    return {
+      address: contactInfo.address,
+      lat: contactInfo.latitude || defaultLocation.lat,
+      lng: contactInfo.longitude || defaultLocation.lng
+    };
+  }, [contactInfo, defaultLocation]);
 
   // Navigasyon fonksiyonu
   const openMobileNavigation = () => {
@@ -327,7 +330,7 @@ export default function Home() {
   };
   
   // Modal kapatma işleyicisi
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedImage(null);
     
@@ -339,7 +342,7 @@ export default function Home() {
         bottomCarouselRef.current.restoreScrollPosition();
       }
     }, 100); // Kısa bir gecikme - modal animasyonu tamamlansın
-  };
+  }, [isTopCarousel]);
   
   // Carousel'leri durdur/devam ettir (modal açıkken durdur)
   const isCarouselPaused = isModalOpen;

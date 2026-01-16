@@ -174,7 +174,9 @@ describe('Validation Utility', () => {
       const result = validateFile(file, { maxSize: 2 });
 
       expect(result.success).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('boyutu'));
+      expect(result.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining('boyutu')])
+      );
     });
 
     it('should validate file type', () => {
@@ -191,7 +193,9 @@ describe('Validation Utility', () => {
       const result = validateFile(file, { allowedTypes: ['image/jpeg', 'image/png'] });
 
       expect(result.success).toBe(false);
-      expect(result.errors).toContain(expect.stringContaining('tipi'));
+      expect(result.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining('tipi')])
+      );
     });
   });
 

@@ -1,6 +1,6 @@
 # 🚀 SK Production - Yapılabilecekler ve İyileştirmeler
 
-> **Tarih**: 2026-01-08  
+> **Tarih**: 2026-01-16  
 > **Versiyon**: 2.0.0  
 > **Durum**: Production Ready ✅
 
@@ -34,20 +34,20 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 ---
 
 ### 2. Calendar Sayfası API Entegrasyonu
-**Durum**: TODO yorumu var, API entegrasyonu eksik  
+**Durum**: Tamamlandı ✅ (Hafta/Gün görünümü + Drag&Drop tarih güncelleme + Calendar endpoint)  
 **Süre**: 3-4 saat  
 **Fayda**: Takvim sayfasının tam çalışması
 
 **Yapılacaklar:**
-- [ ] Calendar API endpoint'leri oluştur
-- [ ] Proje ve bakım verilerini API'den çek
-- [ ] Event oluşturma/düzenleme/silme
-- [ ] Drag & drop ile tarih değiştirme
+- [x] Calendar API endpoint'leri oluştur ✅ (`GET /api/calendar/events`)
+- [x] Proje ve bakım verilerini API'den çek ✅
+- [x] Event düzenleme/silme (mevcut proje/bakım ekranları üzerinden) ✅
+- [x] Drag & drop ile tarih değiştirme ✅ (Proje: start/end, Bakım: scheduledDate)
 
 **Dosyalar:**
-- `client/src/app/admin/calendar/page.tsx` (güncellenecek)
-- `server/src/controllers/calendar.controller.ts` (oluşturulacak)
-- `server/src/routes/calendar.routes.ts` (oluşturulacak)
+- `client/src/app/admin/calendar/page.tsx` (güncellendi ✅)
+- `server/src/controllers/calendar.controller.ts` (oluşturuldu ✅)
+- `server/src/routes/calendar.routes.ts` (oluşturuldu ✅)
 
 ---
 
@@ -123,14 +123,17 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 - [x] Performance monitoring dashboard ✅
 - [x] API response time tracking ✅
 - [x] User activity tracking ✅
-- [ ] Database query performance tracking (backend'de yapılacak)
+- [x] Database query performance tracking ✅ (mongoose query süreleri + dashboard)
 - [x] Real-time metrics görüntüleme ✅
 
 **Dosyalar:**
 - `client/src/app/admin/monitoring/page.tsx` (oluşturuldu ✅)
 - `client/src/services/monitoringService.ts` (oluşturuldu ✅)
 - `client/src/components/admin/AdminSidebar.tsx` (güncellendi ✅)
-- `server/src/controllers/monitoring.controller.ts` (backend'de oluşturulacak - opsiyonel)
+- `server/src/controllers/monitoring.controller.ts` (oluşturuldu ✅)
+- `server/src/routes/monitoring.routes.ts` (oluşturuldu ✅)
+- `server/src/middleware/metrics.middleware.ts` (oluşturuldu ✅)
+- `server/src/utils/monitoring/*` (oluşturuldu ✅)
 
 ---
 

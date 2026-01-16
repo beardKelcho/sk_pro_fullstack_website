@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as equipmentController from '../../controllers/equipment.controller';
-import { Equipment, QRCode, Project } from '../../models';
+import { Equipment, QRCode } from '../../models';
 import { invalidateEquipmentCache } from '../../middleware/cache.middleware';
 
 // uuid ESM parse hatasını engelle (qrGenerator import zinciri)

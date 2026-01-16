@@ -210,6 +210,45 @@ export default function MonitoringPage() {
         </div>
       </div>
 
+      {/* DB Query Performance */}
+      {data.database?.slowestQueries && data.database.slowestQueries.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">DB En Yavaş Sorgular</h3>
+            <span
+              className={`text-xs px-2 py-1 rounded-full ${
+                data.database.status === 'connected' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+              }`}
+            >
+              DB: {data.database.status}
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500 border-b">
+                  <th className="py-2 pr-4">Sorgu</th>
+                  <th className="py-2 pr-4">Ortalama (ms)</th>
+                  <th className="py-2 pr-4">Maks (ms)</th>
+                  <th className="py-2">Adet</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.database.slowestQueries.slice(0, 8).map((q) => (
+                  <tr key={q.query} className="border-b last:border-b-0">
+                    <td className="py-2 pr-4 font-mono text-xs text-gray-700">{q.query}</td>
+                    <td className="py-2 pr-4">{q.averageTime.toFixed(1)}</td>
+                    <td className="py-2 pr-4">{q.maxTime.toFixed(1)}</td>
+                    <td className="py-2">{q.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* User Activity Details */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Kullanıcı Aktivitesi</h3>

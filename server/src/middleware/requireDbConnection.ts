@@ -10,10 +10,11 @@ const isDbConnected = () => mongoose.connection.readyState === 1;
  * Allowlist:
  * - /api (root)
  * - /api/health
+ * - /api/monitoring (monitoring dashboard DB olmadan da kısmen çalışabilsin)
  */
 export const requireDbConnection = (req: Request, res: Response, next: NextFunction) => {
   const path = req.path || '';
-  if (path === '/' || path === '/health') return next();
+  if (path === '/' || path === '/health' || path.startsWith('/monitoring')) return next();
 
   if (!isDbConnected()) {
     return res.status(503).json({

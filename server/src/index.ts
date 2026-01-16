@@ -12,8 +12,10 @@ import { startScheduledTasks } from './utils/scheduledTasks';
 import connectDB from './config/database';
 import { connectRedis } from './config/redis';
 import { requireDbConnection } from './middleware/requireDbConnection';
+import { metricsMiddleware } from './middleware/metrics.middleware';
 import fs from 'fs';
 import path from 'path';
+import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
 
 // Environment değişkenlerini yapılandır
 dotenv.config();
@@ -161,7 +163,7 @@ if (fs.existsSync(uploadsDir)) {
 setupSwagger(app);
 
 // API Routeları (rate limiter burada uygulanır)
-app.use('/api', requireDbConnection, limiter, routes);
+app.use('/api', metricsMiddleware, requireDbConnection, limiter, routes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -197,6 +199,8 @@ const startServer = async () => {
     // MongoDB bağlantısını arka planda dene (non-blocking)
     connectDB().then(() => {
       logger.info('MongoDB veritabanına bağlandı');
+      // DB query metriklerini topla
+      initMongooseQueryMonitor();
       // MongoDB bağlandıktan sonra zamanlanmış görevleri başlat
       startScheduledTasks();
     }).catch((dbError) => {

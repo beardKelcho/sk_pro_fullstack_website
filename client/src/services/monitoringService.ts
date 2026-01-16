@@ -88,6 +88,15 @@ export interface MonitoringDashboardData {
       lastOccurred: string;
     }>;
   };
+  database?: {
+    status: 'connected' | 'disconnected' | string;
+    slowestQueries?: Array<{
+      query: string;
+      averageTime: number;
+      maxTime: number;
+      count: number;
+    }>;
+  };
 }
 
 /**

@@ -25,6 +25,8 @@ import versionHistoryRoutes from './versionHistory.routes';
 import sessionRoutes from './session.routes';
 import twoFactorRoutes from './twoFactor.routes';
 import fileCleanupRoutes from './fileCleanup.routes';
+import monitoringRoutes from './monitoring.routes';
+import calendarRoutes from './calendar.routes';
 import mongoose from 'mongoose';
 
 const router = express.Router();
@@ -78,5 +80,7 @@ router.use('/version-history', versionHistoryRoutes);
 router.use('/sessions', sessionRoutes);
 router.use('/file-cleanup', fileCleanupRoutes);
 router.use('/two-factor', twoFactorRoutes);
+router.use('/monitoring', monitoringRoutes);
+router.use('/calendar', calendarRoutes);
 
 export default router; 

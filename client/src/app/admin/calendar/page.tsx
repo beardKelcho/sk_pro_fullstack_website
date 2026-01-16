@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
 import { ProjectStatus } from '@/types/project';
 import logger from '@/utils/logger';
+import { updateProject } from '@/services/projectService';
+import { updateMaintenance } from '@/services/maintenanceService';
 
 // Proje arayüzü
 interface Project {
@@ -22,6 +25,7 @@ interface Project {
 // Takvim hücresi tipi
 type CalendarCell = {
   day: number;
+  date: Date;
   isCurrentMonth: boolean;
   hasEvent: boolean;
   events: Event[];
@@ -60,6 +64,13 @@ interface Event {
   endDate: string;
   type?: 'project' | 'maintenance';
 }
+
+type DragPayload = {
+  id: string;
+  type: 'project' | 'maintenance';
+  startDate: string;
+  endDate: string;
+};
 
 export default function Calendar() {
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
@@ -219,6 +230,21 @@ export default function Calendar() {
     
     return { firstDayOfWeek, daysInMonth, year, month };
   };
+
+  const getStartOfWeek = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay(); // 0 Pazar
+    const diffToMonday = day === 0 ? -6 : 1 - day; // Pazartesi başlangıç
+    d.setDate(d.getDate() + diffToMonday);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const toISODateOnly = (d: Date) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x.toISOString();
+  };
   
   // Ay ismini al
   const getMonthName = (date: Date) => {
@@ -264,7 +290,7 @@ export default function Calendar() {
           events.push({
             id: maintenance.id,
             name: maintenance.name || 'Bakım',
-            status: 'PLANNING' as ProjectStatus, // Bakımlar için varsayılan durum
+            status: 'PENDING_APPROVAL' as ProjectStatus, // Bakımlar için varsayılan durum (renk için)
             startDate: maintenance.scheduledDate,
             endDate: maintenance.scheduledDate,
             type: 'maintenance'
@@ -274,6 +300,86 @@ export default function Calendar() {
     
     return events;
   }
+
+  const handleDragStart = useCallback((e: React.DragEvent, payload: DragPayload) => {
+    try {
+      e.dataTransfer.setData('application/json', JSON.stringify(payload));
+      e.dataTransfer.effectAllowed = 'move';
+    } catch (err) {
+      logger.error('DragStart payload set error:', err);
+    }
+  }, []);
+
+  const handleDropOnDate = useCallback(
+    async (e: React.DragEvent, targetDate: Date) => {
+      e.preventDefault();
+      const raw = e.dataTransfer.getData('application/json');
+      if (!raw) return;
+
+      let payload: DragPayload | null = null;
+      try {
+        payload = JSON.parse(raw) as DragPayload;
+      } catch {
+        payload = null;
+      }
+      if (!payload?.id || !payload?.type) return;
+
+      const newStart = new Date(targetDate);
+      newStart.setHours(0, 0, 0, 0);
+
+      if (payload.type === 'project') {
+        const oldStart = new Date(payload.startDate);
+        const oldEnd = new Date(payload.endDate || payload.startDate);
+        const durationMs = oldEnd.getTime() - oldStart.getTime();
+        const newEnd = new Date(newStart.getTime() + Math.max(0, durationMs));
+
+        // Optimistic update
+        const prev = projects;
+        setProjects((curr) =>
+          curr.map((p) =>
+            p.id === payload!.id
+              ? { ...p, startDate: toISODateOnly(newStart), endDate: toISODateOnly(newEnd) }
+              : p
+          )
+        );
+
+        toast.info('Proje tarihi güncelleniyor...');
+        try {
+          await updateProject(payload.id, {
+            startDate: toISODateOnly(newStart),
+            endDate: toISODateOnly(newEnd),
+          } as any);
+          toast.success('Proje tarihi güncellendi');
+        } catch (err: any) {
+          logger.error('Project date update error:', err);
+          setProjects(prev);
+          toast.error(err?.message || 'Proje tarihi güncellenemedi');
+        }
+      } else {
+        // maintenance
+        const prev = maintenances;
+        setMaintenances((curr) =>
+          curr.map((m) => (m.id === payload!.id ? { ...m, scheduledDate: toISODateOnly(newStart) } : m))
+        );
+
+        toast.info('Bakım tarihi güncelleniyor...');
+        try {
+          await updateMaintenance(payload.id, { scheduledDate: toISODateOnly(newStart) } as any);
+          toast.success('Bakım tarihi güncellendi');
+        } catch (err: any) {
+          logger.error('Maintenance date update error:', err);
+          setMaintenances(prev);
+          toast.error(err?.message || 'Bakım tarihi güncellenemedi');
+        }
+      }
+    },
+    [maintenances, projects]
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
   
   // Ay görünümü oluştur
   const renderMonth = () => {
@@ -282,10 +388,13 @@ export default function Calendar() {
     // Takvim hücreleri oluştur
     const days = Array.from({ length: daysInMonth }, (_, i) => {
       const day = i + 1;
+      const date = new Date(year, month, day);
+      date.setHours(0, 0, 0, 0);
       const events = getEventsForDay(day, year, month);
       
       return {
         day,
+        date,
         isCurrentMonth: true,
         hasEvent: events.length > 0,
         events
@@ -295,10 +404,13 @@ export default function Calendar() {
     // Önceki ayın günlerini ekle
     const prevMonthDays = Array.from({ length: firstDayOfWeek - 1 }, (_, i) => {
       const day = new Date(year, month, 0).getDate() - (firstDayOfWeek - 2) + i;
+      const date = new Date(year, month - 1, day);
+      date.setHours(0, 0, 0, 0);
       const events = getEventsForDay(day, year, month - 1);
       
       return {
         day,
+        date,
         isCurrentMonth: false,
         hasEvent: events.length > 0,
         events
@@ -306,13 +418,17 @@ export default function Calendar() {
     });
 
     // Sonraki ayın günlerini ekle
-    const remainingDays = 7 - ((days.length + prevMonthDays.length) % 7);
+    const remainder = (days.length + prevMonthDays.length) % 7;
+    const remainingDays = remainder === 0 ? 0 : 7 - remainder;
     const nextMonthDays = Array.from({ length: remainingDays }, (_, i) => {
       const day = i + 1;
+      const date = new Date(year, month + 1, day);
+      date.setHours(0, 0, 0, 0);
       const events = getEventsForDay(day, year, month + 1);
       
       return {
         day,
+        date,
         isCurrentMonth: false,
         hasEvent: events.length > 0,
         events
@@ -377,6 +493,8 @@ export default function Calendar() {
                       className={`border dark:border-gray-700 p-1 h-32 w-32 align-top ${
                         !cell.isCurrentMonth ? 'bg-gray-100 dark:bg-gray-800/30' : ''
                       }`}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDropOnDate(e, cell.date)}
                     >
                       <div className="flex flex-col h-full">
                         <div className="flex justify-between">
@@ -392,7 +510,17 @@ export default function Calendar() {
                               : `/admin/projects/view/${event.id}`;
                             return (
                               <Link href={href} key={eventIndex}>
-                                <div className={`p-1 mb-1 text-xs rounded truncate ${
+                                <div
+                                  draggable
+                                  onDragStart={(e) =>
+                                    handleDragStart(e, {
+                                      id: event.id,
+                                      type: event.type || 'project',
+                                      startDate: event.startDate,
+                                      endDate: event.endDate,
+                                    })
+                                  }
+                                  className={`p-1 mb-1 text-xs rounded truncate cursor-move ${
                                   event.type === 'maintenance' 
                                     ? 'bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200'
                                     : statusColors[event.status]
@@ -411,6 +539,196 @@ export default function Calendar() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    );
+  };
+
+  const weekDays = useMemo(() => {
+    const start = getStartOfWeek(currentDate);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    });
+  }, [currentDate]);
+
+  const renderWeek = () => {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+            {weekDays[0].toLocaleDateString('tr-TR')} - {weekDays[6].toLocaleDateString('tr-TR')}
+          </h2>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() - 7))}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={goToToday}
+              className="px-3 py-1 text-sm bg-[#0066CC] dark:bg-primary-light text-white rounded-md hover:bg-[#0055AA] dark:hover:bg-primary"
+            >
+              Bugün
+            </button>
+            <button
+              onClick={() => setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() + 7))}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-px bg-gray-200 dark:bg-gray-700">
+          {weekDays.map((d) => {
+            const y = d.getFullYear();
+            const m = d.getMonth();
+            const day = d.getDate();
+            const events = getEventsForDay(day, y, m);
+            const isToday = new Date().toDateString() === d.toDateString();
+
+            return (
+              <div
+                key={d.toISOString()}
+                className="bg-white dark:bg-gray-800 min-h-[180px] p-3"
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDropOnDate(e, d)}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-gray-800 dark:text-white">
+                    {d.toLocaleDateString('tr-TR', { weekday: 'short' })}
+                  </div>
+                  <div
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      isToday ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+                    }`}
+                  >
+                    {day}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {events.length === 0 ? (
+                    <div className="text-xs text-gray-400 dark:text-gray-500">Etkinlik yok</div>
+                  ) : (
+                    events.map((event, idx) => {
+                      const href =
+                        event.type === 'maintenance' ? `/admin/maintenance/edit/${event.id}` : `/admin/projects/view/${event.id}`;
+                      return (
+                        <Link href={href} key={`${event.id}-${idx}`}>
+                          <div
+                            draggable
+                            onDragStart={(e) =>
+                              handleDragStart(e, {
+                                id: event.id,
+                                type: event.type || 'project',
+                                startDate: event.startDate,
+                                endDate: event.endDate,
+                              })
+                            }
+                            className={`p-2 text-xs rounded cursor-move ${
+                              event.type === 'maintenance'
+                                ? 'bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200'
+                                : statusColors[event.status]
+                            }`}
+                          >
+                            {event.type === 'maintenance' && '🔧 '}
+                            {event.name}
+                          </div>
+                        </Link>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDay = () => {
+    const d = new Date(currentDate);
+    d.setHours(0, 0, 0, 0);
+    const events = getEventsForDay(d.getDate(), d.getFullYear(), d.getMonth());
+
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">{d.toLocaleDateString('tr-TR')}</h2>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() - 1))}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={goToToday}
+              className="px-3 py-1 text-sm bg-[#0066CC] dark:bg-primary-light text-white rounded-md hover:bg-[#0055AA] dark:hover:bg-primary"
+            >
+              Bugün
+            </button>
+            <button
+              onClick={() => setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() + 1))}
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4" onDragOver={handleDragOver} onDrop={(e) => handleDropOnDate(e, d)}>
+          {events.length === 0 ? (
+            <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-10">Bu gün için etkinlik yok</div>
+          ) : (
+            <div className="space-y-2">
+              {events.map((event, idx) => {
+                const href =
+                  event.type === 'maintenance' ? `/admin/maintenance/edit/${event.id}` : `/admin/projects/view/${event.id}`;
+                return (
+                  <Link href={href} key={`${event.id}-${idx}`}>
+                    <div
+                      draggable
+                      onDragStart={(e) =>
+                        handleDragStart(e, {
+                          id: event.id,
+                          type: event.type || 'project',
+                          startDate: event.startDate,
+                          endDate: event.endDate,
+                        })
+                      }
+                      className={`p-3 rounded cursor-move ${
+                        event.type === 'maintenance'
+                          ? 'bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200'
+                          : statusColors[event.status]
+                      }`}
+                    >
+                      <div className="text-sm font-medium">
+                        {event.type === 'maintenance' && '🔧 '}
+                        {event.name}
+                      </div>
+                      <div className="text-xs opacity-80 mt-1">
+                        {event.type === 'maintenance' ? 'Bakım' : 'Proje'} • {statusNames[event.status] || event.status}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -533,16 +851,8 @@ export default function Calendar() {
       {/* Takvim Görünümü */}
       <div className="space-y-4">
         {view === 'month' && renderMonth()}
-        {view === 'week' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <p className="text-center text-gray-500 dark:text-gray-400">Haftalık görünüm yakında eklenecek</p>
-          </div>
-        )}
-        {view === 'day' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <p className="text-center text-gray-500 dark:text-gray-400">Günlük görünüm yakında eklenecek</p>
-          </div>
-        )}
+        {view === 'week' && renderWeek()}
+        {view === 'day' && renderDay()}
       </div>
       
       {/* Lejant */}

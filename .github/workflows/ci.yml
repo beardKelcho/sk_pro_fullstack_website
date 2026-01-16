@@ -132,13 +132,16 @@ jobs:
           cd ../server && npm ci
 
       - name: Build client
-        run: |
-          cd client && npm run build
         env:
-          # CI build için placeholder değerler (production'da environment variable'lardan alınacak)
-          # GitHub Actions'da secret yoksa boş string döner, bu yüzden ternary operator kullanıyoruz
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL != '' && secrets.NEXT_PUBLIC_API_URL || 'https://api.skpro.com.tr/api' }}
-          NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL != '' && secrets.NEXT_PUBLIC_BACKEND_URL || 'https://api.skpro.com.tr' }}
+          # Secret tanımlı değilse GitHub Actions boş string döndürebilir.
+          # Bu yüzden fallback'i bash içinde güvenilir şekilde yapıyoruz.
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_BACKEND_URL: ${{ secrets.NEXT_PUBLIC_BACKEND_URL }}
+        run: |
+          cd client
+          export NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://api.skpro.com.tr/api}"
+          export NEXT_PUBLIC_BACKEND_URL="${NEXT_PUBLIC_BACKEND_URL:-https://api.skpro.com.tr}"
+          npm run build
 
       - name: Build server
         run: |

@@ -291,6 +291,17 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
+// Subscription değiştiyse client'a haber ver (re-subscribe flow'u tetiklemesi için)
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage({ type: 'SKPRO_PUSH_SUBSCRIPTION_CHANGED' });
+      });
+    })
+  );
+});
+
 // Background sync olaylarını yönet
 self.addEventListener('sync', (event) => {
   if (event.tag === 'skpro-sync-contact') {

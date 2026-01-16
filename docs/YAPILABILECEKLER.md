@@ -237,7 +237,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 - [x] Service Worker iyileştirmeleri ✅ (cache stratejileri + v2 SW)
 - [x] Offline mode geliştirmeleri ✅ (navigation offline fallback + offline.html düzeltmeleri)
 - [x] Background sync ✅ (same-origin `/api/contact` POST kuyruğu + online flush)
-- [ ] Push notification iyileştirmeleri
+- [x] Push notification iyileştirmeleri ✅ (subscription robustness + sw pushsubscriptionchange)
 - [x] Install prompt optimizasyonu ✅ (PWAInstallPrompt + 24h dismiss)
 
 ---

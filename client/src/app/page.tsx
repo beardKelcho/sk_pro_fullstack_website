@@ -216,9 +216,15 @@ export default function Home() {
     const fetchImages = async () => {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-        const response = await fetch(`${API_URL}/site-images/public?category=project&isActive=true&_t=${Date.now()}`, {
-          cache: 'no-store',
-        });
+        const fetchOptions = {
+          cache: 'no-store' as RequestCache,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        };
+        const response = await fetch(`${API_URL}/site-images/public?category=project&isActive=true&_t=${Date.now()}`, fetchOptions);
         
         if (response.ok) {
           const data = await response.json();
@@ -254,6 +260,7 @@ export default function Home() {
               setTopImages(topImagesArray);
               setBottomImages(bottomImagesArray);
             }
+            
           }
         } else {
           logger.error('Resimler yüklenirken bir hata oluştu. Status:', response.status);
@@ -284,12 +291,22 @@ export default function Home() {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
         const isTr = locale === 'tr';
         
+        // Cache bypass için timestamp ekle ve headers ekle
+        const fetchOptions = {
+          cache: 'no-store' as RequestCache,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        };
+        
         const [heroRes, servicesEquipmentRes, aboutRes, contactRes, socialRes] = await Promise.allSettled([
-          fetch(`${API_URL}/site-content/public/hero?_t=${Date.now()}`, { cache: 'no-store' }),
-          fetch(`${API_URL}/site-content/public/services-equipment?_t=${Date.now()}`, { cache: 'no-store' }),
-          fetch(`${API_URL}/site-content/public/about?_t=${Date.now()}`, { cache: 'no-store' }),
-          fetch(`${API_URL}/site-content/public/contact?_t=${Date.now()}`, { cache: 'no-store' }),
-          fetch(`${API_URL}/site-content/public/social?_t=${Date.now()}`, { cache: 'no-store' }),
+          fetch(`${API_URL}/site-content/public/hero?_t=${Date.now()}`, fetchOptions),
+          fetch(`${API_URL}/site-content/public/services-equipment?_t=${Date.now()}`, fetchOptions),
+          fetch(`${API_URL}/site-content/public/about?_t=${Date.now()}`, fetchOptions),
+          fetch(`${API_URL}/site-content/public/contact?_t=${Date.now()}`, fetchOptions),
+          fetch(`${API_URL}/site-content/public/social?_t=${Date.now()}`, fetchOptions),
         ]);
 
         if (heroRes.status === 'fulfilled' && heroRes.value.ok) {
@@ -393,7 +410,9 @@ export default function Home() {
             logger.error('Site içerik yükleme hatası:', error);
           }
         } finally {
-        setLoading(false);
+          // Loading'i false yap - images ayrı useEffect'te yüklenecek
+          setLoading(false);
+        }
       }
     };
 
@@ -527,7 +546,10 @@ export default function Home() {
   }), [contactInfo, location]);
 
   // Loading durumunda skeleton göster
-  if (loading) {
+  // İlk yüklemede heroContent veya images yoksa da loading göster
+  const isInitialLoad = loading || (!heroContent && topImages.length === 0);
+  
+  if (isInitialLoad) {
     return (
       <MainLayout>
         <PageLoadingSkeleton />
@@ -576,48 +598,51 @@ export default function Home() {
       <StructuredData type="localBusiness" data={localBusinessSchema} />
       
       {/* Video Arkaplan */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
-        {(() => {
-          const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-          let baseUrl = '';
-          if (API_URL.includes('://')) {
-            baseUrl = API_URL.replace(/\/api\/?$/, '');
-          } else {
-            baseUrl = API_URL.startsWith('localhost') ? `http://${API_URL.replace(/\/api\/?$/, '')}` : API_URL.replace(/\/api\/?$/, '');
-          }
-          
-          const videoUrl = heroContent?.selectedVideo || heroContent?.backgroundVideo || '';
-          
-          if (videoUrl) {
-            let fullVideoUrl = videoUrl;
-            
-            if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
-              if (/^[0-9a-fA-F]{24}$/.test(videoUrl)) {
-                fullVideoUrl = `${baseUrl}/api/site-images/public/${videoUrl}/image`;
-              } else if (videoUrl.startsWith('/uploads/')) {
-                fullVideoUrl = `${baseUrl}${videoUrl}`;
-              } else if (videoUrl.startsWith('/')) {
-                fullVideoUrl = `${baseUrl}${videoUrl}`;
-              } else if (videoUrl.includes('/')) {
-                fullVideoUrl = `${baseUrl}/uploads/${videoUrl}`;
-              } else {
-                fullVideoUrl = `${baseUrl}/uploads/general/${videoUrl}`;
-              }
+      {heroContent && (heroContent.selectedVideo || heroContent.backgroundVideo) && (
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
+          {(() => {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+            let baseUrl = '';
+            if (API_URL.includes('://')) {
+              baseUrl = API_URL.replace(/\/api\/?$/, '');
+            } else {
+              baseUrl = API_URL.startsWith('localhost') ? `http://${API_URL.replace(/\/api\/?$/, '')}` : API_URL.replace(/\/api\/?$/, '');
             }
             
-            return (
-              <VideoBackgroundPlayer
-                videoUrl={fullVideoUrl}
-                poster={heroContent?.backgroundImage || undefined}
-                fallbackText={tHome('video.fallbackText')}
-              />
-            );
-          } else {
-            return null;
-          }
-        })()}
-      </div>
+            const videoUrl = heroContent.selectedVideo || heroContent.backgroundVideo || '';
+            
+            if (videoUrl) {
+              let fullVideoUrl = videoUrl;
+              
+              if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+                if (/^[0-9a-fA-F]{24}$/.test(videoUrl)) {
+                  fullVideoUrl = `${baseUrl}/api/site-images/public/${videoUrl}/image`;
+                } else if (videoUrl.startsWith('/uploads/')) {
+                  fullVideoUrl = `${baseUrl}${videoUrl}`;
+                } else if (videoUrl.startsWith('/')) {
+                  fullVideoUrl = `${baseUrl}${videoUrl}`;
+                } else if (videoUrl.includes('/')) {
+                  fullVideoUrl = `${baseUrl}/uploads/${videoUrl}`;
+                } else {
+                  fullVideoUrl = `${baseUrl}/uploads/general/${videoUrl}`;
+                }
+              }
+              
+              return (
+                <VideoBackgroundPlayer
+                  key={`video-${fullVideoUrl}`}
+                  videoUrl={fullVideoUrl}
+                  poster={heroContent.backgroundImage || undefined}
+                  fallbackText={tHome('video.fallbackText')}
+                />
+              );
+            } else {
+              return null;
+            }
+          })()}
+        </div>
+      )}
       
       {/* İmmersive Hero Section */}
       <ImmersiveHero 
@@ -638,7 +663,7 @@ export default function Home() {
             
             {/* Üst Container - Sağdan Sola */}
             {topImages.length > 0 && (
-              <div className="mb-8">
+              <div className="mb-8" key={`top-carousel-${topImages.length}`}>
                 <Carousel
                   images={topImages}
                   direction="right"
@@ -651,7 +676,7 @@ export default function Home() {
 
             {/* Alt Container - Soldan Sağa */}
             {bottomImages.length > 0 && (
-              <div className="mt-8">
+              <div className="mt-8" key={`bottom-carousel-${bottomImages.length}`}>
                   <Carousel
                     ref={bottomCarouselRef}
                     images={bottomImages}

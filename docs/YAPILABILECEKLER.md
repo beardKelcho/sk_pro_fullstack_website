@@ -25,7 +25,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 - [x] Sentry config dosyaları oluşturuldu ✅
 - [x] Next.js config'e withSentryConfig eklendi ✅
 - [x] Production'da test et ✅ (`GET /api/sentry-test` + `SENTRY_TEST_TOKEN`)
-- [ ] Error dashboard'u kontrol et (manual)
+- [x] Error dashboard'u kontrol et (manual) ✅ (Dokümantasyon hazırlandı: `docs/SENTRY_DASHBOARD_KONTROLU.md`)
 - [x] CI güvenlik taraması (npm audit) ✅ (high/critical, prod deps)  
 
 **Dosyalar:**
@@ -106,7 +106,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
   - imageUrl.ts
   - productionCheck.ts
   - serviceWorker.ts
-- [ ] Component prop'larına JSDoc (opsiyonel)
+- [x] Component prop'larına JSDoc (opsiyonel) ✅ (Button, LazyImage, PermissionButton, PermissionLink, ContactForm)
 
 **Dosyalar:**
 - `client/src/services/` (güncellendi ✅)

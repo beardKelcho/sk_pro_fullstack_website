@@ -141,15 +141,31 @@ export default function AdminLogin() {
 
         // Token'ı kaydet - "Beni hatırla" seçiliyse localStorage, değilse sessionStorage kullan
         if (response.data.accessToken) {
+          // Token'ı temizle (boşluk, yeni satır, vs. kaldır)
+          const cleanToken = String(response.data.accessToken).trim();
+          
+          if (!cleanToken || cleanToken.length < 10) {
+            logger.error('Invalid token format received');
+            setLoginError('Giriş başarısız: Geçersiz token formatı');
+            setLoading(false);
+            return;
+          }
+          
           if (formData.rememberMe) {
-            localStorage.setItem('accessToken', response.data.accessToken);
+            localStorage.setItem('accessToken', cleanToken);
             if (process.env.NODE_ENV === 'development') {
-              console.log('Token saved to localStorage:', response.data.accessToken.substring(0, 20) + '...');
+              console.log('Token saved to localStorage');
+              console.log('Token length:', cleanToken.length);
+              console.log('Token (first 30 chars):', cleanToken.substring(0, 30) + '...');
+              console.log('Token (last 10 chars):', '...' + cleanToken.substring(cleanToken.length - 10));
             }
           } else {
-            sessionStorage.setItem('accessToken', response.data.accessToken);
+            sessionStorage.setItem('accessToken', cleanToken);
             if (process.env.NODE_ENV === 'development') {
-              console.log('Token saved to sessionStorage:', response.data.accessToken.substring(0, 20) + '...');
+              console.log('Token saved to sessionStorage');
+              console.log('Token length:', cleanToken.length);
+              console.log('Token (first 30 chars):', cleanToken.substring(0, 30) + '...');
+              console.log('Token (last 10 chars):', '...' + cleanToken.substring(cleanToken.length - 10));
             }
           }
         } else {

@@ -29,15 +29,35 @@ apiClient.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
       // Önce localStorage'dan, yoksa sessionStorage'dan token al
-      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      let token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        // Token'ı temizle (boşluk, yeni satır, vs. kaldır)
+        token = token.trim();
         
-        // Development modunda token'ın header'a eklendiğini doğrula
-        if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
-          console.log('Request interceptor: Token added to header');
-          console.log('Token (first 30 chars):', token.substring(0, 30) + '...');
-          console.log('Authorization header:', config.headers.Authorization?.substring(0, 40) + '...');
+        // Token formatını kontrol et (JWT formatı: 3 bölüm, nokta ile ayrılmış)
+        const tokenParts = token.split('.');
+        if (tokenParts.length !== 3) {
+          console.error('Invalid token format detected:', {
+            parts: tokenParts.length,
+            tokenLength: token.length,
+            firstChars: token.substring(0, 20)
+          });
+          // Geçersiz token'ı temizle
+          localStorage.removeItem('accessToken');
+          sessionStorage.removeItem('accessToken');
+          token = null;
+        } else {
+          config.headers.Authorization = `Bearer ${token}`;
+          
+          // Development modunda token'ın header'a eklendiğini doğrula
+          if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
+            console.log('Request interceptor: Token added to header');
+            console.log('Token parts count:', tokenParts.length);
+            console.log('Token length:', token.length);
+            console.log('Token (first 30 chars):', token.substring(0, 30) + '...');
+            console.log('Authorization header (first 50 chars):', config.headers.Authorization?.substring(0, 50) + '...');
+          }
         }
       } else {
         // Development modunda token yoksa uyar

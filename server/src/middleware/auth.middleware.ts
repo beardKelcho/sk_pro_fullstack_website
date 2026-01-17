@@ -27,6 +27,10 @@ export const authenticate = async (
       req.headers.authorization.startsWith('Bearer')
     ) {
       token = req.headers.authorization.split(' ')[1];
+      // Token'ı temizle (boşluk, yeni satır, vs. kaldır)
+      if (token) {
+        token = token.trim();
+      }
     }
     
     if (!token) {
@@ -36,8 +40,36 @@ export const authenticate = async (
       });
     }
     
+    // Token formatını kontrol et (JWT formatı: 3 bölüm, nokta ile ayrılmış)
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      logger.error('Invalid token format received', {
+        parts: tokenParts.length,
+        tokenLength: token.length,
+        path: req.path,
+        firstChars: token.substring(0, 20)
+      });
+      return res.status(401).json({
+        success: false,
+        message: 'Geçersiz token formatı',
+        name: 'JsonWebTokenError',
+      });
+    }
+    
     // Token doğrulama - JWT_SECRET'ı authTokens'tan al (tutarlılık için)
     const JWT_SECRET = process.env.JWT_SECRET || 'sk-production-secret';
+    
+    // Development modunda token ve secret bilgilerini logla
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('Token verification attempt', {
+        path: req.path,
+        tokenLength: token.length,
+        tokenParts: tokenParts.length,
+        secretLength: JWT_SECRET.length,
+        tokenStart: token.substring(0, 20) + '...'
+      });
+    }
+    
     const decoded = jwt.verify(
       token,
       JWT_SECRET

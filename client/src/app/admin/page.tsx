@@ -401,7 +401,10 @@ export default function AdminLogin() {
         }
         // Header'ı anında güncellemek için custom event dispatch et
         if (response.user) {
-          window.dispatchEvent(new CustomEvent('auth:login'));
+          // Kısa bir delay ile event dispatch et (storage'a yazılmasını garantile)
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('auth:login'));
+          }, 100);
         }
 
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay

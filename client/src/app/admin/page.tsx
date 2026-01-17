@@ -200,6 +200,12 @@ export default function AdminLogin() {
         
         // Kullanıcı bilgilerini kaydet
         // Backend'den gelen user formatı: { id, name, email, role }
+        console.log('🔍 Login Response:', {
+          hasUser: !!response.data.user,
+          user: response.data.user,
+          fullResponse: response.data
+        });
+        
         if (response.data.user) {
           const userData = {
             id: response.data.user.id || response.data.user._id,
@@ -214,17 +220,57 @@ export default function AdminLogin() {
           if (formData.rememberMe) {
             localStorage.setItem('user', JSON.stringify(userData));
             console.log('✅ User saved to localStorage:', userData);
+            console.log('✅ localStorage.getItem("user"):', localStorage.getItem('user'));
           } else {
             sessionStorage.setItem('user', JSON.stringify(userData));
             console.log('✅ User saved to sessionStorage:', userData);
+            console.log('✅ sessionStorage.getItem("user"):', sessionStorage.getItem('user'));
           }
           
           // Header'ı anında güncellemek için custom event dispatch et
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('auth:login'));
+            console.log('✅ auth:login event dispatched');
           }, 100);
         } else {
-          console.warn('⚠️ User data not found in response:', response.data);
+          console.error('❌ User data not found in response!', {
+            responseKeys: Object.keys(response.data || {}),
+            responseData: response.data
+          });
+          
+          // User yoksa, token varsa getProfile ile user bilgisini al
+          if (response.data.accessToken) {
+            console.log('⚠️ User not in response, trying to get profile...');
+            try {
+              const profileResponse = await authApi.getProfile();
+              if (profileResponse.data && profileResponse.data.success && profileResponse.data.user) {
+                const userData = {
+                  id: profileResponse.data.user.id || profileResponse.data.user._id,
+                  _id: profileResponse.data.user.id || profileResponse.data.user._id,
+                  name: profileResponse.data.user.name,
+                  email: profileResponse.data.user.email,
+                  role: profileResponse.data.user.role,
+                  permissions: profileResponse.data.user.permissions || [],
+                  isActive: profileResponse.data.user.isActive !== undefined ? profileResponse.data.user.isActive : true,
+                };
+                
+                if (formData.rememberMe) {
+                  localStorage.setItem('user', JSON.stringify(userData));
+                  console.log('✅ User saved to localStorage (from profile):', userData);
+                } else {
+                  sessionStorage.setItem('user', JSON.stringify(userData));
+                  console.log('✅ User saved to sessionStorage (from profile):', userData);
+                }
+                
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('auth:login'));
+                  console.log('✅ auth:login event dispatched (from profile)');
+                }, 100);
+              }
+            } catch (profileError) {
+              console.error('❌ Failed to get profile:', profileError);
+            }
+          }
         }
         
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay

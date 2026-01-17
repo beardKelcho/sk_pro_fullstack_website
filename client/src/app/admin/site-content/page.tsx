@@ -1476,20 +1476,34 @@ function VideoSelector({
         };
       });
       onVideoSelect(selectedVideo || '', videoList);
+      logger.debug('Video yükleme tamamlandı, videoList:', videoList);
     } catch (error: any) {
-      logger.error('Video yükleme hatası:', error);
+      logger.error('Video yükleme hatası:', {
+        error,
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+      });
       const errorMessage = error?.response?.data?.message || error?.message || 'Videolar yüklenirken bir hata oluştu';
       toast.error(errorMessage);
       setVideos([]);
     } finally {
       setLoading(false);
+      logger.debug('Video yükleme işlemi sonlandı (finally)');
     }
   }, [onVideoSelect, selectedVideo]);
 
   // Sayfa yüklendiğinde videoları çek
   useEffect(() => {
+    logger.debug('VideoSelector: useEffect tetiklendi, fetchVideos çağrılıyor');
     fetchVideos();
   }, [fetchVideos]);
+  
+  // Debug: videos state değişikliğini logla
+  useEffect(() => {
+    logger.debug('VideoSelector: videos state güncellendi', { count: videos.length, videos: videos.map(v => ({ id: v._id || v.id, filename: v.filename })) });
+  }, [videos]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

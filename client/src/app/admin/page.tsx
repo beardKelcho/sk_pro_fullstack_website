@@ -320,6 +320,18 @@ export default function AdminLogin() {
         setLoginError(errorMsg);
       }
     } catch (error: any) {
+      // Detaylı hata loglama
+      if (process.env.NODE_ENV === 'development') {
+        console.error('=== LOGIN ERROR ===');
+        console.error('Error:', error);
+        console.error('Error response:', error.response);
+        console.error('Error response data:', error.response?.data);
+        console.error('Error message:', error.message);
+        console.error('Error status:', error.response?.status);
+        console.error('Error code:', error.code);
+        console.error('==================');
+      }
+      
       logger.error('Giriş hatası:', error);
       logger.error('Error response:', error.response?.data);
       const backend = error.response?.data;

@@ -2,6 +2,7 @@ import express from 'express';
 import { authController } from '../controllers';
 import { authenticate } from '../middleware/auth.middleware';
 import { validateLogin, sanitizeInput } from '../middleware/inputValidation';
+import { loginLimiter } from '../middleware/rateLimiters';
 
 const router = express.Router();
 
@@ -59,7 +60,8 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', sanitizeInput, validateLogin, authController.login);
+// Login endpoint'i için özel rate limiter (daha esnek)
+router.post('/login', loginLimiter, sanitizeInput, validateLogin, authController.login);
 
 /**
  * @swagger

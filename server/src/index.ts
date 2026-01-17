@@ -16,7 +16,7 @@ import { mongoSanitize } from './middleware/mongoSanitize';
 import { csrfOriginCheck } from './middleware/csrfOriginCheck';
 import { requestIdMiddleware } from './middleware/requestId.middleware';
 import { apiVersioning } from './middleware/apiVersioning';
-import { authLimiter, exportLimiter, generalApiLimiter, uploadLimiter } from './middleware/rateLimiters';
+import { authLimiter, exportLimiter, generalApiLimiter, uploadLimiter, loginLimiter } from './middleware/rateLimiters';
 import fs from 'fs';
 import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';

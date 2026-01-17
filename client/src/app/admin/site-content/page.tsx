@@ -1190,14 +1190,12 @@ function EquipmentForm({ content, onSave, saving }: {
 const VideoThumbnail = ({ 
   video, 
   videoUrl, 
-  baseUrl, 
   isSelected, 
   onSelect,
   onDelete
 }: { 
   video: SiteImage; 
-  videoUrl: string; 
-  baseUrl: string; 
+  videoUrl: string; // Relative path olarak gelmeli (Next.js rewrites proxy eder)
   isSelected: boolean; 
   onSelect: () => void;
   onDelete?: () => void;

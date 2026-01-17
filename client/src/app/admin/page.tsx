@@ -169,7 +169,7 @@ export default function AdminLogin() {
         }
         
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 150));
         
         // Token'ın gerçekten kaydedildiğini doğrula
         const savedToken = formData.rememberMe 
@@ -184,14 +184,70 @@ export default function AdminLogin() {
         }
         
         if (process.env.NODE_ENV === 'development') {
-          console.log('Token saved successfully, redirecting to dashboard...');
-          console.log('Token (first 20 chars):', savedToken.substring(0, 20) + '...');
+          console.log('Token saved successfully');
+          console.log('Token (first 30 chars):', savedToken.substring(0, 30) + '...');
+          console.log('Token length:', savedToken.length);
         }
         
-        // Token kaydedildi, direkt dashboard'a yönlendir
-        // ProtectedRoute zaten token'ı kontrol edecek, eğer geçersizse login'e yönlendirecek
-        // Bu sayede timing sorunlarını önlemiş oluyoruz
-        window.location.href = '/admin/dashboard';
+        // Token'ın çalıştığını doğrula - getProfile çağrısı yap
+        // Bu, token'ın doğru kaydedildiğini ve axios interceptor'ın token'ı görebildiğini garantiler
+        try {
+          // Axios interceptor'ın token'ı görmesi için biraz daha bekle
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Verifying token with getProfile...');
+            // Token'ın storage'da olduğunu tekrar kontrol et
+            const checkToken = formData.rememberMe 
+              ? localStorage.getItem('accessToken')
+              : sessionStorage.getItem('accessToken');
+            console.log('Token still in storage:', !!checkToken);
+            console.log('Token matches:', checkToken === savedToken);
+          }
+          
+          const profileResponse = await authApi.getProfile();
+          
+          if (profileResponse.data && profileResponse.data.success && profileResponse.data.user) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Token verified successfully, redirecting to dashboard...');
+            }
+            // Token geçerli, dashboard'a yönlendir - full page reload ile
+            window.location.href = '/admin/dashboard';
+          } else {
+            logger.error('Token verification failed - invalid profile response');
+            // Token geçersiz, temizle
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('user');
+            setLoginError('Giriş doğrulaması başarısız. Lütfen tekrar deneyin.');
+            setLoading(false);
+          }
+        } catch (profileError: any) {
+          logger.error('Token verification failed:', profileError);
+          
+          // Hata detaylarını logla
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Profile error details:', {
+              status: profileError.response?.status,
+              message: profileError.response?.data?.message,
+              name: profileError.response?.data?.name,
+              tokenInStorage: !!(formData.rememberMe 
+                ? localStorage.getItem('accessToken')
+                : sessionStorage.getItem('accessToken'))
+            });
+          }
+          
+          // Token geçersiz, temizle
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('user');
+          
+          const errorMessage = profileError.response?.data?.message || profileError.message || 'Token doğrulanamadı';
+          setLoginError(`Giriş doğrulaması başarısız: ${errorMessage}. Lütfen tekrar deneyin.`);
+          setLoading(false);
+        }
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
         logger.error('Login failed:', errorMsg);

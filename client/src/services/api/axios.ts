@@ -32,6 +32,18 @@ apiClient.interceptors.request.use(
       const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        
+        // Development modunda token'ın header'a eklendiğini doğrula
+        if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
+          console.log('Request interceptor: Token added to header');
+          console.log('Token (first 30 chars):', token.substring(0, 30) + '...');
+          console.log('Authorization header:', config.headers.Authorization?.substring(0, 40) + '...');
+        }
+      } else {
+        // Development modunda token yoksa uyar
+        if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
+          console.warn('Request interceptor: No token found in storage');
+        }
       }
     }
     return config;

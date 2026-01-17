@@ -35,10 +35,20 @@ const allowedOrigins = [
   process.env.NGROK_URL,
 ].filter(Boolean); // undefined/null değerleri filtrele
 
+// Development modunda local network IP'lerine izin ver
+const isLocalNetworkOrigin = (origin: string | undefined): boolean => {
+  if (!origin) return false;
+  // localhost ve local network IP'leri (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+  return /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(origin);
+};
+
 app.use(cors({
   origin: (origin, callback) => {
     // Origin yoksa (same-origin request) veya allowedOrigins içindeyse izin ver
     if (!origin || allowedOrigins.includes(origin) || origin.includes('.ngrok-free.app') || origin.includes('.ngrok.io')) {
+      callback(null, true);
+    } else if (process.env.NODE_ENV !== 'production' && isLocalNetworkOrigin(origin)) {
+      // Development modunda local network IP'lerine izin ver
       callback(null, true);
     } else {
       callback(new Error('CORS policy: Origin not allowed'));

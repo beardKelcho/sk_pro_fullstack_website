@@ -25,39 +25,37 @@ export default function AdminLogin() {
   const [twoFactorBackupCode, setTwoFactorBackupCode] = useState('');
   const verify2FAMutation = useVerify2FALogin();
 
-  // Sayfa yüklendiğinde token'ları temizle ve temiz bir başlangıç yap
+  // Sayfa yüklendiğinde mevcut token'ı kontrol et - geçerliyse dashboard'a yönlendir
   useEffect(() => {
-    // Önce tüm token'ları ve auth ile ilgili tüm verileri temizle
-    const clearAllTokens = () => {
-      // localStorage temizle
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('token');
+    const checkExistingAuth = async () => {
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
       
-      // sessionStorage temizle
-      sessionStorage.removeItem('accessToken');
-      sessionStorage.removeItem('user');
-      sessionStorage.removeItem('refreshToken');
-      sessionStorage.removeItem('token');
-      
-      // Cookie'leri de temizle (mümkünse)
-      if (typeof document !== 'undefined') {
-        document.cookie.split(";").forEach((c) => {
-          document.cookie = c
-            .replace(/^ +/, "")
-            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
+      if (token) {
+        try {
+          // Token geçerli mi kontrol et
+          const response = await authApi.getProfile();
+          if (response.data && response.data.success && response.data.user) {
+            // Token geçerli, dashboard'a yönlendir
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Valid token found, redirecting to dashboard...');
+            }
+            window.location.href = '/admin/dashboard';
+            return;
+          }
+        } catch (error) {
+          // Token geçersiz, temizle
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Invalid token found, clearing...');
+          }
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('user');
+        }
       }
     };
-
-    // Sayfa yüklendiğinde token'ları temizle
-    clearAllTokens();
     
-    // Development modunda log
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Login sayfası: Tüm token\'lar temizlendi');
-    }
+    checkExistingAuth();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

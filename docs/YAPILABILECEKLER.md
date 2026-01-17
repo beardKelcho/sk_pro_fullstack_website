@@ -1,7 +1,7 @@
 # 🚀 SK Production - Yapılabilecekler ve İyileştirmeler
 
-> **Tarih**: 2026-01-16  
-> **Versiyon**: 2.0.0  
+> **Tarih**: 2026-01-17  
+> **Versiyon**: 2.0.1  
 > **Durum**: Production Ready ✅
 
 ---
@@ -26,6 +26,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 - [x] Next.js config'e withSentryConfig eklendi ✅
 - [x] Production'da test et ✅ (`GET /api/sentry-test` + `SENTRY_TEST_TOKEN`)
 - [ ] Error dashboard'u kontrol et (manual)
+- [x] CI güvenlik taraması (npm audit) ✅ (high/critical, prod deps)  
 
 **Dosyalar:**
 - `client/sentry.*.config.ts` (mevcut)
@@ -384,8 +385,9 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 - [x] CSRF protection ✅ (state-changing isteklerde Origin allowlist kontrolü)
 - [x] SQL injection prevention (MongoDB için NoSQL injection) ✅ (request mongo sanitize)
 - [x] XSS protection iyileştirmeleri ✅ (CSP + input sanitize temel koruma)
-- [ ] Security audit
-- [ ] Penetration testing
+- [x] CI security audit ✅ (`npm audit` high/critical, prod deps)
+- [ ] Security audit (manual checklist + threat model)
+- [ ] Penetration testing (dış/bağımsız test)
 
 ---
 
@@ -533,4 +535,4 @@ Bu işler hızlıca yapılabilir ve hemen fayda sağlar:
 
 ---
 
-*Son Güncelleme: 2026-01-08*
+*Son Güncelleme: 2026-01-17*

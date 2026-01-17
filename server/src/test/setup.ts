@@ -19,11 +19,20 @@ jest.setTimeout(60000);
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
+  // Bazı test dosyaları mongoose bağlantısını kapatabilir; güvenli başlatma
+  if (mongoose.connection.readyState !== 0) {
+    try {
+      await mongoose.disconnect();
+    } catch {
+      // ignore
+    }
+  }
   await mongoose.connect(mongoUri);
 }, 60000);
 
 // Her test sonrası veritabanını temizle
 afterEach(async () => {
+  if (mongoose.connection.readyState !== 1) return;
   const collections = mongoose.connection.collections;
   for (const key in collections) {
     await collections[key].deleteMany({});
@@ -32,9 +41,28 @@ afterEach(async () => {
 
 // Tüm testler sonrası bağlantıyı kapat
 afterAll(async () => {
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
-  await mongoServer.stop();
+  // Connection down/closed ise buffering timeout'a düşmemek için guard ekle
+  try {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.dropDatabase();
+    }
+  } catch {
+    // ignore - cleanup best effort
+  }
+
+  try {
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    await mongoServer?.stop();
+  } catch {
+    // ignore
+  }
 }, 60000);
 
 // Console log'ları test sırasında gizle

@@ -1,11 +1,14 @@
 name: Comprehensive Tests
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
   workflow_dispatch:
+  schedule:
+    # Nightly full suite (E2E dahil). Gerekirse cron'u haftalığa çekebiliriz.
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: comprehensive-tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   frontend-tests:
@@ -16,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
           cache: 'npm'
       
       - name: Install Dependencies
@@ -47,7 +50,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
           cache: 'npm'
       
       - name: Install Dependencies
@@ -62,7 +65,7 @@ jobs:
         run: cd server && npm run type-check
       
       - name: Run Unit Tests
-        run: cd server && npm run test:coverage
+        run: cd server && npm run test:coverage:ci
       
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
@@ -79,7 +82,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
           cache: 'npm'
       
       - name: Install Dependencies

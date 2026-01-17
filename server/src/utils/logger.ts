@@ -7,6 +7,17 @@
 import winston from 'winston';
 import path from 'path';
 import { getRequestId } from './requestContext';
+import fs from 'fs';
+
+const isProd = process.env.NODE_ENV === 'production';
+
+const ensureLogsDir = () => {
+  const logsDir = path.join(process.cwd(), 'logs');
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+  return logsDir;
+};
 
 /**
  * Log formatı (JSON formatında structured logging)
@@ -51,6 +62,8 @@ const consoleFormat = winston.format.combine(
  * - Development: Console'a da yazar
  * - Production: Sadece warn ve error console'a yazar
  */
+const consoleTransportFormat = process.env.LOG_CONSOLE_FORMAT === 'json' ? logFormat : consoleFormat;
+
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,
@@ -58,14 +71,14 @@ const logger = winston.createLogger({
   transports: [
     // Hata logları için ayrı dosya
     new winston.transports.File({
-      filename: path.join(process.cwd(), 'logs', 'error.log'),
+      filename: path.join(ensureLogsDir(), 'error.log'),
       level: 'error',
       maxsize: 5242880, // 5MB
       maxFiles: 5,
     }),
     // Tüm loglar için dosya
     new winston.transports.File({
-      filename: path.join(process.cwd(), 'logs', 'combined.log'),
+      filename: path.join(ensureLogsDir(), 'combined.log'),
       maxsize: 5242880, // 5MB
       maxFiles: 5,
     }),
@@ -73,20 +86,21 @@ const logger = winston.createLogger({
 });
 
 // Development ortamında console'a da yazdır
-if (process.env.NODE_ENV !== 'production') {
+if (!isProd) {
   logger.add(
     new winston.transports.Console({
-      format: consoleFormat,
+      format: consoleTransportFormat,
     })
   );
 }
 
-// Production'da sadece warn ve error seviyelerini console'a yazdır
-if (process.env.NODE_ENV === 'production') {
+// Production'da stdout/stderr üzerinden log aggregation daha sağlıklı.
+// Default: info ve üzeri; LOG_LEVEL ile değiştirilebilir.
+if (isProd) {
   logger.add(
     new winston.transports.Console({
-      format: consoleFormat,
-      level: 'warn',
+      format: consoleTransportFormat,
+      level: process.env.LOG_LEVEL || 'info',
     })
   );
 }

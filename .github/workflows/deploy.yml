@@ -8,7 +8,7 @@ on:
   workflow_dispatch: # Manuel tetikleme
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
   # VSCode/GitHub Actions linter'ının `env.VERSION` uyarısını engellemek ve
   # her durumda bir VERSION değeri olmasını sağlamak için default veriyoruz.
   # Production job'unda "Create release tag" step'i çalışırsa bu değer $GITHUB_ENV ile override edilir.
@@ -45,7 +45,7 @@ jobs:
 
       - name: Run tests
         run: |
-          npm run test:all || true
+          npm run test:ci || true
 
       - name: Build
         run: |
@@ -118,7 +118,7 @@ jobs:
 
       - name: Run all tests
         run: |
-          npm run test:all
+          npm run test:ci
 
       - name: Type check
         run: |

@@ -41,6 +41,7 @@ export enum Permission {
   EXPORT_DATA = 'export:data',
   
   // Upload/File
+  FILE_VIEW = 'file:view',
   FILE_UPLOAD = 'file:upload',
   FILE_DELETE = 'file:delete',
 
@@ -88,6 +89,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.MAINTENANCE_UPDATE,
     Permission.MAINTENANCE_DELETE,
     Permission.EXPORT_DATA,
+    Permission.FILE_VIEW,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
     Permission.EMAIL_TEMPLATE_MANAGE,
@@ -121,6 +123,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.MAINTENANCE_UPDATE,
     Permission.MAINTENANCE_DELETE,
     Permission.EXPORT_DATA,
+    Permission.FILE_VIEW,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
     Permission.EMAIL_TEMPLATE_MANAGE,
@@ -152,6 +155,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     // Export: Veri dışa aktarma
     Permission.EXPORT_DATA,
     // Dosya: Yükleme
+    Permission.FILE_VIEW,
     Permission.FILE_UPLOAD,
   ],
   
@@ -173,6 +177,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     // Export: Veri dışa aktarma
     Permission.EXPORT_DATA,
     // Dosya: Yükleme ve silme
+    Permission.FILE_VIEW,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
   ],

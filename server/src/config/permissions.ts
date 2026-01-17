@@ -41,6 +41,7 @@ export enum Permission {
   EXPORT_DATA = 'export:data',
   
   // Upload/File
+  FILE_VIEW = 'file:view',
   FILE_UPLOAD = 'file:upload',
   FILE_DELETE = 'file:delete',
   

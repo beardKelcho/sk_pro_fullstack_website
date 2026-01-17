@@ -87,6 +87,11 @@ export default function AdminLogin() {
       if (response.data && response.data.success) {
         // 2FA kontrolü
         if (response.data.requires2FA) {
+          // Backend, 2FA için her zaman kullanıcının gerçek email'ini döndürüyor.
+          // Kullanıcı telefonla giriş yaptıysa bile verify-login aşamasında email ile doğrulama yapabilmek için formData'yı güncelle.
+          if (typeof response.data.email === 'string' && response.data.email.trim()) {
+            setFormData((prev) => ({ ...prev, email: response.data.email.trim() }));
+          }
           setRequires2FA(true);
           setLoading(false);
           return;

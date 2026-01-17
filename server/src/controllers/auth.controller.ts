@@ -1,33 +1,16 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models';
+import { Session, User } from '../models';
 import { IUser } from '../models/User';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
+import { createTokenHash, generateTokenPair, isMobileClient } from '../utils/authTokens';
 
-// JWT token üretme fonksiyonu
-const generateToken = (user: IUser) => {
-  const payload = {
-    id: user._id,
-    email: user.email,
-    role: user.role,
-  };
-
-  // Access token oluşturma (kısa ömürlü)
-  const accessToken = jwt.sign(
-    payload,
-    process.env.JWT_SECRET || 'sk-production-secret',
-    { expiresIn: '1h' }
-  );
-
-  // Refresh token oluşturma (uzun ömürlü)
-  const refreshToken = jwt.sign(
-    { id: user._id },
-    process.env.JWT_REFRESH_SECRET || 'sk-production-refresh-secret',
-    { expiresIn: '7d' }
-  );
-
-  return { accessToken, refreshToken };
+const getClientIp = (req: Request): string | undefined => {
+  const xf = req.headers['x-forwarded-for'];
+  if (typeof xf === 'string' && xf.length) return xf.split(',')[0].trim();
+  if (Array.isArray(xf) && xf.length) return xf[0];
+  return req.ip;
 };
 
 // Kullanıcı giriş işlemi
@@ -89,7 +72,25 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Token üret
-    const { accessToken, refreshToken } = generateToken(user);
+    const { accessToken, refreshToken } = generateTokenPair(user as unknown as IUser);
+
+    // Session oluştur (hash'li token/refreshToken)
+    try {
+      await Session.create({
+        userId: user._id,
+        token: createTokenHash(accessToken),
+        refreshToken: createTokenHash(refreshToken),
+        deviceInfo: {
+          userAgent: req.headers['user-agent'],
+          ipAddress: getClientIp(req),
+        },
+        lastActivity: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        isActive: true,
+      });
+    } catch (sessionError) {
+      logger.warn('Session create failed (non-blocking):', sessionError);
+    }
 
     // Cookie olarak refresh token'ı ayarla
     res.cookie('refreshToken', refreshToken, {
@@ -102,9 +103,11 @@ export const login = async (req: Request, res: Response) => {
     await logAction(req, 'LOGIN', 'System', user._id.toString());
     
     // Başarılı yanıt
+    const mobile = isMobileClient(req);
     res.status(200).json({
       success: true,
       accessToken,
+      ...(mobile ? { refreshToken } : {}),
       user: {
         id: user._id,
         name: user.name,
@@ -123,9 +126,17 @@ export const login = async (req: Request, res: Response) => {
 
 // Kullanıcı çıkış işlemi
 export const logout = async (req: Request, res: Response) => {
-  // Audit log - Logout
-  if (req.user) {
-    await logAction(req, 'LOGOUT', 'System', (req.user as any).id || (req.user as any)._id?.toString() || 'unknown');
+  try {
+    const refreshTokenRaw: string | undefined = req.cookies?.refreshToken || req.body?.refreshToken;
+    if (refreshTokenRaw) {
+      const refreshHash = createTokenHash(refreshTokenRaw);
+      await Session.updateMany(
+        { refreshToken: refreshHash, isActive: true },
+        { isActive: false }
+      );
+    }
+  } catch (e) {
+    logger.warn('Logout session invalidate failed (non-blocking):', e);
   }
   
   // Refresh token cookie'sini temizle
@@ -140,10 +151,11 @@ export const logout = async (req: Request, res: Response) => {
 // Token yenileme işlemi
 export const refreshToken = async (req: Request, res: Response) => {
   try {
-    // Cookie'den refresh token'ı al
-    const refreshToken = req.cookies.refreshToken;
+    // Web: cookie'den, Mobile: body'den (SecureStore) gelebilir
+    const refreshTokenRaw: string | undefined = req.cookies?.refreshToken || req.body?.refreshToken;
+    const mobile = isMobileClient(req) || Boolean(req.body?.refreshToken);
     
-    if (!refreshToken) {
+    if (!refreshTokenRaw) {
       return res.status(401).json({
         success: false,
         message: 'Yenileme token\'ı bulunamadı',
@@ -152,10 +164,25 @@ export const refreshToken = async (req: Request, res: Response) => {
     
     // Token'ı doğrula
     const decoded = jwt.verify(
-      refreshToken,
+      refreshTokenRaw,
       process.env.JWT_REFRESH_SECRET || 'sk-production-refresh-secret'
     ) as jwt.JwtPayload;
     
+    // Session kontrolü (refresh token hash)
+    const refreshHash = createTokenHash(refreshTokenRaw);
+    const session = await Session.findOne({
+      userId: decoded.id,
+      refreshToken: refreshHash,
+      isActive: true,
+      expiresAt: { $gt: new Date() },
+    });
+    if (!session) {
+      return res.status(401).json({
+        success: false,
+        message: 'Geçersiz token',
+      });
+    }
+
     // Kullanıcıyı bul
     const user = await User.findById(decoded.id);
     
@@ -167,7 +194,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
     
     // Yeni token üret
-    const { accessToken, refreshToken: newRefreshToken } = generateToken(user);
+    const { accessToken, refreshToken: newRefreshToken } = generateTokenPair(user as unknown as IUser);
     
     // Yeni refresh token'ı cookie olarak ayarla
     res.cookie('refreshToken', newRefreshToken, {
@@ -175,11 +202,27 @@ export const refreshToken = async (req: Request, res: Response) => {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
     });
+
+    // Session rotate
+    try {
+      await Session.updateOne(
+        { _id: session._id },
+        {
+          token: createTokenHash(accessToken),
+          refreshToken: createTokenHash(newRefreshToken),
+          lastActivity: new Date(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        }
+      );
+    } catch (sessionError) {
+      logger.warn('Session rotate failed (non-blocking):', sessionError);
+    }
     
     // Başarılı yanıt
     res.status(200).json({
       success: true,
       accessToken,
+      ...(mobile ? { refreshToken: newRefreshToken } : {}),
     });
   } catch (error) {
     logger.error('Token yenileme hatası:', error);

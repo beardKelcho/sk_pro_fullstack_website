@@ -6,6 +6,8 @@ import crypto from 'crypto';
 import { User } from '../models';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
+import { Session } from '../models';
+import { createTokenHash, generateTokenPair, isMobileClient } from '../utils/authTokens';
 
 // Encryption/Decryption utilities for 2FA secrets
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
@@ -320,7 +322,17 @@ export const verify2FALogin = async (req: Request, res: Response) => {
       });
     }
 
-    const user = await User.findOne({ email }).select('+twoFactorSecretHash +backupCodes');
+    const identifierRaw = typeof email === 'string' ? email.trim() : '';
+    const identifierIsEmail = identifierRaw.includes('@');
+    const identifierEmail = identifierIsEmail ? identifierRaw.toLowerCase() : '';
+    const identifierPhone = !identifierIsEmail ? identifierRaw.replace(/[^\d+]/g, '') : '';
+
+    const user = await User.findOne({
+      $or: [
+        ...(identifierEmail ? [{ email: identifierEmail }] : []),
+        ...(identifierPhone ? [{ phone: identifierPhone }, { phone: identifierRaw }] : []),
+      ],
+    }).select('+twoFactorSecretHash +backupCodes');
 
     if (!user || !user.is2FAEnabled) {
       return res.status(400).json({
@@ -367,9 +379,46 @@ export const verify2FALogin = async (req: Request, res: Response) => {
       });
     }
 
+    // Token üret (2FA login tamamlandı)
+    const { accessToken, refreshToken } = generateTokenPair(user as any);
+
+    // Session oluştur
+    try {
+      await Session.create({
+        userId: user._id,
+        token: createTokenHash(accessToken),
+        refreshToken: createTokenHash(refreshToken),
+        deviceInfo: {
+          userAgent: req.headers['user-agent'],
+          ipAddress: typeof req.ip === 'string' ? req.ip : undefined,
+        },
+        lastActivity: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        isActive: true,
+      });
+    } catch (sessionError) {
+      logger.warn('Session create failed (non-blocking):', sessionError);
+    }
+
+    // Web için cookie refreshToken
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    const mobile = isMobileClient(req);
     res.status(200).json({
       success: true,
       message: '2FA doğrulaması başarılı',
+      accessToken,
+      ...(mobile ? { refreshToken } : {}),
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error: any) {
     logger.error('2FA login doğrulama hatası:', error);

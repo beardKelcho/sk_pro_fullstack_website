@@ -104,6 +104,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.MAINTENANCE_UPDATE,
     Permission.MAINTENANCE_DELETE,
     Permission.EXPORT_DATA,
+    Permission.FILE_VIEW,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
     Permission.QR_VIEW,
@@ -145,6 +146,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.MAINTENANCE_UPDATE,
     Permission.MAINTENANCE_DELETE,
     Permission.EXPORT_DATA,
+    Permission.FILE_VIEW,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
     Permission.QR_VIEW,
@@ -211,7 +213,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.QR_CREATE,
     Permission.QR_UPDATE,
     Permission.QR_SCAN,
-    // Dosya: Yükleme ve silme
+    // Dosya: Görüntüleme, yükleme ve silme
+    Permission.FILE_VIEW,
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
   ],

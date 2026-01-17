@@ -409,12 +409,32 @@ export default function AdminLogin() {
         if (formData.rememberMe) {
           localStorage.setItem('accessToken', response.accessToken);
           if (response.user) {
-            localStorage.setItem('user', JSON.stringify(response.user));
+            const userData = {
+              id: response.user.id || response.user._id,
+              _id: response.user.id || response.user._id,
+              name: response.user.name,
+              email: response.user.email,
+              role: response.user.role,
+              permissions: response.user.permissions || [],
+              isActive: response.user.isActive !== undefined ? response.user.isActive : true,
+            };
+            localStorage.setItem('user', JSON.stringify(userData));
+            console.log('✅ User saved to localStorage (2FA):', userData);
           }
         } else {
           sessionStorage.setItem('accessToken', response.accessToken);
           if (response.user) {
-            sessionStorage.setItem('user', JSON.stringify(response.user));
+            const userData = {
+              id: response.user.id || response.user._id,
+              _id: response.user.id || response.user._id,
+              name: response.user.name,
+              email: response.user.email,
+              role: response.user.role,
+              permissions: response.user.permissions || [],
+              isActive: response.user.isActive !== undefined ? response.user.isActive : true,
+            };
+            sessionStorage.setItem('user', JSON.stringify(userData));
+            console.log('✅ User saved to sessionStorage (2FA):', userData);
           }
         }
         // Header'ı anında güncellemek için custom event dispatch et

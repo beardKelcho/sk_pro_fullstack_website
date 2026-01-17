@@ -44,6 +44,123 @@ const upload = multer({
   fileFilter,
 });
 
+// Dosya listesi (tüm dosyaları getir)
+router.get(
+  '/list',
+  authenticate,
+  requirePermission(Permission.FILE_VIEW),
+  async (req: express.Request, res: express.Response) => {
+    try {
+      const { type, page = '1', limit = '50', search = '' } = req.query;
+      const fileType = (type as string) || 'all';
+      const pageNum = parseInt(page as string, 10);
+      const limitNum = parseInt(limit as string, 10);
+      const searchTerm = (search as string).toLowerCase();
+
+      if (isCloudStorage()) {
+        // Cloud storage için şimdilik boş array döndür (gelecekte cloud storage API'den listeleme eklenebilir)
+        return res.status(200).json({
+          success: true,
+          files: [],
+          total: 0,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: 0,
+        });
+      }
+
+      // Local storage için dosya listesi
+      const files: any[] = [];
+      const typeDir = fileType === 'all' ? uploadDir : path.join(uploadDir, fileType as string);
+
+      if (fs.existsSync(typeDir)) {
+        const scanDirectory = (dir: string, basePath: string = '') => {
+          const items = fs.readdirSync(dir, { withFileTypes: true });
+          
+          for (const item of items) {
+            const fullPath = path.join(dir, item.name);
+            const relativePath = basePath ? `${basePath}/${item.name}` : item.name;
+            
+            if (item.isDirectory()) {
+              scanDirectory(fullPath, relativePath);
+            } else {
+              const stats = fs.statSync(fullPath);
+              const ext = path.extname(item.name).toLowerCase();
+              const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(ext);
+              const isVideo = /\.(mp4|webm|mov|avi)$/i.test(ext);
+              
+              // Search filtresi
+              if (searchTerm && !item.name.toLowerCase().includes(searchTerm)) {
+                continue;
+              }
+              
+              files.push({
+                filename: item.name,
+                path: relativePath,
+                size: stats.size,
+                uploadedAt: stats.birthtime,
+                modifiedAt: stats.mtime,
+                type: isImage ? 'image' : isVideo ? 'video' : 'document',
+                url: pathToUrl(relativePath),
+                mimetype: getMimeType(ext),
+              });
+            }
+          }
+        };
+        
+        scanDirectory(typeDir, fileType === 'all' ? '' : fileType as string);
+      }
+
+      // Sıralama: en yeni önce
+      files.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+
+      // Sayfalama
+      const total = files.length;
+      const totalPages = Math.ceil(total / limitNum);
+      const startIndex = (pageNum - 1) * limitNum;
+      const paginatedFiles = files.slice(startIndex, startIndex + limitNum);
+
+      res.status(200).json({
+        success: true,
+        files: paginatedFiles,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
+      });
+    } catch (error) {
+      logger.error('Dosya listesi hatası:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Dosya listesi alınırken bir hata oluştu',
+      });
+    }
+  }
+);
+
+// MIME type helper
+const getMimeType = (ext: string): string => {
+  const mimeTypes: { [key: string]: string } = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.pdf': 'application/pdf',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.zip': 'application/zip',
+    '.rar': 'application/x-rar-compressed',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mov': 'video/quicktime',
+    '.avi': 'video/x-msvideo',
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+};
+
 // Tek dosya yükleme
 router.post(
   '/single',

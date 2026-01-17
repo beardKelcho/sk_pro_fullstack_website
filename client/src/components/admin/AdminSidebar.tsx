@@ -280,6 +280,11 @@ const menuItems: MenuItem[] = [
         path: '/admin/project-gallery',
         icon: <></>,
       },
+      {
+        title: 'Dosya Yönetimi',
+        path: '/admin/files',
+        icon: <></>,
+      },
     ],
   },
   {

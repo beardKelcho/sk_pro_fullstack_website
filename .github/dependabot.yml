@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # Root package-lock.json (scripts + tooling)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+
+  # Client (Next.js)
+  - package-ecosystem: "npm"
+    directory: "/client"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:10"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+
+  # Server (Express)
+  - package-ecosystem: "npm"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:20"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:30"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 10
+

@@ -27,6 +27,7 @@
 - [ ] `.env` dosyaları `.gitignore`'da (güvenlik için)
 - [ ] `README.md` güncel
 - [ ] Production branch hazır (main/master)
+- [ ] CI yeşil (lint + typecheck + test + audit) ✅
 
 ### 2. Hesap Oluşturma
 
@@ -112,6 +113,11 @@ Render dashboard'da "Environment" sekmesine gidin ve şunları ekleyin:
 # Temel Ayarlar
 NODE_ENV=production
 PORT=5001
+
+# Logging (Önerilen)
+# Log aggregation için JSON format
+LOG_LEVEL=info
+LOG_CONSOLE_FORMAT=json
 
 # MongoDB
 MONGO_URI=mongodb+srv://skproduction-prod-admin:ŞİFRENİZ@sk-production-cluster.xxxxx.mongodb.net/skproduction?retryWrites=true&w=majority
@@ -264,6 +270,20 @@ SENTRY_AUTH_TOKEN=your-sentry-auth-token
 ---
 
 ## 📊 Monitoring ve Error Tracking
+
+### Health / Readiness (ÖNEMLİ)
+
+- [ ] Backend health check path’i platformda `/api/readyz` olarak ayarlandı (readiness)  
+  - `GET /api/livez` → process up  
+  - `GET /api/readyz` → DB (ve varsa Redis) ready  
+  - `GET /api/health` → snapshot (db/redis/node/commit)
+
+Detay runbook: `docs/OBSERVABILITY_RUNBOOK.md`
+
+### Security Audit (Manual)
+
+- [ ] `docs/SECURITY_AUDIT_CHECKLIST.md` checklist’i tamamlandı
+- [ ] (Opsiyonel) Dış pen test planlandı/uygulandı
 
 ### Sentry (Error Tracking)
 

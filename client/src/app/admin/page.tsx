@@ -333,6 +333,17 @@ export default function AdminLogin() {
       logger.error('Giriş hatası:', error);
       logger.error('Error response:', error.response?.data);
       const backend = error.response?.data;
+      const status = error.response?.status;
+      
+      // Rate limit hatası (429) için özel mesaj
+      if (status === 429 || backend?.code === 'RATE_LIMITED') {
+        const rateLimitMessage = backend?.message || 'Çok fazla giriş denemesi yaptınız. Lütfen 15 dakika sonra tekrar deneyin.';
+        setLoginError(rateLimitMessage);
+        // Rate limit hatası için toast da göster
+        toast.error(rateLimitMessage, { autoClose: 5000 });
+        return;
+      }
+      
       const validationMsg =
         Array.isArray(backend?.errors) && backend.errors.length
           ? backend.errors.map((e: any) => e.msg).filter(Boolean).join(' • ')

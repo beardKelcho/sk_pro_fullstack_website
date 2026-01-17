@@ -1434,18 +1434,30 @@ function VideoSelector({
       
       // availableVideos'u da güncelle (backward compatibility)
       const videoList = (response.images || []).map(img => {
-        // URL'yi düzelt - hem /uploads/general/ hem de /uploads/videos/ destekle
-        let videoUrl = img.url || '';
-        if (!videoUrl.startsWith('http')) {
-          if (videoUrl.startsWith('/uploads/')) {
-            videoUrl = `${baseUrl}${videoUrl}`;
-          } else if (videoUrl.startsWith('/')) {
-            videoUrl = `${baseUrl}${videoUrl}`;
-          } else {
-            // Path formatı: "general/filename.mp4" veya "videos/filename.mp4"
-            videoUrl = `${baseUrl}/uploads/${videoUrl}`;
-          }
+        // Video ID varsa relative path kullan (Next.js rewrites proxy eder)
+        const videoId = img._id || img.id;
+        if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
+          // MongoDB ObjectId - relative path kullan
+          return {
+            url: `/api/site-images/public/${videoId}/image`,
+            filename: img.filename,
+            uploadedAt: img.createdAt
+          };
         }
+        
+        // ID yoksa URL'den relative path oluştur
+        let videoUrl = img.url || '';
+        if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
+          // Full URL ise relative path'e çevir
+          const urlObj = new URL(videoUrl);
+          videoUrl = urlObj.pathname;
+        }
+        
+        // Relative path olarak kullan (Next.js rewrites proxy eder)
+        if (!videoUrl.startsWith('/')) {
+          videoUrl = `/${videoUrl}`;
+        }
+        
         return {
           url: videoUrl,
           filename: img.filename,
@@ -1503,19 +1515,6 @@ function VideoSelector({
         throw new Error('Dosya yükleme başarısız');
       }
 
-      // URL formatını kontrol et ve düzelt
-      let videoUrl = uploadData.file.url;
-      if (!videoUrl.startsWith('http')) {
-        // Relative URL ise baseUrl ile birleştir
-        if (videoUrl.startsWith('/uploads/')) {
-          videoUrl = `${baseUrl}${videoUrl}`;
-        } else if (videoUrl.startsWith('/')) {
-          videoUrl = `${baseUrl}${videoUrl}`;
-        } else {
-          videoUrl = `${baseUrl}/uploads/${videoUrl}`;
-        }
-      }
-      
       // Video path'ini düzelt (DB'ye kaydetmek için)
       // Path formatı: "videos/filename.mp4" (type: 'videos' olduğu için)
       const imagePath = uploadData.file.url.replace(/^\/uploads\//, '');
@@ -1525,7 +1524,7 @@ function VideoSelector({
         filename: uploadData.file.filename,
         originalName: uploadData.file.originalname,
         path: imagePath,
-        url: uploadData.file.url,
+        url: uploadData.file.url, // Relative path olarak kaydet
         category: 'video',
         order: videos.length,
         isActive: true,
@@ -1535,18 +1534,29 @@ function VideoSelector({
       const updatedVideos = [...videos, newVideoImage];
       setVideos(updatedVideos);
       
-      // availableVideos formatına çevir - URL'leri düzelt
+      // availableVideos formatına çevir - Relative path kullan (Next.js rewrites proxy eder)
       const videoList = updatedVideos.map(img => {
-        let imgUrl = img.url || '';
-        if (!imgUrl.startsWith('http')) {
-          if (imgUrl.startsWith('/uploads/')) {
-            imgUrl = `${baseUrl}${imgUrl}`;
-          } else if (imgUrl.startsWith('/')) {
-            imgUrl = `${baseUrl}${imgUrl}`;
-          } else {
-            imgUrl = `${baseUrl}/uploads/${imgUrl}`;
-          }
+        // Video ID varsa relative path kullan
+        const videoId = img._id || img.id;
+        if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
+          return {
+            url: `/api/site-images/public/${videoId}/image`,
+            filename: img.filename,
+            uploadedAt: img.createdAt
+          };
         }
+        
+        // ID yoksa URL'den relative path oluştur
+        let imgUrl = img.url || '';
+        if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+          const urlObj = new URL(imgUrl);
+          imgUrl = urlObj.pathname;
+        }
+        
+        if (!imgUrl.startsWith('/')) {
+          imgUrl = `/${imgUrl}`;
+        }
+        
         return {
           url: imgUrl,
           filename: img.filename,
@@ -1588,31 +1598,30 @@ function VideoSelector({
       const updatedVideos = videos.filter(v => (v._id || v.id) !== videoId);
       setVideos(updatedVideos);
       
-      // Video URL'ini oluştur - hem /uploads/general/ hem de /uploads/videos/ destekle
-      let videoUrl = video.url || '';
-      if (!videoUrl.startsWith('http')) {
-        if (videoUrl.startsWith('/uploads/')) {
-          videoUrl = `${baseUrl}${videoUrl}`;
-        } else if (videoUrl.startsWith('/')) {
-          videoUrl = `${baseUrl}${videoUrl}`;
-        } else {
-          videoUrl = `${baseUrl}/uploads/${videoUrl}`;
-        }
-      }
-      
-      // Video listesini oluştur
+      // Video listesini oluştur - Relative path kullan (Next.js rewrites proxy eder)
       const createVideoList = (videos: SiteImage[]) => {
         return videos.map(img => {
-          let imgUrl = img.url || '';
-          if (!imgUrl.startsWith('http')) {
-            if (imgUrl.startsWith('/uploads/')) {
-              imgUrl = `${baseUrl}${imgUrl}`;
-            } else if (imgUrl.startsWith('/')) {
-              imgUrl = `${baseUrl}${imgUrl}`;
-            } else {
-              imgUrl = `${baseUrl}/uploads/${imgUrl}`;
-            }
+          // Video ID varsa relative path kullan
+          const videoId = img._id || img.id;
+          if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
+            return {
+              url: `/api/site-images/public/${videoId}/image`,
+              filename: img.filename,
+              uploadedAt: img.createdAt
+            };
           }
+          
+          // ID yoksa URL'den relative path oluştur
+          let imgUrl = img.url || '';
+          if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+            const urlObj = new URL(imgUrl);
+            imgUrl = urlObj.pathname;
+          }
+          
+          if (!imgUrl.startsWith('/')) {
+            imgUrl = `/${imgUrl}`;
+          }
+          
           return {
             url: imgUrl,
             filename: img.filename,
@@ -1655,10 +1664,17 @@ function VideoSelector({
 
           const selectedVideoObj = videos.find(v => {
             const videoId = v._id || v.id || '';
-            const videoUrl = v.url.startsWith('http') 
-              ? v.url 
-              : `${baseUrl}${v.url.startsWith('/') ? '' : '/'}${v.url}`;
-            return selectedVideo === videoId || selectedVideo === videoUrl || selectedVideo.includes(v.url);
+            // Video ID ile eşleştir
+            if (selectedVideo === videoId) return true;
+            
+            // URL ile eşleştir (relative path)
+            const videoUrl = v.url || '';
+            if (selectedVideo === videoUrl || selectedVideo.includes(videoUrl)) return true;
+            
+            // Full URL ile eşleştir (backward compatibility)
+            if (selectedVideo.startsWith('http') && videoUrl && selectedVideo.includes(videoUrl)) return true;
+            
+            return false;
           });
 
           // ObjectId olup listede bulunamıyorsa yanlış URL üretmeyelim (http://localhost:5001/<id> gibi)
@@ -1672,18 +1688,43 @@ function VideoSelector({
             );
           }
 
-          const previewUrl =
-            selectedVideoObj
-              ? (selectedVideoObj.url?.startsWith('http')
-                  ? selectedVideoObj.url
-                  : `${baseUrl}${selectedVideoObj.url?.startsWith('/') ? '' : '/'}${selectedVideoObj.url}`)
-              : (selectedVideo.startsWith('http')
-                  ? selectedVideo
-                  : selectedVideo.startsWith('/uploads/')
-                      ? `${baseUrl}${selectedVideo}`
-                      : selectedVideo.startsWith('/')
-                          ? `${baseUrl}${selectedVideo}`
-                          : `${baseUrl}/uploads/${selectedVideo}`);
+          // Preview URL oluştur - Relative path kullan (Next.js rewrites proxy eder)
+          const previewUrl = (() => {
+            if (selectedVideoObj) {
+              // Video ID varsa relative path kullan
+              const videoId = selectedVideoObj._id || selectedVideoObj.id;
+              if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
+                return `/api/site-images/public/${videoId}/image`;
+              }
+              
+              // ID yoksa URL'den relative path oluştur
+              let url = selectedVideoObj.url || '';
+              if (url.startsWith('http://') || url.startsWith('https://')) {
+                const urlObj = new URL(url);
+                url = urlObj.pathname;
+              }
+              
+              if (!url.startsWith('/')) {
+                url = `/${url}`;
+              }
+              
+              return url;
+            }
+            
+            // selectedVideo string ise
+            if (selectedVideo.startsWith('http://') || selectedVideo.startsWith('https://')) {
+              const urlObj = new URL(selectedVideo);
+              return urlObj.pathname;
+            }
+            
+            // Relative path ise olduğu gibi kullan
+            if (selectedVideo.startsWith('/')) {
+              return selectedVideo;
+            }
+            
+            // Relative path oluştur
+            return `/uploads/${selectedVideo}`;
+          })();
 
           // 404/failed durumda tekrar tekrar istek atmasın
           if (previewFailedUrl === previewUrl) {
@@ -1744,9 +1785,27 @@ function VideoSelector({
                   type="button"
                   onClick={() => {
                     const videoList = videos.map(img => {
-                      const url = img.url.startsWith('http') 
-                        ? img.url 
-                        : `${baseUrl}${img.url.startsWith('/') ? '' : '/'}${img.url}`;
+                      // Video ID varsa relative path kullan
+                      const imgId = img._id || img.id;
+                      if (imgId && typeof imgId === 'string' && /^[0-9a-f]{24}$/i.test(imgId)) {
+                        return {
+                          url: `/api/site-images/public/${imgId}/image`,
+                          filename: img.filename,
+                          uploadedAt: img.createdAt
+                        };
+                      }
+                      
+                      // ID yoksa URL'den relative path oluştur
+                      let url = img.url || '';
+                      if (url.startsWith('http://') || url.startsWith('https://')) {
+                        const urlObj = new URL(url);
+                        url = urlObj.pathname;
+                      }
+                      
+                      if (!url.startsWith('/')) {
+                        url = `/${url}`;
+                      }
+                      
                       return {
                         url,
                         filename: img.filename,
@@ -1838,20 +1897,33 @@ function VideoSelector({
         ) : videos.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto p-2">
             {videos.map((video) => {
-              const videoUrl = video.url.startsWith('http') 
-                ? video.url 
-                : `${baseUrl}${video.url.startsWith('/') ? '' : '/'}${video.url}`;
+              // Video URL'ini relative path'e çevir (Next.js rewrites proxy eder)
+              let videoUrl = '';
+              const videoId = video._id || video.id;
               
-              // Seçili video kontrolü - hem tam URL hem de dosya adına göre
-              const videoFilename = video.url.split('/').pop() || '';
-              const selectedFilename = selectedVideo?.split('/').pop() || '';
-              const videoId = video._id || video.id || '';
+              if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
+                // MongoDB ObjectId - relative path kullan
+                videoUrl = `/api/site-images/public/${videoId}/image`;
+              } else {
+                // ID yoksa URL'den relative path oluştur
+                let url = video.url || '';
+                if (url.startsWith('http://') || url.startsWith('https://')) {
+                  const urlObj = new URL(url);
+                  url = urlObj.pathname;
+                }
+                
+                if (!url.startsWith('/')) {
+                  url = `/${url}`;
+                }
+                
+                videoUrl = url;
+              }
+              
+              // Seçili video kontrolü
               const isSelected: boolean = Boolean(
                 selectedVideo === videoUrl 
                 || selectedVideo === videoId
-                || (selectedVideo && typeof selectedVideo === 'string' && selectedVideo.includes(videoFilename))
                 || (selectedVideo && typeof selectedVideo === 'string' && selectedVideo.includes(video.url))
-                || (selectedFilename && selectedFilename === videoFilename)
               );
               
               return (

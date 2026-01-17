@@ -112,6 +112,10 @@ export default function AdminLogin() {
     setLoginError('');
     
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Attempting login with:', { email: formData.email, passwordLength: formData.password.length });
+      }
+      
       const response = await authApi.login({
         email: formData.email,
         password: formData.password,
@@ -121,9 +125,16 @@ export default function AdminLogin() {
       
       // Debug: Response'u console'a yazdır
       if (process.env.NODE_ENV === 'development') {
-        console.log('Login response:', response.data);
-        console.log('AccessToken:', response.data?.accessToken);
+        console.log('=== LOGIN RESPONSE ===');
+        console.log('Full response:', response);
+        console.log('Response data:', response.data);
+        console.log('Response success:', response.data?.success);
+        console.log('AccessToken exists:', !!response.data?.accessToken);
+        console.log('AccessToken value:', response.data?.accessToken);
+        console.log('AccessToken type:', typeof response.data?.accessToken);
         console.log('User:', response.data?.user);
+        console.log('Requires2FA:', response.data?.requires2FA);
+        console.log('=====================');
       }
       
       if (response.data && response.data.success) {
@@ -169,8 +180,20 @@ export default function AdminLogin() {
             }
           }
         } else {
-          logger.error('Login response does not contain accessToken');
-          setLoginError('Giriş başarısız: Token alınamadı');
+          // Token yok - detaylı log
+          if (process.env.NODE_ENV === 'development') {
+            console.error('=== TOKEN NOT FOUND IN RESPONSE ===');
+            console.error('Response data keys:', Object.keys(response.data || {}));
+            console.error('Response data:', response.data);
+            console.error('====================================');
+          }
+          logger.error('Login response does not contain accessToken', {
+            responseKeys: Object.keys(response.data || {}),
+            hasSuccess: !!response.data?.success,
+            hasUser: !!response.data?.user,
+            requires2FA: !!response.data?.requires2FA
+          });
+          setLoginError('Giriş başarısız: Token alınamadı. Lütfen tekrar deneyin.');
           setLoading(false);
           return;
         }

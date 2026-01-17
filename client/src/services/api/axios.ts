@@ -85,21 +85,35 @@ apiClient.interceptors.response.use(
 
       // Invalid signature veya token hatası varsa direkt temizle
       const errorMessage = error.response?.data?.message || '';
+      const errorName = error.response?.data?.name || '';
       const isInvalidToken = errorMessage.includes('invalid') || 
                             errorMessage.includes('signature') || 
                             errorMessage.includes('token') ||
                             errorMessage.includes('Yetkilendirme başarısız') ||
-                            errorMessage.includes('Geçersiz token');
+                            errorMessage.includes('Geçersiz token') ||
+                            errorName === 'JsonWebTokenError' ||
+                            errorName === 'TokenExpiredError';
 
       if (isInvalidToken) {
         // Geçersiz token, direkt temizle ve login'e yönlendir
         if (typeof window !== 'undefined') {
+          // Tüm token'ları ve auth verilerini temizle
           localStorage.removeItem('accessToken');
           localStorage.removeItem('user');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('token');
           sessionStorage.removeItem('accessToken');
           sessionStorage.removeItem('user');
+          sessionStorage.removeItem('refreshToken');
+          sessionStorage.removeItem('token');
+          
+          // Development modunda log
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Geçersiz token tespit edildi, tüm token\'lar temizlendi');
+          }
+          
           // Sadece admin sayfalarındaysa yönlendir
-          if (window.location.pathname.startsWith('/admin')) {
+          if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin') {
             window.location.href = '/admin';
           }
         }

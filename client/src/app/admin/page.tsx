@@ -27,19 +27,37 @@ export default function AdminLogin() {
 
   // Sayfa yüklendiğinde token'ları temizle ve temiz bir başlangıç yap
   useEffect(() => {
-    // Önce tüm token'ları temizle (geçersiz token sorununu önlemek için)
+    // Önce tüm token'ları ve auth ile ilgili tüm verileri temizle
     const clearAllTokens = () => {
+      // localStorage temizle
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('token');
+      
+      // sessionStorage temizle
       sessionStorage.removeItem('accessToken');
       sessionStorage.removeItem('user');
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('token');
+      
+      // Cookie'leri de temizle (mümkünse)
+      if (typeof document !== 'undefined') {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+      }
     };
 
     // Sayfa yüklendiğinde token'ları temizle
     clearAllTokens();
     
-    // Eğer kullanıcı direkt login sayfasına geldiyse, zaten temiz
-    // Eğer başka bir sayfadan redirect edildiyse, temiz token ile başla
+    // Development modunda log
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Login sayfası: Tüm token\'lar temizlendi');
+    }
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,7 +169,7 @@ export default function AdminLogin() {
         }
         
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         // Token'ın gerçekten kaydedildiğini doğrula
         const savedToken = formData.rememberMe 
@@ -169,24 +187,40 @@ export default function AdminLogin() {
         try {
           if (process.env.NODE_ENV === 'development') {
             console.log('Verifying token with getProfile...');
+            console.log('Saved token (first 20 chars):', savedToken.substring(0, 20) + '...');
           }
+          
+          // Axios instance'ının token'ı görmesi için kısa bir delay
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
           const profileResponse = await authApi.getProfile();
           
           if (profileResponse.data && profileResponse.data.success && profileResponse.data.user) {
             if (process.env.NODE_ENV === 'development') {
               console.log('Token verified successfully, redirecting to dashboard...');
             }
-            // Token geçerli, dashboard'a yönlendir
+            // Token geçerli, dashboard'a yönlendir - full page reload ile
             window.location.href = '/admin/dashboard';
           } else {
             logger.error('Token verification failed - invalid profile response');
+            // Token geçersiz, temizle
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('user');
             setLoginError('Giriş doğrulaması başarısız. Lütfen tekrar deneyin.');
             setLoading(false);
           }
         } catch (profileError: any) {
           logger.error('Token verification failed:', profileError);
+          // Token geçersiz, temizle
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('user');
+          
           const errorMessage = profileError.response?.data?.message || profileError.message || 'Token doğrulanamadı';
-          setLoginError(`Giriş doğrulaması başarısız: ${errorMessage}`);
+          setLoginError(`Giriş doğrulaması başarısız: ${errorMessage}. Lütfen tekrar deneyin.`);
           setLoading(false);
         }
       } else {

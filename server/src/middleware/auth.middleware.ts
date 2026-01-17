@@ -61,11 +61,24 @@ export const authenticate = async (
     // Request'e kullanıcı bilgisini ekle
     req.user = user;
     next();
-  } catch (error) {
-    logger.error('Kimlik doğrulama hatası:', error);
+  } catch (error: any) {
+    // Invalid signature veya expired token hatası için daha açıklayıcı mesaj
+    const errorMessage = error.name === 'JsonWebTokenError' 
+      ? 'Geçersiz token. Lütfen tekrar giriş yapın.'
+      : error.name === 'TokenExpiredError'
+      ? 'Token süresi dolmuş. Lütfen tekrar giriş yapın.'
+      : 'Yetkilendirme başarısız';
+    
+    logger.error('Kimlik doğrulama hatası:', { 
+      name: error.name, 
+      message: error.message,
+      path: req.path 
+    });
+    
     res.status(401).json({
       success: false,
-      message: 'Yetkilendirme başarısız',
+      message: errorMessage,
+      name: error.name, // Frontend'de invalid token kontrolü için
     });
   }
 };

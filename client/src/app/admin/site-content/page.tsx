@@ -1929,7 +1929,6 @@ function VideoSelector({
                   key={video._id || video.id}
                   video={video}
                   videoUrl={videoUrl}
-                  baseUrl={baseUrl}
                   isSelected={isSelected}
                   onSelect={() => {
                     // Veritabanına kaydetmek için video ID kullan (en güvenilir yöntem)

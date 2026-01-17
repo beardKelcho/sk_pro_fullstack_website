@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -24,6 +24,36 @@ export default function AdminLogin() {
   const [twoFactorToken, setTwoFactorToken] = useState('');
   const [twoFactorBackupCode, setTwoFactorBackupCode] = useState('');
   const verify2FAMutation = useVerify2FALogin();
+
+  // Sayfa yüklendiğinde zaten giriş yapılmışsa dashboard'a yönlendir
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      if (token) {
+        try {
+          // Token geçerli mi kontrol et
+          const response = await authApi.getProfile();
+          if (response.data && response.data.success && response.data.user) {
+            // Token geçerli, dashboard'a yönlendir
+            window.location.href = '/admin/dashboard';
+          } else {
+            // Token geçersiz, temizle
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('user');
+          }
+        } catch (error) {
+          // Token geçersiz, temizle
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('user');
+        }
+      }
+    };
+    checkExistingAuth();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -84,6 +114,13 @@ export default function AdminLogin() {
       
       logger.debug('Login response:', response.data);
       
+      // Debug: Response'u console'a yazdır
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Login response:', response.data);
+        console.log('AccessToken:', response.data?.accessToken);
+        console.log('User:', response.data?.user);
+      }
+      
       if (response.data && response.data.success) {
         // 2FA kontrolü
         if (response.data.requires2FA) {
@@ -101,9 +138,20 @@ export default function AdminLogin() {
         if (response.data.accessToken) {
           if (formData.rememberMe) {
             localStorage.setItem('accessToken', response.data.accessToken);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Token saved to localStorage:', response.data.accessToken.substring(0, 20) + '...');
+            }
           } else {
             sessionStorage.setItem('accessToken', response.data.accessToken);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Token saved to sessionStorage:', response.data.accessToken.substring(0, 20) + '...');
+            }
           }
+        } else {
+          logger.error('Login response does not contain accessToken');
+          setLoginError('Giriş başarısız: Token alınamadı');
+          setLoading(false);
+          return;
         }
         
         // Kullanıcı bilgilerini kaydet
@@ -118,7 +166,26 @@ export default function AdminLogin() {
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
         // Sonra dashboard'a yönlendir - window.location.href kullan (full page reload)
         // Bu, ProtectedRoute'un token'ı kesinlikle görmesini sağlar
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Redirecting to dashboard in 100ms...');
+        }
         await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Token'ın gerçekten kaydedildiğini doğrula
+        const savedToken = formData.rememberMe 
+          ? localStorage.getItem('accessToken')
+          : sessionStorage.getItem('accessToken');
+        
+        if (!savedToken) {
+          logger.error('Token was not saved properly');
+          setLoginError('Token kaydedilemedi. Lütfen tekrar deneyin.');
+          setLoading(false);
+          return;
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Token verified, redirecting to dashboard...');
+        }
         window.location.href = '/admin/dashboard';
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';

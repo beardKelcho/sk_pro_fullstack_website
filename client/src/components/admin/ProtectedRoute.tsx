@@ -31,6 +31,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
         const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
         if (!token) {
           if (isMounted) {
+            setIsAuthenticated(false);
             router.replace('/admin'); // replace kullan, history'ye ekleme
             setIsLoading(false);
           }
@@ -41,6 +42,11 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
         const response = await authApi.getProfile();
         
         if (!isMounted) return; // Component unmount olduysa devam etme
+        
+        // Debug: Response'u logla
+        if (process.env.NODE_ENV === 'development') {
+          console.log('ProtectedRoute - Profile response:', response.data);
+        }
         
         if (response.data && response.data.success && response.data.user) {
           const user = response.data.user;
@@ -78,16 +84,20 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
           setIsAuthenticated(true);
         } else {
           // Token geçersiz, temizle ve login'e yönlendir
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('accessToken');
-          sessionStorage.removeItem('user');
-          router.replace('/admin');
+          if (isMounted) {
+            setIsAuthenticated(false);
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('user');
+            router.replace('/admin');
+            setIsLoading(false);
+          }
         }
       } catch (error: any) {
         // Hata durumunda sessizce login'e yönlendir (sürekli log spam'ini önle)
         if (process.env.NODE_ENV === 'development') {
-          console.error('Auth check failed:', error);
+          console.error('Auth check failed:', error, error.response?.data);
         }
         // Hem localStorage hem sessionStorage'dan temizle
         localStorage.removeItem('accessToken');
@@ -95,11 +105,11 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
         sessionStorage.removeItem('accessToken');
         sessionStorage.removeItem('user');
         // Sadece bir kez yönlendir, döngüyü önle - replace kullan
-        if (isMounted && pathname !== '/admin' && pathname !== '/admin/login') {
-          router.replace('/admin');
-        }
-      } finally {
         if (isMounted) {
+          setIsAuthenticated(false);
+          if (pathname !== '/admin' && pathname !== '/admin/login') {
+            router.replace('/admin');
+          }
           setIsLoading(false);
         }
       }

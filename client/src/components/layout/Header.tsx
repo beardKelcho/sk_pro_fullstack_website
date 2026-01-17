@@ -29,13 +29,18 @@ const Header: React.FC = () => {
   useEffect(() => {
     const checkAuth = () => {
       const user = getStoredUser();
-      setIsAuthenticated(!!user);
+      const isAuth = !!user;
+      setIsAuthenticated(isAuth);
+      // Debug için (development modunda)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Header - Auth check:', { isAuth, user: user ? { name: user.name, email: user.email } : null });
+      }
     };
     
     // İlk kontrol
     checkAuth();
     
-    // Storage değişikliklerini dinle (localStorage/sessionStorage değiştiğinde)
+    // Storage değişikliklerini dinle (farklı tab'larda değişiklik olduğunda)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'user' || e.key === 'accessToken') {
         checkAuth();
@@ -47,15 +52,26 @@ const Header: React.FC = () => {
       checkAuth();
     };
     
+    // Sayfa focus olduğunda kontrol et (kullanıcı başka tab'dan döndüğünde)
+    const handleFocus = () => {
+      checkAuth();
+    };
+    
+    // Periyodik kontrol (fallback - her 2 saniyede bir)
+    const interval = setInterval(checkAuth, 2000);
+    
     // Event listener'ları ekle
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('auth:login', handleAuthChange);
     window.addEventListener('auth:logout', handleAuthChange);
+    window.addEventListener('focus', handleFocus);
     
     return () => {
+      clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('auth:login', handleAuthChange);
       window.removeEventListener('auth:logout', handleAuthChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 

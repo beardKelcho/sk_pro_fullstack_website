@@ -3,17 +3,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../auth/AuthContext';
 import { LoginScreen } from '../screens/LoginScreen';
 import { TwoFactorScreen } from '../screens/TwoFactorScreen';
-import { DashboardScreen } from '../screens/DashboardScreen';
-import { TasksScreen } from '../screens/TasksScreen';
-import { EquipmentScreen } from '../screens/EquipmentScreen';
+import { TabNavigator } from './TabNavigator';
 import { ActivityIndicator, View } from 'react-native';
 
 export type RootStackParamList = {
   Login: undefined;
   TwoFactor: { email: string };
-  Dashboard: undefined;
-  Tasks: undefined;
-  Equipment: undefined;
+  Main: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -32,8 +28,7 @@ export const RootNavigator = () => {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#0B1220' },
-        headerTintColor: '#fff',
+        headerShown: false,
         contentStyle: { backgroundColor: '#0B1220' }
       }}
     >
@@ -43,11 +38,7 @@ export const RootNavigator = () => {
           <Stack.Screen name="TwoFactor" component={TwoFactorScreen} options={{ title: '2FA' }} />
         </>
       ) : (
-        <>
-          <Stack.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Dashboard' }} />
-          <Stack.Screen name="Tasks" component={TasksScreen} options={{ title: 'Görevler' }} />
-          <Stack.Screen name="Equipment" component={EquipmentScreen} options={{ title: 'Ekipmanlar' }} />
-        </>
+        <Stack.Screen name="Main" component={TabNavigator} />
       )}
     </Stack.Navigator>
   );

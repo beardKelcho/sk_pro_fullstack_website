@@ -81,7 +81,9 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
             return;
           }
           
+          // Authentication başarılı
           setIsAuthenticated(true);
+          setIsLoading(false); // CRITICAL: Loading'i false yap, yoksa sürekli loading'de kalır!
         } else {
           // Token geçersiz, temizle ve login'e yönlendir
           if (isMounted) {

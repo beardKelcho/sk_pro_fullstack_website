@@ -5,11 +5,14 @@ import axios from 'axios';
 // Server-side'da ise tam URL kullan
 const getApiUrl = () => {
   // Client-side'da (browser) relative path kullan - Next.js rewrites devreye girer
+  // Bu sayede farklı bilgisayarlardan erişim sorunsuz çalışır
   if (typeof window !== 'undefined') {
     return '/api';
   }
-  // Server-side'da (SSR) tam URL kullan
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+  // Server-side'da (SSR) tam URL kullan - NEXT_PUBLIC_BACKEND_URL kullan (rewrites için)
+  // Eğer NEXT_PUBLIC_BACKEND_URL yoksa, NEXT_PUBLIC_API_URL kullan
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
+  return `${backendUrl}/api`;
 };
 
 const API_URL = getApiUrl();

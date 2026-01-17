@@ -6,11 +6,21 @@ import { usePermission } from '@/hooks/usePermission';
 import { Permission } from '@/config/permissions';
 import { toast } from 'react-toastify';
 
+/**
+ * PermissionLink component props
+ * @interface PermissionLinkProps
+ * @extends {React.AnchorHTMLAttributes<HTMLAnchorElement>}
+ */
 interface PermissionLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
+  /** Required permission to enable the link */
   permission: Permission;
+  /** Link destination URL */
   href: string;
+  /** Link content */
   children: React.ReactNode;
+  /** Error message shown when user lacks permission */
   disabledMessage?: string;
+  /** Click handler (only called if user has permission) */
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 

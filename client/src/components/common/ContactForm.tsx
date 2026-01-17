@@ -1,12 +1,28 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
+/**
+ * Contact form data structure
+ * @interface ContactFormData
+ */
 interface ContactFormData {
+  /** User's name */
   name: string;
+  /** User's email address */
   email: string;
+  /** Message content */
   message: string;
 }
 
+/**
+ * Contact form component with offline support and background sync
+ * Supports queued submissions when offline
+ * 
+ * @example
+ * ```tsx
+ * <ContactForm />
+ * ```
+ */
 const ContactForm: React.FC = () => {
   const t = useTranslations('site.contactForm');
   const [formData, setFormData] = useState<ContactFormData>({

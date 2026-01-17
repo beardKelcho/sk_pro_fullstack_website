@@ -1,12 +1,32 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
+/**
+ * Button component props
+ * @interface ButtonProps
+ * @extends {React.ButtonHTMLAttributes<HTMLButtonElement>}
+ */
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Button variant style */
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  /** Button size */
   size?: 'sm' | 'md' | 'lg';
+  /** Show loading spinner and disable button */
   isLoading?: boolean;
+  /** Icon to display before button text */
   icon?: React.ReactNode;
 }
+
+/**
+ * Reusable Button component with variants, sizes, and loading state
+ * 
+ * @example
+ * ```tsx
+ * <Button variant="primary" size="lg" isLoading={loading}>
+ *   Kaydet
+ * </Button>
+ * ```
+ */
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, icon, children, disabled, ...props }, ref) => {

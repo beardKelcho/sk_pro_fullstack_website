@@ -5,10 +5,19 @@ import { usePermission } from '@/hooks/usePermission';
 import { Permission } from '@/config/permissions';
 import { toast } from 'react-toastify';
 
+/**
+ * PermissionButton component props
+ * @interface PermissionButtonProps
+ * @extends {React.ButtonHTMLAttributes<HTMLButtonElement>}
+ */
 interface PermissionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Required permission to enable the button */
   permission: Permission;
+  /** Button content */
   children: React.ReactNode;
+  /** Error message shown when user lacks permission */
   disabledMessage?: string;
+  /** Click handler (only called if user has permission) */
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 

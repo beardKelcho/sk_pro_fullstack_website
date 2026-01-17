@@ -3,18 +3,34 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
+/**
+ * LazyImage component props
+ * @interface LazyImageProps
+ */
 interface LazyImageProps {
+  /** Image source URL */
   src: string;
+  /** Alt text for accessibility */
   alt: string;
+  /** Additional CSS classes */
   className?: string;
+  /** Image width (required if fill is false) */
   width?: number;
+  /** Image height (required if fill is false) */
   height?: number;
+  /** Placeholder image URL or blur data URL */
   placeholder?: string;
+  /** Error handler callback */
   onError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
+  /** Load image with priority (above the fold) */
   priority?: boolean;
+  /** Responsive image sizes for different viewports */
   sizes?: string;
+  /** Image quality (1-100, default: 85) */
   quality?: number;
+  /** Fill parent container (requires relative positioning) */
   fill?: boolean;
+  /** Object fit style for the image */
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 }
 

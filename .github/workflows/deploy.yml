@@ -56,7 +56,7 @@ jobs:
       # İstersen ekstra güvence olarak Deploy Hook'ları da tetikleyebiliriz.
       # Secret tanımlı değilse bu step'ler otomatik olarak SKIP edilir.
       - name: Trigger Render deploy hook (staging)
-        if: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL != '' }}
+        if: secrets.RENDER_STAGING_DEPLOY_HOOK_URL != ''
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }}
         run: |
@@ -65,7 +65,7 @@ jobs:
             --retry 5 --retry-delay 2 --retry-all-errors
 
       - name: Trigger Vercel deploy hook (staging)
-        if: ${{ secrets.VERCEL_STAGING_DEPLOY_HOOK_URL != '' }}
+        if: secrets.VERCEL_STAGING_DEPLOY_HOOK_URL != ''
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_STAGING_DEPLOY_HOOK_URL }}
         run: |
@@ -134,7 +134,7 @@ jobs:
           cd ../server && npm run build
 
       - name: Trigger Render deploy hook (production)
-        if: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL != '' }}
+        if: secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL != ''
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL }}
         run: |
@@ -143,7 +143,7 @@ jobs:
             --retry 5 --retry-delay 2 --retry-all-errors
 
       - name: Trigger Vercel deploy hook (production)
-        if: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL != '' }}
+        if: secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL != ''
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL }}
         run: |
@@ -205,7 +205,7 @@ jobs:
           echo "⚠️  This is a hotfix - production deployment will be triggered"
 
       - name: Trigger Render deploy hook (production)
-        if: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL != '' }}
+        if: secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL != ''
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL }}
         run: |
@@ -214,7 +214,7 @@ jobs:
             --retry 5 --retry-delay 2 --retry-all-errors
 
       - name: Trigger Vercel deploy hook (production)
-        if: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL != '' }}
+        if: secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL != ''
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL }}
         run: |

@@ -18,7 +18,8 @@ const Footer: React.FC = () => {
     const fetchSocialMedia = async () => {
       try {
         // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
-        const response = await fetch(`/api/site-content/public/social?_t=${Date.now()}`, { cache: 'no-store' });
+        // Cache-busting kaldırıldı - rate limiting'i önlemek için
+        const response = await fetch(`/api/site-content/public/social`, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
           if (data.content) {

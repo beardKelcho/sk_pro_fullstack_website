@@ -417,7 +417,8 @@ export default function Home() {
     };
 
     fetchSiteContent();
-  }, [locale, tHome, safeArray, safeObject, safeRaw]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]); // Sadece locale değiştiğinde yeniden yükle - rate limiting'i önlemek için
 
   // Hero rotating texts için effect
   useEffect(() => {

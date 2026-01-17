@@ -51,6 +51,8 @@ export default function AdminLogin() {
           localStorage.removeItem('user');
           sessionStorage.removeItem('accessToken');
           sessionStorage.removeItem('user');
+          // Header'ı anında güncellemek için custom event dispatch et
+          window.dispatchEvent(new CustomEvent('auth:logout'));
         }
       }
     };
@@ -203,6 +205,8 @@ export default function AdminLogin() {
           } else {
             sessionStorage.setItem('user', JSON.stringify(response.data.user));
           }
+          // Header'ı anında güncellemek için custom event dispatch et
+          window.dispatchEvent(new CustomEvent('auth:login'));
         }
         
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
@@ -284,6 +288,8 @@ export default function AdminLogin() {
             localStorage.removeItem('user');
             sessionStorage.removeItem('accessToken');
             sessionStorage.removeItem('user');
+            // Header'ı anında güncellemek için custom event dispatch et
+            window.dispatchEvent(new CustomEvent('auth:logout'));
             setLoginError('Giriş doğrulaması başarısız. Lütfen tekrar deneyin.');
             setLoading(false);
           }
@@ -307,6 +313,8 @@ export default function AdminLogin() {
           localStorage.removeItem('user');
           sessionStorage.removeItem('accessToken');
           sessionStorage.removeItem('user');
+          // Header'ı anında güncellemek için custom event dispatch et
+          window.dispatchEvent(new CustomEvent('auth:logout'));
           
           const errorMessage = profileError.response?.data?.message || profileError.message || 'Token doğrulanamadı';
           setLoginError(`Giriş doğrulaması başarısız: ${errorMessage}. Lütfen tekrar deneyin.`);
@@ -390,6 +398,10 @@ export default function AdminLogin() {
           if (response.user) {
             sessionStorage.setItem('user', JSON.stringify(response.user));
           }
+        }
+        // Header'ı anında güncellemek için custom event dispatch et
+        if (response.user) {
+          window.dispatchEvent(new CustomEvent('auth:login'));
         }
 
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay

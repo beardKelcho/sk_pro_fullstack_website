@@ -203,6 +203,8 @@ apiClient.interceptors.response.use(
           localStorage.removeItem('user');
           sessionStorage.removeItem('accessToken');
           sessionStorage.removeItem('user');
+          // Header'ı anında güncellemek için custom event dispatch et
+          window.dispatchEvent(new CustomEvent('auth:logout'));
           // Sadece admin sayfalarındaysa yönlendir
           if (window.location.pathname.startsWith('/admin')) {
             window.location.href = '/admin';

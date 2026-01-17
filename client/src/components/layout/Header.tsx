@@ -25,16 +25,38 @@ const Header: React.FC = () => {
 
   const prefix = `/${locale}`;
 
-  // Kullanıcı giriş kontrolü
+  // Kullanıcı giriş kontrolü - Storage değişikliklerini anında algıla
   useEffect(() => {
     const checkAuth = () => {
       const user = getStoredUser();
       setIsAuthenticated(!!user);
     };
+    
+    // İlk kontrol
     checkAuth();
-    // Storage değişikliklerini dinle
-    const interval = setInterval(checkAuth, 1000);
-    return () => clearInterval(interval);
+    
+    // Storage değişikliklerini dinle (localStorage/sessionStorage değiştiğinde)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'user' || e.key === 'accessToken') {
+        checkAuth();
+      }
+    };
+    
+    // Custom event dinle (login başarılı olduğunda dispatch edilir)
+    const handleAuthChange = () => {
+      checkAuth();
+    };
+    
+    // Event listener'ları ekle
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth:login', handleAuthChange);
+    window.addEventListener('auth:logout', handleAuthChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth:login', handleAuthChange);
+      window.removeEventListener('auth:logout', handleAuthChange);
+    };
   }, []);
 
   const localeOptions = useMemo(

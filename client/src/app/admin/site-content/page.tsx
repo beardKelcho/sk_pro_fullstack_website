@@ -1413,15 +1413,6 @@ function VideoSelector({
   const [previewFailedUrl, setPreviewFailedUrl] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-  // baseUrl'i doğru oluştur - http://localhost:5001 formatında olmalı
-  let baseUrl = '';
-  if (API_URL.includes('://')) {
-    // http:// veya https:// içeriyorsa
-    baseUrl = API_URL.replace(/\/api\/?$/, '');
-  } else {
-    // Sadece localhost:5001/api gibi bir format ise
-    baseUrl = API_URL.startsWith('localhost') ? `http://${API_URL.replace(/\/api\/?$/, '')}` : API_URL.replace(/\/api\/?$/, '');
-  }
 
   const fetchVideos = useCallback(async () => {
     try {

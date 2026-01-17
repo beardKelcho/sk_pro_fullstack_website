@@ -1421,7 +1421,20 @@ function VideoSelector({
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
   const fetchVideos = useCallback(async () => {
+    // Rate limiting hatası geldiyse tekrar deneme
+    if (rateLimitedRef.current) {
+      console.warn('⚠️ VideoSelector: Rate limiting hatası var, fetchVideos atlanıyor');
+      return;
+    }
+    
+    // Zaten fetch yapıldıysa tekrar yapma (React Strict Mode için)
+    if (fetchAttemptedRef.current && videos.length > 0) {
+      console.log('ℹ️ VideoSelector: Zaten fetch yapıldı ve videolar var, tekrar fetch atlanıyor');
+      return;
+    }
+    
     try {
+      fetchAttemptedRef.current = true;
       setLoading(true);
       console.log('🎬 VideoSelector: fetchVideos başlatılıyor...', { category: 'video', isActive: true });
       logger.debug('Video yükleme başlatılıyor...', { category: 'video', isActive: true });

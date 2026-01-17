@@ -7,6 +7,7 @@ import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { setupSwagger } from './config/swagger';
 import logger from './utils/logger';
+import { logCDNConfig } from './config/cdn';
 import { startScheduledTasks } from './utils/scheduledTasks';
 import connectDB from './config/database';
 import { connectRedis } from './config/redis';

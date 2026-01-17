@@ -6,6 +6,7 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import logger from '../utils/logger';
+import { convertToCDNUrl } from '../config/cdn';
 
 // S3 Client configuration
 const s3Client = new S3Client({
@@ -56,10 +57,12 @@ export const uploadToS3 = async (
 
     const result = await s3Client.send(command);
 
-    // Public URL oluştur
-    const url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+    // Public URL oluştur (CDN varsa CDN URL'i kullan)
+    const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+    const url = convertToCDNUrl(s3Url);
 
-    logger.info(`S3'e dosya yüklendi: ${key}`);
+    logger.info(`S3'e dosya yüklendi: ${key}`, { url });
+
 
     return {
       key,

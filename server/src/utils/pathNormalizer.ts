@@ -4,6 +4,7 @@
  */
 
 import path from 'path';
+import { convertToCDNUrl } from '../config/cdn';
 
 /**
  * Path'i normalize et

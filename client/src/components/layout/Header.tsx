@@ -37,10 +37,13 @@ const Header: React.FC = () => {
       }
     };
     
-    // İlk kontrol
+    // İlk kontrol - Component mount olduğunda hemen kontrol et
+    // (Yeni tab açıldığında veya sayfa yüklendiğinde çalışır)
     checkAuth();
     
     // Storage değişikliklerini dinle (farklı tab'larda değişiklik olduğunda)
+    // ÖNEMLİ: Bu event sadece farklı tab'larda localStorage değişikliği olduğunda tetiklenir
+    // Aynı tab'da localStorage değişikliği olduğunda tetiklenmez (bu yüzden custom event kullanıyoruz)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'user' || e.key === 'accessToken') {
         checkAuth();

@@ -92,7 +92,7 @@ jobs:
           cd ../server && npm ci
       
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.10.0
+        uses: supercharge/mongodb-github-action@1.12.1
         with:
           mongodb-version: '7.0'
       

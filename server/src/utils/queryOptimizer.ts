@@ -1,152 +1,195 @@
+/**
+ * Query Optimization Utilities
+ * Database sorgularını optimize etmek için yardımcı fonksiyonlar
+ */
+
+import mongoose from 'mongoose';
 import logger from './logger';
 
 /**
- * Query performance optimizasyon yardımcı fonksiyonları
+ * Query explain plan analizi
+ * Sorgunun performansını analiz eder
  */
-
-/**
- * Select sadece gerekli alanları getirir (lean query için)
- * @param fields - Getirilecek alan isimleri
- * @returns MongoDB select string
- * @example
- * selectFields(['name', 'email', 'role']) // "name email role"
- */
-export const selectFields = (fields: string[]): string => {
-  return fields.join(' ');
-};
-
-/**
- * Pagination için skip ve limit hesaplar
- * @param page - Sayfa numarası (1'den başlar)
- * @param limit - Sayfa başına kayıt sayısı (max: 100)
- * @returns Hesaplanmış skip, limit ve page değerleri
- * @example
- * calculatePagination(2, 20) // { skip: 20, limit: 20, page: 2 }
- */
-export const calculatePagination = (page: number, limit: number) => {
-  const pageNumber = Math.max(1, page);
-  const limitNumber = Math.min(Math.max(1, limit), 100); // Max 100 items per page
-  const skip = (pageNumber - 1) * limitNumber;
-
-  return { skip, limit: limitNumber, page: pageNumber };
-};
-
-/**
- * MongoDB sort options oluşturur
- * @param sort - Sort string (örn: "name" veya "-createdAt")
- * @returns MongoDB sort objesi
- * @example
- * createSortOptions("name") // { name: 1 }
- * createSortOptions("-createdAt") // { createdAt: -1 }
- */
-export const createSortOptions = (sort: string): Record<string, 1 | -1> => {
-  const sortField = sort.startsWith('-') ? sort.substring(1) : sort;
-  const sortOrder = sort.startsWith('-') ? -1 : 1;
-
-  const sortOptions: Record<string, 1 | -1> = {};
-  sortOptions[sortField] = sortOrder;
-  return sortOptions;
-};
-
-/**
- * Text search için güvenli regex oluşturur
- * Özel karakterleri escape eder
- * @param search - Aranacak metin
- * @param caseSensitive - Büyük/küçük harf duyarlı mı? (default: false)
- * @returns Güvenli regex pattern
- * @example
- * createSearchRegex("test") // /test/i
- * createSearchRegex("test", true) // /test/
- */
-export const createSearchRegex = (search: string, caseSensitive: boolean = false): RegExp => {
-  return new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), caseSensitive ? '' : 'i');
-};
-
-/**
- * Date range filter oluşturur
- * @param startDate - Başlangıç tarihi (opsiyonel)
- * @param endDate - Bitiş tarihi (opsiyonel)
- * @returns MongoDB date range filter veya null
- * @example
- * createDateRangeFilter('2024-01-01', '2024-12-31')
- * // { $gte: new Date('2024-01-01'), $lte: new Date('2024-12-31') }
- */
-export const createDateRangeFilter = (
-  startDate?: string | Date,
-  endDate?: string | Date
-): Record<string, any> | null => {
-  if (!startDate && !endDate) {
+export const explainQuery = async <T>(
+  query: mongoose.Query<T, T>,
+  label?: string
+): Promise<any> => {
+  try {
+    const explainResult = await query.explain('executionStats');
+    
+    if (process.env.NODE_ENV === 'development' && process.env.DEBUG_QUERIES === 'true') {
+      logger.debug(`Query Explain (${label || 'unnamed'}):`, {
+        executionStats: explainResult.executionStats,
+        queryPlanner: explainResult.queryPlanner,
+      });
+    }
+    
+    return explainResult;
+  } catch (error) {
+    logger.error('Query explain error:', error);
     return null;
   }
-
-  const filter: Record<string, any> = {};
-
-  if (startDate) {
-    filter.$gte = new Date(startDate);
-  }
-
-  if (endDate) {
-    filter.$lte = new Date(endDate);
-  }
-
-  return Object.keys(filter).length > 0 ? filter : null;
 };
 
 /**
- * Query execution time ölçümü için wrapper
- * Yavaş query'leri (1 saniyeden fazla) uyarır
- * @param queryName - Query adı (loglama için)
- * @param queryFn - Ölçülecek query fonksiyonu
- * @returns Query sonucu
- * @template T - Query sonuç tipi
- * @example
- * const users = await measureQueryTime('getUsers', () => User.find({}));
+ * Index kullanımını kontrol et
  */
-export const measureQueryTime = async <T>(
-  queryName: string,
-  queryFn: () => Promise<T>
-): Promise<T> => {
-  const startTime = Date.now();
+export const checkIndexUsage = async (
+  collectionName: string,
+  query: any
+): Promise<boolean> => {
   try {
-    const result = await queryFn();
-    const executionTime = Date.now() - startTime;
-
-    if (executionTime > 1000) {
-      logger.warn(`Slow query detected: ${queryName} took ${executionTime}ms`);
-    } else {
-      logger.debug(`Query ${queryName} executed in ${executionTime}ms`);
+    const explainResult = await mongoose.connection.db
+      .collection(collectionName)
+      .find(query)
+      .explain('executionStats');
+    
+    const executionStats = explainResult.executionStats || explainResult.queryPlanner?.winningPlan;
+    const stage = executionStats?.stage || executionStats?.inputStage?.stage;
+    
+    // Index kullanıldı mı?
+    const usesIndex = stage === 'IXSCAN' || stage === 'FETCH' || executionStats?.totalDocsExamined < executionStats?.totalDocsReturned;
+    
+    if (!usesIndex && process.env.NODE_ENV === 'development') {
+      logger.warn(`⚠️  Query on ${collectionName} may not be using an index:`, {
+        query,
+        stage,
+        executionStats,
+      });
     }
-
-    return result;
+    
+    return usesIndex;
   } catch (error) {
-    const executionTime = Date.now() - startTime;
-    logger.error(`Query ${queryName} failed after ${executionTime}ms:`, error);
-    throw error;
+    logger.error('Index usage check error:', error);
+    return false;
   }
 };
 
 /**
- * Lean query için optimize edilmiş options
+ * Select only needed fields (projection)
  */
-export const leanQueryOptions = {
-  lean: true,
-  leanWithId: true,
-  leanVirtuals: true,
+export const selectFields = <T extends Record<string, any>>(
+  fields: (keyof T)[]
+): Record<string, 1> => {
+  return fields.reduce((acc, field) => {
+    acc[field as string] = 1;
+    return acc;
+  }, {} as Record<string, 1>);
 };
 
 /**
- * Populate options optimize eder
- * Sadece gerekli alanları getirir (name, email)
- * @param fields - Populate edilecek field isimleri
- * @returns Optimize edilmiş populate options
- * @example
- * optimizePopulate(['user', 'client'])
- * // [{ path: 'user', select: 'name email' }, { path: 'client', select: 'name email' }]
+ * Pagination helper with optimized skip/limit
  */
-export const optimizePopulate = (fields: string[]) => {
-  return fields.map((field) => ({
-    path: field,
-    select: 'name email', // Sadece gerekli alanları getir
-  }));
+export const paginate = (page: number = 1, limit: number = 10) => {
+  const skip = (page - 1) * limit;
+  return { skip, limit };
 };
 
+/**
+ * Sort helper with index-friendly sorting
+ */
+export const sortBy = (field: string, order: 'asc' | 'desc' = 'asc') => {
+  return { [field]: order === 'asc' ? 1 : -1 };
+};
+
+/**
+ * Lean query helper (faster, returns plain objects)
+ */
+export const leanQuery = <T>(query: mongoose.Query<T, T>): mongoose.Query<T, T> => {
+  return query.lean();
+};
+
+/**
+ * Batch processing helper
+ * Büyük veri setlerini küçük parçalara bölerek işler
+ */
+export const batchProcess = async <T>(
+  query: mongoose.Query<T[], T>,
+  batchSize: number,
+  processor: (batch: T[]) => Promise<void>
+): Promise<void> => {
+  let skip = 0;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const batch = await query.skip(skip).limit(batchSize).lean().exec();
+    
+    if (batch.length === 0) {
+      hasMore = false;
+      break;
+    }
+    
+    await processor(batch);
+    skip += batchSize;
+    
+    if (batch.length < batchSize) {
+      hasMore = false;
+    }
+  }
+};
+
+/**
+ * Query cache helper (basit in-memory cache)
+ */
+const queryCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 dakika
+
+export const cachedQuery = async <T>(
+  key: string,
+  queryFn: () => Promise<T>,
+  ttl: number = CACHE_TTL
+): Promise<T> => {
+  const cached = queryCache.get(key);
+  
+  if (cached && Date.now() - cached.timestamp < ttl) {
+    return cached.data;
+  }
+  
+  const data = await queryFn();
+  queryCache.set(key, { data, timestamp: Date.now() });
+  
+  return data;
+};
+
+/**
+ * Cache temizleme
+ */
+export const clearQueryCache = (pattern?: string): void => {
+  if (pattern) {
+    const regex = new RegExp(pattern);
+    for (const key of queryCache.keys()) {
+      if (regex.test(key)) {
+        queryCache.delete(key);
+      }
+    }
+  } else {
+    queryCache.clear();
+  }
+};
+
+/**
+ * Slow query detection
+ */
+export const detectSlowQueries = (threshold: number = 1000) => {
+  const originalExec = mongoose.Query.prototype.exec;
+  
+  mongoose.Query.prototype.exec = function (this: any) {
+    const startTime = Date.now();
+    const query = this;
+    
+    return originalExec.apply(this, arguments).then((result: any) => {
+      const duration = Date.now() - startTime;
+      
+      if (duration > threshold) {
+        logger.warn(`⚠️  Slow query detected (${duration}ms):`, {
+          model: query.model?.modelName,
+          op: query.op,
+          conditions: query._conditions,
+          duration,
+        });
+      }
+      
+      return result;
+    });
+  };
+};

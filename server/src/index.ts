@@ -21,6 +21,7 @@ import { authLimiter, exportLimiter, generalApiLimiter, uploadLimiter, loginLimi
 import fs from 'fs';
 import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
+import { detectSlowQueries } from './utils/queryOptimizer';
 
 // Environment değişkenlerini yapılandır
 dotenv.config();
@@ -239,6 +240,11 @@ const startServer = async () => {
       logger.info('MongoDB veritabanına bağlandı');
       // DB query metriklerini topla
       initMongooseQueryMonitor();
+      // Slow query detection (development'ta)
+      if (process.env.NODE_ENV === 'development' && process.env.DEBUG_SLOW_QUERIES === 'true') {
+        detectSlowQueries(1000); // 1 saniyeden uzun sorguları logla
+        logger.info('🔍 Slow query detection enabled (threshold: 1000ms)');
+      }
       // MongoDB bağlandıktan sonra zamanlanmış görevleri başlat
       startScheduledTasks();
     }).catch((dbError) => {

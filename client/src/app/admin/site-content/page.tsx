@@ -1344,6 +1344,11 @@ const VideoThumbnail = ({
             muted
             playsInline
             crossOrigin="anonymous"
+            onError={() => {
+              // Hemen failed state'e geç - tekrar istek atmasın
+              setFailed(true);
+              setLoading(false);
+            }}
           />
         )}
         <canvas ref={canvasRef} className="hidden" />
@@ -1694,25 +1699,32 @@ function VideoSelector({
           return (
             <div className="bg-white dark:bg-gray-900 rounded-xl border-2 border-[#0066CC] dark:border-primary-light shadow-lg overflow-hidden">
               <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">
-                <video
-                  src={previewUrl}
-                  className="w-full h-full object-cover"
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  onError={(e) => {
-                    // Log spam'i engelle: aynı URL için bir kere fail state'e düşür
-                    if (previewFailedUrl !== previewUrl) {
-                      logger.warn('Video önizleme yüklenemedi:', previewUrl);
-                      setPreviewFailedUrl(previewUrl);
-                    }
-                  }}
-                  onLoadedMetadata={(e) => {
-                    const target = e.target as HTMLVideoElement;
-                    target.currentTime = 1;
-                  }}
-                />
+                {previewFailedUrl !== previewUrl && (
+                  <video
+                    src={previewUrl}
+                    className="w-full h-full object-cover"
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    onError={(e) => {
+                      // Hemen fail state'e geç - tekrar istek atmasın
+                      if (previewFailedUrl !== previewUrl) {
+                        logger.warn('Video önizleme yüklenemedi:', previewUrl);
+                        setPreviewFailedUrl(previewUrl);
+                      }
+                      // Video elementini hemen durdur
+                      const target = e.target as HTMLVideoElement;
+                      target.pause();
+                      target.src = '';
+                      target.load();
+                    }}
+                    onLoadedMetadata={(e) => {
+                      const target = e.target as HTMLVideoElement;
+                      target.currentTime = 1;
+                    }}
+                  />
+                )}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                   <div className="w-16 h-16 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center shadow-lg">
                     <svg className="w-8 h-8 text-[#0066CC] dark:text-primary-light ml-1" fill="currentColor" viewBox="0 0 24 24">

@@ -235,14 +235,17 @@ export default function ProjectsPage() {
             baseFilename="projects"
             label="Dışa Aktar"
           />
-          <Link href="/admin/projects/add">
-            <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              Yeni Proje Ekle
-            </button>
-          </Link>
+          <PermissionLink
+            permission={Permission.PROJECT_CREATE}
+            href="/admin/projects/add"
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+            disabledMessage="Yeni proje oluşturma yetkiniz bulunmamaktadır"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Yeni Proje Ekle
+          </PermissionLink>
         </div>
       </div>
 

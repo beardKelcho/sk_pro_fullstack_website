@@ -158,56 +158,86 @@ export const rolePermissions: Record<Role, Permission[]> = {
   ],
   
   [Role.PROJE_YONETICISI]: [
-    // Proje yöneticisi: Projeler, görevler, müşteriler (malzeme ekleyip çıkaramaz)
+    // Proje: Tam yetki
     Permission.PROJECT_VIEW,
     Permission.PROJECT_CREATE,
     Permission.PROJECT_UPDATE,
     Permission.PROJECT_DELETE,
+    // Görev: Tam yetki
     Permission.TASK_VIEW,
     Permission.TASK_CREATE,
     Permission.TASK_UPDATE,
     Permission.TASK_DELETE,
+    // Müşteri: Tam yetki
     Permission.CLIENT_VIEW,
     Permission.CLIENT_CREATE,
     Permission.CLIENT_UPDATE,
     Permission.CLIENT_DELETE,
-    Permission.EQUIPMENT_VIEW, // Sadece görüntüleme
-    Permission.MAINTENANCE_VIEW, // Sadece görüntüleme
-    Permission.USER_VIEW, // Sadece görüntüleme
+    // Ekipman: Sadece görüntüleme (ekleyemez, çıkaramaz)
+    Permission.EQUIPMENT_VIEW,
+    // Bakım: Sadece görüntüleme
+    Permission.MAINTENANCE_VIEW,
+    // Kullanıcı: Sadece görüntüleme
+    Permission.USER_VIEW,
+    // Export: Veri dışa aktarma
     Permission.EXPORT_DATA,
+    // QR Kod: Görüntüleme ve tarama
     Permission.QR_VIEW,
     Permission.QR_SCAN,
+    // Dosya: Yükleme
+    Permission.FILE_UPLOAD,
   ],
   
   [Role.DEPO_SORUMLUSU]: [
-    // Depo sorumlusu: Ekipman, bakım (görev giremez)
+    // Ekipman: Tam yetki
     Permission.EQUIPMENT_VIEW,
     Permission.EQUIPMENT_CREATE,
     Permission.EQUIPMENT_UPDATE,
     Permission.EQUIPMENT_DELETE,
+    // Bakım: Tam yetki
     Permission.MAINTENANCE_VIEW,
     Permission.MAINTENANCE_CREATE,
     Permission.MAINTENANCE_UPDATE,
     Permission.MAINTENANCE_DELETE,
-    Permission.PROJECT_VIEW, // Sadece görüntüleme
-    Permission.CLIENT_VIEW, // Sadece görüntüleme
+    // Proje: Sadece görüntüleme (görev giremez)
+    Permission.PROJECT_VIEW,
+    // Müşteri: Sadece görüntüleme
+    Permission.CLIENT_VIEW,
+    // Export: Veri dışa aktarma
     Permission.EXPORT_DATA,
+    // QR Kod: Tam yetki
     Permission.QR_VIEW,
     Permission.QR_CREATE,
     Permission.QR_UPDATE,
     Permission.QR_SCAN,
+    // Dosya: Yükleme ve silme
+    Permission.FILE_UPLOAD,
+    Permission.FILE_DELETE,
   ],
   
   [Role.TEKNISYEN]: [
-    // Teknisyen: Sadece görüntüleme (okuma yetkisi)
+    // Proje: Sadece görüntüleme (düzenleyemez, ekleyemez)
     Permission.PROJECT_VIEW,
+    // Görev: Görüntüleme, oluşturma ve düzenleme (kendi görevleri için)
     Permission.TASK_VIEW,
+    Permission.TASK_CREATE,
+    Permission.TASK_UPDATE,
+    // Müşteri: Sadece görüntüleme
     Permission.CLIENT_VIEW,
+    // Ekipman: Görüntüleme ve durum güncelleme (bakım yapıldı, tamamlandı gibi)
     Permission.EQUIPMENT_VIEW,
+    Permission.EQUIPMENT_UPDATE,
+    // Bakım: Görüntüleme, oluşturma ve düzenleme (bakım kayıtları)
     Permission.MAINTENANCE_VIEW,
+    Permission.MAINTENANCE_CREATE,
+    Permission.MAINTENANCE_UPDATE,
+    // Kullanıcı: Sadece görüntüleme
     Permission.USER_VIEW,
+    // QR Kod: Görüntüleme ve tarama
     Permission.QR_VIEW,
     Permission.QR_SCAN,
+    // Dosya: Yükleme (görev dosyaları, bakım fotoğrafları için)
+    Permission.FILE_UPLOAD,
   ],
 };
 

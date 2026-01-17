@@ -224,7 +224,8 @@ export default function Home() {
             'Expires': '0',
           },
         };
-        const response = await fetch(`/api/site-images/public?category=project&isActive=true&_t=${Date.now()}`, fetchOptions);
+        // Cache-busting sadece ilk yüklemede - rate limiting'i önlemek için
+        const response = await fetch(`/api/site-images/public?category=project&isActive=true`, fetchOptions);
         
         if (response.ok) {
           const data = await response.json();
@@ -276,11 +277,9 @@ export default function Home() {
     
     fetchImages();
     
-    const interval = setInterval(() => {
-      fetchImages();
-    }, 10000);
-    
-    return () => clearInterval(interval);
+    // Interval'ı kaldırdık - rate limiting'e neden oluyordu
+    // Gerekirse kullanıcı sayfayı yenilediğinde otomatik güncellenir
+    // return () => clearInterval(interval);
   }, []);
 
   // Site içeriklerini yükle
@@ -301,12 +300,14 @@ export default function Home() {
           },
         };
         
+        // Cache-busting kaldırıldı - rate limiting'i önlemek için
+        // Next.js cache kontrolü yeterli
         const [heroRes, servicesEquipmentRes, aboutRes, contactRes, socialRes] = await Promise.allSettled([
-          fetch(`/api/site-content/public/hero?_t=${Date.now()}`, fetchOptions),
-          fetch(`/api/site-content/public/services-equipment?_t=${Date.now()}`, fetchOptions),
-          fetch(`/api/site-content/public/about?_t=${Date.now()}`, fetchOptions),
-          fetch(`/api/site-content/public/contact?_t=${Date.now()}`, fetchOptions),
-          fetch(`/api/site-content/public/social?_t=${Date.now()}`, fetchOptions),
+          fetch(`/api/site-content/public/hero`, fetchOptions),
+          fetch(`/api/site-content/public/services-equipment`, fetchOptions),
+          fetch(`/api/site-content/public/about`, fetchOptions),
+          fetch(`/api/site-content/public/contact`, fetchOptions),
+          fetch(`/api/site-content/public/social`, fetchOptions),
         ]);
 
         if (heroRes.status === 'fulfilled' && heroRes.value.ok) {

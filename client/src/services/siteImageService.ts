@@ -23,25 +23,45 @@ export const getAllImages = async (params?: {
   const isPublic = !params || Object.keys(params).length === 0;
   const endpoint = isPublic ? '/site-images/public' : '/site-images';
   
+  // Debug log
+  console.log('🔍 getAllImages çağrılıyor:', { endpoint, params, isPublic });
+  
   try {
     const res = await apiClient.get(endpoint, { params });
+    
+    console.log('✅ getAllImages response:', {
+      status: res.status,
+      data: res.data,
+      imagesCount: res.data?.images?.length || 0,
+    });
     
     // Backend response formatı: { success: true, count: number, images: [] }
     // Axios response formatı: { data: { success, count, images } }
     const responseData = res.data || {};
     
     // Response formatını normalize et
-    return {
+    const result = {
       images: responseData.images || [],
       count: responseData.count || responseData.images?.length || 0,
     };
+    
+    console.log('📦 getAllImages normalized result:', result);
+    
+    return result;
   } catch (error: any) {
     // Hata durumunda detaylı log
-    console.error('getAllImages API hatası:', {
+    console.error('❌ getAllImages API hatası:', {
       endpoint,
       params,
       error: error?.response?.data || error?.message,
       status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      headers: error?.response?.headers,
+      config: {
+        url: error?.config?.url,
+        method: error?.config?.method,
+        headers: error?.config?.headers,
+      },
     });
     throw error;
   }

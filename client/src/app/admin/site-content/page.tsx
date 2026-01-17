@@ -1423,23 +1423,32 @@ function VideoSelector({
   const fetchVideos = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('🎬 VideoSelector: fetchVideos başlatılıyor...', { category: 'video', isActive: true });
       logger.debug('Video yükleme başlatılıyor...', { category: 'video', isActive: true });
       
       // Veritabanından video kategorisindeki tüm aktif videoları çek
       // Admin panelinde olduğumuz için getAllImages otomatik olarak /site-images endpoint'ini kullanacak (authentication ile)
       const response = await getAllImages({ category: 'video', isActive: true });
       
+      console.log('📥 VideoSelector: getAllImages response alındı:', response);
       logger.debug('Video yükleme response:', response);
       
       // Response formatını kontrol et - backend'den { success, count, images } geliyor
       const images = response?.images || response?.data?.images || [];
       
+      console.log('🖼️ VideoSelector: Images extracted:', {
+        imagesCount: images.length,
+        images: images.map(img => ({ id: img._id || img.id, filename: img.filename, category: img.category })),
+      });
+      
       if (!response || images.length === 0) {
+        console.warn('⚠️ VideoSelector: Boş response veya video yok', { response, imagesCount: images.length });
         logger.warn('Video yükleme: Boş response veya video yok', { response, imagesCount: images.length });
         setVideos([]);
         return;
       }
       
+      console.log('✅ VideoSelector: Video yükleme başarılı, setVideos çağrılıyor:', images.length, 'video');
       logger.debug('Video yükleme başarılı:', images.length, 'video bulundu');
       setVideos(images);
       

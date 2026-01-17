@@ -405,14 +405,13 @@ export default function Home() {
             }
           }
         }
-        } catch (error) {
-          if (process.env.NODE_ENV === 'development') {
-            logger.error('Site içerik yükleme hatası:', error);
-          }
-        } finally {
-          // Loading'i false yap - images ayrı useEffect'te yüklenecek
-          setLoading(false);
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          logger.error('Site içerik yükleme hatası:', error);
         }
+      } finally {
+        // Loading'i false yap - images ayrı useEffect'te yüklenecek
+        setLoading(false);
       }
     };
 

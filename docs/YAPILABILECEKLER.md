@@ -269,10 +269,10 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 **Fayda**: Daha hızlı statik dosya yükleme
 
 **Yapılacaklar:**
-- [ ] CDN provider seçimi (Cloudflare, AWS CloudFront)
-- [ ] Statik dosyaları CDN'e taşı
-- [ ] Image optimization CDN üzerinden
-- [ ] Cache stratejisi
+- [x] CDN provider seçimi (Cloudflare, AWS CloudFront, Cloudinary) ✅
+- [x] Statik dosyaları CDN'e taşı ✅ (Otomatik URL dönüşümü)
+- [x] Image optimization CDN üzerinden ✅ (Cloudinary built-in, CloudFront için opsiyonel)
+- [x] Cache stratejisi ✅ (Dokümantasyonda öneriler)
 
 ---
 

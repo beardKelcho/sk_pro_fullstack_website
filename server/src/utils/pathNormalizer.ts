@@ -55,7 +55,10 @@ export const normalizePath = (filePath: string, category?: string): string => {
  */
 export const pathToUrl = (filePath: string): string => {
   const normalized = normalizePath(filePath);
-  return `/uploads/${normalized}`;
+  const localUrl = `/uploads/${normalized}`;
+  
+  // CDN aktifse CDN URL'ine çevir
+  return convertToCDNUrl(localUrl);
 };
 
 /**

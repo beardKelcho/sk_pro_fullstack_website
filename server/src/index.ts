@@ -231,6 +231,7 @@ const startServer = async () => {
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`API URL: http://localhost:${PORT}/api`);
       logger.info(`Swagger UI: http://localhost:${PORT}/api-docs`);
+      logCDNConfig(); // CDN yapılandırmasını logla
     });
     
     // MongoDB bağlantısını arka planda dene (non-blocking)

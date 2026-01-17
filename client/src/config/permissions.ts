@@ -178,25 +178,14 @@ export const rolePermissions: Record<Role, Permission[]> = {
   ],
   
   [Role.TEKNISYEN]: [
-    // Proje: Sadece görüntüleme (düzenleyemez, ekleyemez)
+    // Teknisyen: Sadece görüntüleme yetkisi (okuma yetkisi)
+    // Hiçbir veri oluşturma/güncelleme/silme yetkisi yok
     Permission.PROJECT_VIEW,
-    // Görev: Görüntüleme, oluşturma ve düzenleme (kendi görevleri için)
     Permission.TASK_VIEW,
-    Permission.TASK_CREATE,
-    Permission.TASK_UPDATE,
-    // Müşteri: Sadece görüntüleme
     Permission.CLIENT_VIEW,
-    // Ekipman: Görüntüleme ve durum güncelleme (bakım yapıldı, tamamlandı gibi)
     Permission.EQUIPMENT_VIEW,
-    Permission.EQUIPMENT_UPDATE,
-    // Bakım: Görüntüleme, oluşturma ve düzenleme (bakım kayıtları)
     Permission.MAINTENANCE_VIEW,
-    Permission.MAINTENANCE_CREATE,
-    Permission.MAINTENANCE_UPDATE,
-    // Kullanıcı: Sadece görüntüleme
     Permission.USER_VIEW,
-    // Dosya: Yükleme (görev dosyaları, bakım fotoğrafları için)
-    Permission.FILE_UPLOAD,
   ],
 };
 

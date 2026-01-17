@@ -164,12 +164,7 @@ export default function AdminLogin() {
         }
         
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
-        // Sonra dashboard'a yönlendir - window.location.href kullan (full page reload)
-        // Bu, ProtectedRoute'un token'ı kesinlikle görmesini sağlar
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Redirecting to dashboard in 100ms...');
-        }
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
         
         // Token'ın gerçekten kaydedildiğini doğrula
         const savedToken = formData.rememberMe 
@@ -183,10 +178,30 @@ export default function AdminLogin() {
           return;
         }
         
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Token verified, redirecting to dashboard...');
+        // Token'ın çalıştığını doğrula - getProfile çağrısı yap
+        try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Verifying token with getProfile...');
+          }
+          const profileResponse = await authApi.getProfile();
+          
+          if (profileResponse.data && profileResponse.data.success && profileResponse.data.user) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Token verified successfully, redirecting to dashboard...');
+            }
+            // Token geçerli, dashboard'a yönlendir
+            window.location.href = '/admin/dashboard';
+          } else {
+            logger.error('Token verification failed - invalid profile response');
+            setLoginError('Giriş doğrulaması başarısız. Lütfen tekrar deneyin.');
+            setLoading(false);
+          }
+        } catch (profileError: any) {
+          logger.error('Token verification failed:', profileError);
+          const errorMessage = profileError.response?.data?.message || profileError.message || 'Token doğrulanamadı';
+          setLoginError(`Giriş doğrulaması başarısız: ${errorMessage}`);
+          setLoading(false);
         }
-        window.location.href = '/admin/dashboard';
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
         logger.error('Login failed:', errorMsg);

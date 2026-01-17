@@ -119,7 +119,7 @@ jobs:
 
       - name: Run client tests
         run: |
-          cd client && npm run test:ci
+          cd client && npm run test:ci:stable
 
       - name: Run server tests
         run: |

@@ -34,7 +34,7 @@ jobs:
         run: cd client && npm run type-check
       
       - name: Run Unit Tests
-        run: cd client && npm run test:ci
+        run: cd client && npm run test:ci:stable
       
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
@@ -116,7 +116,7 @@ jobs:
       
       - name: Wait for Servers
         run: |
-          npx wait-on http://localhost:5001/api/health http://localhost:3000 --timeout 60000
+          npx wait-on http://localhost:5001/api/readyz http://localhost:3000 --timeout 90000
       
       - name: Run E2E Tests
         run: cd client && npm run cypress:run

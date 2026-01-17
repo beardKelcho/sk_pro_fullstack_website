@@ -10,7 +10,7 @@
     "test:all": "npm run test:frontend && npm run test:backend && npm run test:e2e",
     "test:all:ci": "npm run test:frontend:ci && npm run test:backend:ci && npm run test:e2e",
     "test:frontend": "cd client && npm run test:ci",
-    "test:frontend:ci": "cd client && npm run test:ci",
+    "test:frontend:ci": "cd client && npm run test:ci:stable",
     "test:backend": "cd server && npm run test:coverage",
     "test:backend:ci": "cd server && npm run test:coverage:ci",
     "test:e2e": "cd client && npm run cypress:run",

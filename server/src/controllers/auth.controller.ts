@@ -99,8 +99,10 @@ export const login = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
     });
 
-    // Audit log - Login
-    await logAction(req, 'LOGIN', 'System', user._id.toString());
+    // Audit log - Login (non-blocking, hata olsa bile login devam etsin)
+    logAction(req, 'LOGIN', 'System', user._id.toString()).catch((auditError) => {
+      logger.warn('Audit log oluşturulamadı (non-blocking):', auditError);
+    });
     
     // Başarılı yanıt
     const mobile = isMobileClient(req);

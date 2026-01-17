@@ -1331,7 +1331,7 @@ const VideoThumbnail = ({
         )}
         
         {/* Video element (gizli, sadece thumbnail için) */}
-        {!failed && (
+        {!failed && videoUrl && (
           <video
             ref={videoRef}
             src={videoUrl}
@@ -1341,11 +1341,17 @@ const VideoThumbnail = ({
             preload="metadata"
             muted
             playsInline
-            crossOrigin="anonymous"
-            onError={() => {
+            // crossOrigin kaldırıldı - CORS sorunlarına neden olabilir
+            onError={(e) => {
               // Hemen failed state'e geç - tekrar istek atmasın
+              logger.warn('Video thumbnail yüklenemedi:', videoUrl, e);
               setFailed(true);
               setLoading(false);
+              // Video element'ini durdur ve src'yi temizle
+              const videoEl = e.currentTarget;
+              videoEl.pause();
+              videoEl.removeAttribute('src');
+              videoEl.load(); // Tekrar yükleme denemesini engelle
             }}
           />
         )}
@@ -1418,7 +1424,16 @@ function VideoSelector({
     try {
       setLoading(true);
       // Veritabanından video kategorisindeki tüm aktif videoları çek
+      // Admin panelinde olduğumuz için getAllImages otomatik olarak /site-images endpoint'ini kullanacak (authentication ile)
       const response = await getAllImages({ category: 'video', isActive: true });
+      
+      if (!response || !response.images) {
+        logger.warn('Video yükleme: Boş response', response);
+        setVideos([]);
+        return;
+      }
+      
+      logger.debug('Video yükleme başarılı:', response.images.length, 'video bulundu');
       setVideos(response.images || []);
       
       // availableVideos'u da güncelle (backward compatibility)
@@ -1454,9 +1469,11 @@ function VideoSelector({
         };
       });
       onVideoSelect(selectedVideo || '', videoList);
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Video yükleme hatası:', error);
-      toast.error('Videolar yüklenirken bir hata oluştu');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Videolar yüklenirken bir hata oluştu';
+      toast.error(errorMessage);
+      setVideos([]);
     } finally {
       setLoading(false);
     }

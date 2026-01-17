@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { useLocale, useTranslations } from 'next-intl';
 import { locales, type AppLocale } from '@/i18n/locales';
 import { usePathname } from 'next/navigation';
+import { getStoredUser } from '@/utils/authStorage';
 
 const getLocaleLabel = (tCommon: ReturnType<typeof useTranslations>, l: AppLocale) => {
   return tCommon(`languages.${l}`);
@@ -15,6 +16,7 @@ const getLocaleLabel = (tCommon: ReturnType<typeof useTranslations>, l: AppLocal
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { theme, setTheme } = useTheme();
   const t = useTranslations('site.header');
   const tCommon = useTranslations('common');
@@ -22,6 +24,18 @@ const Header: React.FC = () => {
   const pathname = usePathname();
 
   const prefix = `/${locale}`;
+
+  // Kullanıcı giriş kontrolü
+  useEffect(() => {
+    const checkAuth = () => {
+      const user = getStoredUser();
+      setIsAuthenticated(!!user);
+    };
+    checkAuth();
+    // Storage değişikliklerini dinle
+    const interval = setInterval(checkAuth, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const localeOptions = useMemo(
     () =>
@@ -185,6 +199,18 @@ const Header: React.FC = () => {
               {t('contact')}
             </Link>
 
+            {/* Admin Paneli Butonu (sadece giriş yapmış kullanıcılar için) */}
+            {isAuthenticated && (
+              <Link
+                href="/admin/dashboard"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#0066CC] dark:bg-primary-light text-white rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-colors font-medium text-sm shadow-sm hover:shadow-md"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Admin Paneli
+              </Link>
+            )}
             {/* Language */}
             <LanguageSwitcher />
             {/* Karanlık Mod Butonu */}
@@ -242,6 +268,19 @@ const Header: React.FC = () => {
               <Link href={`${prefix}#contact`} className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors" onClick={closeMobileMenu}>
                 {t('contact')}
               </Link>
+              {/* Admin Paneli Butonu (mobil, sadece giriş yapmış kullanıcılar için) */}
+              {isAuthenticated && (
+                <Link
+                  href="/admin/dashboard"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#0066CC] dark:bg-primary-light text-white rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-colors font-medium text-sm shadow-sm"
+                  onClick={closeMobileMenu}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  Admin Paneli
+                </Link>
+              )}
             </nav>
           </div>
         )}

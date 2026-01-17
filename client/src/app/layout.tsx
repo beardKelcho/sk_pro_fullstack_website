@@ -13,6 +13,7 @@ import { WebVitals } from '@/components/common/WebVitals';
 import LocalizedErrorBoundary from '@/components/common/LocalizedErrorBoundary';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
 import PWAInstallPrompt from '@/components/common/PWAInstallPrompt';
+import CommandPalette from '@/components/common/CommandPalette';
 import Script from 'next/script';
 import { errorTracker } from '@/utils/errorTracking';
 import { registerServiceWorker } from '@/utils/serviceWorker';
@@ -156,6 +157,7 @@ export default async function RootLayout({
             )}
             <Providers>
               <ErrorProvider>
+                <CommandPalette />
                 {children}
                 <FooterWrapper />
                 <ToastContainer 

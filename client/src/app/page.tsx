@@ -601,30 +601,29 @@ export default function Home() {
         <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
           {(() => {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-            let baseUrl = '';
-            if (API_URL.includes('://')) {
-              baseUrl = API_URL.replace(/\/api\/?$/, '');
-            } else {
-              baseUrl = API_URL.startsWith('localhost') ? `http://${API_URL.replace(/\/api\/?$/, '')}` : API_URL.replace(/\/api\/?$/, '');
-            }
-            
             const videoUrl = heroContent.selectedVideo || heroContent.backgroundVideo || '';
             
             if (videoUrl) {
               let fullVideoUrl = videoUrl;
               
+              // Eğer zaten full URL ise (http/https ile başlıyorsa), olduğu gibi kullan
               if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+                // MongoDB ObjectId formatı kontrolü
                 if (/^[0-9a-fA-F]{24}$/.test(videoUrl)) {
-                  fullVideoUrl = `${baseUrl}/api/site-images/public/${videoUrl}/image`;
+                  // Relative path kullan - Next.js rewrites proxy eder
+                  fullVideoUrl = `/api/site-images/public/${videoUrl}/image`;
                 } else if (videoUrl.startsWith('/uploads/')) {
-                  fullVideoUrl = `${baseUrl}${videoUrl}`;
+                  // Relative path - Next.js rewrites proxy eder
+                  fullVideoUrl = videoUrl;
                 } else if (videoUrl.startsWith('/')) {
-                  fullVideoUrl = `${baseUrl}${videoUrl}`;
+                  // Relative path - Next.js rewrites proxy eder
+                  fullVideoUrl = videoUrl;
                 } else if (videoUrl.includes('/')) {
-                  fullVideoUrl = `${baseUrl}/uploads/${videoUrl}`;
+                  // Relative path oluştur
+                  fullVideoUrl = `/uploads/${videoUrl}`;
                 } else {
-                  fullVideoUrl = `${baseUrl}/uploads/general/${videoUrl}`;
+                  // Relative path oluştur
+                  fullVideoUrl = `/uploads/general/${videoUrl}`;
                 }
               }
               
@@ -1010,13 +1009,11 @@ export default function Home() {
                     }}
                   />
                   {(() => {
-                    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-                    const baseUrl = API_URL.endsWith('/api') ? API_URL.replace(/\/api$/, '') : API_URL.replace(/\/api\/?$/, '');
-                    
+                    // Relative path kullan - Next.js rewrites backend'e proxy eder
                     if (aboutContent?.image && aboutContent.image.length === 24 && /^[a-fA-F0-9]{24}$/.test(aboutContent.image)) {
                       return (
                         <LazyImage
-                          src={`${baseUrl}/api/site-images/public/${aboutContent.image}/image`}
+                          src={`/api/site-images/public/${aboutContent.image}/image`}
                           alt="SK Production Ekibi"
                           className="relative rounded-2xl w-full aspect-[4/3] z-10"
                           fill

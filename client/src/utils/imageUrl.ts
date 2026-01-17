@@ -62,7 +62,6 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
 
   const normalized: ImageUrlOptions = typeof options === 'string' ? { imageId: options } : options;
   const { imageId, image, fallback } = normalized;
-  const baseUrl = getBaseUrl();
   
   // If imageId is provided, use it directly
   if (imageId) {
@@ -74,8 +73,8 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
       // Ama eğer bu bir Next.js internal hash ise, bunu handle etme
       const isOnlyHex = /^[0-9a-f]+$/i.test(imageId);
       if (isOnlyHex && imageId.length >= 12 && imageId.length <= 32) {
-        // Bu bir MongoDB ObjectId veya benzer bir ID - API endpoint'ine gönder
-        return `${baseUrl}/api/site-images/public/${imageId}/image`;
+        // Bu bir MongoDB ObjectId veya benzer bir ID - Relative path kullan (Next.js rewrites proxy eder)
+        return `/api/site-images/public/${imageId}/image`;
       }
     }
     // Geçersiz ID ise fallback döndür
@@ -90,8 +89,8 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
       // Next.js internal hash pattern'i kontrolü
       const isOnlyHex = /^[0-9a-f]+$/i.test(dbId);
       if (isOnlyHex && dbId.length >= 12 && dbId.length <= 32) {
-        // Bu bir MongoDB ObjectId - API endpoint'ine gönder
-        return `${baseUrl}/api/site-images/public/${dbId}/image`;
+        // Bu bir MongoDB ObjectId - Relative path kullan (Next.js rewrites proxy eder)
+        return `/api/site-images/public/${dbId}/image`;
       }
     }
     
@@ -109,17 +108,19 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
       return fallback || '';
     }
     
-    // Convert relative paths to full URLs
-    if (imageUrl.startsWith('/uploads/')) {
-      return `${baseUrl}${imageUrl}`;
-    } else if (!imageUrl.startsWith('http')) {
-      if (!imageUrl.startsWith('/')) {
-        imageUrl = `/${imageUrl}`;
-      }
-      return `${baseUrl}${imageUrl}`;
+    // Eğer zaten full URL ise (http/https ile başlıyorsa), olduğu gibi döndür
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
     }
     
-    return imageUrl;
+    // Relative path ise olduğu gibi döndür (Next.js rewrites proxy eder)
+    // /uploads/ ile başlıyorsa veya / ile başlıyorsa relative path olarak kullan
+    if (imageUrl.startsWith('/')) {
+      return imageUrl;
+    }
+    
+    // Relative path değilse, / ekle
+    return `/${imageUrl}`;
   }
   
   return fallback || '';

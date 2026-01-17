@@ -8,7 +8,7 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', '127.0.0.1'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -21,6 +21,121 @@ const nextConfig = {
         hostname: 'localhost',
         port: '5001',
         pathname: '/api/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '5001',
+        pathname: '/**',
+      },
+      // Local network IP'leri için (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+      {
+        protocol: 'http',
+        hostname: '192.168.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '10.*.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.16.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.17.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.18.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.19.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.20.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.21.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.22.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.23.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.24.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.25.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.26.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.27.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.28.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.29.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.30.*.*',
+        port: '5001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '172.31.*.*',
+        port: '5001',
+        pathname: '/**',
       },
       {
         protocol: 'https',

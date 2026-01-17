@@ -57,22 +57,33 @@ export const logAction = async (
   resourceId: string,
   changes?: AuditLogData['changes']
 ): Promise<void> => {
-  // User ID'yi al, yoksa null kullan (system actions için)
-  const userId = (req.user as any)?.id || (req.user as any)?._id?.toString() || null;
-  
-  await createAuditLog({
-    user: userId, // null olabilir (system actions için)
-    action,
-    resource,
-    resourceId,
-    changes,
-    metadata: {
-      ipAddress: req.ip || req.socket.remoteAddress,
-      userAgent: req.get('user-agent'),
-      method: req.method,
-      endpoint: req.originalUrl || req.url,
-    },
-  });
+  try {
+    // User ID'yi al, yoksa null kullan (system actions için)
+    const userId = (req.user as any)?.id || (req.user as any)?._id?.toString() || null;
+    
+    // userId'nin geçerli bir ObjectId olup olmadığını kontrol et
+    let validUserId: string | null = null;
+    if (userId && typeof userId === 'string' && /^[0-9a-f]{24}$/i.test(userId)) {
+      validUserId = userId;
+    }
+    
+    await createAuditLog({
+      user: validUserId || null, // null olabilir (system actions için)
+      action,
+      resource,
+      resourceId,
+      changes,
+      metadata: {
+        ipAddress: req.ip || req.socket.remoteAddress,
+        userAgent: req.get('user-agent'),
+        method: req.method,
+        endpoint: req.originalUrl || req.url,
+      },
+    });
+  } catch (error) {
+    // Audit log hatası ana işlemi engellemesin - sadece logla
+    logger.error('Audit log oluşturma hatası:', error);
+  }
 };
 
 /**

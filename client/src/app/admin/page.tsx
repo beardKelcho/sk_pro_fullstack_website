@@ -185,24 +185,51 @@ export default function AdminLogin() {
         }
         
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 200));
         
-        // Token'ın gerçekten kaydedildiğini doğrula
-        const savedToken = formData.rememberMe 
-          ? localStorage.getItem('accessToken')
-          : sessionStorage.getItem('accessToken');
+        // Token'ın gerçekten kaydedildiğini doğrula - hem localStorage hem sessionStorage'dan kontrol et
+        const savedTokenLocal = localStorage.getItem('accessToken');
+        const savedTokenSession = sessionStorage.getItem('accessToken');
+        const savedToken = formData.rememberMe ? savedTokenLocal : savedTokenSession;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Token verification after save:');
+          console.log('Remember me:', formData.rememberMe);
+          console.log('Token in localStorage:', !!savedTokenLocal, savedTokenLocal ? savedTokenLocal.length + ' chars' : 'none');
+          console.log('Token in sessionStorage:', !!savedTokenSession, savedTokenSession ? savedTokenSession.length + ' chars' : 'none');
+          console.log('Using token from:', formData.rememberMe ? 'localStorage' : 'sessionStorage');
+        }
         
         if (!savedToken) {
-          logger.error('Token was not saved properly');
+          logger.error('Token was not saved properly', {
+            rememberMe: formData.rememberMe,
+            hasLocalStorage: !!savedTokenLocal,
+            hasSessionStorage: !!savedTokenSession
+          });
           setLoginError('Token kaydedilemedi. Lütfen tekrar deneyin.');
           setLoading(false);
           return;
         }
         
+        // Token formatını kontrol et
+        const tokenParts = savedToken.split('.');
+        if (tokenParts.length !== 3) {
+          logger.error('Invalid token format after save', {
+            parts: tokenParts.length,
+            tokenLength: savedToken.length,
+            firstChars: savedToken.substring(0, 20)
+          });
+          setLoginError('Geçersiz token formatı. Lütfen tekrar deneyin.');
+          setLoading(false);
+          return;
+        }
+        
         if (process.env.NODE_ENV === 'development') {
-          console.log('Token saved successfully');
+          console.log('Token saved successfully and format verified');
           console.log('Token (first 30 chars):', savedToken.substring(0, 30) + '...');
+          console.log('Token (last 10 chars):', '...' + savedToken.substring(savedToken.length - 10));
           console.log('Token length:', savedToken.length);
+          console.log('Token parts:', tokenParts.length);
         }
         
         // Token'ın çalıştığını doğrula - getProfile çağrısı yap

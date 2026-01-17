@@ -38,15 +38,27 @@ apiClient.interceptors.request.use(
         // Token formatını kontrol et (JWT formatı: 3 bölüm, nokta ile ayrılmış)
         const tokenParts = token.split('.');
         if (tokenParts.length !== 3) {
-          console.error('Invalid token format detected:', {
-            parts: tokenParts.length,
-            tokenLength: token.length,
-            firstChars: token.substring(0, 20)
-          });
-          // Geçersiz token'ı temizle
-          localStorage.removeItem('accessToken');
-          sessionStorage.removeItem('accessToken');
-          token = null;
+          // Development modunda detaylı log
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Invalid token format detected in interceptor:', {
+              parts: tokenParts.length,
+              tokenLength: token.length,
+              firstChars: token.substring(0, 20),
+              lastChars: token.substring(token.length - 20),
+              url: config.url
+            });
+          }
+          // Geçersiz token'ı temizle ama sadece gerçekten geçersizse
+          // Eğer token çok kısa veya formatı tamamen yanlışsa temizle
+          if (token.length < 20 || tokenParts.length === 0) {
+            localStorage.removeItem('accessToken');
+            sessionStorage.removeItem('accessToken');
+            token = null;
+          } else {
+            // Format biraz farklı olabilir ama token var, yine de kullanmayı dene
+            // (bazı edge case'ler için)
+            config.headers.Authorization = `Bearer ${token}`;
+          }
         } else {
           config.headers.Authorization = `Bearer ${token}`;
           
@@ -56,6 +68,7 @@ apiClient.interceptors.request.use(
             console.log('Token parts count:', tokenParts.length);
             console.log('Token length:', token.length);
             console.log('Token (first 30 chars):', token.substring(0, 30) + '...');
+            console.log('Token (last 10 chars):', '...' + token.substring(token.length - 10));
             console.log('Authorization header (first 50 chars):', config.headers.Authorization?.substring(0, 50) + '...');
           }
         }

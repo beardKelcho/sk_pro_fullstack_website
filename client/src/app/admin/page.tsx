@@ -183,46 +183,15 @@ export default function AdminLogin() {
           return;
         }
         
-        // Token'ın çalıştığını doğrula - getProfile çağrısı yap
-        try {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Verifying token with getProfile...');
-            console.log('Saved token (first 20 chars):', savedToken.substring(0, 20) + '...');
-          }
-          
-          // Axios instance'ının token'ı görmesi için kısa bir delay
-          await new Promise(resolve => setTimeout(resolve, 50));
-          
-          const profileResponse = await authApi.getProfile();
-          
-          if (profileResponse.data && profileResponse.data.success && profileResponse.data.user) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Token verified successfully, redirecting to dashboard...');
-            }
-            // Token geçerli, dashboard'a yönlendir - full page reload ile
-            window.location.href = '/admin/dashboard';
-          } else {
-            logger.error('Token verification failed - invalid profile response');
-            // Token geçersiz, temizle
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('accessToken');
-            sessionStorage.removeItem('user');
-            setLoginError('Giriş doğrulaması başarısız. Lütfen tekrar deneyin.');
-            setLoading(false);
-          }
-        } catch (profileError: any) {
-          logger.error('Token verification failed:', profileError);
-          // Token geçersiz, temizle
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('accessToken');
-          sessionStorage.removeItem('user');
-          
-          const errorMessage = profileError.response?.data?.message || profileError.message || 'Token doğrulanamadı';
-          setLoginError(`Giriş doğrulaması başarısız: ${errorMessage}. Lütfen tekrar deneyin.`);
-          setLoading(false);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Token saved successfully, redirecting to dashboard...');
+          console.log('Token (first 20 chars):', savedToken.substring(0, 20) + '...');
         }
+        
+        // Token kaydedildi, direkt dashboard'a yönlendir
+        // ProtectedRoute zaten token'ı kontrol edecek, eğer geçersizse login'e yönlendirecek
+        // Bu sayede timing sorunlarını önlemiş oluyoruz
+        window.location.href = '/admin/dashboard';
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
         logger.error('Login failed:', errorMsg);

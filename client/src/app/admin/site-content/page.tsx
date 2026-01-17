@@ -207,6 +207,33 @@ function HeroForm({ content, onSave, saving }: {
     rotatingTexts: content?.rotatingTexts || [],
   });
 
+  const [images, setImages] = useState<SiteImage[]>([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+
+  useEffect(() => {
+    if (showImageModal) {
+      fetchImages();
+    }
+  }, [showImageModal]);
+
+  const fetchImages = async () => {
+    try {
+      const response = await getAllImages({ category: 'hero' });
+      setImages(response.images || []);
+    } catch (error) {
+      logger.error('Resim yükleme hatası:', error);
+    }
+  };
+
+  const handleImageSelect = (imageId: string) => {
+    setFormData({ ...formData, backgroundImage: imageId });
+    setShowImageModal(false);
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, backgroundImage: '' });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
@@ -318,6 +345,42 @@ function HeroForm({ content, onSave, saving }: {
         </div>
       </div>
 
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Arkaplan Görsel (Video yoksa kullanılır)
+        </label>
+        <div className="flex gap-3 items-start">
+          {formData.backgroundImage && (
+            <div className="relative w-32 h-20 rounded border border-gray-300 dark:border-gray-600 overflow-hidden flex-shrink-0">
+              <LazyImage
+                src={getImageUrl(formData.backgroundImage)}
+                alt="Hero background"
+                fill
+                className="object-cover"
+              />
+            </div>
+          )}
+          <div className="flex gap-2 flex-1">
+            <button
+              type="button"
+              onClick={() => setShowImageModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+            >
+              {formData.backgroundImage ? 'Değiştir' : 'Görsel Seç'}
+            </button>
+            {formData.backgroundImage && (
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm"
+              >
+                Kaldır
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <button
         type="submit"
         disabled={saving}
@@ -325,6 +388,48 @@ function HeroForm({ content, onSave, saving }: {
       >
         {saving ? 'Kaydediliyor...' : 'Kaydet'}
       </button>
+
+      {/* Image Selection Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Hero Görseli Seç</h3>
+                <button
+                  onClick={() => setShowImageModal(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {images.map((image) => (
+                  <div
+                    key={image._id || image.id || image.filename}
+                    onClick={() => {
+                      if (image._id) handleImageSelect(image._id);
+                    }}
+                    className="relative aspect-square rounded border-2 border-gray-300 dark:border-gray-600 overflow-hidden cursor-pointer hover:border-blue-500 transition-colors"
+                  >
+                    <LazyImage
+                      src={getImageUrl(image._id)}
+                      alt={image.filename || 'Image'}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+              {images.length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  Henüz hero kategorisinde görsel yok. Lütfen önce görsel yükleyin.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

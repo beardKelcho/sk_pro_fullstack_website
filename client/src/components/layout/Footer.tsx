@@ -17,8 +17,8 @@ const Footer: React.FC = () => {
   useEffect(() => {
     const fetchSocialMedia = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-        const response = await fetch(`${API_URL}/site-content/public/social?_t=${Date.now()}`, { cache: 'no-store' });
+        // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
+        const response = await fetch(`/api/site-content/public/social?_t=${Date.now()}`, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
           if (data.content) {

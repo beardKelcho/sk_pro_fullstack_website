@@ -215,7 +215,7 @@ export default function Home() {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+        // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
         const fetchOptions = {
           cache: 'no-store' as RequestCache,
           headers: {
@@ -224,7 +224,7 @@ export default function Home() {
             'Expires': '0',
           },
         };
-        const response = await fetch(`${API_URL}/site-images/public?category=project&isActive=true&_t=${Date.now()}`, fetchOptions);
+        const response = await fetch(`/api/site-images/public?category=project&isActive=true&_t=${Date.now()}`, fetchOptions);
         
         if (response.ok) {
           const data = await response.json();
@@ -288,7 +288,7 @@ export default function Home() {
     const fetchSiteContent = async () => {
       try {
         setLoading(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+        // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
         const isTr = locale === 'tr';
         
         // Cache bypass için timestamp ekle ve headers ekle
@@ -302,11 +302,11 @@ export default function Home() {
         };
         
         const [heroRes, servicesEquipmentRes, aboutRes, contactRes, socialRes] = await Promise.allSettled([
-          fetch(`${API_URL}/site-content/public/hero?_t=${Date.now()}`, fetchOptions),
-          fetch(`${API_URL}/site-content/public/services-equipment?_t=${Date.now()}`, fetchOptions),
-          fetch(`${API_URL}/site-content/public/about?_t=${Date.now()}`, fetchOptions),
-          fetch(`${API_URL}/site-content/public/contact?_t=${Date.now()}`, fetchOptions),
-          fetch(`${API_URL}/site-content/public/social?_t=${Date.now()}`, fetchOptions),
+          fetch(`/api/site-content/public/hero?_t=${Date.now()}`, fetchOptions),
+          fetch(`/api/site-content/public/services-equipment?_t=${Date.now()}`, fetchOptions),
+          fetch(`/api/site-content/public/about?_t=${Date.now()}`, fetchOptions),
+          fetch(`/api/site-content/public/contact?_t=${Date.now()}`, fetchOptions),
+          fetch(`/api/site-content/public/social?_t=${Date.now()}`, fetchOptions),
         ]);
 
         if (heroRes.status === 'fulfilled' && heroRes.value.ok) {

@@ -1591,10 +1591,10 @@ function VideoSelector({
       const createVideoList = (videos: SiteImage[]) => {
         return videos.map(img => {
           // Video ID varsa relative path kullan
-          const videoId = img._id || img.id;
-          if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
+          const imgId = img._id || img.id;
+          if (imgId && typeof imgId === 'string' && /^[0-9a-f]{24}$/i.test(imgId)) {
             return {
-              url: `/api/site-images/public/${videoId}/image`,
+              url: `/api/site-images/public/${imgId}/image`,
               filename: img.filename,
               uploadedAt: img.createdAt
             };
@@ -1619,9 +1619,25 @@ function VideoSelector({
         });
       };
       
+      // Video URL'ini oluştur (seçili video kontrolü için)
+      let videoUrl = '';
+      if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
+        videoUrl = `/api/site-images/public/${videoId}/image`;
+      } else {
+        let url = video.url || '';
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          const urlObj = new URL(url);
+          url = urlObj.pathname;
+        }
+        if (!url.startsWith('/')) {
+          url = `/${url}`;
+        }
+        videoUrl = url;
+      }
+      
       // Eğer silinen video seçiliyse, seçimi kaldır
-      // selectedVideo artık video ID olabilir, videoUrl ile karşılaştır
-      if (selectedVideo === videoId || selectedVideo === videoUrl) {
+      // selectedVideo artık video ID veya video URL olabilir
+      if (selectedVideo === videoId || selectedVideo === videoUrl || (selectedVideo && typeof selectedVideo === 'string' && selectedVideo.includes(video.url))) {
         onVideoSelect('', createVideoList(updatedVideos));
       } else {
         // Sadece video listesini güncelle

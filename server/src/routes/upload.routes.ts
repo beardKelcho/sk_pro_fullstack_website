@@ -7,35 +7,20 @@ import { Permission } from '../config/permissions';
 import logger from '../utils/logger';
 import { normalizePath, pathToUrl } from '../utils/pathNormalizer';
 import { checkAndOptimizeImage } from '../utils/imageOptimizer';
+import { createStorage, isCloudStorage } from '../config/storage';
+import { uploadToCloudinary, deleteFromCloudinary } from '../services/cloudinaryService';
+import { uploadToS3, deleteFromS3 } from '../services/s3Service';
 
 const router = express.Router();
 
-// Upload klasörünü oluştur
+// Upload klasörünü oluştur (local storage için)
 const uploadDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Multer konfigürasyonu
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // type parametresini hem body'den hem de query'den al
-    const type = req.body.type || (req.query.type as string) || 'general';
-    const typeDir = path.join(uploadDir, type);
-    
-    if (!fs.existsSync(typeDir)) {
-      fs.mkdirSync(typeDir, { recursive: true });
-    }
-    
-    cb(null, typeDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    cb(null, `${name}-${uniqueSuffix}${ext}`);
-  },
-});
+// Storage engine oluştur (local/cloudinary/s3)
+const storage = createStorage();
 
 // File filter
 const fileFilter = (req: express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
@@ -65,7 +50,7 @@ router.post(
   authenticate,
   requirePermission(Permission.FILE_UPLOAD),
   upload.single('file'),
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -74,12 +59,46 @@ router.post(
         });
       }
 
-      const fileType = req.body.type || 'general';
-      const normalizedPath = normalizePath(`${fileType}/${req.file.filename}`, fileType);
-      const fileUrl = pathToUrl(normalizedPath);
+      const fileType = (req.body.type || req.query.type || 'general') as string;
+      let fileUrl: string;
+      let filePath: string;
+      let filename: string;
 
-      // Resim dosyası ise optimize et (async, background'da)
-      if (req.file) {
+      // Cloud storage kullanılıyorsa
+      if (isCloudStorage() && req.file.buffer) {
+        const storageType = process.env.STORAGE_TYPE?.toLowerCase();
+        
+        if (storageType === 'cloudinary') {
+          // Cloudinary'ye upload
+          const result = await uploadToCloudinary(req.file.buffer, req.file.originalname, {
+            folder: fileType,
+            resource_type: 'auto',
+          });
+          
+          fileUrl = result.secure_url;
+          filePath = result.public_id;
+          filename = result.public_id.split('/').pop() || req.file.originalname;
+        } else if (storageType === 's3') {
+          // S3'e upload
+          const result = await uploadToS3(req.file.buffer, req.file.originalname, {
+            folder: fileType,
+            contentType: req.file.mimetype,
+          });
+          
+          fileUrl = result.url;
+          filePath = result.key;
+          filename = result.key.split('/').pop() || req.file.originalname;
+        } else {
+          throw new Error('Unknown storage type');
+        }
+      } else {
+        // Local storage
+        const normalizedPath = normalizePath(`${fileType}/${req.file.filename}`, fileType);
+        fileUrl = pathToUrl(normalizedPath);
+        filePath = normalizedPath;
+        filename = req.file.filename;
+
+        // Resim dosyası ise optimize et (async, background'da)
         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(req.file.filename);
         if (isImage) {
           const fullPath = path.join(process.cwd(), 'uploads', normalizedPath);
@@ -87,19 +106,19 @@ router.post(
             logger.error(`Resim optimizasyonu hatası (background): ${req.file?.filename}`, error);
           });
         }
-
-        logger.info(`Dosya yüklendi: ${req.file.filename} (${(req.file.size / 1024 / 1024).toFixed(2)}MB) by user ${req.user?.id}`);
       }
+
+      logger.info(`Dosya yüklendi: ${filename} (${(req.file.size / 1024 / 1024).toFixed(2)}MB) by user ${req.user?.id}`);
 
       res.status(200).json({
         success: true,
         file: {
-          filename: req.file.filename,
+          filename,
           originalname: req.file.originalname,
           mimetype: req.file.mimetype,
           size: req.file.size,
           url: fileUrl,
-          path: normalizedPath, // Normalize edilmiş path
+          path: filePath,
         },
       });
     } catch (error) {
@@ -118,7 +137,7 @@ router.post(
   authenticate,
   requirePermission(Permission.FILE_UPLOAD),
   upload.array('files', 10),
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     try {
       if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
         return res.status(400).json({
@@ -127,29 +146,65 @@ router.post(
         });
       }
 
-      const fileType = req.body.type || 'general';
-      const files = (req.files as Express.Multer.File[]).map((file) => {
-        const normalizedPath = normalizePath(`${fileType}/${file.filename}`, fileType);
-        const fileUrl = pathToUrl(normalizedPath);
+      const fileType = (req.body.type || req.query.type || 'general') as string;
+      const files = await Promise.all(
+        (req.files as Express.Multer.File[]).map(async (file) => {
+          let fileUrl: string;
+          let filePath: string;
+          let filename: string;
 
-        // Resim dosyası ise optimize et (async, background'da)
-        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.filename);
-        if (isImage) {
-          const fullPath = path.join(process.cwd(), 'uploads', normalizedPath);
-          checkAndOptimizeImage(fullPath).catch((error) => {
-            logger.error(`Resim optimizasyonu hatası (background): ${file.filename}`, error);
-          });
-        }
+          // Cloud storage kullanılıyorsa
+          if (isCloudStorage() && file.buffer) {
+            const storageType = process.env.STORAGE_TYPE?.toLowerCase();
+            
+            if (storageType === 'cloudinary') {
+              const result = await uploadToCloudinary(file.buffer, file.originalname, {
+                folder: fileType,
+                resource_type: 'auto',
+              });
+              
+              fileUrl = result.secure_url;
+              filePath = result.public_id;
+              filename = result.public_id.split('/').pop() || file.originalname;
+            } else if (storageType === 's3') {
+              const result = await uploadToS3(file.buffer, file.originalname, {
+                folder: fileType,
+                contentType: file.mimetype,
+              });
+              
+              fileUrl = result.url;
+              filePath = result.key;
+              filename = result.key.split('/').pop() || file.originalname;
+            } else {
+              throw new Error('Unknown storage type');
+            }
+          } else {
+            // Local storage
+            const normalizedPath = normalizePath(`${fileType}/${file.filename}`, fileType);
+            fileUrl = pathToUrl(normalizedPath);
+            filePath = normalizedPath;
+            filename = file.filename;
 
-        return {
-          filename: file.filename,
-        originalname: file.originalname,
-          mimetype: file.mimetype,
-          size: file.size,
-          url: fileUrl,
-          path: normalizedPath, // Normalize edilmiş path
-        };
-      });
+            // Resim dosyası ise optimize et (async, background'da)
+            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.filename);
+            if (isImage) {
+              const fullPath = path.join(process.cwd(), 'uploads', normalizedPath);
+              checkAndOptimizeImage(fullPath).catch((error) => {
+                logger.error(`Resim optimizasyonu hatası (background): ${file.filename}`, error);
+              });
+            }
+          }
+
+          return {
+            filename,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+            url: fileUrl,
+            path: filePath,
+          };
+        })
+      );
 
       logger.info(`${files.length} dosya yüklendi by user ${req.user?.id}`);
 
@@ -172,21 +227,37 @@ router.delete(
   '/:filename',
   authenticate,
   requirePermission(Permission.FILE_DELETE),
-  (req: express.Request, res: express.Response) => {
+  async (req: express.Request, res: express.Response) => {
     try {
       const { filename } = req.params;
-      const type = req.query.type as string || 'general';
-      const filePath = path.join(uploadDir, type, filename);
+      const fileType = (req.query.type as string) || 'general';
 
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).json({
-          success: false,
-          message: 'Dosya bulunamadı',
-        });
+      if (isCloudStorage()) {
+        const storageType = process.env.STORAGE_TYPE?.toLowerCase();
+        
+        if (storageType === 'cloudinary') {
+          // Cloudinary'den sil
+          const publicId = `${fileType}/${filename}`;
+          await deleteFromCloudinary(publicId, 'auto');
+        } else if (storageType === 's3') {
+          // S3'ten sil
+          const key = `${fileType}/${filename}`;
+          await deleteFromS3(key);
+        }
+      } else {
+        // Local storage'dan sil
+        const filePath = path.join(uploadDir, fileType, filename);
+        
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          logger.info(`Dosya silindi: ${filename} by user ${req.user?.id}`);
+        } else {
+          return res.status(404).json({
+            success: false,
+            message: 'Dosya bulunamadı',
+          });
+        }
       }
-
-      fs.unlinkSync(filePath);
-      logger.info(`Dosya silindi: ${filename} by user ${req.user?.id}`);
 
       res.status(200).json({
         success: true,
@@ -203,4 +274,3 @@ router.delete(
 );
 
 export default router;
-

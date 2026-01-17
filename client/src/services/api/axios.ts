@@ -170,9 +170,14 @@ apiClient.interceptors.response.use(
 
       try {
         // Refresh token ile yeni access token al
+        // Client-side'da relative path kullan (Next.js rewrites proxy eder)
+        // Server-side'da tam URL kullan
         const refreshUrl = typeof window !== 'undefined' 
           ? '/api/auth/refresh-token' 
-          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/auth/refresh-token`;
+          : (() => {
+              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
+              return `${backendUrl}/api/auth/refresh-token`;
+            })();
         const response = await axios.post(refreshUrl, {}, {
           withCredentials: true,
           timeout: 5000,

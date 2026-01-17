@@ -83,6 +83,29 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
+      // Invalid signature veya token hatası varsa direkt temizle
+      const errorMessage = error.response?.data?.message || '';
+      const isInvalidToken = errorMessage.includes('invalid') || 
+                            errorMessage.includes('signature') || 
+                            errorMessage.includes('token') ||
+                            errorMessage.includes('Yetkilendirme başarısız') ||
+                            errorMessage.includes('Geçersiz token');
+
+      if (isInvalidToken) {
+        // Geçersiz token, direkt temizle ve login'e yönlendir
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('user');
+          // Sadece admin sayfalarındaysa yönlendir
+          if (window.location.pathname.startsWith('/admin')) {
+            window.location.href = '/admin';
+          }
+        }
+        return Promise.reject(error);
+      }
+
       try {
         // Refresh token ile yeni access token al
         const refreshUrl = typeof window !== 'undefined' 
@@ -106,14 +129,17 @@ apiClient.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return apiClient(originalRequest);
         }
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         // Refresh token başarısız, logout yap
         if (typeof window !== 'undefined') {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('user');
           sessionStorage.removeItem('accessToken');
           sessionStorage.removeItem('user');
-          window.location.href = '/admin';
+          // Sadece admin sayfalarındaysa yönlendir
+          if (window.location.pathname.startsWith('/admin')) {
+            window.location.href = '/admin';
+          }
         }
         return Promise.reject(refreshError);
       }

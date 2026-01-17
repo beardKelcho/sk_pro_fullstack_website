@@ -25,34 +25,21 @@ export default function AdminLogin() {
   const [twoFactorBackupCode, setTwoFactorBackupCode] = useState('');
   const verify2FAMutation = useVerify2FALogin();
 
-  // Sayfa yüklendiğinde zaten giriş yapılmışsa dashboard'a yönlendir
+  // Sayfa yüklendiğinde token'ları temizle ve temiz bir başlangıç yap
   useEffect(() => {
-    const checkExistingAuth = async () => {
-      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      if (token) {
-        try {
-          // Token geçerli mi kontrol et
-          const response = await authApi.getProfile();
-          if (response.data && response.data.success && response.data.user) {
-            // Token geçerli, dashboard'a yönlendir
-            window.location.href = '/admin/dashboard';
-          } else {
-            // Token geçersiz, temizle
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('accessToken');
-            sessionStorage.removeItem('user');
-          }
-        } catch (error) {
-          // Token geçersiz, temizle
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('accessToken');
-          sessionStorage.removeItem('user');
-        }
-      }
+    // Önce tüm token'ları temizle (geçersiz token sorununu önlemek için)
+    const clearAllTokens = () => {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('user');
     };
-    checkExistingAuth();
+
+    // Sayfa yüklendiğinde token'ları temizle
+    clearAllTokens();
+    
+    // Eğer kullanıcı direkt login sayfasına geldiyse, zaten temiz
+    // Eğer başka bir sayfadan redirect edildiyse, temiz token ile başla
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

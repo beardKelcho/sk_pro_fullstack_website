@@ -191,6 +191,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.EQUIPMENT_VIEW,
     Permission.MAINTENANCE_VIEW,
     Permission.USER_VIEW,
+    // Dosya: Sadece görüntüleme
+    Permission.FILE_VIEW,
   ],
 };
 

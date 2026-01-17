@@ -244,7 +244,18 @@ const Header: React.FC = () => {
             </Link>
 
             {/* Admin Paneli Butonu (sadece giriş yapmış kullanıcılar için) */}
-            {isAuthenticated && (
+            {(() => {
+              const user = getStoredUser();
+              const hasUser = !!user;
+              console.log('🔍 Header - Render check (Desktop):', { 
+                isAuthenticated, 
+                hasUser, 
+                user: user ? { name: user.name, email: user.email } : null,
+                willShow: isAuthenticated || hasUser
+              });
+              return null;
+            })()}
+            {(isAuthenticated || (typeof window !== 'undefined' && !!getStoredUser())) && (
               <Link
                 href="/admin/dashboard"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#0066CC] dark:bg-primary-light text-white rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-colors font-medium text-sm shadow-sm hover:shadow-md"
@@ -313,7 +324,7 @@ const Header: React.FC = () => {
                 {t('contact')}
               </Link>
               {/* Admin Paneli Butonu (mobil, sadece giriş yapmış kullanıcılar için) */}
-              {isAuthenticated && (
+              {(isAuthenticated || (typeof window !== 'undefined' && !!getStoredUser())) && (
                 <Link
                   href="/admin/dashboard"
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#0066CC] dark:bg-primary-light text-white rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-colors font-medium text-sm shadow-sm"

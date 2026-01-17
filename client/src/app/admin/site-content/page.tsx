@@ -1460,7 +1460,7 @@ function VideoSelector({
     } finally {
       setLoading(false);
     }
-  }, [baseUrl, onVideoSelect, selectedVideo]);
+  }, [onVideoSelect, selectedVideo]);
 
   // Sayfa yüklendiğinde videoları çek
   useEffect(() => {
@@ -1925,9 +1925,27 @@ function VideoSelector({
                     // Veritabanına kaydetmek için video ID kullan (en güvenilir yöntem)
                     const videoId = video._id || video.id || '';
                     const videoList = videos.map(img => {
-                      const url = img.url.startsWith('http') 
-                        ? img.url 
-                        : `${baseUrl}${img.url.startsWith('/') ? '' : '/'}${img.url}`;
+                      // Video ID varsa relative path kullan
+                      const imgId = img._id || img.id;
+                      if (imgId && typeof imgId === 'string' && /^[0-9a-f]{24}$/i.test(imgId)) {
+                        return {
+                          url: `/api/site-images/public/${imgId}/image`,
+                          filename: img.filename,
+                          uploadedAt: img.createdAt
+                        };
+                      }
+                      
+                      // ID yoksa URL'den relative path oluştur
+                      let url = img.url || '';
+                      if (url.startsWith('http://') || url.startsWith('https://')) {
+                        const urlObj = new URL(url);
+                        url = urlObj.pathname;
+                      }
+                      
+                      if (!url.startsWith('/')) {
+                        url = `/${url}`;
+                      }
+                      
                       return {
                         url,
                         filename: img.filename,

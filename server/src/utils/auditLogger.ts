@@ -57,10 +57,11 @@ export const logAction = async (
   resourceId: string,
   changes?: AuditLogData['changes']
 ): Promise<void> => {
-  const userId = (req.user as any)?.id || (req.user as any)?._id?.toString() || 'system';
+  // User ID'yi al, yoksa null kullan (system actions için)
+  const userId = (req.user as any)?.id || (req.user as any)?._id?.toString() || null;
   
   await createAuditLog({
-    user: userId,
+    user: userId, // null olabilir (system actions için)
     action,
     resource,
     resourceId,

@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IAuditLog extends Document {
-  user: mongoose.Types.ObjectId; // User ID who performed the action
+  user?: mongoose.Types.ObjectId | null; // User ID who performed the action (null for system actions)
   action: string; // CREATE, UPDATE, DELETE, VIEW, etc.
   resource: string; // Equipment, Project, Task, User, etc.
   resourceId: mongoose.Types.ObjectId; // ID of the affected resource
@@ -25,7 +25,7 @@ const AuditLogSchema: Schema = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // System actions için null olabilir
     },
     action: {
       type: String,

@@ -17,7 +17,9 @@ const keyByUserOrIp = (req: Request): string => {
   try {
     const token = getTokenFromReq(req);
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'sk-production-secret') as any;
+      // Merkezi JWT_SECRET kullan
+      const { JWT_SECRET } = require('../utils/authTokens');
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
       const userId = decoded?.id || decoded?._id || decoded?.userId;
       if (userId) return `user:${String(userId)}`;
     }

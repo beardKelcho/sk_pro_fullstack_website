@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models';
 import { Permission, hasPermission, hasRole, Role } from '../config/permissions';
 import logger from '../utils/logger';
+import { JWT_SECRET } from '../utils/authTokens'; // Merkezi JWT_SECRET kullan
 
 declare global {
   namespace Express {
@@ -56,9 +57,7 @@ export const authenticate = async (
       });
     }
     
-    // Token doğrulama - JWT_SECRET'ı authTokens'tan al (tutarlılık için)
-    const JWT_SECRET = process.env.JWT_SECRET || 'sk-production-secret';
-    
+    // Token doğrulama - JWT_SECRET'ı authTokens'tan import et (tutarlılık için)
     // Development modunda token ve secret bilgilerini logla
     if (process.env.NODE_ENV === 'development') {
       logger.debug('Token verification attempt', {
@@ -66,6 +65,7 @@ export const authenticate = async (
         tokenLength: token.length,
         tokenParts: tokenParts.length,
         secretLength: JWT_SECRET.length,
+        secretStart: JWT_SECRET.substring(0, 10) + '...',
         tokenStart: token.substring(0, 20) + '...'
       });
     }

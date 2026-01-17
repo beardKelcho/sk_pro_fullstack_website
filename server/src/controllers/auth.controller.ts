@@ -162,10 +162,11 @@ export const refreshToken = async (req: Request, res: Response) => {
       });
     }
     
-    // Token'ı doğrula
+    // Token'ı doğrula - Merkezi JWT_REFRESH_SECRET kullan
+    const { JWT_REFRESH_SECRET } = require('../utils/authTokens');
     const decoded = jwt.verify(
       refreshTokenRaw,
-      process.env.JWT_REFRESH_SECRET || 'sk-production-refresh-secret'
+      JWT_REFRESH_SECRET
     ) as jwt.JwtPayload;
     
     // Session kontrolü (refresh token hash)

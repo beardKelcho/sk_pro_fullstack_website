@@ -14,12 +14,14 @@ export type TokenPair = {
 };
 
 // JWT_SECRET'ları merkezi bir yerden al - tutarlılık için
-const JWT_SECRET = process.env.JWT_SECRET || 'sk-production-secret';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'sk-production-refresh-secret';
+// TÜM yerlerde aynı secret kullanılması için export ediyoruz
+export const JWT_SECRET = process.env.JWT_SECRET || 'sk-production-secret';
+export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'sk-production-refresh-secret';
 
 // Development modunda JWT_SECRET'ı logla (güvenlik için production'da loglanmaz)
 if (process.env.NODE_ENV === 'development') {
   console.log('JWT_SECRET configured:', JWT_SECRET ? 'Yes (length: ' + JWT_SECRET.length + ')' : 'No (using default)');
+  console.log('JWT_SECRET value (first 10 chars):', JWT_SECRET.substring(0, 10) + '...');
 }
 
 export const createTokenHash = (token: string): string => {

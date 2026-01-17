@@ -22,8 +22,29 @@ export const getAllImages = async (params?: {
   // Public endpoint kullan (anasayfa için)
   const isPublic = !params || Object.keys(params).length === 0;
   const endpoint = isPublic ? '/site-images/public' : '/site-images';
-  const res = await apiClient.get(endpoint, { params });
-  return res.data;
+  
+  try {
+    const res = await apiClient.get(endpoint, { params });
+    
+    // Backend response formatı: { success: true, count: number, images: [] }
+    // Axios response formatı: { data: { success, count, images } }
+    const responseData = res.data || {};
+    
+    // Response formatını normalize et
+    return {
+      images: responseData.images || [],
+      count: responseData.count || responseData.images?.length || 0,
+    };
+  } catch (error: any) {
+    // Hata durumunda detaylı log
+    console.error('getAllImages API hatası:', {
+      endpoint,
+      params,
+      error: error?.response?.data || error?.message,
+      status: error?.response?.status,
+    });
+    throw error;
+  }
 };
 
 export const getImageById = async (id: string): Promise<SiteImage> => {

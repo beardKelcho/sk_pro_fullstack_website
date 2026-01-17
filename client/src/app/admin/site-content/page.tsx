@@ -1423,21 +1423,28 @@ function VideoSelector({
   const fetchVideos = useCallback(async () => {
     try {
       setLoading(true);
+      logger.debug('Video yükleme başlatılıyor...', { category: 'video', isActive: true });
+      
       // Veritabanından video kategorisindeki tüm aktif videoları çek
       // Admin panelinde olduğumuz için getAllImages otomatik olarak /site-images endpoint'ini kullanacak (authentication ile)
       const response = await getAllImages({ category: 'video', isActive: true });
       
-      if (!response || !response.images) {
-        logger.warn('Video yükleme: Boş response', response);
+      logger.debug('Video yükleme response:', response);
+      
+      // Response formatını kontrol et - backend'den { success, count, images } geliyor
+      const images = response?.images || response?.data?.images || [];
+      
+      if (!response || images.length === 0) {
+        logger.warn('Video yükleme: Boş response veya video yok', { response, imagesCount: images.length });
         setVideos([]);
         return;
       }
       
-      logger.debug('Video yükleme başarılı:', response.images.length, 'video bulundu');
-      setVideos(response.images || []);
+      logger.debug('Video yükleme başarılı:', images.length, 'video bulundu');
+      setVideos(images);
       
       // availableVideos'u da güncelle (backward compatibility)
-      const videoList = (response.images || []).map(img => {
+      const videoList = images.map(img => {
         // Video ID varsa relative path kullan (Next.js rewrites proxy eder)
         const videoId = img._id || img.id;
         if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {

@@ -31,10 +31,13 @@ const Header: React.FC = () => {
       const user = getStoredUser();
       const isAuth = !!user;
       setIsAuthenticated(isAuth);
-      // Debug için (development modunda)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Header - Auth check:', { isAuth, user: user ? { name: user.name, email: user.email } : null });
-      }
+      // Debug için (her zaman - production'da da görmek için)
+      console.log('🔍 Header - Auth check:', { 
+        isAuth, 
+        user: user ? { name: user.name, email: user.email, role: user.role } : null,
+        localStorage: typeof window !== 'undefined' ? localStorage.getItem('user') : 'N/A',
+        sessionStorage: typeof window !== 'undefined' ? sessionStorage.getItem('user') : 'N/A'
+      });
     };
     
     // İlk kontrol - Component mount olduğunda hemen kontrol et

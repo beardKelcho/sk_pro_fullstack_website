@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { tokenStorage } from './tokenStorage';
 import { authApi } from '../api/auth';
+import { getExpoPushToken, registerPushToken, setupNotificationListeners } from '../services/notificationService';
+import { isOnline, addNetworkListener, syncQueue } from '../services/offlineService';
 
 type AuthState = {
   isBootstrapping: boolean;
@@ -54,6 +56,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     bootstrap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Push notification setup
+  useEffect(() => {
+    if (!state.isAuthenticated) return;
+
+    let unsubscribe: (() => void) | undefined;
+
+    const setupPush = async () => {
+      try {
+        const token = await getExpoPushToken();
+        if (token) {
+          await registerPushToken(token);
+        }
+      } catch (error) {
+        console.error('Push notification setup hatası:', error);
+      }
+    };
+
+    setupPush();
+
+    // Notification listeners
+    unsubscribe = setupNotificationListeners(
+      (notification) => {
+        console.log('Notification received:', notification);
+      },
+      (response) => {
+        console.log('Notification tapped:', response);
+        // Navigation logic buraya eklenebilir
+      }
+    );
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [state.isAuthenticated]);
+
+  // Offline mode setup
+  useEffect(() => {
+    const unsubscribe = addNetworkListener(async (isConnected) => {
+      if (isConnected && state.isAuthenticated) {
+        // Online olduğunda queue'yu sync et
+        try {
+          await syncQueue();
+        } catch (error) {
+          console.error('Queue sync hatası:', error);
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [state.isAuthenticated]);
 
   const signIn: AuthContextValue['signIn'] = async ({ email, password }) => {
     const res = await authApi.login({ email, password });

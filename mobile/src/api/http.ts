@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { tokenStorage } from '../auth/tokenStorage';
+import { isOnline, addToQueue } from '../services/offlineService';
 
 const apiUrlFromExtra =
   (Constants.expoConfig?.extra as any)?.apiUrl ||
@@ -34,6 +35,23 @@ http.interceptors.request.use(async (config) => {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
+
+  // Offline mode kontrolü (GET request'ler hariç, sadece mutation'lar queue'ya eklenir)
+  const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(config.method?.toUpperCase() || '');
+  if (isMutation) {
+    const online = await isOnline();
+    if (!online) {
+      // Offline mode: Request'i queue'ya ekle
+      await addToQueue({
+        method: (config.method?.toUpperCase() || 'GET') as any,
+        url: config.url || '',
+        data: config.data,
+      });
+      // Request'i iptal et (offline olduğu için göndermiyoruz)
+      return Promise.reject(new Error('OFFLINE_MODE'));
+    }
+  }
+
   return config;
 });
 

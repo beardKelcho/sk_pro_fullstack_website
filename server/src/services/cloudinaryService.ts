@@ -5,6 +5,7 @@
 
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
+import path from 'path';
 import logger from '../utils/logger';
 
 // Cloudinary configuration
@@ -124,9 +125,6 @@ const getResourceType = (filename: string): 'image' | 'video' | 'raw' => {
   }
   return 'raw';
 };
-
-// path import ekle
-import path from 'path';
 
 /**
  * Dosya type'ından folder belirle

@@ -36,10 +36,11 @@ export const authenticate = async (
       });
     }
     
-    // Token doğrulama
+    // Token doğrulama - JWT_SECRET'ı authTokens'tan al (tutarlılık için)
+    const JWT_SECRET = process.env.JWT_SECRET || 'sk-production-secret';
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'sk-production-secret'
+      JWT_SECRET
     ) as jwt.JwtPayload;
     
     // Kullanıcıyı bul

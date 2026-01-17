@@ -7,6 +7,9 @@ import { getAllUsers, deleteUser, getRoleLabel, mapBackendRoleToFrontend } from 
 import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 import logger from '@/utils/logger';
 import { toast } from 'react-toastify';
+import PermissionButton from '@/components/common/PermissionButton';
+import PermissionLink from '@/components/common/PermissionLink';
+import { Permission } from '@/config/permissions';
 
 // Kullanıcı türü tanımlama
 interface User {
@@ -409,30 +412,37 @@ export default function UserList() {
                             Görüntüle
                           </button>
                         </Link>
-                        <Link href={`/admin/users/edit/${user.id}`}>
-                          <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            Düzenle
-                          </button>
-                        </Link>
-                        <button 
+                        <PermissionLink
+                          permission={Permission.USER_UPDATE}
+                          href={`/admin/users/edit/${user.id}`}
+                          className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                          disabledMessage="Kullanıcı düzenleme yetkiniz bulunmamaktadır"
+                        >
+                          Düzenle
+                        </PermissionLink>
+                        <PermissionButton
+                          permission={Permission.USER_UPDATE}
                           onClick={() => {
                             setSelectedUserForPassword({ id: user.id, name: user.name });
                             setShowPasswordModal(true);
                           }}
                           className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
+                          disabledMessage="Şifre değiştirme yetkiniz bulunmamaktadır"
                           title="Şifre Değiştir"
                         >
                           Şifre
-                        </button>
-                        <button 
+                        </PermissionButton>
+                        <PermissionButton
+                          permission={Permission.USER_DELETE}
                           onClick={() => {
                             setUserToDelete(user.id);
                             setShowDeleteModal(true);
                           }}
                           className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                          disabledMessage="Kullanıcı silme yetkiniz bulunmamaktadır"
                         >
                           Sil
-                        </button>
+                        </PermissionButton>
                       </div>
                     </td>
                   </tr>

@@ -10,6 +10,9 @@ import ImportModal from '@/components/admin/ImportModal';
 import BulkActions, { BulkAction } from '@/components/admin/BulkActions';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+import PermissionButton from '@/components/common/PermissionButton';
+import PermissionLink from '@/components/common/PermissionLink';
+import { Permission } from '@/config/permissions';
 
 // Ekipman türü tanımlama
 interface Equipment {
@@ -767,30 +770,37 @@ export default function EquipmentList() {
                             Görüntüle
                           </button>
                         </Link>
-                        <Link href={`/admin/equipment/edit/${item.id}`}>
-                          <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                            Düzenle
-                          </button>
-                        </Link>
-                        <button
+                        <PermissionLink
+                          permission={Permission.EQUIPMENT_UPDATE}
+                          href={`/admin/equipment/edit/${item.id}`}
+                          className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                          disabledMessage="Ekipman düzenleme yetkiniz bulunmamaktadır"
+                        >
+                          Düzenle
+                        </PermissionLink>
+                        <PermissionButton
+                          permission={Permission.MAINTENANCE_UPDATE}
                           onClick={() => {
                             setEquipmentForMaintenance(item.id);
                             setNextMaintenanceDate(item.nextMaintenanceDate || '');
                             setShowMaintenanceModal(true);
                           }}
                           className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
+                          disabledMessage="Bakım işlemi için yetkiniz bulunmamaktadır"
                         >
                           Bakım
-                        </button>
-                        <button 
+                        </PermissionButton>
+                        <PermissionButton
+                          permission={Permission.EQUIPMENT_DELETE}
                           onClick={() => {
                             setEquipmentToDelete(item.id);
                             setShowDeleteModal(true);
                           }}
                           className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                          disabledMessage="Ekipman silme yetkiniz bulunmamaktadır"
                         >
                           Sil
-                        </button>
+                        </PermissionButton>
                       </div>
                     </td>
                   </tr>

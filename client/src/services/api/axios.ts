@@ -227,14 +227,21 @@ apiClient.interceptors.response.use(
           });
         }
         
-        // Admin panelindeyse forbidden sayfasına yönlendir
-        // Sadece admin sayfalarındaysa ve zaten forbidden sayfasında değilsek yönlendir
-        if (window.location.pathname.startsWith('/admin') && 
-            window.location.pathname !== '/admin/forbidden' &&
-            window.location.pathname !== '/admin') {
-          window.location.href = '/admin/forbidden';
-          return Promise.reject(error);
-        }
+        // Toast mesajı göster (forbidden sayfasına yönlendirme yapma)
+        // Dinamik import kullanarak toast'ı yükle (SSR uyumluluğu için)
+        import('react-toastify').then(({ toast }) => {
+          toast.error(errorMessage, {
+            position: 'top-right',
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+        }).catch(() => {
+          // Toast yüklenemezse console'a yaz
+          console.error('403 Forbidden:', errorMessage);
+        });
       }
     }
 

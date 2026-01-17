@@ -10,6 +10,8 @@ import logger from '@/utils/logger';
 import { toast } from 'react-toastify';
 import { getStoredUserPermissions, getStoredUserRole } from '@/utils/authStorage';
 import { hasPermission, Permission } from '@/config/permissions';
+import PermissionButton from '@/components/common/PermissionButton';
+import PermissionLink from '@/components/common/PermissionLink';
 
 // Backend enum'larını Türkçe string'e çeviren yardımcı fonksiyon
 const getStatusDisplay = (status: ProjectStatus): ProjectStatusDisplay => {
@@ -413,17 +415,22 @@ export default function ProjectsPage() {
                               Görüntüle
                             </button>
                           </Link>
-                          <Link href={`/admin/projects/edit/${project.id}`}>
-                            <button className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                              Düzenle
-                            </button>
-                          </Link>
-                          <button 
+                          <PermissionLink
+                            permission={Permission.PROJECT_UPDATE}
+                            href={`/admin/projects/edit/${project.id}`}
+                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            disabledMessage="Proje düzenleme yetkiniz bulunmamaktadır"
+                          >
+                            Düzenle
+                          </PermissionLink>
+                          <PermissionButton
+                            permission={Permission.PROJECT_DELETE}
                             onClick={() => handleDeleteClick(project)}
                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            disabledMessage="Proje silme yetkiniz bulunmamaktadır"
                           >
                             Sil
-                          </button>
+                          </PermissionButton>
                         </div>
                       </td>
                     </tr>

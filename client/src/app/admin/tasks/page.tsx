@@ -7,6 +7,9 @@ import { getAllTasks, deleteTask } from '@/services/taskService';
 import ExportButton from '@/components/admin/ExportButton';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+import PermissionButton from '@/components/common/PermissionButton';
+import PermissionLink from '@/components/common/PermissionLink';
+import { Permission } from '@/config/permissions';
 
 // Görev türü tanımlama
 interface Task {
@@ -526,20 +529,25 @@ export default function TaskList() {
                               Görüntüle
                             </button>
                           </Link>
-                          <Link href={`/admin/tasks/edit/${task.id}`}>
-                            <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-                              Düzenle
-                            </button>
-                          </Link>
-                          <button 
+                          <PermissionLink
+                            permission={Permission.TASK_UPDATE}
+                            href={`/admin/tasks/edit/${task.id}`}
+                            className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                            disabledMessage="Görev düzenleme yetkiniz bulunmamaktadır"
+                          >
+                            Düzenle
+                          </PermissionLink>
+                          <PermissionButton
+                            permission={Permission.TASK_DELETE}
                             onClick={() => {
                               setTaskToDelete(task.id);
                               setShowDeleteModal(true);
                             }}
                             className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                            disabledMessage="Görev silme yetkiniz bulunmamaktadır"
                           >
                             Sil
-                          </button>
+                          </PermissionButton>
                         </div>
                       </td>
                     </tr>

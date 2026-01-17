@@ -199,14 +199,32 @@ export default function AdminLogin() {
         }
         
         // Kullanıcı bilgilerini kaydet
+        // Backend'den gelen user formatı: { id, name, email, role }
         if (response.data.user) {
+          const userData = {
+            id: response.data.user.id || response.data.user._id,
+            _id: response.data.user.id || response.data.user._id,
+            name: response.data.user.name,
+            email: response.data.user.email,
+            role: response.data.user.role,
+            permissions: response.data.user.permissions || [],
+            isActive: response.data.user.isActive !== undefined ? response.data.user.isActive : true,
+          };
+          
           if (formData.rememberMe) {
-            localStorage.setItem('user', JSON.stringify(response.data.user));
+            localStorage.setItem('user', JSON.stringify(userData));
+            console.log('✅ User saved to localStorage:', userData);
           } else {
-            sessionStorage.setItem('user', JSON.stringify(response.data.user));
+            sessionStorage.setItem('user', JSON.stringify(userData));
+            console.log('✅ User saved to sessionStorage:', userData);
           }
+          
           // Header'ı anında güncellemek için custom event dispatch et
-          window.dispatchEvent(new CustomEvent('auth:login'));
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('auth:login'));
+          }, 100);
+        } else {
+          console.warn('⚠️ User data not found in response:', response.data);
         }
         
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay

@@ -211,8 +211,15 @@ export default function Home() {
     }
   };
 
+  // Fetch yapıldı mı kontrolü için ref
+  const imagesFetchedRef = useRef(false);
+  const contentFetchedRef = useRef<string | null>(null);
+
   // Sayfa yüklendiğinde veritabanından resimleri çek
   useEffect(() => {
+    // Zaten fetch yapıldıysa tekrar yapma (React Strict Mode için)
+    if (imagesFetchedRef.current) return;
+    
     const fetchImages = async () => {
       try {
         // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
@@ -224,7 +231,7 @@ export default function Home() {
             'Expires': '0',
           },
         };
-        // Cache-busting sadece ilk yüklemede - rate limiting'i önlemek için
+        // Cache-busting kaldırıldı - rate limiting'i önlemek için
         const response = await fetch(`/api/site-images/public?category=project&isActive=true`, fetchOptions);
         
         if (response.ok) {
@@ -263,34 +270,41 @@ export default function Home() {
             }
             
           }
+          imagesFetchedRef.current = true; // Fetch tamamlandı
         } else {
+          // Rate limiting hatası geldiğinde retry yapma
+          if (response.status === 429) {
+            logger.warn('Rate limit reached for images. Skipping retry.');
+            // Mevcut resimleri koru, yeni istek atma
+            imagesFetchedRef.current = true; // Tekrar deneme
+            return;
+          }
           logger.error('Resimler yüklenirken bir hata oluştu. Status:', response.status);
-          setTopImages([]);
-          setBottomImages([]);
+          // Hata durumunda da tekrar deneme (sonsuz loop'u önlemek için)
+          imagesFetchedRef.current = true;
         }
       } catch (error) {
         logger.error('Resim yükleme hatası:', error);
-        setTopImages([]);
-        setBottomImages([]);
+        // Hata durumunda da tekrar deneme
+        imagesFetchedRef.current = true;
       }
     };
     
     fetchImages();
-    
-    // Interval'ı kaldırdık - rate limiting'e neden oluyordu
-    // Gerekirse kullanıcı sayfayı yenilediğinde otomatik güncellenir
-    // return () => clearInterval(interval);
   }, []);
 
   // Site içeriklerini yükle
   useEffect(() => {
+    // Aynı locale için zaten fetch yapıldıysa tekrar yapma
+    if (contentFetchedRef.current === locale) return;
+    
     const fetchSiteContent = async () => {
       try {
         setLoading(true);
         // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
         const isTr = locale === 'tr';
         
-        // Cache bypass için timestamp ekle ve headers ekle
+        // Cache bypass için headers ekle
         const fetchOptions = {
           cache: 'no-store' as RequestCache,
           headers: {
@@ -309,6 +323,17 @@ export default function Home() {
           fetch(`/api/site-content/public/contact`, fetchOptions),
           fetch(`/api/site-content/public/social`, fetchOptions),
         ]);
+
+        // Rate limiting kontrolü - herhangi biri 429 döndüyse işlemi durdur
+        const hasRateLimit = [heroRes, servicesEquipmentRes, aboutRes, contactRes, socialRes].some(
+          (res) => res.status === 'fulfilled' && res.value.status === 429
+        );
+        if (hasRateLimit) {
+          logger.warn('Rate limit reached for site content. Skipping retry.');
+          contentFetchedRef.current = locale; // Tekrar deneme
+          setLoading(false);
+          return;
+        }
 
         if (heroRes.status === 'fulfilled' && heroRes.value.ok) {
           const heroData = await heroRes.value.json();
@@ -406,10 +431,23 @@ export default function Home() {
             }
           }
         }
+        
+        // Fetch başarılı oldu, locale'i kaydet
+        contentFetchedRef.current = locale;
       } catch (error) {
+        // Rate limiting hatası kontrolü
+        if (error && typeof error === 'object' && 'status' in error && (error as any).status === 429) {
+          logger.warn('Rate limit reached for site content. Skipping retry.');
+          contentFetchedRef.current = locale; // Tekrar deneme
+          setLoading(false);
+          return;
+        }
+        
         if (process.env.NODE_ENV === 'development') {
           logger.error('Site içerik yükleme hatası:', error);
         }
+        // Hata durumunda da locale'i kaydet (sonsuz loop'u önlemek için)
+        contentFetchedRef.current = locale;
       } finally {
         // Loading'i false yap - images ayrı useEffect'te yüklenecek
         setLoading(false);
@@ -417,8 +455,7 @@ export default function Home() {
     };
 
     fetchSiteContent();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale]); // Sadece locale değiştiğinde yeniden yükle - rate limiting'i önlemek için
+  }, [locale, tHome, safeArray, safeObject, safeRaw]); // Tüm dependency'leri ekle
 
   // Hero rotating texts için effect
   useEffect(() => {

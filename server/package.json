@@ -68,7 +68,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.14",
     "@types/pdfkit": "^0.17.4",
-    "@types/redis": "^4.0.10",
+    "@types/redis": "^4.0.11",
     "@types/sanitize-html": "^2.16.0",
     "@types/speakeasy": "^2.0.10",
     "@types/supertest": "^6.0.3",

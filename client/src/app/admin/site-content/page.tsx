@@ -1419,6 +1419,10 @@ function VideoSelector({
   const [previewFailedUrl, setPreviewFailedUrl] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+  
+  // Rate limiting kontrolü için ref - 429 hatası geldiğinde tekrar deneme
+  const rateLimitedRef = useRef(false);
+  const fetchAttemptedRef = useRef(false);
 
   const fetchVideos = useCallback(async () => {
     // Rate limiting hatası geldiyse tekrar deneme
@@ -1499,7 +1503,19 @@ function VideoSelector({
       });
       onVideoSelect(selectedVideo || '', videoList);
       logger.debug('Video yükleme tamamlandı, videoList:', videoList);
+      rateLimitedRef.current = false; // Başarılı olduysa rate limit flag'ini sıfırla
     } catch (error: any) {
+      // Rate limiting hatası kontrolü
+      if (error?.response?.status === 429) {
+        console.warn('⚠️ VideoSelector: Rate limiting hatası (429), tekrar deneme yapılmayacak');
+        rateLimitedRef.current = true; // Rate limit flag'ini set et
+        const errorMessage = 'Çok fazla istek yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.';
+        toast.warning(errorMessage);
+        setVideos([]);
+        setLoading(false);
+        return; // Erken çık - tekrar deneme
+      }
+      
       logger.error('Video yükleme hatası:', {
         error,
         message: error?.message,
@@ -1514,13 +1530,19 @@ function VideoSelector({
       setLoading(false);
       logger.debug('Video yükleme işlemi sonlandı (finally)');
     }
-  }, [onVideoSelect, selectedVideo]);
+  }, [onVideoSelect, selectedVideo, videos.length]);
 
-  // Sayfa yüklendiğinde videoları çek
+  // Sayfa yüklendiğinde videoları çek (sadece bir kez)
   useEffect(() => {
+    // Rate limiting hatası varsa veya zaten fetch yapıldıysa atla
+    if (rateLimitedRef.current || (fetchAttemptedRef.current && videos.length > 0)) {
+      console.log('ℹ️ VideoSelector: useEffect - fetchVideos atlanıyor (rateLimited veya zaten fetch yapıldı)');
+      return;
+    }
+    
     logger.debug('VideoSelector: useEffect tetiklendi, fetchVideos çağrılıyor');
     fetchVideos();
-  }, [fetchVideos]);
+  }, [fetchVideos, videos.length]);
   
   // Debug: videos state değişikliğini logla
   useEffect(() => {

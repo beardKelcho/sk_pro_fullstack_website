@@ -204,6 +204,32 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // 403 Forbidden hatası - Yetkisiz işlem denemesi
+    if (error.response?.status === 403) {
+      if (typeof window !== 'undefined') {
+        const errorMessage = error.response?.data?.message || 'Bu işlem için yetkiniz bulunmamaktadır';
+        
+        // Development modunda log
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('403 Forbidden hatası:', {
+            message: errorMessage,
+            url: originalRequest?.url,
+            method: originalRequest?.method,
+            pathname: window.location.pathname
+          });
+        }
+        
+        // Admin panelindeyse forbidden sayfasına yönlendir
+        // Sadece admin sayfalarındaysa ve zaten forbidden sayfasında değilsek yönlendir
+        if (window.location.pathname.startsWith('/admin') && 
+            window.location.pathname !== '/admin/forbidden' &&
+            window.location.pathname !== '/admin') {
+          window.location.href = '/admin/forbidden';
+          return Promise.reject(error);
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );

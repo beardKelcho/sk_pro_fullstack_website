@@ -115,8 +115,11 @@ export default function AdminLogin() {
           }
         }
         
-        // Dashboard'a yönlendir
-        router.push('/admin/dashboard');
+        // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
+        // Sonra dashboard'a yönlendir - window.location.href kullan (full page reload)
+        // Bu, ProtectedRoute'un token'ı kesinlikle görmesini sağlar
+        await new Promise(resolve => setTimeout(resolve, 100));
+        window.location.href = '/admin/dashboard';
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
         logger.error('Login failed:', errorMsg);
@@ -174,8 +177,10 @@ export default function AdminLogin() {
           }
         }
 
-        // Dashboard'a yönlendir
-        router.push('/admin/dashboard');
+        // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
+        // Sonra dashboard'a yönlendir - window.location.href kullan (full page reload)
+        await new Promise(resolve => setTimeout(resolve, 100));
+        window.location.href = '/admin/dashboard';
       } else {
         setLoginError(response.message || '2FA doğrulama başarısız');
       }

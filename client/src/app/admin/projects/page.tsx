@@ -50,10 +50,10 @@ interface ProjectDisplay extends Omit<Project, 'status' | 'client'> {
 const statusColors: Record<ProjectStatusDisplay, string> = {
   'Onay Bekleyen': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   'Onaylanan': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
-  'Devam Ediyor': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  'Tamamlandı': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  'Ertelendi': 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
-  'İptal Edildi': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+  'Devam Ediyor': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  'Tamamlandı': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300', // Yeşil - Tamamlandı
+  'Ertelendi': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300', // Sarı - Ertelendi
+  'İptal Edildi': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' // Kırmızı - İptal Edildi
 };
 
 export default function ProjectsPage() {

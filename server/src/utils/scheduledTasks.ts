@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { Maintenance, Equipment, Task } from '../models';
+import { Maintenance, Equipment, Task, Project } from '../models';
 import { sendMaintenanceReminderEmail } from './emailService';
 import { startAllScheduledReports } from '../controllers/reportSchedule.controller';
 import logger from './logger';
@@ -151,6 +151,61 @@ export const scheduleAutoCompleteDueTasks = () => {
   logger.info(`Otomatik görev tamamlama zamanlandı (${cronExpr})`);
 };
 
+// Proje durumlarını otomatik güncelle (default: her saat başı)
+export const scheduleAutoUpdateProjectStatus = () => {
+  // Env ile override edilebilir: ör. "*/30 * * * *" (30 dk)
+  const cronExpr = process.env.PROJECT_AUTO_UPDATE_CRON || '0 * * * *'; // Her saat başı
+
+  cron.schedule(cronExpr, async () => {
+    try {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Bugünün başlangıcı (00:00:00)
+      const todayEnd = new Date(now);
+      todayEnd.setHours(23, 59, 59, 999); // Bugünün sonu (23:59:59)
+
+      // 1. APPROVED -> ACTIVE: Başlangıç tarihi bugün veya geçmişte olan projeler
+      const approvedToActiveResult = await Project.updateMany(
+        {
+          status: 'APPROVED',
+          startDate: { $lte: todayEnd }, // Başlangıç tarihi bugün veya geçmişte
+        },
+        {
+          $set: {
+            status: 'ACTIVE',
+          },
+        }
+      );
+
+      const approvedToActiveCount = (approvedToActiveResult as any).modifiedCount ?? (approvedToActiveResult as any).nModified ?? 0;
+
+      // 2. ACTIVE -> COMPLETED: Bitiş tarihi bugünden önce olan projeler
+      const activeToCompletedResult = await Project.updateMany(
+        {
+          status: 'ACTIVE',
+          endDate: { $exists: true, $ne: null, $lt: now }, // Bitiş tarihi bugünden önce
+        },
+        {
+          $set: {
+            status: 'COMPLETED',
+          },
+        }
+      );
+
+      const activeToCompletedCount = (activeToCompletedResult as any).modifiedCount ?? (activeToCompletedResult as any).nModified ?? 0;
+
+      if (approvedToActiveCount > 0 || activeToCompletedCount > 0) {
+        logger.info(
+          `Otomatik proje durum güncellemesi: ${approvedToActiveCount} proje APPROVED->ACTIVE, ${activeToCompletedCount} proje ACTIVE->COMPLETED`
+        );
+      }
+    } catch (error) {
+      logger.error('Otomatik proje durum güncellemesi hatası:', error);
+    }
+  });
+
+  logger.info(`Otomatik proje durum güncellemesi zamanlandı (${cronExpr})`);
+};
+
 // Tüm zamanlanmış görevleri başlat
 export const startScheduledTasks = () => {
   // Monitoring realtime push (prod/dev). Env ile kapatılabilir.
@@ -160,6 +215,12 @@ export const startScheduledTasks = () => {
   // İstenirse TASK_AUTO_COMPLETE_ENABLED=false ile kapatılabilir.
   if (process.env.TASK_AUTO_COMPLETE_ENABLED !== 'false') {
     scheduleAutoCompleteDueTasks();
+  }
+
+  // Proje durumlarını otomatik güncelle (prod/dev fark etmez)
+  // İstenirse PROJECT_AUTO_UPDATE_ENABLED=false ile kapatılabilir.
+  if (process.env.PROJECT_AUTO_UPDATE_ENABLED !== 'false') {
+    scheduleAutoUpdateProjectStatus();
   }
 
   if (process.env.NODE_ENV === 'production') {

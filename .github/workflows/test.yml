@@ -37,7 +37,7 @@ jobs:
         run: cd client && npm run test:ci:stable
       
       - name: Upload Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ./client/coverage/lcov.info
           flags: frontend
@@ -68,7 +68,7 @@ jobs:
         run: cd server && npm run test:coverage:ci
       
       - name: Upload Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ./server/coverage/lcov.info
           flags: backend

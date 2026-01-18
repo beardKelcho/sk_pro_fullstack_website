@@ -126,7 +126,7 @@ jobs:
           cd server && npm run test:coverage:ci
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: |
             client/coverage/lcov.info

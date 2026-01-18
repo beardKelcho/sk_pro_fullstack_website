@@ -95,98 +95,93 @@ export default function Calendar() {
       setLoading(true);
       
       try {
-        // Ayın başlangıç ve bitiş tarihlerini hesapla
-        const { year, month } = getMonthDetails(currentDate);
-        const startOfMonth = new Date(year, month, 1);
-        const endOfMonth = new Date(year, month + 1, 0);
+        // Görünüme göre tarih aralığını hesapla
+        let startDate: Date;
+        let endDate: Date;
         
-        // API'den projeleri çek (tarih filtresi ile)
-        const { getAllProjects } = await import('@/services/projectService');
-        const projectResponse = await getAllProjects({
-          status: selectedProjectStatuses.join(','),
-          startDate: startOfMonth.toISOString(),
-          endDate: endOfMonth.toISOString(),
-          limit: 1000, // Takvim için yeterli sayıda proje çek
+        if (view === 'month') {
+          // Ay görünümü: Ayın başlangıç ve bitiş tarihleri
+          const { year, month } = getMonthDetails(currentDate);
+          startDate = new Date(year, month, 1);
+          endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        } else if (view === 'week') {
+          // Hafta görünümü: Haftanın başlangıç ve bitiş tarihleri
+          const weekStart = getStartOfWeek(currentDate);
+          startDate = new Date(weekStart);
+          endDate = new Date(weekStart);
+          endDate.setDate(endDate.getDate() + 6);
+          endDate.setHours(23, 59, 59, 999);
+        } else {
+          // Gün görünümü: Sadece o gün
+          const day = new Date(currentDate);
+          day.setHours(0, 0, 0, 0);
+          startDate = day;
+          endDate = new Date(day);
+          endDate.setHours(23, 59, 59, 999);
+        }
+        
+        // Calendar events API'yi kullan (projeler + bakımlar birleşik)
+        const apiClient = (await import('@/services/api/axios')).default;
+        const response = await apiClient.get('/calendar/events', {
+          params: {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            status: selectedProjectStatuses.join(','),
+          },
         });
         
-        // Projeleri calendar formatına çevir
-        const calendarProjects: Project[] = projectResponse.projects
-          .map((project: {
-            _id?: string;
-            id?: string;
-            name?: string;
-            client?: string | { name?: string };
-            startDate?: string;
-            endDate?: string;
-            location?: string;
-            status?: ProjectStatus;
-            team?: Array<string | { _id?: string; id?: string }>;
-            equipment?: Array<string | { _id?: string; id?: string }>;
-          }) => ({
-            id: project._id || project.id || '',
-            name: project.name || '',
-            client: typeof project.client === 'object' && project.client ? project.client.name || '' : project.client || '',
-            startDate: project.startDate || '',
-            endDate: project.endDate || project.startDate || '',
-            location: project.location || '',
-            status: (project.status || 'PENDING_APPROVAL') as ProjectStatus,
-            team: Array.isArray(project.team) ? project.team.map((t: string | { _id?: string; id?: string }) => typeof t === 'string' ? t : (t._id || t.id || '')) : [],
-            equipment: Array.isArray(project.equipment) ? project.equipment.map((e: string | { _id?: string; id?: string }) => typeof e === 'string' ? e : (e._id || e.id || '')) : [],
-          }));
-        
-        setProjects(calendarProjects);
-        
-        // API'den bakımları çek (eğer gösteriliyorsa)
-        if (showEquipment) {
-          const { getAllMaintenance } = await import('@/services/maintenanceService');
-          const maintenanceResponse = await getAllMaintenance({
-            status: 'SCHEDULED,IN_PROGRESS',
-            startDate: startOfMonth.toISOString(),
-            endDate: endOfMonth.toISOString(),
-            limit: 1000, // Takvim için yeterli sayıda bakım çek
-          });
+        if (response.data.success && response.data.events) {
+          const events = response.data.events;
           
-          // Bakımları calendar formatına çevir
-          const calendarMaintenances = maintenanceResponse.maintenances
-            .map((maintenance: {
-              _id?: string;
-              id?: string;
-              equipment?: { name?: string; _id?: string } | string;
-              type?: string;
-              scheduledDate?: string;
-              status?: string;
-            }) => ({
-              id: maintenance._id || maintenance.id || '',
-              name:
-                typeof maintenance.equipment === 'string'
-                  ? 'Bakım'
-                  : maintenance.equipment?.name || 'Bakım',
-              type: maintenance.type || 'ROUTINE',
-              scheduledDate: maintenance.scheduledDate || '',
-              status: maintenance.status || 'SCHEDULED',
-              equipment:
-                typeof maintenance.equipment === 'string'
-                  ? maintenance.equipment
-                  : maintenance.equipment?._id || '',
+          // Projeleri ayır ve formatla
+          const calendarProjects: Project[] = events
+            .filter((event: any) => event.type === 'project' && showProjects)
+            .map((event: any) => ({
+              id: event.id,
+              name: event.name,
+              client: '', // Calendar API'den client bilgisi gelmiyor, gerekirse ayrı çekilebilir
+              startDate: event.startDate,
+              endDate: event.endDate || event.startDate,
+              location: '',
+              status: event.status as ProjectStatus,
+              team: [],
+              equipment: [],
+            }));
+          
+          setProjects(calendarProjects);
+          
+          // Bakımları ayır ve formatla
+          const calendarMaintenances = events
+            .filter((event: any) => event.type === 'maintenance' && showEquipment)
+            .map((event: any) => ({
+              id: event.id,
+              name: event.name,
+              type: 'ROUTINE', // Calendar API'den type gelmiyor, varsayılan
+              scheduledDate: event.startDate,
+              status: 'SCHEDULED', // Calendar API'den status gelmiyor, varsayılan
+              equipment: '',
             }));
           
           setMaintenances(calendarMaintenances);
         } else {
+          // API'den veri gelmediyse boş liste göster
+          setProjects([]);
           setMaintenances([]);
         }
         
         setLoading(false);
       } catch (error) {
-        logger.error('Veri yükleme hatası:', error);
+        logger.error('Takvim verileri yükleme hatası:', error);
         // Hata durumunda boş liste göster
         setProjects([]);
         setMaintenances([]);
         setLoading(false);
+        toast.error('Takvim verileri yüklenirken bir hata oluştu');
       }
     };
     
     fetchData();
-  }, [selectedProjectStatuses, currentDate, showEquipment]);
+  }, [selectedProjectStatuses, currentDate, showEquipment, showProjects, view]);
   
   // Sonraki aya geç
   const nextMonth = () => {

@@ -8,6 +8,7 @@ import winston from 'winston';
 import path from 'path';
 import { getRequestId } from './requestContext';
 import fs from 'fs';
+import { createCloudWatchTransport, createElasticsearchTransport } from './logTransports';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -103,6 +104,18 @@ if (isProd) {
       level: process.env.LOG_LEVEL || 'info',
     })
   );
+  
+  // CloudWatch transport ekle (production + AWS credentials varsa)
+  const cloudWatchTransport = createCloudWatchTransport();
+  if (cloudWatchTransport) {
+    logger.add(cloudWatchTransport);
+  }
+  
+  // Elasticsearch transport ekle (production + ELASTICSEARCH_URL varsa)
+  const elasticsearchTransport = createElasticsearchTransport();
+  if (elasticsearchTransport) {
+    logger.add(elasticsearchTransport);
+  }
 }
 
 export default logger;

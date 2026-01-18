@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Client, Equipment, Maintenance, Project, Task, User } from '../models';
 import logger from '../utils/logger';
+import { optimizeAggregation } from '../utils/aggregationOptimizer';
 
 const parseDate = (raw: unknown): Date | null => {
   if (typeof raw !== 'string' || !raw) return null;

@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import { Comment } from '../models';
 import { notifyUsers } from '../utils/notificationService';
+import sanitizeHtml from 'sanitize-html';
 
 const normalizeResourceType = (raw: unknown) => {
   const v = String(raw || '').toUpperCase();
@@ -52,6 +53,28 @@ export const createComment = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'message zorunludur' });
     }
 
+    // HTML içeriğini sanitize et (XSS koruması)
+    const sanitizedMessage = sanitizeHtml(message.trim(), {
+      allowedTags: [
+        'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3',
+        'ul', 'ol', 'li', 'a', 'span',
+      ],
+      allowedAttributes: {
+        a: ['href', 'target', 'rel'],
+        span: ['style'],
+      },
+      allowedStyles: {
+        '*': {
+          color: [/^#[0-9a-fA-F]{3,6}$/],
+          'background-color': [/^#[0-9a-fA-F]{3,6}$/],
+        },
+      },
+      allowedSchemes: ['http', 'https', 'mailto'],
+      allowedSchemesByTag: {
+        a: ['http', 'https', 'mailto'],
+      },
+    });
+
     const mentionIds: mongoose.Types.ObjectId[] = Array.isArray(mentions)
       ? mentions
           .filter((id: any) => mongoose.Types.ObjectId.isValid(String(id)))
@@ -62,7 +85,7 @@ export const createComment = async (req: Request, res: Response) => {
       resourceType,
       resourceId: new mongoose.Types.ObjectId(resourceId),
       author: new mongoose.Types.ObjectId(String(userId)),
-      message: message.trim(),
+      message: sanitizedMessage,
       mentions: mentionIds,
     });
 

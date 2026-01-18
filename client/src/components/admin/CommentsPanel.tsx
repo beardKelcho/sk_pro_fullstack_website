@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { CommentResourceType, useComments, useCreateComment, useDeleteComment } from '@/services/commentService';
+import RichTextEditor from './RichTextEditor';
 
 type MentionUser = { id: string; name: string };
 
@@ -20,7 +21,18 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
   const [message, setMessage] = useState('');
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
 
-  const canSubmit = useMemo(() => message.trim().length > 0, [message]);
+  // HTML içeriğinden sadece metni çıkar (boş kontrolü için)
+  const getPlainText = (html: string): string => {
+    if (typeof window === 'undefined') return html;
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.textContent || div.innerText || '';
+  };
+
+  const canSubmit = useMemo(() => {
+    const plainText = getPlainText(message);
+    return plainText.trim().length > 0;
+  }, [message]);
 
   const handleToggleMention = (userId: string) => {
     setSelectedMentions((prev) => (prev.includes(userId) ? prev.filter((x) => x !== userId) : [...prev, userId]));
@@ -30,7 +42,8 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
     e.preventDefault();
     if (!canSubmit) return;
     try {
-      await createMutation.mutateAsync({ message: message.trim(), mentions: selectedMentions });
+      // HTML içeriğini gönder (backend'de sanitize edilecek)
+      await createMutation.mutateAsync({ message: message, mentions: selectedMentions });
       setMessage('');
       setSelectedMentions([]);
       toast.success('Yorum eklendi');
@@ -82,12 +95,11 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
         )}
 
         <div>
-          <textarea
+          <RichTextEditor
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
+            onChange={setMessage}
             placeholder="Yorum yaz…"
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2"
+            disabled={createMutation.isPending}
           />
         </div>
         <div className="flex justify-end">
@@ -122,7 +134,10 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
                   Sil
                 </button>
               </div>
-              <p className="mt-2 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{c.message}</p>
+              <div
+                className="mt-2 text-sm text-gray-800 dark:text-gray-200 prose prose-sm dark:prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: c.message }}
+              />
             </div>
           ))
         ) : (

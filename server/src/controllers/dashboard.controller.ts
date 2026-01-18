@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Equipment, Project, Task, Client, Maintenance } from '../models';
 import logger from '../utils/logger';
+import { optimizeAggregation } from '../utils/aggregationOptimizer';
 
 // Dashboard istatistiklerini getir
 export const getDashboardStats = async (req: Request, res: Response) => {
@@ -133,8 +134,8 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
       });
     }
 
-    // Ekipman durum dağılımı
-    const equipmentStatus = await Equipment.aggregate([
+    // Ekipman durum dağılımı (optimize edilmiş)
+    const equipmentStatusPipeline = optimizeAggregation([
       {
         $group: {
           _id: '$status',
@@ -142,9 +143,10 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
         }
       }
     ]);
+    const equipmentStatus = await Equipment.aggregate(equipmentStatusPipeline);
 
-    // Proje durum dağılımı
-    const projectStatus = await Project.aggregate([
+    // Proje durum dağılımı (optimize edilmiş)
+    const projectStatusPipeline = optimizeAggregation([
       {
         $group: {
           _id: '$status',
@@ -152,9 +154,10 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
         }
       }
     ]);
+    const projectStatus = await Project.aggregate(projectStatusPipeline);
 
-    // Görev durum dağılımı
-    const taskStatus = await Task.aggregate([
+    // Görev durum dağılımı (optimize edilmiş)
+    const taskStatusPipeline = optimizeAggregation([
       {
         $group: {
           _id: '$status',
@@ -162,6 +165,7 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
         }
       }
     ]);
+    const taskStatus = await Task.aggregate(taskStatusPipeline);
 
     // Görev tamamlanma trendi (son N gün)
     const taskCompletionTrend = [];

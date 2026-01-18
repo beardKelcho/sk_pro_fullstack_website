@@ -47,13 +47,17 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
 
     // --- Projects ---
     const projectMatch = { startDate: { $gte: rangeStart, $lte: rangeEnd } };
-    const projectByStatus = await Project.aggregate([
+    
+    // Optimize edilmiş aggregation pipeline'ları
+    const projectByStatusPipeline = optimizeAggregation([
       { $match: projectMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
+    
+    const projectByStatus = await Project.aggregate(projectByStatusPipeline, { allowDiskUse: true });
 
-    const projectTrend = await Project.aggregate([
+    const projectTrendPipeline = optimizeAggregation([
       { $match: projectMatch },
       {
         $group: {
@@ -63,6 +67,8 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
       },
       { $sort: { _id: 1 } },
     ]);
+    
+    const projectTrend = await Project.aggregate(projectTrendPipeline, { allowDiskUse: true });
 
     const topClients = await Project.aggregate([
       { $match: projectMatch },

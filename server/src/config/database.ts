@@ -17,9 +17,15 @@ const connectDB = async () => {
     
     logger.info('MongoDB bağlantısı kuruluyor...');
     
+    // Connection pool ayarlarını environment variable'lardan al
+    const maxPoolSize = parseInt(process.env.MONGODB_MAX_POOL_SIZE || '20', 10);
+    const minPoolSize = parseInt(process.env.MONGODB_MIN_POOL_SIZE || '5', 10);
+    const maxIdleTimeMS = parseInt(process.env.MONGODB_MAX_IDLE_TIME_MS || '30000', 10);
+    const heartbeatFrequencyMS = parseInt(process.env.MONGODB_HEARTBEAT_FREQUENCY_MS || '10000', 10);
+    
     const conn = await mongoose.connect(mongoUri, {
-      maxPoolSize: 20, // Maksimum bağlantı sayısı
-      minPoolSize: 5, // Minimum bağlantı sayısı
+      maxPoolSize, // Maksimum bağlantı sayısı (env'den)
+      minPoolSize, // Minimum bağlantı sayısı (env'den)
       serverSelectionTimeoutMS: 30000, // 30 saniye
       socketTimeoutMS: 45000,
       connectTimeoutMS: 30000, // Bağlantı timeout'u
@@ -27,9 +33,16 @@ const connectDB = async () => {
       retryWrites: true,
       w: 'majority',
       // Connection pool optimizasyonları
-      maxIdleTimeMS: 30000, // 30 saniye idle kalırsa kapat
-      heartbeatFrequencyMS: 10000, // 10 saniyede bir heartbeat
+      maxIdleTimeMS, // Idle kalma süresi (env'den)
+      heartbeatFrequencyMS, // Heartbeat sıklığı (env'den)
+      // Connection pool monitoring
+      monitorCommands: process.env.NODE_ENV === 'development', // Development'ta command monitoring
     });
+    
+    // Connection pool istatistiklerini logla
+    if (process.env.NODE_ENV === 'development') {
+      logger.info(`📊 MongoDB Connection Pool: max=${maxPoolSize}, min=${minPoolSize}, idle=${maxIdleTimeMS}ms, heartbeat=${heartbeatFrequencyMS}ms`);
+    }
 
     logger.info(`✅ MongoDB Connected: ${conn.connection.host}`);
 

@@ -25,9 +25,9 @@
 **Süre**: 1 hafta  
 **Fayda**: Dış takvimlerle senkronizasyon
 
-- [ ] Google Calendar sync
-- [ ] Outlook Calendar sync
-- [ ] Calendar import
+- [x] Google Calendar sync ✅
+- [x] Outlook Calendar sync ✅
+- [x] Calendar import ✅
 
 **Not**: iCal export zaten mevcut. Import ve sync özellikleri kullanıcı talebine göre eklenebilir.
 
@@ -36,7 +36,7 @@
 **Süre**: 2-3 gün  
 **Fayda**: S3 kullanıcıları için CDN desteği
 
-- [ ] CDN entegrasyonu (Cloudinary built-in, S3 için CloudFront gerekli)
+- [x] CDN entegrasyonu (Cloudinary built-in, S3 için CloudFront gerekli) ✅
 
 **Not**: Cloudinary kullanıcıları için CDN zaten mevcut. S3 kullanıcıları için CloudFront entegrasyonu gerekli.
 
@@ -49,8 +49,8 @@
 **Süre**: 2-3 hafta  
 **Fayda**: Gerçek zamanlı işbirliği, canlı düzenleme
 
-- [ ] WebSocket server kurulumu (Socket.io)
-- [ ] Canlı düzenleme (collaborative editing)
+- [x] WebSocket server kurulumu (Socket.io) ✅
+- [x] Canlı düzenleme (collaborative editing) ✅
 
 **Not**: SSE ile real-time bildirimler ve dashboard güncellemeleri zaten mevcut. WebSocket sadece iki yönlü iletişim (collaborative editing) için gerekli.
 
@@ -59,11 +59,11 @@
 **Süre**: 2-3 hafta  
 **Fayda**: Daha esnek veri çekme, over-fetching önleme
 
-- [ ] GraphQL schema oluştur
-- [ ] Apollo Server kurulumu
-- [ ] GraphQL resolvers
-- [ ] GraphQL playground
-- [ ] REST API ile birlikte çalışma
+- [x] GraphQL schema oluştur ✅
+- [x] Apollo Server kurulumu ✅
+- [x] GraphQL resolvers ✅
+- [x] GraphQL playground ✅
+- [x] REST API ile birlikte çalışma ✅
 
 **Not**: REST API yeterli seviyede. GraphQL sadece özel ihtiyaçlar için opsiyonel.
 

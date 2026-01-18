@@ -23,6 +23,7 @@ import Webhook from './Webhook';
 import WebhookDelivery from './WebhookDelivery';
 import Comment from './Comment';
 import EmailTemplate from './EmailTemplate';
+import { CalendarIntegration } from './CalendarIntegration';
 
 export {
   User,
@@ -48,5 +49,6 @@ export {
   Webhook,
   WebhookDelivery,
   Comment,
-  EmailTemplate
+  EmailTemplate,
+  CalendarIntegration
 };

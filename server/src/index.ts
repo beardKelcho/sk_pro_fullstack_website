@@ -3,7 +3,10 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { createServer } from 'http';
 import routes from './routes';
+import { initWebSocket } from './config/websocket';
+import { initGraphQL } from './config/graphql';
 import { errorHandler } from './middleware/errorHandler';
 import { setupSwagger } from './config/swagger';
 import logger from './utils/logger';
@@ -28,6 +31,9 @@ dotenv.config();
 
 // Express app oluştur
 const app = express();
+
+// HTTP server oluştur (WebSocket ve GraphQL için)
+const httpServer = createServer(app);
 
 // CORS Middleware (en önce - Helmet'ten önce)
 // ngrok URL'lerini de destekle
@@ -226,12 +232,27 @@ if (!fs.existsSync(logsDir)) {
 // MongoDB bağlantısı ve Sunucu başlatma
 const startServer = async () => {
   try {
-    // Server'ı önce başlat, MongoDB bağlantısını arka planda yap
-    app.listen(PORT, () => {
+    // WebSocket server'ı başlat
+    if (process.env.ENABLE_WEBSOCKET === 'true') {
+      initWebSocket(httpServer);
+      logger.info('✅ WebSocket server aktif');
+    }
+
+    // GraphQL server'ı başlat
+    if (process.env.ENABLE_GRAPHQL === 'true') {
+      await initGraphQL(httpServer, app);
+      logger.info('✅ GraphQL server aktif');
+    }
+
+    // HTTP server'ı başlat
+    httpServer.listen(PORT, () => {
       logger.info(`Sunucu port ${PORT} üzerinde çalışıyor`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`API URL: http://localhost:${PORT}/api`);
       logger.info(`Swagger UI: http://localhost:${PORT}/api-docs`);
+      if (process.env.ENABLE_GRAPHQL === 'true') {
+        logger.info(`GraphQL: http://localhost:${PORT}/graphql`);
+      }
       logCDNConfig(); // CDN yapılandırmasını logla
     });
     

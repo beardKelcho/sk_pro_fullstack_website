@@ -103,8 +103,8 @@ Proje **production-ready** durumda. Tüm kritik özellikler tamamlandı, güvenl
 1. **Test Coverage %80+** - Mevcut coverage yeterli, %80+ hedefi kademeli artırılabilir
 
 ### Orta Öncelik (Opsiyonel)
-2. **Calendar Entegrasyonları** - Google/Outlook sync, import (iCal export mevcut)
-3. **CDN Entegrasyonu (S3 için)** - Cloudinary kullanıcıları için zaten mevcut
+2. **Calendar Entegrasyonları** - ✅ Google/Outlook sync, import tamamlandı
+3. **CDN Entegrasyonu (S3 için)** - ✅ CloudFront dokümantasyonu eklendi
 
 ### Düşük Öncelik (Uzun Vade)
 4. **Real-time Collaboration (WebSocket)** - SSE mevcut, WebSocket sadece collaborative editing için

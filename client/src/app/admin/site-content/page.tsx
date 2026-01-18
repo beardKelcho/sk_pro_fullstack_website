@@ -1450,8 +1450,8 @@ function VideoSelector({
       console.log('📥 VideoSelector: getAllImages response alındı:', response);
       logger.debug('Video yükleme response:', response);
       
-      // Response formatını kontrol et - backend'den { success, count, images } geliyor
-      const images = response?.images || response?.data?.images || [];
+      // Response formatını kontrol et - getAllImages { images, count } döndürüyor
+      const images = response?.images || [];
       
       console.log('🖼️ VideoSelector: Images extracted:', {
         imagesCount: images.length,

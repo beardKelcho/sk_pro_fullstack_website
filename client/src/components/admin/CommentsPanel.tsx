@@ -135,7 +135,7 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
                 </button>
               </div>
               <div
-                className="mt-2 text-sm text-gray-800 dark:text-gray-200 prose prose-sm dark:prose-invert max-w-none"
+                className="mt-2 text-sm text-gray-800 dark:text-gray-200 rich-text-content"
                 dangerouslySetInnerHTML={{ __html: c.message }}
               />
             </div>
@@ -144,6 +144,59 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
           <div className="p-4 text-sm text-gray-500 dark:text-gray-400">Henüz yorum yok.</div>
         )}
       </div>
+      <style jsx global>{`
+        .rich-text-content {
+          line-height: 1.6;
+        }
+        .rich-text-content p {
+          margin: 0.5rem 0;
+        }
+        .rich-text-content p:first-child {
+          margin-top: 0;
+        }
+        .rich-text-content p:last-child {
+          margin-bottom: 0;
+        }
+        .rich-text-content ul,
+        .rich-text-content ol {
+          margin: 0.5rem 0;
+          padding-left: 1.5rem;
+        }
+        .rich-text-content h1,
+        .rich-text-content h2,
+        .rich-text-content h3 {
+          margin: 0.75rem 0 0.5rem 0;
+          font-weight: 600;
+        }
+        .rich-text-content h1 {
+          font-size: 1.25rem;
+        }
+        .rich-text-content h2 {
+          font-size: 1.125rem;
+        }
+        .rich-text-content h3 {
+          font-size: 1rem;
+        }
+        .rich-text-content a {
+          color: #0066cc;
+          text-decoration: underline;
+        }
+        .dark .rich-text-content a {
+          color: #60a5fa;
+        }
+        .rich-text-content strong {
+          font-weight: 600;
+        }
+        .rich-text-content em {
+          font-style: italic;
+        }
+        .rich-text-content u {
+          text-decoration: underline;
+        }
+        .rich-text-content s {
+          text-decoration: line-through;
+        }
+      `}</style>
     </div>
   );
 }

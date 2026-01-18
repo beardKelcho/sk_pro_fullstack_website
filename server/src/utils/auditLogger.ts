@@ -3,7 +3,7 @@ import AuditLog from '../models/AuditLog';
 import logger from './logger';
 
 export interface AuditLogData {
-  user: string; // User ID
+  user: string | null; // User ID (null for system actions)
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'VIEW' | 'EXPORT' | 'IMPORT' | 'LOGIN' | 'LOGOUT' | 'PERMISSION_CHANGE';
   resource: 'Equipment' | 'Project' | 'Task' | 'User' | 'Client' | 'Maintenance' | 'SiteImage' | 'SiteContent' | 'QRCode' | 'Notification' | 'PushSubscription' | 'NotificationSettings' | 'Widget' | 'System' | 'ReportSchedule' | 'SavedSearch' | 'Session';
   resourceId: string;

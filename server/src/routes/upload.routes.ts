@@ -355,7 +355,10 @@ router.delete(
         if (storageType === 'cloudinary') {
           // Cloudinary'den sil
           const publicId = `${fileType}/${filename}`;
-          await deleteFromCloudinary(publicId, 'auto');
+          // Resource type'ı dosya uzantısına göre belirle
+          const ext = filename.split('.').pop()?.toLowerCase();
+          const resourceType = ext && ['mp4', 'webm', 'mov', 'avi'].includes(ext) ? 'video' : 'image';
+          await deleteFromCloudinary(publicId, resourceType);
         } else if (storageType === 's3') {
           // S3'ten sil
           const key = `${fileType}/${filename}`;

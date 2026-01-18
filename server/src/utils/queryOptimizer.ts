@@ -15,12 +15,12 @@ export const explainQuery = async <T>(
   label?: string
 ): Promise<any> => {
   try {
-    const explainResult = await query.explain('executionStats');
+    const explainResult = await query.explain('executionStats') as any;
     
     if (process.env.NODE_ENV === 'development' && process.env.DEBUG_QUERIES === 'true') {
       logger.debug(`Query Explain (${label || 'unnamed'}):`, {
-        executionStats: explainResult.executionStats,
-        queryPlanner: explainResult.queryPlanner,
+        executionStats: explainResult?.executionStats,
+        queryPlanner: explainResult?.queryPlanner,
       });
     }
     
@@ -39,12 +39,16 @@ export const checkIndexUsage = async (
   query: any
 ): Promise<boolean> => {
   try {
+    if (!mongoose.connection.db) {
+      return false;
+    }
+    
     const explainResult = await mongoose.connection.db
       .collection(collectionName)
       .find(query)
-      .explain('executionStats');
+      .explain('executionStats') as any;
     
-    const executionStats = explainResult.executionStats || explainResult.queryPlanner?.winningPlan;
+    const executionStats = explainResult?.executionStats || explainResult?.queryPlanner?.winningPlan;
     const stage = executionStats?.stage || executionStats?.inputStage?.stage;
     
     // Index kullanıldı mı?
@@ -95,8 +99,8 @@ export const sortBy = (field: string, order: 'asc' | 'desc' = 'asc') => {
 /**
  * Lean query helper (faster, returns plain objects)
  */
-export const leanQuery = <T>(query: mongoose.Query<T, T>): mongoose.Query<T, T> => {
-  return query.lean();
+export const leanQuery = <T>(query: mongoose.Query<T, T>): mongoose.Query<any, any> => {
+  return query.lean() as any;
 };
 
 /**
@@ -106,13 +110,13 @@ export const leanQuery = <T>(query: mongoose.Query<T, T>): mongoose.Query<T, T> 
 export const batchProcess = async <T>(
   query: mongoose.Query<T[], T>,
   batchSize: number,
-  processor: (batch: T[]) => Promise<void>
+  processor: (batch: any[]) => Promise<void>
 ): Promise<void> => {
   let skip = 0;
   let hasMore = true;
   
   while (hasMore) {
-    const batch = await query.skip(skip).limit(batchSize).lean().exec();
+    const batch = await (query.skip(skip).limit(batchSize).lean().exec() as Promise<any[]>);
     
     if (batch.length === 0) {
       hasMore = false;
@@ -173,11 +177,11 @@ export const clearQueryCache = (pattern?: string): void => {
 export const detectSlowQueries = (threshold: number = 1000) => {
   const originalExec = mongoose.Query.prototype.exec;
   
-  mongoose.Query.prototype.exec = function (this: any) {
+  mongoose.Query.prototype.exec = function (this: any, ...args: any[]) {
     const startTime = Date.now();
     const query = this;
     
-    return originalExec.apply(this, arguments).then((result: any) => {
+    return (originalExec.apply(this, args) as Promise<any>).then((result: any) => {
       const duration = Date.now() - startTime;
       
       if (duration > threshold) {

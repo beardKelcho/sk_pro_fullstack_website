@@ -1,26 +1,48 @@
 # SK Production - Web Sitesi ve Admin Paneli
 
+> **Versiyon**: 2.0.1  
+> **Durum**: ✅ **PRODUCTION READY**
+
 SK Production için geliştirilmiş modern web sitesi ve yeniden kullanılabilir admin paneli.
 
 ## 🚀 Özellikler
 
 ### Web Sitesi
-- Modern ve responsive tasarım
-- Görüntü rejisi ve medya server hizmetlerinin sunumu
-- Proje galerisi ve carousel
-- İletişim formu
-- SEO optimizasyonu
-- Dark mode desteği
+- ✅ Modern ve responsive tasarım
+- ✅ Multi-language desteği (TR, EN, FR, ES)
+- ✅ Görüntü rejisi ve medya server hizmetlerinin sunumu
+- ✅ Proje galerisi ve carousel
+- ✅ İletişim formu
+- ✅ SEO optimizasyonu
+- ✅ Dark mode desteği
+- ✅ PWA özellikleri
+- ✅ Offline mode
 
 ### Admin Paneli
-- **Ekipman Yönetimi**: Ekipman takibi, bakım planlaması
-- **Proje Yönetimi**: Proje oluşturma, takip ve yönetim
-- **Müşteri Yönetimi**: Müşteri bilgileri ve proje geçmişi
-- **Görev Yönetimi**: Görev atama, takip ve durum yönetimi
-- **Bakım Yönetimi**: Ekipman bakım takvimi ve kayıtları
-- **Kullanıcı Yönetimi**: Rol bazlı erişim kontrolü
-- **Dashboard**: İstatistikler ve özet bilgiler
-- **Takvim**: Proje ve bakım takvimi görünümü
+- ✅ **Dashboard**: İstatistikler, grafikler ve özet bilgiler
+- ✅ **Ekipman Yönetimi**: Ekipman takibi, QR kod, bakım planlaması
+- ✅ **Proje Yönetimi**: Proje oluşturma, takip, durum yönetimi, otomatik durum güncellemesi
+- ✅ **Müşteri Yönetimi**: Müşteri bilgileri ve proje geçmişi
+- ✅ **Görev Yönetimi**: Görev atama, takip ve durum yönetimi
+- ✅ **Bakım Yönetimi**: Ekipman bakım takvimi, hatırlatmalar ve kayıtları
+- ✅ **Kullanıcı Yönetimi**: Rol bazlı erişim kontrolü, permission yönetimi
+- ✅ **Takvim**: Proje ve bakım takvimi (Ay/Hafta/Gün görünümü, drag & drop)
+- ✅ **Site İçerik Yönetimi**: Hero, Services, About, Contact bölümleri
+- ✅ **Site Görsel Yönetimi**: Görsel upload, kategorilendirme
+- ✅ **Dosya Yönetimi**: Dosya upload, listeleme, silme
+- ✅ **Yorum Sistemi**: Rich text editor, @mention desteği
+- ✅ **Bildirim Sistemi**: Real-time SSE bildirimleri
+- ✅ **Webhook Desteği**: Event-based webhook'lar
+- ✅ **Email Template Sistemi**: HTML email template'leri
+- ✅ **Analytics Dashboard**: Gelişmiş analiz ve raporlama
+- ✅ **Monitoring Dashboard**: Sistem izleme ve metrikler
+
+### Mobil Uygulama
+- ✅ React Native (Expo) tabanlı mobil uygulama
+- ✅ Authentication (Bearer tokens, refresh tokens, 2FA)
+- ✅ Dashboard, Tasks, Equipment, Calendar modülleri
+- ✅ Push Notifications
+- ✅ Offline Mode
 
 ## 🛠️ Teknolojiler
 
@@ -81,9 +103,10 @@ npm run dev
 ## 🔐 Kullanıcı Rolleri
 
 - **ADMIN**: Tüm yetkilere sahip
-- **INVENTORY_MANAGER**: Ekipman ve bakım yönetimi
-- **TECHNICIAN**: Görev ve proje yönetimi
-- **USER**: Sınırlı erişim
+- **FIRMA_SAHIBI**: Tüm yetkilere sahip (ADMIN ile aynı)
+- **PROJE_YONETICISI**: Proje ve görev yönetimi
+- **DEPO_SORUMLUSU**: Ekipman ve bakım yönetimi
+- **TEKNISYEN**: Sadece görüntüleme (okuma yetkisi)
 
 ## 📁 Proje Yapısı
 

@@ -372,7 +372,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 
 **Yapılacaklar:**
 - [x] Structured logging (JSON format) ✅ (Winston JSON + requestId meta)
-- [ ] Log aggregation (ELK stack veya CloudWatch)
+- [x] Log aggregation (ELK stack veya CloudWatch) ✅ (logTransports.ts utility + CloudWatch/Elasticsearch desteği)
 - [x] Log level management ✅ (`LOG_LEVEL` ile)
 - [x] Performance logging ✅ (API request metrics middleware + monitoring dashboard)
 - [x] Error correlation ✅ (`X-Request-Id` + loglarda requestId)

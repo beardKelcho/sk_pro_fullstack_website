@@ -63,11 +63,13 @@ Proje **production-ready** durumda. Tüm kritik özellikler tamamlandı, güvenl
 - ✅ TypeScript (Frontend + Backend)
 - ✅ MongoDB (Mongoose ODM)
 - ✅ Express.js REST API
+- ✅ GraphQL API (Apollo Server) - Opsiyonel
+- ✅ WebSocket (Socket.io) - Opsiyonel
 - ✅ Next.js 14 (App Router)
 - ✅ React Query (Data fetching)
 - ✅ TailwindCSS (Styling)
 - ✅ Cloud Storage (Cloudinary, AWS S3)
-- ✅ CDN Entegrasyonu
+- ✅ CDN Entegrasyonu (Cloudinary, CloudFront, Cloudflare)
 - ✅ Log Aggregation (CloudWatch, ELK Stack)
 - ✅ Error Tracking (Sentry)
 - ✅ Database Optimizasyonu (Indexing, Aggregation pipeline)

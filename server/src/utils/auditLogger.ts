@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import mongoose from 'mongoose';
 import AuditLog from '../models/AuditLog';
 import logger from './logger';
 
@@ -26,11 +27,24 @@ export interface AuditLogData {
  */
 export const createAuditLog = async (data: AuditLogData): Promise<void> => {
   try {
+    // resourceId'yi ObjectId'ye çevir (string ise)
+    let resourceIdObjectId: mongoose.Types.ObjectId;
+    if (typeof data.resourceId === 'string') {
+      if (mongoose.Types.ObjectId.isValid(data.resourceId)) {
+        resourceIdObjectId = new mongoose.Types.ObjectId(data.resourceId);
+      } else {
+        logger.warn('Geçersiz resourceId formatı:', data.resourceId);
+        return; // Geçersiz ID ise audit log oluşturma
+      }
+    } else {
+      resourceIdObjectId = data.resourceId as mongoose.Types.ObjectId;
+    }
+
     await AuditLog.create({
       user: data.user,
       action: data.action,
       resource: data.resource,
-      resourceId: data.resourceId,
+      resourceId: resourceIdObjectId,
       changes: data.changes || [],
       metadata: data.metadata || {},
     });

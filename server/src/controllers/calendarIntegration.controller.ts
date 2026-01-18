@@ -4,6 +4,7 @@
  */
 
 import { Request, Response } from 'express';
+import axios from 'axios';
 import { CalendarIntegration } from '../models';
 import {
   refreshGoogleAccessToken,
@@ -118,7 +119,6 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
     }
 
     // Token exchange
-    const axios = require('axios');
     const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
       client_id: clientId,
       client_secret: clientSecret,
@@ -251,7 +251,6 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
     }
 
     // Token exchange
-    const axios = require('axios');
     const tokenResponse = await axios.post(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
       client_id: clientId,
       client_secret: clientSecret,

@@ -80,6 +80,12 @@ AWS_S3_BUCKET_NAME=your-bucket-name
 
 CloudFront'un S3'e erişebilmesi için bucket policy:
 
+**Yöntem 1: Origin Access Control (OAC) - Önerilen (Yeni)**
+
+1. CloudFront Distribution oluştururken "Origin Access" bölümünde "Origin Access Control settings (recommended)" seçin
+2. "Create control setting" ile yeni bir OAC oluşturun
+3. S3 bucket policy'ye OAC'yi ekleyin:
+
 ```json
 {
   "Version": "2012-10-17",
@@ -100,6 +106,37 @@ CloudFront'un S3'e erişebilmesi için bucket policy:
     }
   ]
 }
+```
+
+**Yöntem 2: Origin Access Identity (OAI) - Eski Yöntem**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowCloudFrontServicePrincipal",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity E1234567890ABC"
+      },
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::your-bucket-name/*"
+    }
+  ]
+}
+```
+
+#### 3.4. CloudFront Distribution Test
+
+Distribution oluşturulduktan sonra (15-20 dakika deploy süresi):
+
+```bash
+# Distribution URL'ini test et
+curl -I https://d1234567890.cloudfront.net/uploads/site-images/test.jpg
+
+# Cache headers kontrolü
+curl -I https://d1234567890.cloudfront.net/uploads/site-images/test.jpg | grep -i cache
 ```
 
 ### 4. Cloudflare CDN

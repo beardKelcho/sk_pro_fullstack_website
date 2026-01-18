@@ -233,3 +233,207 @@ export const exportCalendarIcs = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: 'iCal export başarısız' });
   }
 };
+
+/**
+ * iCal import (ICS)
+ * POST /api/calendar/import
+ * Body: { file: File (multipart/form-data) }
+ */
+export const importCalendarIcs = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'iCal dosyası yüklenmedi' });
+    }
+
+    const fileContent = req.file.buffer.toString('utf-8');
+    const lines = fileContent.split(/\r?\n/);
+
+    // iCal parse
+    const events: Array<{
+      summary: string;
+      startDate: Date;
+      endDate: Date;
+      description?: string;
+      type?: 'project' | 'maintenance';
+    }> = [];
+
+    let currentEvent: any = null;
+    let inEvent = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      if (line === 'BEGIN:VEVENT') {
+        inEvent = true;
+        currentEvent = {};
+      } else if (line === 'END:VEVENT') {
+        if (currentEvent && currentEvent.summary && currentEvent.startDate) {
+          // DTEND yoksa DTSTART + 1 gün
+          if (!currentEvent.endDate) {
+            const start = new Date(currentEvent.startDate);
+            start.setDate(start.getDate() + 1);
+            currentEvent.endDate = start;
+          }
+          
+          // Proje mi bakım mı? SUMMARY'den anla
+          if (currentEvent.summary.includes('[Proje]') || currentEvent.summary.includes('[Project]')) {
+            currentEvent.type = 'project';
+            currentEvent.summary = currentEvent.summary.replace(/\[Proje\]|\[Project\]/g, '').trim();
+          } else if (currentEvent.summary.includes('[Bakım]') || currentEvent.summary.includes('[Maintenance]')) {
+            currentEvent.type = 'maintenance';
+            currentEvent.summary = currentEvent.summary.replace(/\[Bakım\]|\[Maintenance\]/g, '').trim();
+          } else {
+            // Varsayılan olarak proje
+            currentEvent.type = 'project';
+          }
+          
+          events.push(currentEvent);
+        }
+        inEvent = false;
+        currentEvent = null;
+      } else if (inEvent && currentEvent) {
+        // SUMMARY
+        if (line.startsWith('SUMMARY:')) {
+          currentEvent.summary = unescapeIcsText(line.substring(8));
+        }
+        // DTSTART
+        else if (line.startsWith('DTSTART')) {
+          const dateStr = line.includes('VALUE=DATE:') 
+            ? line.substring(line.indexOf('VALUE=DATE:') + 11)
+            : line.substring(line.indexOf(':') + 1);
+          currentEvent.startDate = parseIcsDate(dateStr);
+        }
+        // DTEND
+        else if (line.startsWith('DTEND')) {
+          const dateStr = line.includes('VALUE=DATE:') 
+            ? line.substring(line.indexOf('VALUE=DATE:') + 11)
+            : line.substring(line.indexOf(':') + 1);
+          currentEvent.endDate = parseIcsDate(dateStr);
+        }
+        // DESCRIPTION
+        else if (line.startsWith('DESCRIPTION:')) {
+          currentEvent.description = unescapeIcsText(line.substring(12));
+        }
+      }
+    }
+
+    if (events.length === 0) {
+      return res.status(400).json({ success: false, message: 'iCal dosyasında geçerli etkinlik bulunamadı' });
+    }
+
+    // Permissions kontrolü
+    const user = req.user as any;
+    const role = user?.role as string;
+    const userPermissions = (user?.permissions || []) as string[];
+    const canCreateProject = 
+      role === Role.ADMIN ||
+      role === Role.FIRMA_SAHIBI ||
+      hasPermission(role, Permission.PROJECT_CREATE, userPermissions);
+    const canCreateMaintenance = 
+      role === Role.ADMIN ||
+      role === Role.FIRMA_SAHIBI ||
+      hasPermission(role, Permission.MAINTENANCE_CREATE, userPermissions);
+
+    const result = {
+      success: 0,
+      failed: 0,
+      errors: [] as string[],
+      projects: [] as any[],
+      maintenances: [] as any[],
+    };
+
+    // Client model'ini import et (proje oluşturmak için)
+    const Client = (await import('../models')).Client;
+
+    // Varsayılan client bul veya oluştur (iCal import için)
+    let defaultClient = await Client.findOne({ name: 'iCal Import' });
+    if (!defaultClient) {
+      defaultClient = await Client.create({
+        name: 'iCal Import',
+        email: 'import@skproduction.com',
+        phone: '',
+        address: '',
+        notes: 'iCal import ile otomatik oluşturuldu',
+      });
+    }
+
+    for (const event of events) {
+      try {
+        if (event.type === 'project' && canCreateProject) {
+          // Proje oluştur
+          const project = await Project.create({
+            name: event.summary || 'İsimsiz Proje',
+            description: event.description || 'iCal import ile oluşturuldu',
+            startDate: event.startDate,
+            endDate: event.endDate,
+            status: 'APPROVED', // Import edilen projeler onaylanmış olarak eklenir
+            location: '',
+            client: defaultClient._id,
+            team: [],
+            equipment: [],
+          });
+          result.projects.push(project);
+          result.success++;
+        } else if (event.type === 'maintenance' && canCreateMaintenance) {
+          // Bakım oluştur (ekipman bulunamazsa atlanır)
+          // Bakım için ekipman gerekli, bu yüzden sadece proje oluşturuyoruz
+          // İleride ekipman eşleştirme eklenebilir
+          result.failed++;
+          result.errors.push(`${event.summary}: Bakım için ekipman gerekli (şimdilik atlandı)`);
+        } else {
+          result.failed++;
+          result.errors.push(`${event.summary}: Yetki yetersiz`);
+        }
+      } catch (error: any) {
+        result.failed++;
+        result.errors.push(`${event.summary}: ${error.message || 'Bilinmeyen hata'}`);
+        logger.error('iCal import event oluşturma hatası:', error);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `${result.success} etkinlik başarıyla içe aktarıldı, ${result.failed} etkinlik başarısız`,
+      result,
+    });
+  } catch (error) {
+    logger.error('Calendar iCal import hatası:', error);
+    return res.status(500).json({ success: false, message: 'iCal import başarısız' });
+  }
+};
+
+/**
+ * iCal date parse (YYYYMMDD veya YYYYMMDDTHHMMSSZ formatı)
+ */
+const parseIcsDate = (dateStr: string): Date => {
+  // YYYYMMDD formatı
+  if (dateStr.length === 8) {
+    const year = parseInt(dateStr.substring(0, 4), 10);
+    const month = parseInt(dateStr.substring(4, 6), 10) - 1; // 0-indexed
+    const day = parseInt(dateStr.substring(6, 8), 10);
+    return new Date(Date.UTC(year, month, day));
+  }
+  // YYYYMMDDTHHMMSSZ formatı
+  else if (dateStr.length >= 15 && dateStr.includes('T')) {
+    const year = parseInt(dateStr.substring(0, 4), 10);
+    const month = parseInt(dateStr.substring(4, 6), 10) - 1;
+    const day = parseInt(dateStr.substring(6, 8), 10);
+    const hour = dateStr.length > 9 ? parseInt(dateStr.substring(9, 11), 10) : 0;
+    const minute = dateStr.length > 11 ? parseInt(dateStr.substring(11, 13), 10) : 0;
+    const second = dateStr.length > 13 ? parseInt(dateStr.substring(13, 15), 10) : 0;
+    return new Date(Date.UTC(year, month, day, hour, minute, second));
+  }
+  // Fallback: Date.parse
+  return new Date(dateStr);
+};
+
+/**
+ * iCal text unescape
+ */
+const unescapeIcsText = (text: string): string => {
+  return text
+    .replace(/\\n/g, '\n')
+    .replace(/\\,/g, ',')
+    .replace(/\\;/g, ';')
+    .replace(/\\\\/g, '\\');
+};

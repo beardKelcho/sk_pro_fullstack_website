@@ -741,6 +741,10 @@ export default function Calendar() {
     );
   }
 
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const importFileInputRef = React.useRef<HTMLInputElement>(null);
+
   const handleDownloadIcs = () => {
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -750,6 +754,50 @@ export default function Calendar() {
       status: selectedProjectStatuses.join(','),
     });
     window.location.href = `/api/calendar/ics?${params.toString()}`;
+  };
+
+  const handleImportIcs = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.ics') && file.type !== 'text/calendar') {
+      toast.error('Sadece .ics dosyaları yüklenebilir');
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      const response = await fetch('/api/calendar/import', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(data.message || 'iCal dosyası başarıyla içe aktarıldı');
+        setShowImportModal(false);
+        if (importFileInputRef.current) {
+          importFileInputRef.current.value = '';
+        }
+        // Takvimi yenile
+        window.location.reload();
+      } else {
+        throw new Error(data.message || 'iCal import başarısız');
+      }
+    } catch (error: any) {
+      logger.error('iCal import hatası:', error);
+      toast.error(error.message || 'iCal dosyası içe aktarılırken bir hata oluştu');
+    } finally {
+      setImporting(false);
+    }
   };
   
   return (
@@ -768,6 +816,13 @@ export default function Calendar() {
             aria-label="iCal indir"
           >
             iCal İndir
+          </button>
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="px-3 py-1 text-sm rounded-md bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-700"
+            aria-label="iCal içe aktar"
+          >
+            iCal İçe Aktar
           </button>
           <button
             onClick={() => setView('month')}
@@ -880,6 +935,57 @@ export default function Calendar() {
           ))}
         </div>
       </div>
+
+      {/* iCal Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">iCal Dosyası İçe Aktar</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+              .ics formatındaki takvim dosyasını yükleyerek projeleri içe aktarabilirsiniz.
+            </p>
+            <div className="mb-4">
+              <input
+                ref={importFileInputRef}
+                type="file"
+                accept=".ics,text/calendar"
+                onChange={handleImportIcs}
+                disabled={importing}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300 dark:hover:file:bg-blue-800
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  if (importFileInputRef.current) {
+                    importFileInputRef.current.value = '';
+                  }
+                }}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
+                disabled={importing}
+              >
+                İptal
+              </button>
+            </div>
+            {importing && (
+              <div className="mt-4 text-center">
+                <svg className="animate-spin h-5 w-5 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">İçe aktarılıyor...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

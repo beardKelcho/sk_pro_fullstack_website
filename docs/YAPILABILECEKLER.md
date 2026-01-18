@@ -407,7 +407,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 - [x] Görev yorumları ✅ (Admin görev detay: Yorumlar sekmesi)
 - [x] @mention sistemi ✅ (seçili kullanıcılar + backend `mentions[]`)
 - [x] Bildirim entegrasyonu ✅ (mention -> Notification `SYSTEM`)
-- [ ] Rich text editor (opsiyonel; harici editor/lib seçimi gerektirir)
+- [x] Rich text editor ✅ (React Quill entegrasyonu + HTML sanitization)
 
 ---
 

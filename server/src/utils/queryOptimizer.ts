@@ -181,7 +181,8 @@ export const detectSlowQueries = (threshold: number = 1000) => {
     const startTime = Date.now();
     const query = this;
     
-    return (originalExec.apply(this, args) as Promise<any>).then((result: any) => {
+    // @ts-ignore - Mongoose exec method signature
+    return (originalExec.apply(this, args as any) as Promise<any>).then((result: any) => {
       const duration = Date.now() - startTime;
       
       if (duration > threshold) {

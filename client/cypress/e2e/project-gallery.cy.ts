@@ -27,13 +27,11 @@ describe('Project Gallery', () => {
       cy.visit('/admin/project-gallery');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Galeri grid veya listesi
-      cy.get('body').then(($body) => {
-        const gallery = $body.find('[class*="gallery"], [class*="grid"], img');
-        if (gallery.length > 0) {
-          cy.log('Galeri bulundu');
-        }
-      });
+      // Galeri grid veya listesi - gerçek assertion ile
+      cy.get('[class*="gallery"], [class*="grid"], img', { timeout: 10000 })
+        .should('have.length.at.least', 0) // Galeri boş olabilir
+        .first()
+        .should('exist');
     });
   });
 
@@ -42,21 +40,20 @@ describe('Project Gallery', () => {
       cy.visit('/admin/project-gallery');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Ekle butonu
-      cy.get('body').then(($body) => {
-        const addBtn = $body.find('button:contains("Ekle"), button:contains("Add")').first();
-        if (addBtn.length > 0) {
-          cy.wrap(addBtn).scrollIntoView().click({ force: true });
-          cy.wait(1000);
-          
-          // Modal veya form
-          cy.get('body').then(($modal) => {
-            if ($modal.find('[role="dialog"], input[type="file"]').length > 0) {
-              cy.log('Proje görseli ekleme formu açıldı');
-            }
-          });
-        }
-      });
+      // Ekle butonu - gerçek assertion ile
+      cy.get('button:contains("Ekle"), button:contains("Add")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.wait(1000);
+      
+      // Modal veya form - gerçek assertion ile
+      cy.get('[role="dialog"], .modal, input[type="file"]', { timeout: 5000 })
+        .should('exist')
+        .should('be.visible');
     });
   });
 });

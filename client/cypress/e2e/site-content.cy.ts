@@ -27,15 +27,19 @@ describe('Site Content Management', () => {
       cy.visit('/admin/site-content');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Bölüm seçimi (Hero, Services, About, Contact, vb.)
-      cy.get('body').then(($body) => {
-        const sectionBtns = $body.find('button:contains("Hero"), button:contains("Hizmet"), [role="tab"]');
-        if (sectionBtns.length > 0) {
-          cy.wrap(sectionBtns.first()).click({ force: true });
-          cy.wait(1000);
-          cy.log('Bölüm seçildi');
-        }
-      });
+      // Bölüm seçimi - gerçek assertion ile
+      cy.get('button:contains("Hero"), button:contains("Hizmet"), [role="tab"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.wait(1000);
+      
+      // Bölüm içeriğinin görüntülendiğini doğrula
+      cy.get('form, input, textarea', { timeout: 10000 })
+        .should('exist');
     });
   });
 
@@ -44,18 +48,19 @@ describe('Site Content Management', () => {
       cy.visit('/admin/site-content');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Hero bölümüne git
-      cy.get('body').then(($body) => {
-        const heroBtn = $body.find('button:contains("Hero"), [aria-label*="hero"]').first();
-        if (heroBtn.length > 0) {
-          cy.wrap(heroBtn).click({ force: true });
-          cy.wait(1000);
-          
-          // Hero form alanları
-          cy.get('input[name*="title"], textarea[name*="description"]', { timeout: 10000 })
-            .should('exist');
-        }
-      });
+      // Hero bölümüne git - gerçek assertion ile
+      cy.get('button:contains("Hero"), [aria-label*="hero"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .click({ force: true });
+      
+      cy.wait(1000);
+      
+      // Hero form alanları - gerçek assertion ile
+      cy.get('input[name*="title"], textarea[name*="description"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible');
     });
   });
 
@@ -64,15 +69,18 @@ describe('Site Content Management', () => {
       cy.visit('/admin/site-content');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Services bölümüne git
-      cy.get('body').then(($body) => {
-        const servicesBtn = $body.find('button:contains("Hizmet"), button:contains("Service")').first();
-        if (servicesBtn.length > 0) {
-          cy.wrap(servicesBtn).click({ force: true });
-          cy.wait(1000);
-          cy.log('Services bölümü açıldı');
-        }
-      });
+      // Services bölümüne git - gerçek assertion ile
+      cy.get('button:contains("Hizmet"), button:contains("Service")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .click({ force: true });
+      
+      cy.wait(1000);
+      
+      // Services form alanlarının görüntülendiğini doğrula
+      cy.get('form, input, textarea', { timeout: 10000 })
+        .should('exist');
     });
   });
 
@@ -81,15 +89,18 @@ describe('Site Content Management', () => {
       cy.visit('/admin/site-content');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // About bölümüne git
-      cy.get('body').then(($body) => {
-        const aboutBtn = $body.find('button:contains("Hakkımızda"), button:contains("About")').first();
-        if (aboutBtn.length > 0) {
-          cy.wrap(aboutBtn).click({ force: true });
-          cy.wait(1000);
-          cy.log('About bölümü açıldı');
-        }
-      });
+      // About bölümüne git - gerçek assertion ile
+      cy.get('button:contains("Hakkımızda"), button:contains("About")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .click({ force: true });
+      
+      cy.wait(1000);
+      
+      // About form alanlarının görüntülendiğini doğrula
+      cy.get('form, input, textarea', { timeout: 10000 })
+        .should('exist');
     });
   });
 
@@ -98,18 +109,19 @@ describe('Site Content Management', () => {
       cy.visit('/admin/site-content');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Contact bölümüne git
-      cy.get('body').then(($body) => {
-        const contactBtn = $body.find('button:contains("İletişim"), button:contains("Contact")').first();
-        if (contactBtn.length > 0) {
-          cy.wrap(contactBtn).click({ force: true });
-          cy.wait(1000);
-          
-          // Contact form alanları
-          cy.get('input[name*="email"], input[name*="phone"]', { timeout: 10000 })
-            .should('exist');
-        }
-      });
+      // Contact bölümüne git - gerçek assertion ile
+      cy.get('button:contains("İletişim"), button:contains("Contact")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .click({ force: true });
+      
+      cy.wait(1000);
+      
+      // Contact form alanları - gerçek assertion ile
+      cy.get('input[name*="email"], input[name*="phone"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible');
     });
   });
 });

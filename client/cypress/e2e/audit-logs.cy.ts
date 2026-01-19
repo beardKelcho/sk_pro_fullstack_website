@@ -27,13 +27,11 @@ describe('Audit Logs', () => {
       cy.visit('/admin/audit-logs');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Log listesi
-      cy.get('body').then(($body) => {
-        const logList = $body.find('table, ul, [class*="log"], tbody');
-        if (logList.length > 0) {
-          cy.log('Audit log listesi bulundu');
-        }
-      });
+      // Log listesi - gerçek assertion ile
+      cy.get('table, ul, [class*="log"], tbody', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .should('be.visible');
     });
   });
 
@@ -42,39 +40,35 @@ describe('Audit Logs', () => {
       cy.visit('/admin/audit-logs');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Filtre butonları
-      cy.get('body').then(($body) => {
-        const filters = $body.find('select[name*="filter"], button[aria-label*="filtre"]');
-        if (filters.length > 0) {
-          cy.log('Filtreleme öğeleri bulundu');
-        }
-      });
+      // Filtre butonları - gerçek assertion ile
+      cy.get('select[name*="filter"], button[aria-label*="filtre"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .should('be.visible');
     });
 
     it('kullanıcıya göre filtreleme çalışmalı', () => {
       cy.visit('/admin/audit-logs');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Kullanıcı filtresi
-      cy.get('body').then(($body) => {
-        const userFilter = $body.find('select[name*="user"], input[placeholder*="kullanıcı"]').first();
-        if (userFilter.length > 0) {
-          cy.wrap(userFilter).scrollIntoView().should('be.visible');
-        }
-      });
+      // Kullanıcı filtresi - gerçek assertion ile
+      cy.get('select[name*="user"], input[placeholder*="kullanıcı"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible');
     });
 
     it('aksiyona göre filtreleme çalışmalı', () => {
       cy.visit('/admin/audit-logs');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Aksiyon filtresi
-      cy.get('body').then(($body) => {
-        const actionFilter = $body.find('select[name*="action"], button:contains("Aksiyon")').first();
-        if (actionFilter.length > 0) {
-          cy.wrap(actionFilter).scrollIntoView().should('be.visible');
-        }
-      });
+      // Aksiyon filtresi - gerçek assertion ile
+      cy.get('select[name*="action"], button:contains("Aksiyon")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible');
     });
   });
 
@@ -83,21 +77,23 @@ describe('Audit Logs', () => {
       cy.visit('/admin/audit-logs');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Detay butonu veya satıra tıklama
-      cy.get('body').then(($body) => {
-        const detailBtn = $body.find('button:contains("Detay"), tr, a[href*="view"]').first();
-        if (detailBtn.length > 0) {
-          cy.wrap(detailBtn).scrollIntoView().click({ force: true });
-          cy.wait(2000);
-          
-          // Detay modal veya sayfa
-          cy.get('body').then(($detail) => {
-            if ($detail.find('[role="dialog"], [class*="detail"]').length > 0) {
-              cy.log('Audit log detayı görüntülendi');
-            }
-          });
-        }
-      });
+      // Log listesi yüklensin
+      cy.wait(2000);
+      
+      // Detay butonu veya satıra tıklama - gerçek assertion ile
+      cy.get('button:contains("Detay"), table tbody tr, a[href*="view"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.wait(2000);
+      
+      // Detay modal veya sayfa - gerçek assertion ile
+      cy.get('[role="dialog"], [class*="detail"], [class*="modal"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible');
     });
   });
 });

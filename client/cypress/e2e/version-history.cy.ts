@@ -50,92 +50,87 @@ describe('Version History Yönetimi', () => {
       cy.visit('/admin/projects');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Proje edit sayfasına git
-      cy.get('body').then(($body) => {
-        const editLink = $body.find('a[href*="/projects/edit"]').first();
-        if (editLink.length > 0) {
-          cy.wrap(editLink).click({ force: true });
-          cy.url({ timeout: 15000 }).should('include', '/projects/edit');
-          
-          // Version history butonuna tıkla
-          cy.get('body').then(($editPage) => {
-            const versionBtn = $editPage.find('button:contains("Versiyon"), button:contains("Version")').first();
-            if (versionBtn.length > 0) {
-              cy.wrap(versionBtn).scrollIntoView().click({ force: true });
-              cy.wait(2000);
-              
-              // Modal kontrolü
-              cy.get('body').then(($modal) => {
-                if ($modal.find('[role="dialog"], .modal, [class*="modal"]').length > 0) {
-                  cy.log('Version history modal açıldı');
-                }
-              });
-            }
-          });
-        }
-      });
+      // Proje edit sayfasına git - gerçek assertion ile
+      cy.get('a[href*="/projects/edit"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .click({ force: true });
+      
+      cy.url({ timeout: 15000 }).should('include', '/projects/edit');
+      
+      // Version history butonuna tıkla - gerçek assertion ile
+      cy.get('button:contains("Versiyon"), button:contains("Version")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.wait(2000);
+      
+      // Modal kontrolü - gerçek assertion ile
+      cy.get('[role="dialog"], .modal, [class*="modal"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible');
     });
 
     it('version history listesi görüntülenebilmeli', () => {
-      // Proje edit sayfasında version history'yi aç
+      // Proje edit sayfasında version history'yi aç - gerçek assertion ile
       cy.visit('/admin/projects');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      cy.get('body').then(($body) => {
-        const editLink = $body.find('a[href*="/projects/edit"]').first();
-        if (editLink.length > 0) {
-          cy.wrap(editLink).click({ force: true });
-          cy.url({ timeout: 15000 }).should('include', '/projects/edit');
-          
-          // Version history butonuna tıkla
-          cy.get('body').then(($editPage) => {
-            const versionBtn = $editPage.find('button:contains("Versiyon")').first();
-            if (versionBtn.length > 0) {
-              cy.wrap(versionBtn).click({ force: true });
-              cy.wait(2000);
-              
-              // Version listesi kontrolü
-              cy.get('body').then(($modal) => {
-                if ($modal.find('ul, table, [class*="version"], [class*="history"]').length > 0) {
-                  cy.log('Version history listesi bulundu');
-                }
-              });
-            }
-          });
-        }
-      });
+      cy.get('a[href*="/projects/edit"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .click({ force: true });
+      
+      cy.url({ timeout: 15000 }).should('include', '/projects/edit');
+      
+      // Version history butonuna tıkla - gerçek assertion ile
+      cy.get('button:contains("Versiyon")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.wait(2000);
+      
+      // Version listesi kontrolü - gerçek assertion ile
+      cy.get('ul, table, [class*="version"], [class*="history"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible');
     });
 
     it('rollback işlemi çalışabilmeli', () => {
-      // Proje edit sayfasında version history'yi aç
+      // Proje edit sayfasında version history'yi aç - gerçek assertion ile
       cy.visit('/admin/projects');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      cy.get('body').then(($body) => {
-        const editLink = $body.find('a[href*="/projects/edit"]').first();
-        if (editLink.length > 0) {
-          cy.wrap(editLink).click({ force: true });
-          cy.url({ timeout: 15000 }).should('include', '/projects/edit');
-          
-          // Version history butonuna tıkla
-          cy.get('body').then(($editPage) => {
-            const versionBtn = $editPage.find('button:contains("Versiyon")').first();
-            if (versionBtn.length > 0) {
-              cy.wrap(versionBtn).click({ force: true });
-              cy.wait(2000);
-              
-              // Rollback butonu
-              cy.get('body').then(($modal) => {
-                const rollbackBtn = $modal.find('button:contains("Geri"), button:contains("Rollback"), button:contains("Yükle")').first();
-                if (rollbackBtn.length > 0) {
-                  cy.log('Rollback butonu bulundu');
-                  // Rollback'i test etme (veri kaybı olabilir)
-                }
-              });
-            }
-          });
-        }
-      });
+      cy.get('a[href*="/projects/edit"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .click({ force: true });
+      
+      cy.url({ timeout: 15000 }).should('include', '/projects/edit');
+      
+      // Version history butonuna tıkla - gerçek assertion ile
+      cy.get('button:contains("Versiyon")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.wait(2000);
+      
+      // Rollback butonu - gerçek assertion ile
+      cy.get('button:contains("Geri"), button:contains("Rollback"), button:contains("Yükle")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .should('be.visible');
+      
+      // Not: Rollback'i gerçekten çalıştırmıyoruz (veri kaybı olabilir)
     });
   });
 });

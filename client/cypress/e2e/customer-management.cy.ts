@@ -47,48 +47,53 @@ describe('Müşteri Yönetimi', () => {
         .clear()
         .type(`test${timestamp}@customer.com`, { force: true });
 
-      // Telefon
-      cy.get('body').then(($body) => {
-        if ($body.find('input[name="phone"], input#phone').length > 0) {
-          cy.get('input[name="phone"], input#phone', { timeout: 10000 })
-            .should('be.visible')
-            .clear()
-            .type('5321234567', { force: true });
-        }
-      });
+      // Telefon - gerçek assertion ile
+      cy.get('input[name="phone"], input#phone', { timeout: 10000 })
+        .then(($input) => {
+          if ($input.length > 0) {
+            cy.wrap($input)
+              .should('be.visible')
+              .clear()
+              .type('5321234567', { force: true });
+          }
+        });
 
-      // Submit butonu
+      // Submit butonu - gerçek assertion ile
       cy.get('button[type="submit"], form button[type="submit"]', { timeout: 10000 })
+        .should('exist')
         .scrollIntoView()
-        .should('be.visible');
+        .should('be.visible')
+        .should('not.be.disabled');
     });
 
     it('müşteri görüntüleme sayfası açılmalı', () => {
       cy.visit('/admin/customers');
       cy.get('body', { timeout: 15000 }).should('be.visible');
 
-      // Görüntüle linki
-      cy.get('body').then(($body) => {
-        const viewLink = $body.find('a[href*="/customers/view"], tr').first();
-        if (viewLink.length > 0) {
-          cy.wrap(viewLink).scrollIntoView().click({ force: true });
-          cy.url({ timeout: 15000 }).should('include', '/customers/view');
-        }
-      });
+      // Görüntüle linki - gerçek assertion ile
+      cy.get('a[href*="/customers/view"], table tbody tr', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.url({ timeout: 15000 }).should('include', '/customers/view');
     });
 
     it('müşteri düzenleme sayfası açılmalı', () => {
       cy.visit('/admin/customers');
       cy.get('body', { timeout: 15000 }).should('be.visible');
 
-      // Düzenle linki
-      cy.get('body').then(($body) => {
-        const editLink = $body.find('a[href*="/customers/edit"], button:contains("Düzenle")').first();
-        if (editLink.length > 0) {
-          cy.wrap(editLink).scrollIntoView().click({ force: true });
-          cy.url({ timeout: 15000 }).should('include', '/customers/edit');
-        }
-      });
+      // Düzenle linki - gerçek assertion ile
+      cy.get('a[href*="/customers/edit"], button:contains("Düzenle")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.url({ timeout: 15000 }).should('include', '/customers/edit');
     });
   });
 });

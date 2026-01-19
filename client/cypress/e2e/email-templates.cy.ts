@@ -27,13 +27,11 @@ describe('Email Templates', () => {
       cy.visit('/admin/email-templates');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Template listesi
-      cy.get('body').then(($body) => {
-        const templateList = $body.find('table, ul, [class*="template"]');
-        if (templateList.length > 0) {
-          cy.log('Template listesi bulundu');
-        }
-      });
+      // Template listesi - gerçek assertion ile
+      cy.get('table, ul, [class*="template"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .should('be.visible');
     });
   });
 
@@ -42,42 +40,40 @@ describe('Email Templates', () => {
       cy.visit('/admin/email-templates');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Düzenle butonu
-      cy.get('body').then(($body) => {
-        const editBtn = $body.find('button:contains("Düzenle"), button:contains("Edit"), a[href*="edit"]').first();
-        if (editBtn.length > 0) {
-          cy.wrap(editBtn).scrollIntoView().click({ force: true });
-          cy.wait(2000);
-          
-          // Düzenleme formu
-          cy.get('body').then(($form) => {
-            if ($form.find('form, textarea, input').length > 0) {
-              cy.log('Template düzenleme formu açıldı');
-            }
-          });
-        }
-      });
+      // Düzenle butonu - gerçek assertion ile
+      cy.get('button:contains("Düzenle"), button:contains("Edit"), a[href*="edit"]', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.wait(2000);
+      
+      // Düzenleme formu - gerçek assertion ile
+      cy.get('form, textarea, input[name*="subject"], input[name*="title"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible');
     });
 
     it('template preview görüntülenebilmeli', () => {
       cy.visit('/admin/email-templates');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Preview butonu
-      cy.get('body').then(($body) => {
-        const previewBtn = $body.find('button:contains("Önizle"), button:contains("Preview")').first();
-        if (previewBtn.length > 0) {
-          cy.wrap(previewBtn).scrollIntoView().click({ force: true });
-          cy.wait(2000);
-          
-          // Preview modal
-          cy.get('body').then(($modal) => {
-            if ($modal.find('[role="dialog"], .modal, [class*="preview"]').length > 0) {
-              cy.log('Template preview görüntülendi');
-            }
-          });
-        }
-      });
+      // Preview butonu - gerçek assertion ile
+      cy.get('button:contains("Önizle"), button:contains("Preview")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.wait(2000);
+      
+      // Preview modal - gerçek assertion ile
+      cy.get('[role="dialog"], .modal, [class*="preview"]', { timeout: 10000 })
+        .should('exist')
+        .should('be.visible');
     });
   });
 });

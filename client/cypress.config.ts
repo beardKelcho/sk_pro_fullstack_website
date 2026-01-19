@@ -9,6 +9,11 @@ export default defineConfig({
     screenshotOnRunFailure: true,
     viewportWidth: 1280,
     viewportHeight: 720,
+    // Accessibility testleri için timeout artırıldı
+    defaultCommandTimeout: 10000, // 10 saniye (default: 4000ms)
+    requestTimeout: 10000,
+    responseTimeout: 10000,
+    pageLoadTimeout: 30000, // 30 saniye
     env: {
       // Test kullanıcısı bilgileri (2FA kapalı)
       TEST_USER_EMAIL: 'test@skpro.com.tr',

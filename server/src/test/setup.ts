@@ -6,6 +6,8 @@
 
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { disconnectRedis } from '../config/redis';
+import { stopMonitoringRealtimePush } from '../utils/scheduledTasks';
 
 // Mongoose'ın Jest fake timer uyarılarını bastır (özellikle bazı unit testlerde fake timers kullanıyoruz)
 process.env.SUPPRESS_JEST_WARNINGS = process.env.SUPPRESS_JEST_WARNINGS || 'true';
@@ -37,10 +39,30 @@ afterEach(async () => {
   for (const key in collections) {
     await collections[key].deleteMany({});
   }
+  
+  // Aktif timer'ları temizle (fake timers kullanılmıyorsa)
+  if (!jest.isMockFunction(setTimeout)) {
+    // Real timers kullanılıyorsa, pending timer'ları kontrol et
+    // Jest'in kendi timer cleanup'ı var ama ekstra güvenlik için
+  }
 });
 
 // Tüm testler sonrası bağlantıyı kapat
 afterAll(async () => {
+  // Scheduled tasks'ı durdur (interval'ları temizle)
+  try {
+    stopMonitoringRealtimePush();
+  } catch {
+    // ignore
+  }
+  
+  // Redis bağlantısını kapat
+  try {
+    await disconnectRedis();
+  } catch {
+    // ignore - Redis test'te kullanılmıyor olabilir
+  }
+  
   // Connection down/closed ise buffering timeout'a düşmemek için guard ekle
   try {
     if (mongoose.connection.readyState === 1) {
@@ -62,6 +84,18 @@ afterAll(async () => {
     await mongoServer?.stop();
   } catch {
     // ignore
+  }
+  
+  // Tüm pending timer'ları temizle
+  // Jest'in kendi cleanup'ı var ama ekstra güvenlik için
+  if (typeof jest !== 'undefined' && jest.clearAllTimers) {
+    jest.clearAllTimers();
+  }
+  
+  // Node.js event loop'u temizle (pending callbacks)
+  // Force garbage collection (eğer --expose-gc flag'i ile çalıştırılıyorsa)
+  if (global.gc) {
+    global.gc();
   }
 }, 60000);
 

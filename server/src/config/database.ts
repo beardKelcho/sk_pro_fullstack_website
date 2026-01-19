@@ -53,7 +53,12 @@ const connectDB = async () => {
 
     mongoose.connection.on('disconnected', () => {
       logger.warn('MongoDB disconnected. Attempting to reconnect...');
-      setTimeout(connectDB, 5000);
+      // Test ortamında reconnect yapma (test teardown'da sorun çıkarır)
+      if (process.env.NODE_ENV !== 'test') {
+        const reconnectTimer = setTimeout(connectDB, 5000);
+        // Timer'ı unref et (process'i açık tutmasın - özellikle test ortamında)
+        reconnectTimer.unref();
+      }
     });
 
     mongoose.connection.on('reconnected', () => {

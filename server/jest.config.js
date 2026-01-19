@@ -27,4 +27,10 @@ module.exports = {
     },
   },
   setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  // Worker process'lerin düzgün kapanması için
+  // forceExit: true kullanmak yerine teardown'da cleanup yapıyoruz
+  // Ancak bazı durumlarda forceExit gerekebilir (CI ortamında)
+  forceExit: process.env.CI === 'true' || process.env.FORCE_EXIT === 'true',
+  // Open handles'ı tespit et (development'ta)
+  detectOpenHandles: process.env.DETECT_OPEN_HANDLES === 'true',
 }; 

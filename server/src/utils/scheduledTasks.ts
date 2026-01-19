@@ -28,6 +28,15 @@ export const startMonitoringRealtimePush = () => {
   logger.info(`Monitoring realtime push aktif (interval: ${intervalMs}ms)`);
 };
 
+// Monitoring realtime push'u durdur (test teardown için)
+export const stopMonitoringRealtimePush = () => {
+  if (monitoringRealtimeInterval) {
+    clearInterval(monitoringRealtimeInterval);
+    monitoringRealtimeInterval = null;
+    logger.info('Monitoring realtime push durduruldu');
+  }
+};
+
 // Bakım hatırlatma görevini çalıştır (her gün saat 09:00'da)
 export const scheduleMaintenanceReminders = () => {
   cron.schedule('0 9 * * *', async () => {

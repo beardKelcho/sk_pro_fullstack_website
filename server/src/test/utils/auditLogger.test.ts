@@ -1,44 +1,43 @@
-import { createAuditLog, logLoginAction, logAction } from '../../utils/auditLogger';
-import AuditLog from '../../models/AuditLog';
 import mongoose from 'mongoose';
 import { Request } from 'express';
+
+// Logger'ı import et ve spy'la
 import logger from '../../utils/logger';
-
-// Mock AuditLog model
-const mockCreate = jest.fn();
-jest.mock('../../models/AuditLog', () => ({
-  __esModule: true,
-  default: {
-    create: mockCreate,
-    find: jest.fn(),
-    countDocuments: jest.fn(),
-  },
-}));
-
-// Mock logger
-jest.mock('../../utils/logger', () => ({
-  __esModule: true,
-  default: {
-    warn: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-  },
-}));
+import AuditLog from '../../models/AuditLog';
+import { createAuditLog, logLoginAction, logAction } from '../../utils/auditLogger';
 
 describe('auditLogger', () => {
   const mockUserId = new mongoose.Types.ObjectId();
   const mockResourceId = new mongoose.Types.ObjectId();
+  let mockCreate: jest.SpyInstance;
+  let mockWarn: jest.SpyInstance;
+  let mockError: jest.SpyInstance;
 
   beforeEach(() => {
+    // AuditLog.create'i spy'la
+    mockCreate = jest.spyOn(AuditLog, 'create').mockResolvedValue({} as any);
+    // Logger'ı spy'la
+    mockWarn = jest.spyOn(logger, 'warn').mockImplementation(() => logger);
+    mockError = jest.spyOn(logger, 'error').mockImplementation(() => logger);
     jest.clearAllMocks();
-    // Her test için mock'u resetle
-    mockCreate.mockResolvedValue({});
+  });
+
+  afterEach(() => {
+    // Spy'ları restore et
+    if (mockCreate) {
+      mockCreate.mockRestore();
+    }
+    if (mockWarn) {
+      mockWarn.mockRestore();
+    }
+    if (mockError) {
+      mockError.mockRestore();
+    }
+    jest.clearAllMocks();
   });
 
   describe('createAuditLog', () => {
     it('should create an audit log with valid ObjectId strings', async () => {
-      mockCreate.mockResolvedValue({});
-
       await createAuditLog({
         user: mockUserId.toString(),
         action: 'CREATE',
@@ -61,8 +60,6 @@ describe('auditLogger', () => {
     });
 
     it('should create an audit log with ObjectId objects', async () => {
-      mockCreate.mockResolvedValue({});
-
       await createAuditLog({
         user: mockUserId.toString(),
         action: 'UPDATE',
@@ -83,8 +80,6 @@ describe('auditLogger', () => {
     });
 
     it('should handle null user for system actions', async () => {
-      mockCreate.mockResolvedValue({});
-
       await createAuditLog({
         user: null,
         action: 'CREATE',
@@ -103,8 +98,6 @@ describe('auditLogger', () => {
     });
 
     it('should handle "system" string as null user', async () => {
-      mockCreate.mockResolvedValue({});
-
       await createAuditLog({
         user: 'system',
         action: 'CREATE',
@@ -120,11 +113,16 @@ describe('auditLogger', () => {
           resourceId: mockResourceId,
         })
       );
-      expect(logger.warn).toHaveBeenCalled();
+      // logger.warn çağrıldığını kontrol et (system string için uyarı verilir)
+      expect(mockWarn).toHaveBeenCalledWith(
+        expect.stringContaining('Geçersiz user ID formatı'),
+        expect.anything()
+      );
     });
 
     it('should skip audit log creation for invalid resourceId', async () => {
       mockCreate.mockClear();
+      (logger.warn as jest.Mock).mockClear();
 
       await createAuditLog({
         user: mockUserId.toString(),
@@ -134,11 +132,15 @@ describe('auditLogger', () => {
       });
 
       expect(mockCreate).not.toHaveBeenCalled();
-      expect(logger.warn).toHaveBeenCalled();
+      expect(mockWarn).toHaveBeenCalledWith(
+        expect.stringContaining('Geçersiz resourceId formatı'),
+        expect.anything()
+      );
     });
 
     it('should skip audit log creation for invalid user ID', async () => {
-      mockCreate.mockResolvedValue({});
+      mockCreate.mockClear();
+      (logger.warn as jest.Mock).mockClear();
 
       await createAuditLog({
         user: 'invalid-user-id',
@@ -158,11 +160,15 @@ describe('auditLogger', () => {
           metadata: {},
         })
       );
-      expect(logger.warn).toHaveBeenCalled();
+      expect(mockWarn).toHaveBeenCalledWith(
+        expect.stringContaining('Geçersiz user ID formatı'),
+        expect.anything()
+      );
     });
 
     it('should handle errors gracefully', async () => {
-      mockCreate.mockRejectedValue(new Error('Database error'));
+      mockError.mockClear();
+      mockCreate.mockRejectedValueOnce(new Error('Database error'));
 
       await createAuditLog({
         user: mockUserId.toString(),
@@ -171,7 +177,7 @@ describe('auditLogger', () => {
         resourceId: mockResourceId.toString(),
       });
 
-      expect(logger.error).toHaveBeenCalledWith('Audit log oluşturma hatası:', expect.any(Error));
+      expect(mockError).toHaveBeenCalledWith('Audit log oluşturma hatası:', expect.any(Error));
     });
   });
 
@@ -186,8 +192,6 @@ describe('auditLogger', () => {
     } as unknown as Request;
 
     it('should create a login audit log', async () => {
-      mockCreate.mockResolvedValue({});
-
       await logLoginAction(mockUserId.toString(), mockReq);
 
       expect(mockCreate).toHaveBeenCalledWith(
@@ -209,19 +213,25 @@ describe('auditLogger', () => {
 
     it('should skip audit log for invalid user ID', async () => {
       mockCreate.mockClear();
+      mockWarn.mockClear();
 
       await logLoginAction('invalid-id', mockReq);
 
       expect(mockCreate).not.toHaveBeenCalled();
-      expect(logger.warn).toHaveBeenCalled();
+      expect(mockWarn).toHaveBeenCalledWith(
+        expect.stringContaining('Geçersiz user ID for login audit log'),
+        expect.anything()
+      );
     });
 
     it('should handle errors gracefully', async () => {
-      mockCreate.mockRejectedValue(new Error('Database error'));
+      mockError.mockClear();
+      mockCreate.mockRejectedValueOnce(new Error('Database error'));
 
       await logLoginAction(mockUserId.toString(), mockReq);
 
-      expect(logger.error).toHaveBeenCalledWith('Login audit log oluşturma hatası:', expect.any(Error));
+      // createAuditLog içindeki catch bloğu önce çalışır
+      expect(mockError).toHaveBeenCalledWith('Audit log oluşturma hatası:', expect.any(Error));
     });
   });
 
@@ -237,8 +247,6 @@ describe('auditLogger', () => {
     } as unknown as Request;
 
     it('should create an audit log from request', async () => {
-      mockCreate.mockResolvedValue({});
-
       await logAction(mockReq, 'UPDATE', 'Project', mockResourceId.toString(), [
         { field: 'name', oldValue: 'Old', newValue: 'New' },
       ]);
@@ -261,7 +269,6 @@ describe('auditLogger', () => {
         ...mockReq,
         user: undefined,
       } as unknown as Request;
-      mockCreate.mockResolvedValue({});
 
       await logAction(reqWithoutUser, 'VIEW', 'Project', mockResourceId.toString());
 
@@ -276,11 +283,12 @@ describe('auditLogger', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      mockCreate.mockRejectedValue(new Error('Database error'));
+      mockError.mockClear();
+      mockCreate.mockRejectedValueOnce(new Error('Database error'));
 
       await logAction(mockReq, 'DELETE', 'Project', mockResourceId.toString());
 
-      expect(logger.error).toHaveBeenCalledWith('Audit log oluşturma hatası:', expect.any(Error));
+      expect(mockError).toHaveBeenCalledWith('Audit log oluşturma hatası:', expect.any(Error));
     });
   });
 });

@@ -84,7 +84,9 @@ describe('Export Controller', () => {
     mockRequest = {
       user: { id: 'test-user-id' },
       ip: '127.0.0.1',
-      socket: { remoteAddress: '127.0.0.1' },
+      socket: {
+        remoteAddress: '127.0.0.1',
+      } as Partial<import('net').Socket> as any,
       get: jest.fn().mockReturnValue('Mozilla/5.0'),
       method: 'GET',
       originalUrl: '/api/export/equipment',

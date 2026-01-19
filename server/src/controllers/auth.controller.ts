@@ -3,8 +3,9 @@ import jwt from 'jsonwebtoken';
 import { Session, User } from '../models';
 import { IUser } from '../models/User';
 import logger from '../utils/logger';
-import { logAction } from '../utils/auditLogger';
+import { logLoginAction } from '../utils/auditLogger';
 import { createTokenHash, generateTokenPair, isMobileClient } from '../utils/authTokens';
+import { AppError, AuthenticatedRequest } from '../types/common';
 
 const getClientIp = (req: Request): string | undefined => {
   const xf = req.headers['x-forwarded-for'];
@@ -15,8 +16,12 @@ const getClientIp = (req: Request): string | undefined => {
 
 // Kullanıcı giriş işlemi
 export const login = async (req: Request, res: Response) => {
+  const requestId = req.headers['x-request-id'] || 'unknown';
+  logger.info('Login attempt started', { requestId, email: req.body?.email ? 'provided' : 'missing' });
+  
   try {
     const { email, password } = req.body;
+    logger.debug('Login request body received', { requestId, hasEmail: !!email, hasPassword: !!password });
     const identifierRaw = typeof email === 'string' ? email.trim() : '';
     const isEmail = identifierRaw.includes('@');
     const identifierEmail = isEmail ? identifierRaw.toLowerCase() : '';
@@ -72,7 +77,19 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Token üret
-    const { accessToken, refreshToken } = generateTokenPair(user as unknown as IUser);
+    let accessToken: string;
+    let refreshToken: string;
+    try {
+      logger.debug('Generating token pair', { requestId, userId: user._id.toString() });
+      const tokens = generateTokenPair(user as unknown as IUser);
+      accessToken = tokens.accessToken;
+      refreshToken = tokens.refreshToken;
+      logger.debug('Token pair generated successfully', { requestId, accessTokenLength: accessToken.length });
+    } catch (tokenError: unknown) {
+      const error = tokenError as AppError;
+      logger.error('Token üretme hatası:', { requestId, error, message: error?.message, stack: error?.stack });
+      throw new Error('Token üretilemedi: ' + (error?.message || 'Bilinmeyen hata'));
+    }
 
     // Session oluştur (hash'li token/refreshToken)
     try {
@@ -93,19 +110,22 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Cookie olarak refresh token'ı ayarla
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
-    });
+    try {
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
+      });
+    } catch (cookieError) {
+      logger.warn('Cookie ayarlama hatası (non-blocking):', cookieError);
+    }
 
-    // Audit log - Login (non-blocking, hata olsa bile login devam etsin)
-    logAction(req, 'LOGIN', 'System', user._id.toString()).catch((auditError) => {
-      logger.warn('Audit log oluşturulamadı (non-blocking):', auditError);
-    });
-    
-    // Başarılı yanıt
+    // Başarılı yanıt - ÖNCE response gönder, sonra audit log
     const mobile = isMobileClient(req);
+    
+    logger.info('Login successful, sending response', { requestId, userId: user._id.toString(), mobile });
+    
+    // Response'u gönder
     res.status(200).json({
       success: true,
       accessToken,
@@ -117,12 +137,38 @@ export const login = async (req: Request, res: Response) => {
         role: user.role,
       },
     });
-  } catch (error) {
-    logger.error('Login hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.',
+    
+    logger.debug('Login response sent successfully', { requestId });
+    
+    // Audit log - Response gönderildikten SONRA (non-blocking)
+    // Bu şekilde audit log hatası login'i engellemez
+    setImmediate(() => {
+      logLoginAction(user._id.toString(), req).catch((auditError) => {
+        logger.warn('Login audit log oluşturulamadı (non-blocking):', auditError);
+      });
     });
+  } catch (error: unknown) {
+    const appError = error as AppError;
+    const requestId = req.headers['x-request-id'] || 'unknown';
+    logger.error('Login hatası:', {
+      requestId,
+      error: appError?.toString() || String(error),
+      message: appError?.message,
+      stack: appError?.stack,
+      name: appError?.name,
+      email: req.body?.email,
+    });
+    
+    // Response henüz gönderilmediyse gönder
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: appError?.message || 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.',
+        ...(process.env.NODE_ENV === 'development' ? { details: appError?.stack } : {}),
+      });
+    } else {
+      logger.warn('Login error but response already sent', { requestId });
+    }
   }
 };
 

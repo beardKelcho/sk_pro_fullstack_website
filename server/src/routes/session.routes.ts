@@ -14,11 +14,13 @@ router.use(authenticate);
 // Aktif oturumları getir
 router.get('/', getActiveSessions);
 
+// Tüm diğer oturumları sonlandır
+// NOTE: Bu route, `/:sessionId` param route'undan ÖNCE gelmeli.
+// Aksi halde Express, `/sessions/all/others` isteğini `sessionId="all"` diye yakalar.
+router.delete('/all/others', terminateAllOtherSessions);
+
 // Belirli bir oturumu sonlandır
 router.delete('/:sessionId', terminateSession);
-
-// Tüm diğer oturumları sonlandır
-router.delete('/all/others', terminateAllOtherSessions);
 
 export default router;
 

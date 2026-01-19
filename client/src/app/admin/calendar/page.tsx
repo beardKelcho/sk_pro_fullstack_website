@@ -73,6 +73,7 @@ type DragPayload = {
 };
 
 export default function Calendar() {
+  // TÜM HOOK'LAR EN ÜSTTE, KOŞULSUZ OLARAK TANIMLANMALI (React Rules of Hooks)
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -88,6 +89,10 @@ export default function Calendar() {
     status: string;
     equipment: string;
   }>>([]);
+  const [users, setUsers] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const importFileInputRef = React.useRef<HTMLInputElement>(null);
   
   // Tarih filtrelemesi ve veri yükleme
   useEffect(() => {
@@ -95,6 +100,20 @@ export default function Calendar() {
       setLoading(true);
       
       try {
+        // Kullanıcı listesini çek (assignee seçimi için)
+        try {
+          const { getAllUsers } = await import('@/services/userService');
+          const usersRes = await getAllUsers({ page: 1, limit: 1000 });
+          setUsers((usersRes.users || []).map((u: any) => ({
+            id: u._id || u.id || '',
+            name: u.name || '',
+            email: u.email || '',
+          })));
+        } catch (userError) {
+          logger.warn('Kullanıcı listesi yüklenemedi:', userError);
+          setUsers([]);
+        }
+
         // Görünüme göre tarih aralığını hesapla
         let startDate: Date;
         let endDate: Date;
@@ -130,37 +149,42 @@ export default function Calendar() {
           },
         });
         
-        if (response.data.success && response.data.events) {
-          const events = response.data.events;
+        if (response.data && response.data.success !== false) {
+          // API response formatını kontrol et
+          const events = response.data.events || response.data || [];
           
           // Projeleri ayır ve formatla
-          const calendarProjects: Project[] = events
-            .filter((event: any) => event.type === 'project' && showProjects)
-            .map((event: any) => ({
-              id: event.id,
-              name: event.name,
-              client: '', // Calendar API'den client bilgisi gelmiyor, gerekirse ayrı çekilebilir
-              startDate: event.startDate,
-              endDate: event.endDate || event.startDate,
-              location: '',
-              status: event.status as ProjectStatus,
-              team: [],
-              equipment: [],
-            }));
+          const calendarProjects: Project[] = Array.isArray(events)
+            ? events
+                .filter((event: any) => event.type === 'project' && showProjects)
+                .map((event: any) => ({
+                  id: event.id || event._id,
+                  name: event.name || 'İsimsiz Proje',
+                  client: event.client || '', 
+                  startDate: event.startDate,
+                  endDate: event.endDate || event.startDate,
+                  location: event.location || '',
+                  status: (event.status || 'PENDING_APPROVAL') as ProjectStatus,
+                  team: event.team || [],
+                  equipment: event.equipment || [],
+                }))
+            : [];
           
           setProjects(calendarProjects);
           
           // Bakımları ayır ve formatla
-          const calendarMaintenances = events
-            .filter((event: any) => event.type === 'maintenance' && showEquipment)
-            .map((event: any) => ({
-              id: event.id,
-              name: event.name,
-              type: 'ROUTINE', // Calendar API'den type gelmiyor, varsayılan
-              scheduledDate: event.startDate,
-              status: 'SCHEDULED', // Calendar API'den status gelmiyor, varsayılan
-              equipment: '',
-            }));
+          const calendarMaintenances = Array.isArray(events)
+            ? events
+                .filter((event: any) => event.type === 'maintenance' && showEquipment)
+                .map((event: any) => ({
+                  id: event.id || event._id,
+                  name: event.name || 'Bakım',
+                  type: event.type || 'ROUTINE',
+                  scheduledDate: event.startDate || event.scheduledDate,
+                  status: event.status || 'SCHEDULED',
+                  equipment: event.equipment || '',
+                }))
+            : [];
           
           setMaintenances(calendarMaintenances);
         } else {
@@ -241,10 +265,10 @@ export default function Calendar() {
     return x.toISOString();
   };
   
-  // Ay ismini al
+  // Ay ismini al - Admin paneli i18n dışında olduğu için sabit Türkçe kullan
   const getMonthName = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
-    return date.toLocaleDateString('tr-TR', options);
+    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
   
   // Belirli bir gün için etkinlikleri getir
@@ -554,7 +578,7 @@ export default function Calendar() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-            {weekDays[0].toLocaleDateString('tr-TR')} - {weekDays[6].toLocaleDateString('tr-TR')}
+            {weekDays[0].toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} - {weekDays[6].toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
           </h2>
           <div className="flex space-x-2">
             <button
@@ -599,7 +623,7 @@ export default function Calendar() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm font-medium text-gray-800 dark:text-white">
-                    {d.toLocaleDateString('tr-TR', { weekday: 'short' })}
+                    {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'][d.getDay() === 0 ? 6 : d.getDay() - 1]}
                   </div>
                   <div
                     className={`text-xs px-2 py-0.5 rounded-full ${
@@ -658,7 +682,9 @@ export default function Calendar() {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white">{d.toLocaleDateString('tr-TR')}</h2>
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+            {d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </h2>
           <div className="flex space-x-2">
             <button
               onClick={() => setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth(), prev.getDate() - 1))}
@@ -729,7 +755,7 @@ export default function Calendar() {
     );
   };
   
-  // Yükleniyor durumu
+  // Yükleniyor durumu - hook'lardan SONRA kontrol edilmeli
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -740,10 +766,6 @@ export default function Calendar() {
       </div>
     );
   }
-
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const importFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleDownloadIcs = () => {
     const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);

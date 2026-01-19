@@ -321,69 +321,18 @@ export default function AdminLogin() {
           console.log('Token parts:', tokenParts.length);
         }
         
-        // Token'ın çalıştığını doğrula - getProfile çağrısı yap
-        // Bu, token'ın doğru kaydedildiğini ve axios interceptor'ın token'ı görebildiğini garantiler
-        try {
-          // Axios interceptor'ın token'ı görmesi için biraz daha bekle
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Verifying token with getProfile...');
-            // Token'ın storage'da olduğunu tekrar kontrol et
-            const checkToken = formData.rememberMe 
-              ? localStorage.getItem('accessToken')
-              : sessionStorage.getItem('accessToken');
-            console.log('Token still in storage:', !!checkToken);
-            console.log('Token matches:', checkToken === savedToken);
-          }
-          
-          const profileResponse = await authApi.getProfile();
-          
-          if (profileResponse.data && profileResponse.data.success && profileResponse.data.user) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Token verified successfully, redirecting to dashboard...');
-            }
-            // Token geçerli, dashboard'a yönlendir - full page reload ile
-            window.location.href = '/admin/dashboard';
-          } else {
-            logger.error('Token verification failed - invalid profile response');
-            // Token geçersiz, temizle
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('accessToken');
-            sessionStorage.removeItem('user');
-            // Header'ı anında güncellemek için custom event dispatch et
-            window.dispatchEvent(new CustomEvent('auth:logout'));
-            setLoginError('Giriş doğrulaması başarısız. Lütfen tekrar deneyin.');
-            setLoading(false);
-          }
-        } catch (profileError: any) {
-          logger.error('Token verification failed:', profileError);
-          
-          // Hata detaylarını logla
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Profile error details:', {
-              status: profileError.response?.status,
-              message: profileError.response?.data?.message,
-              name: profileError.response?.data?.name,
-              tokenInStorage: !!(formData.rememberMe 
-                ? localStorage.getItem('accessToken')
-                : sessionStorage.getItem('accessToken'))
-            });
-          }
-          
-          // Token geçersiz, temizle
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('accessToken');
-          sessionStorage.removeItem('user');
-          // Header'ı anında güncellemek için custom event dispatch et
-          window.dispatchEvent(new CustomEvent('auth:logout'));
-          
-          const errorMessage = profileError.response?.data?.message || profileError.message || 'Token doğrulanamadı';
-          setLoginError(`Giriş doğrulaması başarısız: ${errorMessage}. Lütfen tekrar deneyin.`);
-          setLoading(false);
+        // Token kaydedildi, direkt dashboard'a yönlendir
+        // getProfile çağrısı yapmıyoruz çünkü bu gereksiz ve hata kaynağı olabilir
+        // Token zaten backend'den geldi ve geçerli, bu yeterli
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Login başarılı, token kaydedildi, dashboard\'a yönlendiriliyor...');
         }
+        
+        // Kısa bir delay ile redirect yap (storage'a yazılmasını garantile)
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Dashboard'a yönlendir - full page reload ile
+        window.location.href = '/admin/dashboard';
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
         logger.error('Login failed:', errorMsg);

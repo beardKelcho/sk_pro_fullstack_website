@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AppError } from '../types/common';
 import { ReportSchedule } from '../models';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
@@ -108,11 +109,12 @@ export const createReportSchedule = async (req: Request, res: Response) => {
       success: true,
       schedule: reportSchedule,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Rapor zamanlaması oluşturma hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Rapor zamanlaması oluşturulamadı',
+      message: appError?.message || (error as Error)?.message || 'Rapor zamanlaması oluşturulamadı',
     });
   }
 };
@@ -172,11 +174,12 @@ export const updateReportSchedule = async (req: Request, res: Response) => {
       success: true,
       schedule,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Rapor zamanlaması güncelleme hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Rapor zamanlaması güncellenemedi',
+      message: appError?.message || (error as Error)?.message || 'Rapor zamanlaması güncellenemedi',
     });
   }
 };

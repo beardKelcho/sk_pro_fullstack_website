@@ -4,12 +4,14 @@ import logger from '../utils/logger';
 import { pingClient, registerClient, unregisterClient } from '../utils/realtime/realtimeHub';
 
 export const streamRealtime = async (req: Request, res: Response) => {
-  // SSE headers
-  res.status(200);
-  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no');
+  // SSE headers - Express otomatik olarak chunked encoding yapar, Transfer-Encoding header'ını kaldır
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+    // Transfer-Encoding header'ını kaldırdık - Express otomatik olarak chunked encoding yapar
+  });
 
   // flush headers if available
   // @ts-ignore

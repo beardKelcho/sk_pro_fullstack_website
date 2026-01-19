@@ -6,13 +6,15 @@ import { notifyProjectTeam } from '../utils/notificationService';
 import logger from '../utils/logger';
 import { logAction, extractChanges } from '../utils/auditLogger';
 import { emitWebhookEvent } from '../services/webhook.service';
+import { AppError, MongooseFilter, MongooseSortOptions, MongooseUpdateResult } from '../types/common';
+import { IProject } from '../models/Project';
 
 // Tüm projeleri listele
 export const getAllProjects = async (req: Request, res: Response) => {
   try {
     const { status, search, startDate, endDate, sort = '-createdAt', page = 1, limit = 10 } = req.query;
     
-    const filters: any = {};
+    const filters: MongooseFilter<IProject> = {};
     
     if (status) {
       filters.status = status;
@@ -29,7 +31,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
     // Tarih filtresi - projelerin seçili tarih aralığı ile kesişmesi
     // Proje, filtrenin tarih aralığı ile kesişiyorsa gösterilir
     if (startDate || endDate) {
-      const dateFilter: any[] = [];
+      const dateFilter: MongooseFilter<IProject>[] = [];
       const filterStartDate = startDate ? new Date(startDate as string) : null;
       const filterEndDate = endDate ? new Date(endDate as string) : null;
       
@@ -84,7 +86,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
       : (sort as string);
     const sortOrder = (sort as string).startsWith('-') ? -1 : 1;
     
-    const sortOptions: any = {};
+    const sortOptions: MongooseSortOptions = {};
     sortOptions[sortField] = sortOrder;
     
     const [projects, total] = await Promise.all([
@@ -246,7 +248,8 @@ export const createProject = async (req: Request, res: Response) => {
         { $set: { status: 'IN_USE', currentProject: project._id } }
       );
 
-      if ((reserveResult as any).modifiedCount !== validEquipmentIds.length) {
+      const updateResult = reserveResult as MongooseUpdateResult;
+      if (updateResult.modifiedCount !== validEquipmentIds.length) {
         // Rollback: sadece bu proje için rezerve edilenleri geri al
         await Equipment.updateMany(
           { _id: { $in: validEquipmentIds }, currentProject: project._id },
@@ -264,9 +267,18 @@ export const createProject = async (req: Request, res: Response) => {
     
     // Cache'i invalidate et
     const { invalidateProjectCache, invalidateDashboardCache, invalidateEquipmentCache } = await import('../middleware/cache.middleware');
-    await invalidateProjectCache().catch((err: any) => logger.error('Project cache invalidation hatası:', err));
-    await invalidateDashboardCache().catch((err: any) => logger.error('Dashboard cache invalidation hatası:', err));
-    await invalidateEquipmentCache().catch((err: any) => logger.error('Equipment cache invalidation hatası:', err));
+    await invalidateProjectCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Project cache invalidation hatası:', error);
+    });
+    await invalidateDashboardCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Dashboard cache invalidation hatası:', error);
+    });
+    await invalidateEquipmentCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Equipment cache invalidation hatası:', error);
+    });
     
     // Audit log
     await logAction(req, 'CREATE', 'Project', project._id.toString());
@@ -412,7 +424,10 @@ export const updateProject = async (req: Request, res: Response) => {
       await Equipment.updateMany(
         { _id: { $in: removedEquipmentIds }, currentProject: updatedProject._id },
         { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
-      ).catch((err: any) => logger.error('Ekipman status AVAILABLE update hatası:', err));
+      ).catch((err: unknown) => {
+        const error = err as AppError;
+        logger.error('Ekipman status AVAILABLE update hatası:', error);
+      });
     }
 
     let responseProject = updatedProject;
@@ -422,7 +437,10 @@ export const updateProject = async (req: Request, res: Response) => {
       await Equipment.updateMany(
         { currentProject: updatedProject._id },
         { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
-      ).catch((err: any) => logger.error('Ekipman status AVAILABLE (project close) update hatası:', err));
+      ).catch((err: unknown) => {
+        const error = err as AppError;
+        logger.error('Ekipman status AVAILABLE (project close) update hatası:', error);
+      });
 
       // Re-fetch: populate edilen equipment statüleri güncel olsun
       const refreshedProject = await Project.findById(updatedProject._id)
@@ -504,9 +522,18 @@ export const updateProject = async (req: Request, res: Response) => {
     
     // Cache'i invalidate et
     const { invalidateProjectCache, invalidateDashboardCache, invalidateEquipmentCache } = await import('../middleware/cache.middleware');
-    await invalidateProjectCache().catch((err: any) => logger.error('Project cache invalidation hatası:', err));
-    await invalidateDashboardCache().catch((err: any) => logger.error('Dashboard cache invalidation hatası:', err));
-    await invalidateEquipmentCache().catch((err: any) => logger.error('Equipment cache invalidation hatası:', err));
+    await invalidateProjectCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Project cache invalidation hatası:', error);
+    });
+    await invalidateDashboardCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Dashboard cache invalidation hatası:', error);
+    });
+    await invalidateEquipmentCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Equipment cache invalidation hatası:', error);
+    });
     
     // Audit log - değişiklikleri kaydet
     if (oldProject) {
@@ -567,15 +594,27 @@ export const deleteProject = async (req: Request, res: Response) => {
         ],
       },
       { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
-    ).catch((err: any) => logger.error('Proje silme sırasında ekipman release hatası:', err));
+    ).catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Proje silme sırasında ekipman release hatası:', error);
+    });
 
     await project.deleteOne();
     
     // Cache'i invalidate et
     const { invalidateProjectCache, invalidateDashboardCache, invalidateEquipmentCache } = await import('../middleware/cache.middleware');
-    await invalidateProjectCache().catch((err: any) => logger.error('Project cache invalidation hatası:', err));
-    await invalidateDashboardCache().catch((err: any) => logger.error('Dashboard cache invalidation hatası:', err));
-    await invalidateEquipmentCache().catch((err: any) => logger.error('Equipment cache invalidation hatası:', err));
+    await invalidateProjectCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Project cache invalidation hatası:', error);
+    });
+    await invalidateDashboardCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Dashboard cache invalidation hatası:', error);
+    });
+    await invalidateEquipmentCache().catch((err: unknown) => {
+      const error = err as AppError;
+      logger.error('Equipment cache invalidation hatası:', error);
+    });
     
     // Audit log
     await logAction(req, 'DELETE', 'Project', id);

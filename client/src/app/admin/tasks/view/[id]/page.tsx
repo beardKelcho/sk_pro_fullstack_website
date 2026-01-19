@@ -462,6 +462,11 @@ export default function ViewTask() {
                             <span className="text-[#0066CC] dark:text-primary-light hover:underline font-medium">{relatedProject.name}</span>
                           </Link>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{relatedProject.status}</p>
+                          <Link href="/admin/projects">
+                            <button className="mt-2 px-3 py-1 text-xs bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md transition-colors">
+                              Proje Yönetimi
+                            </button>
+                          </Link>
                         </div>
                       ) : (
                         <p className="text-gray-500 dark:text-gray-400">Proje ile ilişkilendirilmemiş</p>

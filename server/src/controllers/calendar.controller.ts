@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { AppError } from '../types/common';
 import { Maintenance, Project } from '../models';
 import { hasPermission, Permission, Role } from '../config/permissions';
 import logger from '../utils/logger';
@@ -92,13 +93,13 @@ export const getCalendarEvents = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
+      events,
       range: { startDate, endDate },
       counts: {
         projects: projects.length,
         maintenances: maintenances.length,
         events: events.length,
       },
-      events,
     });
   } catch (error) {
     logger.error('Calendar events hatası:', error);
@@ -384,9 +385,10 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
           result.failed++;
           result.errors.push(`${event.summary}: Yetki yetersiz`);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+      const appError = error as AppError;
         result.failed++;
-        result.errors.push(`${event.summary}: ${error.message || 'Bilinmeyen hata'}`);
+        result.errors.push(`${event.summary}: ${appError?.message || (error as Error)?.message || 'Bilinmeyen hata'}`);
         logger.error('iCal import event oluşturma hatası:', error);
       }
     }

@@ -46,7 +46,7 @@ const FileManagementPage: React.FC = () => {
   const fetchFiles = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get<FileListResponse>('/api/upload/list', {
+      const response = await axios.get<FileListResponse>('/upload/list', {
         params: {
           type: fileType === 'all' ? undefined : fileType,
           page: currentPage,
@@ -94,7 +94,7 @@ const FileManagementPage: React.FC = () => {
         formData.append('file', selectedFiles[0]);
         formData.append('type', fileType === 'all' ? 'general' : fileType);
         
-        const response = await axios.post('/api/upload/single', formData, {
+        const response = await axios.post('/upload/single', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -114,7 +114,7 @@ const FileManagementPage: React.FC = () => {
         });
         formData.append('type', fileType === 'all' ? 'general' : fileType);
         
-        const response = await axios.post('/api/upload/multiple', formData, {
+        const response = await axios.post('/upload/multiple', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -147,7 +147,7 @@ const FileManagementPage: React.FC = () => {
       // Path'den type'ı çıkar
       const type = path.split('/')[0] || 'general';
       
-      await axios.delete(`/api/upload/${encodeURIComponent(filename)}`, {
+      await axios.delete(`/upload/${encodeURIComponent(filename)}`, {
         params: { type },
       });
 

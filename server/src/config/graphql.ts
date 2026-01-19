@@ -7,8 +7,8 @@ import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { HttpServer } from 'http';
-import { Request, Response, NextFunction } from 'express';
+import { Server as HttpServer } from 'http';
+import { Request, Response, NextFunction, Application } from 'express';
 import { authenticate } from '../middleware/auth.middleware';
 import logger from '../utils/logger';
 
@@ -104,12 +104,45 @@ const typeDefs = `#graphql
   }
 `;
 
+// GraphQL Resolver Types
+interface GraphQLContext {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
+
+interface QueryArgs {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  id?: string;
+}
+
+interface ProjectInput {
+  name: string;
+  description?: string;
+  startDate: string;
+  endDate?: string;
+  status?: string;
+  location?: string;
+  clientId: string;
+  teamIds?: string[];
+  equipmentIds?: string[];
+}
+
+interface MutationArgs {
+  id: string;
+  input: ProjectInput;
+}
+
 // GraphQL Resolvers
 const resolvers = {
   Query: {
-    projects: async (_: any, args: any, context: any) => {
+    projects: async (_: unknown, args: QueryArgs, _context: GraphQLContext) => {
       const { Project } = await import('../models');
-      const query: any = {};
+      const query: Record<string, unknown> = {};
       if (args.status) query.status = args.status;
       return Project.find(query)
         .limit(args.limit || 10)
@@ -118,26 +151,26 @@ const resolvers = {
         .populate('team')
         .populate('equipment');
     },
-    project: async (_: any, args: any, context: any) => {
+    project: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
       const { Project } = await import('../models');
       return Project.findById(args.id).populate('client').populate('team').populate('equipment');
     },
-    equipment: async (_: any, args: any, context: any) => {
+    equipment: async (_: unknown, args: QueryArgs, _context: GraphQLContext) => {
       const { Equipment } = await import('../models');
-      const query: any = {};
+      const query: Record<string, unknown> = {};
       if (args.status) query.status = args.status;
       return Equipment.find(query)
         .limit(args.limit || 10)
         .skip(args.offset || 0)
         .populate('responsibleUser');
     },
-    equipmentItem: async (_: any, args: any, context: any) => {
+    equipmentItem: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
       const { Equipment } = await import('../models');
       return Equipment.findById(args.id).populate('responsibleUser');
     },
-    tasks: async (_: any, args: any, context: any) => {
+    tasks: async (_: unknown, args: QueryArgs, _context: GraphQLContext) => {
       const { Task } = await import('../models');
-      const query: any = {};
+      const query: Record<string, unknown> = {};
       if (args.status) query.status = args.status;
       return Task.find(query)
         .limit(args.limit || 10)
@@ -145,21 +178,21 @@ const resolvers = {
         .populate('assignedTo')
         .populate('project');
     },
-    task: async (_: any, args: any, context: any) => {
+    task: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
       const { Task } = await import('../models');
       return Task.findById(args.id).populate('assignedTo').populate('project');
     },
-    clients: async (_: any, args: any, context: any) => {
+    clients: async (_: unknown, args: QueryArgs, _context: GraphQLContext) => {
       const { Client } = await import('../models');
       return Client.find().limit(args.limit || 10).skip(args.offset || 0);
     },
-    client: async (_: any, args: any, context: any) => {
+    client: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
       const { Client } = await import('../models');
       return Client.findById(args.id);
     },
   },
   Mutation: {
-    createProject: async (_: any, args: any, context: any) => {
+    createProject: async (_: unknown, args: { input: ProjectInput }, _context: GraphQLContext) => {
       const { Project } = await import('../models');
       const project = await Project.create({
         ...args.input,
@@ -167,11 +200,13 @@ const resolvers = {
         team: args.input.teamIds || [],
         equipment: args.input.equipmentIds || [],
       });
-      return project.populate('client').populate('team').populate('equipment');
+      const populated = await project.populate('client');
+      const populated2 = await populated.populate('team');
+      return await populated2.populate('equipment');
     },
-    updateProject: async (_: any, args: any, context: any) => {
+    updateProject: async (_: unknown, args: MutationArgs, _context: GraphQLContext) => {
       const { Project } = await import('../models');
-      const updateData: any = { ...args.input };
+      const updateData: Record<string, unknown> = { ...args.input };
       if (updateData.clientId) {
         updateData.client = updateData.clientId;
         delete updateData.clientId;
@@ -185,9 +220,12 @@ const resolvers = {
         delete updateData.equipmentIds;
       }
       const project = await Project.findByIdAndUpdate(args.id, updateData, { new: true });
-      return project?.populate('client').populate('team').populate('equipment');
+      if (!project) return null;
+      const populated = await project.populate('client');
+      const populated2 = await populated.populate('team');
+      return await populated2.populate('equipment');
     },
-    deleteProject: async (_: any, args: any, context: any) => {
+    deleteProject: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
       const { Project } = await import('../models');
       await Project.findByIdAndDelete(args.id);
       return true;
@@ -198,7 +236,12 @@ const resolvers = {
 /**
  * GraphQL server'ı başlat
  */
-export const initGraphQL = async (httpServer: HttpServer, app: any) => {
+export const initGraphQL = async (httpServer: HttpServer, app: Application): Promise<ApolloServer | null> => {
+  // GraphQL sadece ENABLE_GRAPHQL=true olduğunda aktif
+  if (process.env.ENABLE_GRAPHQL !== 'true') {
+    return null;
+  }
+  
   try {
     const schema = makeExecutableSchema({ typeDefs, resolvers });
 
@@ -216,7 +259,7 @@ export const initGraphQL = async (httpServer: HttpServer, app: any) => {
       try {
         // authenticate middleware'ini promise olarak wrap et
         await new Promise<void>((resolve, reject) => {
-          authenticate(req, res, (err?: any) => {
+          authenticate(req, res, (err?: unknown) => {
             if (err) {
               // Error response zaten authenticate middleware'de gönderildi
               reject(err);
@@ -236,9 +279,9 @@ export const initGraphQL = async (httpServer: HttpServer, app: any) => {
     app.use(
       '/graphql',
       expressMiddleware(server, {
-        context: async ({ req }) => {
+        context: async ({ req }: { req: Request }) => {
           // Request'ten user bilgisini al (authenticate middleware'den gelir)
-          return { user: (req as any).user };
+          return { user: (req as Request & { user?: { id: string; email: string; role: string } }).user };
         },
       })
     );

@@ -67,11 +67,12 @@ const connectDB = async () => {
       process.exit(0);
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('❌ MongoDB bağlantı hatası:', error);
     
     // Hata detaylarını analiz et
-    if (error?.message?.includes('IP') || error?.message?.includes('whitelist')) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('IP') || errorMessage.includes('whitelist')) {
       logger.error('');
       logger.error('🔴 SORUN: MongoDB Atlas IP Whitelist hatası!');
       logger.error('');
@@ -83,7 +84,7 @@ const connectDB = async () => {
       logger.error('📋 Mevcut IP\'nizi öğrenmek için:');
       logger.error('   curl https://api.ipify.org');
       logger.error('');
-    } else if (error?.message?.includes('authentication')) {
+    } else if (errorMessage.includes('authentication')) {
       logger.error('');
       logger.error('🔴 SORUN: MongoDB kimlik doğrulama hatası!');
       logger.error('');
@@ -91,7 +92,7 @@ const connectDB = async () => {
       logger.error('   - MONGO_URI içindeki kullanıcı adı ve şifreyi kontrol edin');
       logger.error('   - MongoDB Atlas\'ta kullanıcının doğru yetkileri olduğundan emin olun');
       logger.error('');
-    } else if (error?.message?.includes('ENOTFOUND') || error?.message?.includes('getaddrinfo')) {
+    } else if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('getaddrinfo')) {
       logger.error('');
       logger.error('🔴 SORUN: MongoDB sunucusu bulunamadı!');
       logger.error('');

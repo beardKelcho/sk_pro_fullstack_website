@@ -14,16 +14,31 @@ const clientIdsByUser = new Map<string, Set<string>>();
 const clientIdsByRole = new Map<string, Set<string>>();
 
 const writeSse = (res: Response, event: string, data: any) => {
-  // NOTE: SSE format: event + data; data must be single line, so JSON.stringify
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
+  try {
+    // NOTE: SSE format: event + data; data must be single line, so JSON.stringify
+    // Chunked encoding sorununu önlemek için her yazma işleminden önce kontrol et
+    if (res.destroyed || res.closed) {
+      return false; // Connection kapalıysa yazma
+    }
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+    return true;
+  } catch (error) {
+    // Connection hatası - sessizce ignore et
+    return false;
+  }
 };
 
 const safeWrite = (client: RealtimeClient, event: string, data: any) => {
   try {
-    writeSse(client.res, event, data);
+    // Connection durumunu kontrol et
+    if (client.res.destroyed || client.res.closed) {
+      return false; // Connection kapalıysa yazma
+    }
+    return writeSse(client.res, event, data);
   } catch {
     // ignore: disconnect cleanup handled by request close
+    return false;
   }
 };
 
@@ -97,6 +112,10 @@ export const pingClient = (clientId: string) => {
   const c = clientsById.get(clientId);
   if (!c) return;
   try {
+    // Connection durumunu kontrol et
+    if (c.res.destroyed || c.res.closed) {
+      return; // Connection kapalıysa ping gönderme
+    }
     c.res.write(`: ping ${Date.now()}\n\n`);
   } catch {
     // ignore

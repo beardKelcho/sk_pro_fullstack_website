@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useActiveSessions, useTerminateSession, useTerminateAllOtherSessions } from '@/services/sessionService';
 import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 // Basit tarih formatlama fonksiyonları
 const formatDistanceToNow = (date: Date) => {
   const now = new Date();
@@ -85,11 +86,17 @@ export default function SessionsPage() {
 
     try {
       setTerminatingId(sessionId);
-      await terminateSession.mutateAsync(sessionId);
-      toast.success('Oturum başarıyla sonlandırıldı');
-      refetch();
+      const result = await terminateSession.mutateAsync(sessionId);
+      if (result && result.success) {
+        toast.success(result.message || 'Oturum başarıyla sonlandırıldı');
+        refetch();
+      } else {
+        toast.error(result?.message || 'Oturum sonlandırılamadı');
+      }
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Oturum sonlandırılırken bir hata oluştu');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Oturum sonlandırılırken bir hata oluştu';
+      toast.error(errorMessage);
+      logger.error('Session termination error:', error);
     } finally {
       setTerminatingId(null);
     }

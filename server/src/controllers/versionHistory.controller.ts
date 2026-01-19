@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AppError } from '../types/common';
 import mongoose from 'mongoose';
 import { VersionHistory } from '../models';
 import { getVersionHistory, rollbackToVersion } from '../utils/versionHistory';
@@ -135,11 +136,12 @@ export const rollbackVersion = async (req: Request, res: Response) => {
       success: true,
       message: `Versiyon ${versionNumber}'a rollback yapıldı`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Rollback hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Rollback yapılamadı',
+      message: appError?.message || (error as Error)?.message || 'Rollback yapılamadı',
     });
   }
 };

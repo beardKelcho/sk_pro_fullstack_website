@@ -34,9 +34,19 @@ export const connectSse = ({ url, token, onEvent, onError }: ConnectSseOptions) 
       let buffer = '';
 
       while (!closed) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+        try {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value) {
+            buffer += decoder.decode(value, { stream: true });
+          }
+        } catch (readError: any) {
+          // ERR_INCOMPLETE_CHUNKED_ENCODING hatası - connection kapandı
+          if (readError?.name === 'AbortError' || readError?.message?.includes('chunked')) {
+            break; // Normal disconnect, sessizce çık
+          }
+          throw readError; // Diğer hatalar için throw et
+        }
 
         // SSE events are separated by \n\n
         let idx: number;

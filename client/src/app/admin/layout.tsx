@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { NextIntlClientProvider } from 'next-intl';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
 import GlobalSearch from '@/components/admin/GlobalSearch';
@@ -27,6 +28,9 @@ export default function AdminLayout({
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  // Locale için default 'tr' kullan (admin paneli i18n dışında ama locale hatası önlemek için)
+  const adminLocale = 'tr';
+  const [adminMessages, setAdminMessages] = React.useState<any>({});
   
   // Sidebar toggle fonksiyonu
   const toggleSidebar = () => {
@@ -84,6 +88,27 @@ export default function AdminLayout({
     return () => disconnect();
   }, [queryClient, pathname]);
 
+  // Admin paneli için minimal messages (locale hatası önlemek için)
+  React.useEffect(() => {
+    // Hook her render'da tanımlı olmalı; login sayfasında ekstra iş yapmayalım
+    if (pathname === '/admin/login' || pathname === '/admin') {
+      setAdminMessages({});
+      return;
+    }
+
+    const loadMessages = async () => {
+      try {
+        const messages = await import(`@/messages/${adminLocale}.json`);
+        setAdminMessages(messages.default || {});
+      } catch {
+        // messages dosyası yoksa boş obje kullan
+        setAdminMessages({});
+      }
+    };
+
+    loadMessages();
+  }, [adminLocale, pathname]);
+
   // Login sayfası için farklı layout gösterme - ProtectedRoute kullanma
   if (pathname === '/admin/login' || pathname === '/admin') {
     return (
@@ -97,10 +122,11 @@ export default function AdminLayout({
 
   // Diğer admin sayfaları için ProtectedRoute kullan
   return (
-    <ProtectedRoute>
-      <ErrorBoundary>
-        <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-cyan-50/20 
-          dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 ${inter.className} relative overflow-hidden`}>
+    <NextIntlClientProvider locale={adminLocale} messages={adminMessages}>
+      <ProtectedRoute>
+        <ErrorBoundary>
+          <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-cyan-50/20 
+            dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 ${inter.className} relative overflow-hidden`}>
           {/* Animated background */}
           <div className="fixed inset-0 gradient-animated opacity-5 dark:opacity-10 pointer-events-none" />
           
@@ -147,5 +173,6 @@ export default function AdminLayout({
         </div>
       </ErrorBoundary>
     </ProtectedRoute>
+    </NextIntlClientProvider>
   );
 } 

@@ -199,14 +199,18 @@ export default function EditMaintenance() {
     
     try {
       // Backend formatına uygun veri hazırla
+      // Tarihleri ISO8601 formatına çevir (yyyy-MM-dd -> ISO string)
+      const scheduledDateISO = formData.startDate ? new Date(formData.startDate + 'T00:00:00').toISOString() : undefined;
+      const completedDateISO = formData.endDate ? new Date(formData.endDate + 'T00:00:00').toISOString() : undefined;
+      
       const maintenanceData = {
         equipment: formData.equipmentId,
         type: formData.type === 'Periyodik' ? 'ROUTINE' :
               formData.type === 'Arıza' ? 'REPAIR' :
               formData.type === 'Kalibrasyon' ? 'INSPECTION' : 'UPGRADE',
         description: formData.description,
-        scheduledDate: formData.startDate,
-        completedDate: formData.endDate || undefined,
+        scheduledDate: scheduledDateISO,
+        completedDate: completedDateISO,
         status: formData.status === 'Planlandı' ? 'SCHEDULED' :
                 formData.status === 'Devam Ediyor' ? 'IN_PROGRESS' :
                 formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED',

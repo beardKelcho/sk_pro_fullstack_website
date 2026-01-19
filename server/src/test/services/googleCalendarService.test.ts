@@ -42,7 +42,7 @@ describe('Google Calendar Service', () => {
 
   describe('listGoogleCalendars', () => {
     it('takvimleri listele', async () => {
-      (axios as jest.Mock).mockResolvedValue({
+      (axios as unknown as jest.Mock).mockResolvedValue({
         data: {
           items: [
             { id: 'primary', summary: 'Primary Calendar' },
@@ -59,13 +59,13 @@ describe('Google Calendar Service', () => {
 
   describe('googleEventToProject', () => {
     it('Google event\'i proje formatına çevirmeli', () => {
-      const event = {
+      const event: import('../../services/googleCalendarService').GoogleCalendarEvent = {
         summary: 'Test Event',
         description: 'Test Description',
         start: { date: '2026-01-15' },
         end: { date: '2026-01-16' },
         location: 'Test Location',
-        status: 'confirmed',
+        status: 'confirmed' as const,
       };
 
       const project = googleEventToProject(event, 'user1', 'client1');

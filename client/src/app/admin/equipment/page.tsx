@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getAllEquipment, deleteEquipment } from '@/services/equipmentService';
+import { getAllEquipment, deleteEquipment, useDeleteEquipment } from '@/services/equipmentService';
 import { bulkDelete, bulkUpdateStatus } from '@/services/bulkService';
 import ExportMenu from '@/components/admin/ExportMenu';
 import ImportModal from '@/components/admin/ImportModal';
@@ -357,12 +357,17 @@ export default function EquipmentList() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
   
+  // React Query delete hook
+  const deleteEquipmentMutation = useDeleteEquipment();
+
   // Ekipman silme işlevi
   const handleDeleteEquipment = async () => {
     if (!equipmentToDelete) return;
     try {
-      await deleteEquipment(equipmentToDelete);
-      setEquipment(equipment.filter(item => item.id !== equipmentToDelete));
+      await deleteEquipmentMutation.mutateAsync(equipmentToDelete);
+      // React Query otomatik olarak cache'i invalidate edecek, manuel refetch gerekmez
+      // Ancak local state'i de güncelle
+      setEquipment(prev => prev.filter(item => item.id !== equipmentToDelete));
       setShowDeleteModal(false);
       setEquipmentToDelete(null);
       toast.success('Ekipman başarıyla silindi');
@@ -707,12 +712,13 @@ export default function EquipmentList() {
                   const isSelected = selectedIds.includes(item.id);
                   return (
                   <tr key={item.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleSelect(item.id)}
-                        className="w-4 h-4 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -763,12 +769,18 @@ export default function EquipmentList() {
                         Son: {formatDate(item.lastMaintenanceDate)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end space-x-2">
-                        <Link href={`/admin/equipment/view/${item.id}`}>
-                          <button className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80">
-                            Görüntüle
-                          </button>
+                        <Link 
+                          href={`/admin/equipment/view/${item.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            router.push(`/admin/equipment/view/${item.id}`);
+                          }}
+                          className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80 cursor-pointer"
+                        >
+                          Görüntüle
                         </Link>
                         <PermissionLink
                           permission={Permission.EQUIPMENT_UPDATE}

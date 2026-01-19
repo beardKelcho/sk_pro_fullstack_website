@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Ekipman türü
 interface Equipment {
@@ -140,6 +142,18 @@ const formatDate = (dateString?: string): string => {
   });
 };
 
+const getCurrentUserId = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem('user') || sessionStorage.getItem('user');
+  if (!raw) return null;
+  try {
+    const user = JSON.parse(raw);
+    return user?.id || user?._id || null;
+  } catch {
+    return null;
+  }
+};
+
 export default function MaintenancePage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [equipment, setEquipment] = useState<any[]>([]);
@@ -231,9 +245,15 @@ export default function MaintenancePage() {
     setUpdatingMaintenance(true);
     
     try {
+      const currentUserId = getCurrentUserId();
+      if (!currentUserId) {
+        toast.error('Bakım kaydı oluşturmak için kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.');
+        setUpdatingMaintenance(false);
+        return;
+      }
+
       // Maintenance kaydı oluştur veya güncelle
       const { createMaintenance } = await import('@/services/maintenanceService');
-      const today = new Date().toISOString().split('T')[0];
       
       // Önce mevcut bakım kaydını kontrol et ve tamamla
       // Sonra yeni bakım kaydı oluştur
@@ -243,7 +263,7 @@ export default function MaintenancePage() {
         description: 'Periyodik bakım tamamlandı',
         scheduledDate: newMaintenanceDate,
         status: 'SCHEDULED',
-        assignedTo: '', // Kullanıcı ID'si buraya gelecek
+        assignedTo: currentUserId,
       });
       
       // Ekipman listesini yeniden yükle
@@ -269,7 +289,8 @@ export default function MaintenancePage() {
       setShowModal(false);
       
     } catch (error) {
-      console.error('Bakım güncellenirken hata:', error);
+      logger.error('Bakım güncellenirken hata:', error);
+      toast.error((error as any)?.message || 'Bakım güncellenirken bir hata oluştu');
       setUpdatingMaintenance(false);
     }
   };

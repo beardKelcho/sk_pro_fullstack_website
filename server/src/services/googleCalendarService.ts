@@ -79,9 +79,10 @@ export const refreshGoogleAccessToken = async (
       grant_type: 'refresh_token',
     });
 
+    const data = response.data as { access_token: string; expires_in?: number };
     return {
-      accessToken: response.data.access_token,
-      expiresIn: response.data.expires_in || 3600,
+      accessToken: data.access_token,
+      expiresIn: data.expires_in || 3600,
     };
   } catch (error: any) {
     logger.error('Google token refresh hatası:', error);
@@ -151,7 +152,7 @@ export const deleteGoogleCalendarEvent = async (
 /**
  * Google Calendar event'ini proje formatına çevir
  */
-export const googleEventToProject = (event: GoogleCalendarEvent, userId: string, clientId: string) => {
+export const googleEventToProject = (event: GoogleCalendarEvent, userId: string, clientId: string): any => {
   const startDate = event.start.date || event.start.dateTime?.split('T')[0];
   const endDate = event.end.date || event.end.dateTime?.split('T')[0];
 

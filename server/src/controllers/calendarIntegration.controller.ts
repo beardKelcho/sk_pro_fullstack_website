@@ -4,25 +4,20 @@
  */
 
 import { Request, Response } from 'express';
+import { AppError } from '../types/common';
 import axios from 'axios';
 import { CalendarIntegration } from '../models';
 import {
   refreshGoogleAccessToken,
-  listGoogleCalendars,
   listGoogleCalendarEvents,
   createGoogleCalendarEvent,
-  updateGoogleCalendarEvent,
-  deleteGoogleCalendarEvent,
   googleEventToProject,
   projectToGoogleEvent,
 } from '../services/googleCalendarService';
 import {
   refreshOutlookAccessToken,
-  listOutlookCalendars,
   listOutlookCalendarEvents,
   createOutlookCalendarEvent,
-  updateOutlookCalendarEvent,
-  deleteOutlookCalendarEvent,
   outlookEventToProject,
   projectToOutlookEvent,
 } from '../services/outlookCalendarService';
@@ -127,10 +122,11 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
       redirect_uri: redirectUri,
     });
 
-    const { access_token, refresh_token, expires_in } = tokenResponse.data;
+    const tokenData = tokenResponse.data as { access_token: string; refresh_token: string; expires_in: number };
+    const { access_token, refresh_token, expires_in } = tokenData;
 
     // Calendar integration kaydet veya güncelle
-    const integration = await CalendarIntegration.findOneAndUpdate(
+    await CalendarIntegration.findOneAndUpdate(
       { user: user.id, provider: 'google' },
       {
         user: user.id,
@@ -156,9 +152,10 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
     }
 
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?success=true`);
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Google Calendar callback hatası:', error);
-    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?error=${encodeURIComponent(error.message || 'Entegrasyon başarısız')}`);
+    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?error=${encodeURIComponent(appError?.message || (error as Error)?.message || 'Entegrasyon başarısız')}`);
   }
 };
 
@@ -260,10 +257,11 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
       scope: 'https://graph.microsoft.com/Calendars.ReadWrite offline_access',
     });
 
-    const { access_token, refresh_token, expires_in } = tokenResponse.data;
+    const tokenData = tokenResponse.data as { access_token: string; refresh_token: string; expires_in: number };
+    const { access_token, refresh_token, expires_in } = tokenData;
 
     // Calendar integration kaydet veya güncelle
-    const integration = await CalendarIntegration.findOneAndUpdate(
+    await CalendarIntegration.findOneAndUpdate(
       { user: user.id, provider: 'outlook' },
       {
         user: user.id,
@@ -277,9 +275,10 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
     );
 
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?success=true`);
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Outlook Calendar callback hatası:', error);
-    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?error=${encodeURIComponent(error.message || 'Entegrasyon başarısız')}`);
+    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?error=${encodeURIComponent(appError?.message || (error as Error)?.message || 'Entegrasyon başarısız')}`);
   }
 };
 
@@ -413,17 +412,18 @@ export const syncCalendarImport = async (req: Request, res: Response) => {
       try {
         let projectData;
         if (integration.provider === 'google') {
-          projectData = googleEventToProject(event, user.id, defaultClient._id);
+          projectData = await googleEventToProject(event, user.id || user._id.toString(), defaultClient._id.toString());
         } else {
-          projectData = outlookEventToProject(event, user.id, defaultClient._id);
+          projectData = await outlookEventToProject(event, user.id || user._id.toString(), defaultClient._id.toString());
         }
 
         const project = await Project.create(projectData);
         result.projects.push(project);
         result.success++;
-      } catch (error: any) {
+      } catch (error: unknown) {
+      const appError = error as AppError;
         result.failed++;
-        result.errors.push(`${event.summary || event.subject}: ${error.message || 'Bilinmeyen hata'}`);
+        result.errors.push(`${event.summary || event.subject}: ${appError?.message || (error as Error)?.message || 'Bilinmeyen hata'}`);
         logger.error('Calendar event import hatası:', error);
       }
     }
@@ -436,11 +436,12 @@ export const syncCalendarImport = async (req: Request, res: Response) => {
       message: `${result.success} proje başarıyla içe aktarıldı, ${result.failed} proje başarısız`,
       result,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Calendar import hatası:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Calendar import başarısız',
+      message: appError?.message || (error as Error)?.message || 'Calendar import başarısız',
     });
   }
 };
@@ -516,9 +517,10 @@ export const syncCalendarExport = async (req: Request, res: Response) => {
           result.events.push(created);
         }
         result.success++;
-      } catch (error: any) {
+      } catch (error: unknown) {
+      const appError = error as AppError;
         result.failed++;
-        result.errors.push(`${project.name}: ${error.message || 'Bilinmeyen hata'}`);
+        result.errors.push(`${project.name}: ${appError?.message || (error as Error)?.message || 'Bilinmeyen hata'}`);
         logger.error('Calendar event export hatası:', error);
       }
     }
@@ -531,11 +533,12 @@ export const syncCalendarExport = async (req: Request, res: Response) => {
       message: `${result.success} proje başarıyla dışa aktarıldı, ${result.failed} proje başarısız`,
       result,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Calendar export hatası:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Calendar export başarısız',
+      message: appError?.message || (error as Error)?.message || 'Calendar export başarısız',
     });
   }
 };

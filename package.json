@@ -33,6 +33,8 @@
     "ngrok:urls": "node scripts/get-all-ngrok-urls.js",
     "ngrok:both": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm run ngrok\" \"npm run ngrok:frontend\"",
     "check-ports": "./scripts/check-ports.sh",
+    "check:env": "cd server && npm run check:env",
+    "create:test-user": "cd server && npm run create:test-user",
     "test:production": "./scripts/test-production-deployment.sh",
     "install:all": "npm install && cd client && npm install && cd ../server && npm install",
     "setup:branches": "./scripts/setup-branches.sh",

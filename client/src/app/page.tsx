@@ -53,10 +53,12 @@ const VideoBackgroundPlayer = ({
 
     const handleError = (e: Event) => {
       setFailed(true);
+      const video = e.target as HTMLVideoElement;
+      const error = video.error;
+      // DEMUXER_ERROR_NO_SUPPORTED_STREAMS hatası - video format/codec uyumsuzluğu
+      // Sessizce fallback'e geç (video gösterilmez, arka plan boş kalır veya poster gösterilir)
       if (process.env.NODE_ENV === 'development') {
-        const video = e.target as HTMLVideoElement;
-        const error = video.error;
-        logger.error('Video yükleme hatası:', {
+        logger.warn('Video yükleme hatası (fallback aktif):', {
           videoUrl,
           errorCode: error?.code,
           errorMessage: error?.message

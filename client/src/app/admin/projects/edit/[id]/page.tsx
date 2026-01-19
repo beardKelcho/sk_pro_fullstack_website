@@ -13,6 +13,7 @@ import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { getStoredUserRole } from '@/utils/authStorage';
 import { hasRole, Role } from '@/config/permissions';
+import VersionHistoryModal from '@/components/admin/VersionHistoryModal';
 
 // Form verileri için arayüz
 interface FormData {
@@ -79,6 +80,7 @@ export default function EditProject() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
   
   // State'ler - takım üyeleri ve ekipman seçimi için
   const [teamCheckboxes, setTeamCheckboxes] = useState<{ [key: string]: boolean }>({});
@@ -643,6 +645,18 @@ export default function EditProject() {
             </div>
           )}
           
+          {/* Versiyon Geçmişi Butonu */}
+          <button
+            type="button"
+            onClick={() => setShowVersionHistory(true)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Versiyon Geçmişi
+          </button>
+          
           {/* İptal ve Kaydet Düğmeleri */}
           <Link href={`/admin/projects/view/${projectId}`}>
             <button
@@ -673,6 +687,15 @@ export default function EditProject() {
           </button>
         </div>
       </form>
+      
+      {/* Versiyon Geçmişi Modal */}
+      <VersionHistoryModal
+        isOpen={showVersionHistory}
+        onClose={() => setShowVersionHistory(false)}
+        resource="Project"
+        resourceId={projectId}
+        resourceName={formData.name}
+      />
     </div>
   );
 } 

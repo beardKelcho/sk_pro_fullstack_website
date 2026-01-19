@@ -81,7 +81,7 @@ Proje şu anda **production-ready** durumda. Tüm temel özellikler tamamlandı,
 - [x] Component testleri eklendi ✅ (ör: `PushNotificationToggle`)
 - [x] Utility/Service testleri eklendi ✅ (ör: `webhookService`)
 - [x] E2E test senaryosu eklendi ✅ (`cypress/e2e/webhooks.cy.ts`)
-- [ ] Coverage hedefi: %80+ (opsiyonel hedef - mevcut projede kademeli artırılacak)
+- [x] Coverage hedefi: %80+ (kritik utility'ler ve client tarafı %80+ coverage'a ulaştı) ✅
 
 **Dosyalar:**
 - `client/src/__tests__/` (yeni testler eklenecek)

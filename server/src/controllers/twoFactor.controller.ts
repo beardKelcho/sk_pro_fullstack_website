@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AppError } from '../types/common';
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import bcrypt from 'bcryptjs';
@@ -91,11 +92,12 @@ export const setup2FA = async (req: Request, res: Response) => {
       backupCodes, // Sadece bu seferlik gösterilir
       message: '2FA kurulumu başlatıldı. QR kodu tarayın ve doğrulama kodunu girin.',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('2FA kurulum hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || '2FA kurulumu sırasında bir hata oluştu',
+      message: appError?.message || (error as Error)?.message || '2FA kurulumu sırasında bir hata oluştu',
     });
   }
 };
@@ -178,11 +180,12 @@ export const verify2FA = async (req: Request, res: Response) => {
       success: true,
       message: '2FA başarıyla aktif edildi',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('2FA doğrulama hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || '2FA doğrulama sırasında bir hata oluştu',
+      message: appError?.message || (error as Error)?.message || '2FA doğrulama sırasında bir hata oluştu',
     });
   }
 };
@@ -270,11 +273,12 @@ export const disable2FA = async (req: Request, res: Response) => {
       success: false,
       message: '2FA devre dışı bırakmak için şifre gereklidir',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('2FA devre dışı bırakma hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || '2FA devre dışı bırakma sırasında bir hata oluştu',
+      message: appError?.message || (error as Error)?.message || '2FA devre dışı bırakma sırasında bir hata oluştu',
     });
   }
 };
@@ -299,11 +303,12 @@ export const get2FAStatus = async (req: Request, res: Response) => {
       is2FAEnabled: user.is2FAEnabled || false,
       hasBackupCodes: user.backupCodes && user.backupCodes.length > 0,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('2FA durum kontrolü hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || '2FA durumu kontrol edilemedi',
+      message: appError?.message || (error as Error)?.message || '2FA durumu kontrol edilemedi',
     });
   }
 };
@@ -420,11 +425,12 @@ export const verify2FALogin = async (req: Request, res: Response) => {
         role: user.role,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('2FA login doğrulama hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || '2FA doğrulama sırasında bir hata oluştu',
+      message: appError?.message || (error as Error)?.message || '2FA doğrulama sırasında bir hata oluştu',
     });
   }
 };

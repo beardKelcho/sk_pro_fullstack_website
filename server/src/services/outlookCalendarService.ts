@@ -85,9 +85,10 @@ export const refreshOutlookAccessToken = async (
       scope: 'https://graph.microsoft.com/Calendars.ReadWrite',
     });
 
+    const data = response.data as { access_token: string; expires_in?: number };
     return {
-      accessToken: response.data.access_token,
-      expiresIn: response.data.expires_in || 3600,
+      accessToken: data.access_token,
+      expiresIn: data.expires_in || 3600,
     };
   } catch (error: any) {
     logger.error('Outlook token refresh hatası:', error);
@@ -158,7 +159,7 @@ export const deleteOutlookCalendarEvent = async (
 /**
  * Outlook Calendar event'ini proje formatına çevir
  */
-export const outlookEventToProject = (event: OutlookCalendarEvent, userId: string, clientId: string) => {
+export const outlookEventToProject = async (event: OutlookCalendarEvent, userId: string, clientId: string): Promise<any> => {
   const startDate = event.isAllDay
     ? event.start.dateTime.split('T')[0]
     : new Date(event.start.dateTime).toISOString().split('T')[0];
@@ -166,6 +167,7 @@ export const outlookEventToProject = (event: OutlookCalendarEvent, userId: strin
     ? event.end.dateTime.split('T')[0]
     : new Date(event.end.dateTime).toISOString().split('T')[0];
 
+  const mongoose = (await import('mongoose')).default;
   return {
     name: event.subject || 'İsimsiz Proje',
     description: event.body?.content || '',
@@ -173,8 +175,8 @@ export const outlookEventToProject = (event: OutlookCalendarEvent, userId: strin
     endDate: new Date(endDate),
     status: event.showAs === 'free' ? 'PENDING_APPROVAL' : 'APPROVED',
     location: event.location?.displayName || '',
-    client: clientId,
-    team: [userId],
+    client: mongoose.Types.ObjectId.isValid(clientId) ? new mongoose.Types.ObjectId(clientId) : clientId,
+    team: [mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId],
     equipment: [],
   };
 };

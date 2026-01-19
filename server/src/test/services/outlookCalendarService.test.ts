@@ -42,7 +42,7 @@ describe('Outlook Calendar Service', () => {
 
   describe('listOutlookCalendars', () => {
     it('takvimleri listele', async () => {
-      (axios as jest.Mock).mockResolvedValue({
+      (axios as unknown as jest.Mock).mockResolvedValue({
         data: {
           value: [
             { id: 'cal1', name: 'Calendar 1' },
@@ -58,18 +58,18 @@ describe('Outlook Calendar Service', () => {
   });
 
   describe('outlookEventToProject', () => {
-    it('Outlook event\'i proje formatına çevirmeli', () => {
-      const event = {
+    it('Outlook event\'i proje formatına çevirmeli', async () => {
+      const event: import('../../services/outlookCalendarService').OutlookCalendarEvent = {
         subject: 'Test Event',
-        body: { content: 'Test Description' },
+        body: { contentType: 'text', content: 'Test Description' },
         start: { dateTime: '2026-01-15T00:00:00Z', timeZone: 'UTC' },
         end: { dateTime: '2026-01-16T00:00:00Z', timeZone: 'UTC' },
         location: { displayName: 'Test Location' },
         isAllDay: true,
-        showAs: 'busy',
+        showAs: 'busy' as const,
       };
 
-      const project = outlookEventToProject(event, 'user1', 'client1');
+      const project = await outlookEventToProject(event, 'user1', 'client1');
 
       expect(project.name).toBe('Test Event');
       expect(project.description).toBe('Test Description');

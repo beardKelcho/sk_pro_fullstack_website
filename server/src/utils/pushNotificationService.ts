@@ -2,17 +2,33 @@ import webpush from 'web-push';
 import PushSubscription from '../models/PushSubscription';
 import logger from './logger';
 
-// VAPID keys environment'tan alınmalı
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:info@skpro.com.tr';
+let vapidConfigured = false;
+let vapidMissingLogged = false;
 
-// VAPID keys ayarlanmışsa webpush'u yapılandır
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-} else {
-  logger.warn('VAPID keys ayarlanmamış. Push notification gönderilemeyecek.');
-}
+const ensureVapidConfigured = (): boolean => {
+  const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+  const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+  const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:info@skpro.com.tr';
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    if (!vapidMissingLogged) {
+      vapidMissingLogged = true;
+      // Dev ortamında push opsiyonel: warn yerine info (log gürültüsünü azalt).
+      const msg = 'VAPID keys ayarlanmamış. Push notification gönderilemeyecek.';
+      if (isProd) logger.warn(msg);
+      else logger.info(msg);
+    }
+    return false;
+  }
+
+  if (!vapidConfigured) {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    vapidConfigured = true;
+  }
+
+  return true;
+};
 
 export interface PushNotificationPayload {
   title: string;
@@ -37,8 +53,7 @@ export const sendPushNotification = async (
   payload: PushNotificationPayload
 ): Promise<boolean> => {
   try {
-    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-      logger.warn('VAPID keys ayarlanmamış, push notification gönderilemedi');
+    if (!ensureVapidConfigured()) {
       return false;
     }
 
@@ -123,6 +138,10 @@ export const broadcastPushNotification = async (
   payload: PushNotificationPayload
 ): Promise<{ success: number; failed: number }> => {
   try {
+    if (!ensureVapidConfigured()) {
+      return { success: 0, failed: 0 };
+    }
+
     const subscriptions = await PushSubscription.find({});
 
     if (subscriptions.length === 0) {

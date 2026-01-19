@@ -29,7 +29,9 @@ describe('ContactForm Component Testleri', () => {
   it('form validasyonu çalışmalı', async () => {
     render(<ContactForm />);
     
-    const submitButton = screen.getByRole('button', { name: /gönder/i });
+    // Buton text'i translation key'inden geliyor, type="submit" ile bul
+    const submitButton = screen.getByRole('button', { name: /submit|gönder/i }) || 
+                        screen.getByRole('button', { type: 'submit' });
     fireEvent.click(submitButton);
 
     // HTML5 validation çalışacak, hata mesajı görünmeyebilir ama form submit edilmeyecek
@@ -50,7 +52,9 @@ describe('ContactForm Component Testleri', () => {
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(messageInput, { target: { value: 'Test message' } });
     
-    const submitButton = screen.getByRole('button', { name: /gönder/i });
+    // Buton text'i translation key'inden geliyor, type="submit" ile bul
+    const submitButton = screen.getByRole('button', { name: /submit|gönder/i }) || 
+                        screen.getByRole('button', { type: 'submit' });
     fireEvent.click(submitButton);
 
     await waitFor(() => {

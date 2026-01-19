@@ -285,6 +285,16 @@ const menuItems: MenuItem[] = [
         path: '/admin/files',
         icon: <></>,
       },
+      {
+        title: 'Veri İçe Aktar',
+        path: '/admin/import',
+        icon: <></>,
+      },
+      {
+        title: 'Veri Dışa Aktar',
+        path: '/admin/export',
+        icon: <></>,
+      },
     ],
   },
   {

@@ -39,12 +39,24 @@ export const createRateLimiter = (opts: {
   const minutes = Math.ceil(opts.windowMs / (60 * 1000));
   const defaultMessage = opts.customMessage || `Çok fazla istek. Lütfen ${minutes} dakika sonra tekrar deneyin.`;
   
+  // Test ve development ortamında rate limiting'i tamamen devre dışı bırak
+  // TestSprite gibi otomasyon testleri için gerekli
+  const isTestEnv = process.env.NODE_ENV === 'test' || 
+                    process.env.NODE_ENV === 'development' || 
+                    process.env.DISABLE_RATE_LIMIT === 'true';
+  
   return rateLimit({
     windowMs: opts.windowMs,
     max: opts.max,
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => req.method === 'OPTIONS',
+    skip: (req) => {
+      // OPTIONS isteklerini her zaman atla
+      if (req.method === 'OPTIONS') return true;
+      // Test ortamında tüm istekleri atla
+      if (isTestEnv) return true;
+      return false;
+    },
     keyGenerator: (req) => {
       if (opts.keyStrategy === 'user_or_ip') return keyByUserOrIp(req);
       return `ip:${req.ip}`;
@@ -58,7 +70,7 @@ const WINDOW_15M = 15 * 60 * 1000;
 
 export const generalApiLimiter = createRateLimiter({
   windowMs: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, WINDOW_15M),
-  max: parseNumber(process.env.RATE_LIMIT_GENERAL_MAX, 500),
+  max: parseNumber(process.env.RATE_LIMIT_GENERAL_MAX, process.env.NODE_ENV === 'test' ? 10000 : 500), // Test ortamında çok daha esnek
   keyStrategy: 'user_or_ip',
 });
 
@@ -69,10 +81,13 @@ export const authLimiter = createRateLimiter({
   keyStrategy: 'ip',
 });
 
-// Login endpoint'i için özel rate limiter (daha esnek - normal kullanım için yeterli)
+// Login endpoint'i için özel rate limiter (test/development ortamı için daha esnek)
 export const loginLimiter = createRateLimiter({
   windowMs: parseNumber(process.env.RATE_LIMIT_LOGIN_WINDOW_MS, 15 * 60 * 1000), // 15 dakika
-  max: parseNumber(process.env.RATE_LIMIT_LOGIN_MAX, 15), // 15 dakikada 15 deneme (normal kullanım için yeterli)
+  max: parseNumber(
+    process.env.RATE_LIMIT_LOGIN_MAX, 
+    process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development' ? 1000 : 15
+  ), // Test ve development ortamında çok daha esnek
   keyStrategy: 'ip',
   customMessage: 'Çok fazla giriş denemesi yaptınız. Lütfen 15 dakika sonra tekrar deneyin.',
 });

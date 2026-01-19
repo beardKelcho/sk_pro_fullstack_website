@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AppError } from '../types/common';
 import ExcelJS from 'exceljs';
 import { Equipment, Project, Client } from '../models';
 import logger from '../utils/logger';
@@ -164,11 +165,12 @@ export const importEquipment = async (req: Request, res: Response) => {
         });
 
         result.success++;
-      } catch (error: any) {
+      } catch (error: unknown) {
+      const appError = error as AppError;
         result.errors.push({
           row: rowNumber,
           field: 'general',
-          message: error.message || 'Bilinmeyen hata',
+          message: appError?.message || (error as Error)?.message || 'Bilinmeyen hata',
         });
         result.failed++;
       }
@@ -190,11 +192,12 @@ export const importEquipment = async (req: Request, res: Response) => {
       message: `${result.success} ekipman başarıyla import edildi`,
       result,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Ekipman import hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Ekipman import edilirken bir hata oluştu',
+      message: appError?.message || (error as Error)?.message || 'Ekipman import edilirken bir hata oluştu',
     });
   }
 };
@@ -275,11 +278,12 @@ export const importProjects = async (req: Request, res: Response) => {
         });
 
         result.success++;
-      } catch (error: any) {
+      } catch (error: unknown) {
+      const appError = error as AppError;
         result.errors.push({
           row: rowNumber,
           field: 'general',
-          message: error.message || 'Bilinmeyen hata',
+          message: appError?.message || (error as Error)?.message || 'Bilinmeyen hata',
         });
         result.failed++;
       }
@@ -300,11 +304,12 @@ export const importProjects = async (req: Request, res: Response) => {
       message: `${result.success} proje başarıyla import edildi`,
       result,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Proje import hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Proje import edilirken bir hata oluştu',
+      message: appError?.message || (error as Error)?.message || 'Proje import edilirken bir hata oluştu',
     });
   }
 };
@@ -354,7 +359,8 @@ export const downloadTemplate = async (req: Request, res: Response) => {
 
     await workbook.xlsx.write(res);
     res.end();
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Template indirme hatası:', error);
     res.status(500).json({
       success: false,

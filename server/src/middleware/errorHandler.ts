@@ -71,9 +71,32 @@ export const errorHandler = (
   }
 
   // Default error
-  logger.error('Unhandled error:', err);
-  return res.status(500).json({
-    status: 'error',
-    message: 'Something went wrong!',
+  logger.error('Unhandled error:', {
+    error: err,
+    message: err.message,
+    stack: err.stack,
+    name: err.name,
+    path: req.path,
+    method: req.method,
   });
+  
+  // Response henüz gönderilmediyse gönder
+  if (!res.headersSent) {
+    const isTestOrDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+    return res.status(500).json({
+      success: false,
+      status: 'error',
+      message: isTestOrDev 
+        ? (err.message || 'Internal Server Error')
+        : 'Internal Server Error',
+      ...(isTestOrDev ? { 
+        details: err.stack,
+        name: err.name,
+        path: req.path,
+        method: req.method
+      } : {}),
+    });
+  } else {
+    logger.warn('Error handler called but response already sent', { path: req.path });
+  }
 }; 

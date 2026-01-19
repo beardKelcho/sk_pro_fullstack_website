@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AppError } from '../types/common';
 import { QRCode, QRScanHistory, Equipment, Project } from '../models';
 import logger from '../utils/logger';
 import { generateQRCodeContent, generateQRCodeImage, parseQRCodeContent } from '../utils/qrGenerator';
@@ -93,10 +94,12 @@ export const createQRCode = async (req: Request, res: Response) => {
       qrCode,
       qrImage, // Base64 PNG
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const appError = error as AppError;
+    const mongooseError = error as { code?: number | string };
     logger.error('QR kod oluşturma hatası:', error);
     
-    if (error.code === 11000) {
+    if (mongooseError?.code === 11000) {
       return res.status(409).json({
         success: false,
         message: 'Bu QR kod zaten mevcut',

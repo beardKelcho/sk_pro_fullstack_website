@@ -11,9 +11,12 @@ import PieChartWidget from '@/components/admin/widgets/PieChartWidget';
 import LineChartWidget from '@/components/admin/widgets/LineChartWidget';
 import BarChartWidget from '@/components/admin/widgets/BarChartWidget';
 import { getAllProjects } from '@/services/projectService';
+import { checkApiHealth } from '@/utils/apiHealthCheck';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
+  const [apiAvailable, setApiAvailable] = useState<boolean | null>(null);
+  const [isCustomizing, setIsCustomizing] = useState(false); // Dashboard özelleştirme modu
   const [stats, setStats] = useState({
     equipment: { total: 0, available: 0, inUse: 0, maintenance: 0 },
     projects: { total: 0, active: 0, completed: 0 },
@@ -29,6 +32,16 @@ export default function Dashboard() {
       try {
         setLoading(true);
 
+        // Önce API'nin erişilebilir olup olmadığını kontrol et
+        const isApiAvailable = await checkApiHealth();
+        setApiAvailable(isApiAvailable);
+
+        if (!isApiAvailable) {
+          logger.warn('Backend API erişilebilir değil. Dashboard boş verilerle gösterilecek.');
+          setLoading(false);
+          return;
+        }
+
         const [statsData, projectsData] = await Promise.allSettled([
           getDashboardStats(),
           getAllProjects({ page: 1, limit: 1000 }),
@@ -37,20 +50,28 @@ export default function Dashboard() {
         if (statsData.status === 'fulfilled') {
           setStats(statsData.value.stats);
           setUpcomingMaintenances(statsData.value.upcomingMaintenances || []);
+        } else {
+          // API hatası durumunda varsayılan değerleri kullan
+          logger.warn('Dashboard stats yüklenemedi:', statsData.reason);
         }
 
         if (projectsData.status === 'fulfilled') {
           setProjects(projectsData.value.projects || []);
         } else {
           setProjects([]);
+          logger.warn('Projects yüklenemedi:', projectsData.reason);
         }
 
         // Charts verisini ayrı bir request olarak lazy load et (non-blocking)
         getDashboardCharts(7)
           .then((chartsData) => setCharts(chartsData))
-          .catch((error) => logger.error('Charts verisi yüklenirken hata:', error));
+          .catch((error) => {
+            logger.error('Charts verisi yüklenirken hata:', error);
+            // Charts yüklenemezse null kalır, sayfa yine de render edilir
+          });
       } catch (error) {
         logger.error('Dashboard verileri yüklenirken hata:', error);
+        // Hata olsa bile sayfa render edilmeli
       } finally {
         setLoading(false);
       }
@@ -112,6 +133,32 @@ export default function Dashboard() {
     );
   }
 
+  // API erişilebilir değilse kullanıcıya bilgi ver
+  if (apiAvailable === false) {
+    return (
+      <div className="space-y-6">
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
+              SK Production yönetim paneline hoş geldiniz
+            </p>
+          </div>
+        </div>
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <h2 className="text-yellow-800 dark:text-yellow-200 font-semibold mb-2">Backend API Erişilemiyor</h2>
+          <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+            Backend API&apos;ye bağlanılamıyor. Lütfen backend sunucusunun çalıştığından emin olun.
+            <br />
+            <span className="text-xs mt-2 block">
+              Backend URL: {process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001'}
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const dashboardStats = { stats, upcomingProjects: [], upcomingMaintenances };
   const chartData = charts
     ? {
@@ -142,6 +189,26 @@ export default function Dashboard() {
             SK Production yönetim paneline hoş geldiniz
           </p>
         </div>
+        <button
+          onClick={() => setIsCustomizing(!isCustomizing)}
+          className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center gap-2"
+        >
+          {isCustomizing ? (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Özelleştirmeyi Bitir
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Dashboard&apos;u Özelleştir
+            </>
+          )}
+        </button>
       </div>
 
       {/* 1) En üst: Tüm Projeler (durumlarıyla) */}
@@ -204,17 +271,17 @@ export default function Dashboard() {
         <StatCardWidget
           widget={makeWidget({ type: 'STAT_CARD', title: 'Toplam Ekipman', settings: { statType: 'equipment_total' } })}
           dashboardStats={dashboardStats}
-          isEditable={false}
+          isEditable={isCustomizing}
         />
         <StatCardWidget
           widget={makeWidget({ type: 'STAT_CARD', title: 'Aktif Projeler', settings: { statType: 'projects_active' } })}
           dashboardStats={dashboardStats}
-          isEditable={false}
+          isEditable={isCustomizing}
         />
         <StatCardWidget
           widget={makeWidget({ type: 'STAT_CARD', title: 'Açık Görevler', settings: { statType: 'tasks_open' } })}
           dashboardStats={dashboardStats}
-          isEditable={false}
+          isEditable={isCustomizing}
         />
       </div>
 
@@ -224,14 +291,14 @@ export default function Dashboard() {
           <DonutChartWidget
             widget={makeWidget({ type: 'DONUT_CHART', title: 'Proje Durum Dağılımı', settings: { chartType: 'project_status' } })}
             chartData={chartData}
-            isEditable={false}
+            isEditable={isCustomizing}
           />
         </div>
         <div className="min-h-[190px]">
           <StatCardWidget
             widget={makeWidget({ type: 'STAT_CARD', title: 'Müşteriler', settings: { statType: 'clients_total' } })}
             dashboardStats={dashboardStats}
-            isEditable={false}
+            isEditable={isCustomizing}
           />
         </div>
       </div>
@@ -242,7 +309,7 @@ export default function Dashboard() {
           <PieChartWidget
             widget={makeWidget({ type: 'PIE_CHART', title: 'Ekipman Durum Dağılımı', settings: { chartType: 'equipment_status' } })}
             chartData={chartData}
-            isEditable={false}
+            isEditable={isCustomizing}
           />
         </div>
 
@@ -286,7 +353,7 @@ export default function Dashboard() {
         <LineChartWidget
           widget={makeWidget({ type: 'LINE_CHART', title: 'Görev Tamamlanma Trendi', settings: { chartType: 'task_completion' } })}
           chartData={chartData}
-          isEditable={false}
+          isEditable={isCustomizing}
         />
       </div>
 
@@ -295,7 +362,7 @@ export default function Dashboard() {
         <BarChartWidget
           widget={makeWidget({ type: 'BAR_CHART', title: 'Aylık Aktivite', settings: { chartType: 'monthly_activity' } })}
           chartData={chartData}
-          isEditable={false}
+          isEditable={isCustomizing}
         />
       </div>
     </div>

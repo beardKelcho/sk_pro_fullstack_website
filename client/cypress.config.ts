@@ -9,6 +9,14 @@ export default defineConfig({
     screenshotOnRunFailure: true,
     viewportWidth: 1280,
     viewportHeight: 720,
+    env: {
+      // Test kullanıcısı bilgileri (2FA kapalı)
+      TEST_USER_EMAIL: 'test@skpro.com.tr',
+      TEST_USER_PASSWORD: 'Test123!',
+      // Eski admin bilgileri (fallback)
+      ADMIN_EMAIL: 'admin@skpro.com.tr',
+      ADMIN_PASSWORD: 'Admin123!',
+    },
     setupNodeEvents(_on, _config) {
       // implement node event listeners here
     },

@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createMaintenance } from '@/services/maintenanceService';
+import { createMaintenance, useCreateMaintenance } from '@/services/maintenanceService';
+import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 // Form tipi
 interface MaintenanceForm {
@@ -37,6 +39,7 @@ const sampleTechnicians = [
 
 export default function AddMaintenance() {
   const router = useRouter();
+  const createMaintenanceMutation = useCreateMaintenance();
   
   // Form state'i
   const [formData, setFormData] = useState<MaintenanceForm>({
@@ -165,17 +168,21 @@ export default function AddMaintenance() {
         notes: (formData.notes ?? '').trim() || undefined
       };
       
-      await createMaintenance(maintenanceData as any);
+      await createMaintenanceMutation.mutateAsync(maintenanceData as any);
       setSuccess(true);
+      toast.success('Bakım kaydı başarıyla oluşturuldu');
       
       setTimeout(() => {
         router.push('/admin/maintenance');
       }, 2000);
       
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 'Bakım kaydı eklenirken bir hata oluştu. Lütfen tekrar deneyin.';
       setErrors({
-        submit: 'Bakım kaydı eklenirken bir hata oluştu. Lütfen tekrar deneyin.'
+        submit: errorMessage
       });
+      toast.error(errorMessage);
+      logger.error('Maintenance creation error:', error);
     } finally {
       setLoading(false);
     }

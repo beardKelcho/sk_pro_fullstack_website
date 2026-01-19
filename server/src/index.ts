@@ -52,13 +52,20 @@ const isLocalNetworkOrigin = (origin: string | undefined): boolean => {
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Origin yoksa (same-origin request) veya allowedOrigins içindeyse izin ver
+    // Test ve development modunda tüm origin'lere izin ver (test ortamı için gerekli)
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.ALLOW_ALL_ORIGINS === 'true') {
+      callback(null, true);
+      return;
+    }
+    
+    // Production modunda sadece izin verilen origin'lere izin ver
     if (!origin || allowedOrigins.includes(origin) || origin.includes('.ngrok-free.app') || origin.includes('.ngrok.io')) {
       callback(null, true);
-    } else if (process.env.NODE_ENV !== 'production' && isLocalNetworkOrigin(origin)) {
-      // Development modunda local network IP'lerine izin ver
+    } else if (isLocalNetworkOrigin(origin)) {
+      // Local network IP'lerine izin ver
       callback(null, true);
     } else {
+      logger.warn('CORS blocked origin:', origin);
       callback(new Error('CORS policy: Origin not allowed'));
     }
   },
@@ -70,9 +77,11 @@ app.use(cors({
     'X-Requested-With',
     'Cache-Control',
     'Pragma',
-    'Expires' // expires header'ını ekle
+    'Expires',
+    'X-Test-Origin', // Test ortamı için
+    'X-Request-ID'
   ],
-  exposedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
 }));
 
 // Security Middleware
@@ -239,8 +248,8 @@ const startServer = async () => {
     }
 
     // GraphQL server'ı başlat
-    if (process.env.ENABLE_GRAPHQL === 'true') {
-      await initGraphQL(httpServer, app);
+    const graphqlServer = await initGraphQL(httpServer, app);
+    if (graphqlServer) {
       logger.info('✅ GraphQL server aktif');
     }
 

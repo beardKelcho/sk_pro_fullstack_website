@@ -40,8 +40,24 @@ export const createAuditLog = async (data: AuditLogData): Promise<void> => {
       resourceIdObjectId = data.resourceId as mongoose.Types.ObjectId;
     }
 
+    // user field'ını ObjectId'ye çevir (string ise) veya null bırak
+    let userObjectId: mongoose.Types.ObjectId | null = null;
+    if (data.user) {
+      if (typeof data.user === 'string') {
+        // "system" veya geçersiz string'ler için null kullan
+        if (data.user.toLowerCase() === 'system' || !mongoose.Types.ObjectId.isValid(data.user)) {
+          logger.warn('Geçersiz user ID formatı (system veya invalid):', data.user);
+          userObjectId = null; // System action olarak işaretle
+        } else {
+          userObjectId = new mongoose.Types.ObjectId(data.user);
+        }
+      } else if (typeof data.user === 'object' && mongoose.Types.ObjectId.isValid(data.user as any)) {
+        userObjectId = data.user as unknown as mongoose.Types.ObjectId;
+      }
+    }
+
     await AuditLog.create({
-      user: data.user,
+      user: userObjectId, // ObjectId veya null
       action: data.action,
       resource: data.resource,
       resourceId: resourceIdObjectId,
@@ -51,6 +67,38 @@ export const createAuditLog = async (data: AuditLogData): Promise<void> => {
   } catch (error) {
     // Log error but don't throw - audit logging should not break the main flow
     logger.error('Audit log oluşturma hatası:', error);
+  }
+};
+
+/**
+ * Login işlemi için özel audit log fonksiyonu
+ * Login sırasında req.user henüz yok, bu yüzden user ID'yi direkt alır
+ */
+export const logLoginAction = async (
+  userId: string,
+  req: Request
+): Promise<void> => {
+  try {
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      logger.warn('Geçersiz user ID for login audit log:', userId);
+      return;
+    }
+
+    await createAuditLog({
+      user: userId,
+      action: 'LOGIN',
+      resource: 'User',
+      resourceId: userId,
+      metadata: {
+        ipAddress: req.ip || req.socket.remoteAddress || undefined,
+        userAgent: req.get('user-agent') || undefined,
+        method: req.method,
+        endpoint: req.originalUrl || req.url,
+      },
+    });
+  } catch (error) {
+    // Audit log hatası ana işlemi engellemesin - sadece logla
+    logger.error('Login audit log oluşturma hatası:', error);
   }
 };
 
@@ -197,12 +245,14 @@ export const getAuditLogs = async (filters: {
   const limit = filters.limit || 50;
   const skip = (page - 1) * limit;
 
+  // Performans optimizasyonu: lean() kullan ve populate'i optimize et
   const [logs, total] = await Promise.all([
     AuditLog.find(query)
       .populate('user', 'name email role')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit),
+      .limit(limit)
+      .lean(), // Lean query - daha hızlı
     AuditLog.countDocuments(query),
   ]);
 

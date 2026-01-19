@@ -16,11 +16,17 @@ const customJestConfig = {
     '^@types/(.*)$': '<rootDir>/src/types/$1',
     '^@styles/(.*)$': '<rootDir>/src/styles/$1',
     '^@context/(.*)$': '<rootDir>/src/context/$1',
+    '^next-intl$': '<rootDir>/__mocks__/next-intl.ts',
+    '^next/font/google$': '<rootDir>/__mocks__/nextFontGoogle.ts',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
   },
+  // next-intl / use-intl ESM çıktıları Jest'te parse edilemediği için bu paketleri transform'a dahil ediyoruz
+  transformIgnorePatterns: [
+    '/node_modules/(?!(next-intl|use-intl)/)',
+  ],
   testPathIgnorePatterns: [
     '/node_modules/',
     '/.next/',

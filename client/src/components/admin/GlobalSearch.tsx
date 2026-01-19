@@ -143,15 +143,23 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }
 
     try {
-      await createSavedSearch.mutateAsync({
+      const result = await createSavedSearch.mutateAsync({
         name: query,
         resource: 'All',
         filters: { query },
       });
-      toast.success('Arama kaydedildi');
-      setActiveTab('saved');
+      
+      if (result && result.success) {
+        toast.success('Arama kaydedildi');
+        setActiveTab('saved');
+      } else {
+        toast.error('Arama kaydedilemedi');
+      }
     } catch (error: any) {
-      toast.error('Arama kaydedilirken bir hata oluştu');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Arama kaydedilirken bir hata oluştu';
+      toast.error(errorMessage);
+      const logger = require('@/utils/logger').default;
+      logger.error('Arama kaydetme hatası:', error);
     }
   };
 

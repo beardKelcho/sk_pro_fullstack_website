@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { AppError, MongooseFilter, MongooseSortOptions, MongooseUpdateResult } from '../types/common';
+import { IEquipment } from '../models/Equipment';
 import { Equipment, QRCode, Project } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
@@ -69,7 +71,10 @@ export const getAllEquipment = async (req: Request, res: Response) => {
       await Equipment.updateMany(
         { _id: { $in: danglingProjectEquipIds } },
         { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
-      ).catch((err: any) => logger.error('Dangling currentProject release hatası:', err));
+      ).catch((err: unknown) => {
+        const error = err as AppError;
+        logger.error('Dangling currentProject release hatası:', error);
+      });
     }
 
     // B) IN_USE ama currentProject yoksa: aktif projelerde kullanılıyor mu kontrol et; kullanılmıyorsa release et
@@ -97,7 +102,10 @@ export const getAllEquipment = async (req: Request, res: Response) => {
         await Equipment.updateMany(
           { _id: { $in: toRelease } },
           { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
-        ).catch((err: any) => logger.error('Legacy IN_USE release hatası:', err));
+        ).catch((err: unknown) => {
+          const error = err as AppError;
+          logger.error('Legacy IN_USE release hatası:', error);
+        });
       }
     }
 
@@ -163,7 +171,10 @@ export const getEquipmentById = async (req: Request, res: Response) => {
       await Equipment.updateOne(
         { _id: equipment._id },
         { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
-      ).catch((err: any) => logger.error('Equipment detail dangling release hatası:', err));
+      ).catch((err: unknown) => {
+        const error = err as AppError;
+        logger.error('Equipment detail dangling release hatası:', error);
+      });
       equipment = await Equipment.findById(id)
         .populate('responsibleUser', 'name email')
         .populate('currentProject', 'name status')
@@ -178,7 +189,10 @@ export const getEquipmentById = async (req: Request, res: Response) => {
         await Equipment.updateOne(
           { _id: equipment._id },
           { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } }
-        ).catch((err: any) => logger.error('Equipment detail legacy release hatası:', err));
+        ).catch((err: unknown) => {
+          const error = err as AppError;
+          logger.error('Equipment detail legacy release hatası:', error);
+        });
         equipment = await Equipment.findById(id)
           .populate('responsibleUser', 'name email')
           .populate('currentProject', 'name status')
@@ -262,13 +276,15 @@ export const createEquipment = async (req: Request, res: Response) => {
           { new: false }
         );
         break;
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const error = err as AppError;
+        const mongooseError = err as { code?: number | string };
         // Duplicate key: retry
-        if (err?.code === 11000 && attempt < maxAttempts) {
+        if (mongooseError?.code === 11000 && attempt < maxAttempts) {
           continue;
         }
         // Diğer hatalarda geri al
-        logger.error('Ekipman QR oluşturma hatası:', err);
+        logger.error('Ekipman QR oluşturma hatası:', error);
         await Equipment.findByIdAndDelete(equipment._id).catch(() => null);
         return res.status(500).json({
           success: false,
@@ -354,7 +370,10 @@ export const updateEquipment = async (req: Request, res: Response) => {
         oldEquipment,
         updatedEquipment.toObject(),
         new mongoose.Types.ObjectId(userId)
-      ).catch((err: any) => logger.error('Versiyon geçmişi oluşturma hatası:', err));
+      ).catch((err: unknown) => {
+        const error = err as AppError;
+        logger.error('Versiyon geçmişi oluşturma hatası:', error);
+      });
     }
     
     // Cache'i invalidate et

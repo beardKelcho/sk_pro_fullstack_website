@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AppError } from '../types/common';
 import { SavedSearch, SearchHistory } from '../models';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
@@ -61,11 +62,12 @@ export const createSavedSearch = async (req: Request, res: Response) => {
       success: true,
       savedSearch,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+      const appError = error as AppError;
     logger.error('Kaydedilmiş arama oluşturma hatası:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Kaydedilmiş arama oluşturulamadı',
+      message: appError?.message || (error as Error)?.message || 'Kaydedilmiş arama oluşturulamadı',
     });
   }
 };

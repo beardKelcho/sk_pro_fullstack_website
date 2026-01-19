@@ -180,7 +180,7 @@ apiClient.interceptors.response.use(
             })();
         const response = await axios.post(refreshUrl, {}, {
           withCredentials: true,
-          timeout: 5000,
+          timeout: 10000, // Timeout'u 10 saniyeye çıkar (5 saniye çok kısa olabilir)
         });
 
         const { accessToken } = response.data;
@@ -197,17 +197,31 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         }
       } catch (refreshError: any) {
-        // Refresh token başarısız, logout yap
+        // Refresh token başarısız
+        // Network hatası veya timeout ise, kullanıcıyı hemen logout etme
+        // Sadece 401 (Unauthorized) veya 403 (Forbidden) hatası ise logout yap
+        const isAuthError = refreshError?.response?.status === 401 || refreshError?.response?.status === 403;
+        const isNetworkError = !refreshError?.response || refreshError?.code === 'ECONNABORTED' || refreshError?.code === 'ERR_NETWORK';
+        
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('accessToken');
-          sessionStorage.removeItem('user');
-          // Header'ı anında güncellemek için custom event dispatch et
-          window.dispatchEvent(new CustomEvent('auth:logout'));
-          // Sadece admin sayfalarındaysa yönlendir
-          if (window.location.pathname.startsWith('/admin')) {
-            window.location.href = '/admin';
+          if (isAuthError) {
+            // Gerçek auth hatası - logout yap
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem('user');
+            // Header'ı anında güncellemek için custom event dispatch et
+            window.dispatchEvent(new CustomEvent('auth:logout'));
+            // Sadece admin sayfalarındaysa yönlendir
+            if (window.location.pathname.startsWith('/admin')) {
+              window.location.href = '/admin';
+            }
+          } else if (isNetworkError) {
+            // Network hatası - kullanıcıya bilgi ver ama logout etme
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('Token refresh network hatası, kullanıcı logout edilmedi:', refreshError);
+            }
+            // Orijinal hatayı reject et, böylece çağıran kod hatayı handle edebilir
           }
         }
         return Promise.reject(refreshError);

@@ -3,28 +3,36 @@ import logger from '../utils/logger';
 
 let redisClient: RedisClientType | null = null;
 let redisDisabledLogged = false;
+let redisConnectFailedLogged = false;
 
 export const connectRedis = async (): Promise<RedisClientType | null> => {
   try {
-    // Dev ortamında Redis opsiyonel: REDIS_URL yoksa default olarak bağlanmayı deneme (log spam + ECONNREFUSED)
-    const hasRedisUrl = Boolean(process.env.REDIS_URL);
-    const redisEnabled =
-      process.env.REDIS_ENABLED !== 'false' && (hasRedisUrl || process.env.NODE_ENV === 'production');
+    const isProd = process.env.NODE_ENV === 'production';
+    const redisEnabledFlag = process.env.REDIS_ENABLED !== 'false';
+
+    // Dev ortamında Redis opsiyonel: REDIS_URL yoksa localhost'u dene (Redis çalışmıyorsa sessizce cache'i kapat).
+    // Prod ortamında REDIS_URL beklenir; yoksa cache devre dışı kalır ve uyarı basılır.
+    const redisUrl =
+      process.env.REDIS_URL || (!isProd ? 'redis://127.0.0.1:6379' : undefined);
+    const redisEnabled = redisEnabledFlag && Boolean(redisUrl);
 
     if (!redisEnabled) {
       if (!redisDisabledLogged) {
         redisDisabledLogged = true;
-        logger.warn('Redis devre dışı (REDIS_URL yok veya REDIS_ENABLED=false). Cache kapalı devam ediliyor.');
+        // Dev'de Redis opsiyonel olduğundan warn yerine info kullan (gürültüyü azalt).
+        const msg = 'Redis devre dışı (REDIS_URL yok veya REDIS_ENABLED=false). Cache kapalı devam ediliyor.';
+        if (isProd) logger.warn(msg);
+        else logger.info(msg);
       }
       return null;
     }
 
     // Redis URL'i environment variable'dan al (prod'da zorunlu gibi davranıyoruz)
-    const redisUrl = process.env.REDIS_URL as string;
+    const resolvedRedisUrl = redisUrl as string;
     
     // Redis client oluştur
     redisClient = createClient({
-      url: redisUrl,
+      url: resolvedRedisUrl,
       socket: {
         reconnectStrategy: (retries) => {
           if (retries > 10) {
@@ -60,7 +68,13 @@ export const connectRedis = async (): Promise<RedisClientType | null> => {
     logger.info('Redis başarıyla bağlandı');
     return redisClient;
   } catch (error) {
-    logger.warn('Redis bağlantısı kurulamadı, cache devre dışı:', error);
+    // Dev ortamında Redis opsiyonel: bağlantı yoksa log spam yapma.
+    if (process.env.NODE_ENV === 'production') {
+      logger.warn('Redis bağlantısı kurulamadı, cache devre dışı:', error);
+    } else if (!redisConnectFailedLogged) {
+      redisConnectFailedLogged = true;
+      logger.info('Redis bağlantısı kurulamadı (dev için opsiyonel). Cache kapalı devam ediliyor.');
+    }
     // Redis yoksa uygulama çalışmaya devam etsin
     return null;
   }

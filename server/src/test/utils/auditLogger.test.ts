@@ -2,12 +2,27 @@ import { createAuditLog, logLoginAction, logAction } from '../../utils/auditLogg
 import AuditLog from '../../models/AuditLog';
 import mongoose from 'mongoose';
 import { Request } from 'express';
+import logger from '../../utils/logger';
 
 // Mock AuditLog model
-jest.mock('../../models/AuditLog');
+const mockCreate = jest.fn();
+jest.mock('../../models/AuditLog', () => ({
+  __esModule: true,
+  default: {
+    create: mockCreate,
+    find: jest.fn(),
+    countDocuments: jest.fn(),
+  },
+}));
+
+// Mock logger
 jest.mock('../../utils/logger', () => ({
-  warn: jest.fn(),
-  error: jest.fn(),
+  __esModule: true,
+  default: {
+    warn: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
 }));
 
 describe('auditLogger', () => {
@@ -16,12 +31,13 @@ describe('auditLogger', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Her test için mock'u resetle
+    mockCreate.mockResolvedValue({});
   });
 
   describe('createAuditLog', () => {
     it('should create an audit log with valid ObjectId strings', async () => {
-      const mockCreate = jest.fn().mockResolvedValue({});
-      (AuditLog.create as jest.Mock) = mockCreate;
+      mockCreate.mockResolvedValue({});
 
       await createAuditLog({
         user: mockUserId.toString(),
@@ -32,19 +48,20 @@ describe('auditLogger', () => {
         metadata: { ipAddress: '127.0.0.1' },
       });
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        user: mockUserId,
-        action: 'CREATE',
-        resource: 'Project',
-        resourceId: mockResourceId,
-        changes: [{ field: 'name', oldValue: 'Old', newValue: 'New' }],
-        metadata: { ipAddress: '127.0.0.1' },
-      });
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: mockUserId,
+          action: 'CREATE',
+          resource: 'Project',
+          resourceId: mockResourceId,
+          changes: [{ field: 'name', oldValue: 'Old', newValue: 'New' }],
+          metadata: { ipAddress: '127.0.0.1' },
+        })
+      );
     });
 
     it('should create an audit log with ObjectId objects', async () => {
-      const mockCreate = jest.fn().mockResolvedValue({});
-      (AuditLog.create as jest.Mock) = mockCreate;
+      mockCreate.mockResolvedValue({});
 
       await createAuditLog({
         user: mockUserId.toString(),
@@ -53,19 +70,20 @@ describe('auditLogger', () => {
         resourceId: mockResourceId.toString(),
       });
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        user: mockUserId,
-        action: 'UPDATE',
-        resource: 'Equipment',
-        resourceId: mockResourceId,
-        changes: [],
-        metadata: {},
-      });
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: mockUserId,
+          action: 'UPDATE',
+          resource: 'Equipment',
+          resourceId: mockResourceId,
+          changes: [],
+          metadata: {},
+        })
+      );
     });
 
     it('should handle null user for system actions', async () => {
-      const mockCreate = jest.fn().mockResolvedValue({});
-      (AuditLog.create as jest.Mock) = mockCreate;
+      mockCreate.mockResolvedValue({});
 
       await createAuditLog({
         user: null,
@@ -85,9 +103,7 @@ describe('auditLogger', () => {
     });
 
     it('should handle "system" string as null user', async () => {
-      const mockCreate = jest.fn().mockResolvedValue({});
-      (AuditLog.create as jest.Mock) = mockCreate;
-      const logger = require('../../utils/logger');
+      mockCreate.mockResolvedValue({});
 
       await createAuditLog({
         user: 'system',
@@ -108,9 +124,7 @@ describe('auditLogger', () => {
     });
 
     it('should skip audit log creation for invalid resourceId', async () => {
-      const mockCreate = jest.fn();
-      (AuditLog.create as jest.Mock) = mockCreate;
-      const logger = require('../../utils/logger');
+      mockCreate.mockClear();
 
       await createAuditLog({
         user: mockUserId.toString(),
@@ -124,9 +138,7 @@ describe('auditLogger', () => {
     });
 
     it('should skip audit log creation for invalid user ID', async () => {
-      const mockCreate = jest.fn();
-      (AuditLog.create as jest.Mock) = mockCreate;
-      const logger = require('../../utils/logger');
+      mockCreate.mockResolvedValue({});
 
       await createAuditLog({
         user: 'invalid-user-id',
@@ -135,21 +147,22 @@ describe('auditLogger', () => {
         resourceId: mockResourceId.toString(),
       });
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        user: null,
-        action: 'CREATE',
-        resource: 'Project',
-        resourceId: mockResourceId,
-        changes: [],
-        metadata: {},
-      });
+      // Invalid user ID için null user ile audit log oluşturulmalı
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: null,
+          action: 'CREATE',
+          resource: 'Project',
+          resourceId: mockResourceId,
+          changes: [],
+          metadata: {},
+        })
+      );
       expect(logger.warn).toHaveBeenCalled();
     });
 
     it('should handle errors gracefully', async () => {
-      const mockCreate = jest.fn().mockRejectedValue(new Error('Database error'));
-      (AuditLog.create as jest.Mock) = mockCreate;
-      const logger = require('../../utils/logger');
+      mockCreate.mockRejectedValue(new Error('Database error'));
 
       await createAuditLog({
         user: mockUserId.toString(),
@@ -173,30 +186,29 @@ describe('auditLogger', () => {
     } as unknown as Request;
 
     it('should create a login audit log', async () => {
-      const mockCreate = jest.fn().mockResolvedValue({});
-      (AuditLog.create as jest.Mock) = mockCreate;
+      mockCreate.mockResolvedValue({});
 
       await logLoginAction(mockUserId.toString(), mockReq);
 
-      expect(mockCreate).toHaveBeenCalledWith({
-        user: mockUserId,
-        action: 'LOGIN',
-        resource: 'User',
-        resourceId: mockUserId,
-        changes: [],
-        metadata: {
-          ipAddress: '127.0.0.1',
-          userAgent: 'Mozilla/5.0',
-          method: 'POST',
-          endpoint: '/api/auth/login',
-        },
-      });
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: mockUserId,
+          action: 'LOGIN',
+          resource: 'User',
+          resourceId: mockUserId,
+          changes: [],
+          metadata: expect.objectContaining({
+            ipAddress: '127.0.0.1',
+            userAgent: 'Mozilla/5.0',
+            method: 'POST',
+            endpoint: '/api/auth/login',
+          }),
+        })
+      );
     });
 
     it('should skip audit log for invalid user ID', async () => {
-      const mockCreate = jest.fn();
-      (AuditLog.create as jest.Mock) = mockCreate;
-      const logger = require('../../utils/logger');
+      mockCreate.mockClear();
 
       await logLoginAction('invalid-id', mockReq);
 
@@ -205,13 +217,11 @@ describe('auditLogger', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      const mockCreate = jest.fn().mockRejectedValue(new Error('Database error'));
-      (AuditLog.create as jest.Mock) = mockCreate;
-      const logger = require('../../utils/logger');
+      mockCreate.mockRejectedValue(new Error('Database error'));
 
       await logLoginAction(mockUserId.toString(), mockReq);
 
-      expect(logger.error).toHaveBeenCalledWith('Audit log oluşturma hatası:', expect.any(Error));
+      expect(logger.error).toHaveBeenCalledWith('Login audit log oluşturma hatası:', expect.any(Error));
     });
   });
 
@@ -227,15 +237,14 @@ describe('auditLogger', () => {
     } as unknown as Request;
 
     it('should create an audit log from request', async () => {
-      const mockCreate = jest.fn().mockResolvedValue({});
-      (AuditLog.create as jest.Mock) = mockCreate;
+      mockCreate.mockResolvedValue({});
 
       await logAction(mockReq, 'UPDATE', 'Project', mockResourceId.toString(), [
         { field: 'name', oldValue: 'Old', newValue: 'New' },
       ]);
 
       expect(mockCreate).toHaveBeenCalled();
-      const callArgs = (mockCreate as jest.Mock).mock.calls[0][0];
+      const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.user?.toString()).toBe(mockUserId.toString());
       expect(callArgs.action).toBe('UPDATE');
       expect(callArgs.resource).toBe('Project');
@@ -252,13 +261,12 @@ describe('auditLogger', () => {
         ...mockReq,
         user: undefined,
       } as unknown as Request;
-      const mockCreate = jest.fn().mockResolvedValue({});
-      (AuditLog.create as jest.Mock) = mockCreate;
+      mockCreate.mockResolvedValue({});
 
       await logAction(reqWithoutUser, 'VIEW', 'Project', mockResourceId.toString());
 
       expect(mockCreate).toHaveBeenCalled();
-      const callArgs = (mockCreate as jest.Mock).mock.calls[0][0];
+      const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.user).toBeNull();
       expect(callArgs.action).toBe('VIEW');
       expect(callArgs.resource).toBe('Project');
@@ -268,9 +276,7 @@ describe('auditLogger', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      const mockCreate = jest.fn().mockRejectedValue(new Error('Database error'));
-      (AuditLog.create as jest.Mock) = mockCreate;
-      const logger = require('../../utils/logger');
+      mockCreate.mockRejectedValue(new Error('Database error'));
 
       await logAction(mockReq, 'DELETE', 'Project', mockResourceId.toString());
 

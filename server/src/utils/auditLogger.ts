@@ -90,8 +90,8 @@ export const logLoginAction = async (
       resource: 'User',
       resourceId: userId,
       metadata: {
-        ipAddress: req.ip || req.socket.remoteAddress || undefined,
-        userAgent: req.get('user-agent') || undefined,
+        ipAddress: req.ip || req.socket?.remoteAddress || undefined,
+        userAgent: req.get?.('user-agent') || undefined,
         method: req.method,
         endpoint: req.originalUrl || req.url,
       },
@@ -136,8 +136,8 @@ export const logAction = async (
       resourceId,
       changes,
       metadata: {
-        ipAddress: req.ip || req.socket.remoteAddress,
-        userAgent: req.get('user-agent'),
+        ipAddress: req.ip || req.socket?.remoteAddress || undefined,
+        userAgent: req.get('user-agent') || undefined,
         method: req.method,
         endpoint: req.originalUrl || req.url,
       },

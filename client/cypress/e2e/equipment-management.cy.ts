@@ -96,16 +96,15 @@ describe('Ekipman Yönetimi', () => {
       cy.visit('/admin/equipment');
       cy.get('body', { timeout: 15000 }).should('be.visible');
 
-      // Ekipman listesinde "Görüntüle" linki veya satıra tıklama
-      cy.get('body').then(($body) => {
-        const viewLink = $body.find('a[href*="/equipment/view"], a[href*="/equipment/"], button:contains("Görüntüle"), button:contains("View")').first();
-        if (viewLink.length > 0) {
-          cy.wrap(viewLink).scrollIntoView().click({ force: true });
-          cy.url({ timeout: 15000 }).should('include', '/equipment/view');
-        } else {
-          cy.log('Görüntüle linki bulunamadı - test atlanıyor');
-        }
-      });
+      // Ekipman listesinde "Görüntüle" linki veya satıra tıklama - gerçek assertion ile
+      cy.get('a[href*="/equipment/view"], a[href*="/equipment/"], button:contains("Görüntüle"), button:contains("View"), table tbody tr', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.url({ timeout: 15000 }).should('include', '/equipment/view');
     });
 
     it('ekipman düzenleme sayfası açılmalı', () => {

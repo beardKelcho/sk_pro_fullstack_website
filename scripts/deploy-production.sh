@@ -7,6 +7,17 @@ set -e
 
 echo "🚀 Production Deployment Başlatılıyor..."
 
+# Pre-deployment check (opsiyonel - SKIP_PRE_CHECK=1 ile atlanabilir)
+if [ -z "$SKIP_PRE_CHECK" ] && [ -f "scripts/pre-deployment-check.sh" ]; then
+    echo "🔍 Pre-deployment check çalıştırılıyor..."
+    if ! bash scripts/pre-deployment-check.sh; then
+        echo "❌ Pre-deployment check başarısız! Deployment iptal edildi."
+        echo "💡 SKIP_PRE_CHECK=1 ile atlayabilirsiniz (önerilmez)"
+        exit 1
+    fi
+    echo ""
+fi
+
 # develop branch'inde olduğumuzdan emin ol
 CURRENT_BRANCH=$(git branch --show-current)
 if [ "$CURRENT_BRANCH" != "develop" ]; then
@@ -85,3 +96,7 @@ echo "🔗 Backend: https://api.skproduction.com"
 echo "🏷️  Version: v$VERSION"
 echo ""
 echo "⏳ Deployment tamamlanması 3-7 dakika sürebilir..."
+echo ""
+echo "💡 Deployment sonrası doğrulama için:"
+echo "   npm run verify:deployment"
+echo ""

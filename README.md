@@ -65,14 +65,14 @@ SK Production için geliştirilmiş modern web sitesi ve yeniden kullanılabilir
 
 ## 📦 Kurulum
 
-Detaylı kurulum rehberi için **[KURULUM_REHBERI.md](./docs/KURULUM_REHBERI.md)** dosyasına bakın.
+Detaylı kurulum rehberi için **[KURULUM_VE_BASLANGIC.md](./docs/KURULUM_VE_BASLANGIC.md)** dosyasına bakın.
 
 ### 🚀 Production'a Alma
 
 Production'a almak ve yayındayken geliştirme yapmak için:
-- **[DEPLOYMENT_README.md](./docs/DEPLOYMENT_README.md)** - Deployment ve geliştirme rehberi
-- **[PRODUCTION_DEPLOYMENT_CHECKLIST.md](./docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md)** - Production deployment checklist
-- **[PRODUCTION_GELISTIRME_REHBERI.md](./docs/PRODUCTION_GELISTIRME_REHBERI.md)** - Production'da geliştirme rehberi
+- **[PRODUCTION_DEPLOYMENT.md](./docs/PRODUCTION_DEPLOYMENT.md)** ⚡ - Production deployment kapsamlı rehberi (ÖNERİLEN)
+- **[DEPLOYMENT_SCRIPTS_REHBERI.md](./docs/DEPLOYMENT_SCRIPTS_REHBERI.md)** - Deployment script'leri kullanım rehberi
+- **[GITHUB_SECRETS_REHBERI.md](./docs/GITHUB_SECRETS_REHBERI.md)** - GitHub Secrets yapılandırma rehberi
 
 ### Hızlı Başlangıç
 
@@ -212,22 +212,30 @@ Tüm dokümanların indeks listesi: **[docs/README.md](./docs/README.md)**
 
 ### Ana Dokümanlar
 
-- **[KURULUM_REHBERI.md](./docs/KURULUM_REHBERI.md)** - Kapsamlı kurulum, başlatma ve kullanım rehberi
+- **[KURULUM_VE_BASLANGIC.md](./docs/KURULUM_VE_BASLANGIC.md)** - Kurulum ve başlangıç rehberi
+  - Hızlı başlangıç (5 dakika)
   - MongoDB kurulumu (Atlas + Local)
   - Environment yapılandırması
   - Proje başlatma yöntemleri
   - Sorun giderme
-  - Deployment rehberi
-  - Production checklist
 
-- **[PROJE_GELISTIRME.md](./docs/PROJE_GELISTIRME.md)** - Proje geliştirme, iyileştirmeler ve teknik detaylar
+- **[PRODUCTION_DEPLOYMENT.md](./docs/PRODUCTION_DEPLOYMENT.md)** - Production deployment rehberi
+  - Hızlı başlangıç (10 dakika)
+  - Detaylı deployment adımları
+  - Git branch stratejisi
+  - Günlük geliştirme akışı
+  - Platform önerileri ve maliyetler
+
+- **[PROJE_DURUMU.md](./docs/PROJE_DURUMU.md)** - Proje durumu ve özellikler
+  - Genel bakış
   - Tamamlanan özellikler
-  - Test stratejisi (detaylı)
-  - Yetki sistemi (detaylı tablo)
-  - Dosya yükleme mimarisi
+  - Teknik stack
+  - Yol haritası
+
+- **[PROJE_GELISTIRME.md](./docs/PROJE_GELISTIRME.md)** - Geliştirme süreçleri ve teknik detaylar
+  - Test stratejisi
+  - Yetki sistemi
   - Teknik mimari
-  - Yapılacaklar listesi (öncelik matrisi ile)
-  - İyileştirme önerileri
 
 ## 📝 Lisans
 

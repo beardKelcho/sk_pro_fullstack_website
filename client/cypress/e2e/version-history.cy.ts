@@ -20,30 +20,22 @@ describe('Version History Yönetimi', () => {
       cy.visit('/admin/projects');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // İlk projeye tıkla veya edit sayfasına git
-      cy.get('body').then(($body) => {
-        const editLink = $body.find('a[href*="/projects/edit"], tr').first();
-        if (editLink.length > 0) {
-          cy.wrap(editLink).scrollIntoView().click({ force: true });
-          cy.url({ timeout: 15000 }).should('include', '/projects/edit');
-          
-          // Version history butonu
-          cy.get('body', { timeout: 15000 }).then(($editPage) => {
-            const versionBtn = $editPage.find('button:contains("Versiyon"), button:contains("Version"), button:contains("Geçmiş")');
-            if (versionBtn.length > 0) {
-              cy.log('Version history butonu bulundu');
-              cy.wrap(versionBtn).scrollIntoView().should('be.visible');
-            } else {
-              cy.log('Version history butonu bulunamadı');
-            }
-          });
-        } else {
-          // Direkt edit sayfasına git (test için)
-          cy.visit('/admin/projects/add');
-          cy.wait(2000);
-          cy.log('Proje edit sayfası kontrol edildi');
-        }
-      });
+      // İlk projeye tıkla veya edit sayfasına git - gerçek assertion ile
+      cy.get('a[href*="/projects/edit"], table tbody tr', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true });
+      
+      cy.url({ timeout: 15000 }).should('include', '/projects/edit');
+      
+      // Version history butonu - gerçek assertion ile
+      cy.get('button:contains("Versiyon"), button:contains("Version"), button:contains("Geçmiş")', { timeout: 10000 })
+        .first()
+        .should('exist')
+        .scrollIntoView()
+        .should('be.visible');
     });
 
     it('version history modal açılabilmeli', () => {

@@ -60,18 +60,18 @@ describe('SK Production - Kapsamlı E2E Testler', () => {
     });
 
     it('iletişim formu çalışmalı', () => {
-      // Sayfanın en altına in
-      cy.scrollTo('bottom');
-      cy.wait(2000); // Animasyonlar ve yüklemeler için bekle
+      // Contact bölümüne direkt git (#contact ID'si var)
+      cy.get('#contact', { timeout: 15000 }).scrollIntoView({ duration: 1000 });
+      cy.wait(2000); // Animasyonlar ve lazy loading için bekle
 
-      // Form elementini bul (Sayfada tek form var)
-      cy.get('form', { timeout: 15000 }).should('exist');
-
+      // Form'u contact bölümü içinde ara
+      cy.get('#contact form', { timeout: 10000 }).should('exist');
+      
       // Form alanlarının varlığını kontrol et
-      cy.get('form input[type="text"]').should('exist'); // İsim
-      cy.get('form input[type="email"]').should('exist'); // Email
-      cy.get('form textarea').should('exist'); // Mesaj
-      cy.get('form button[type="submit"]').should('exist'); // Gönder butonu
+      cy.get('#contact form input[name="name"], #contact form input#name', { timeout: 10000 }).should('exist');
+      cy.get('#contact form input[name="email"], #contact form input#email, #contact form input[type="email"]', { timeout: 10000 }).should('exist');
+      cy.get('#contact form textarea[name="message"], #contact form textarea#message', { timeout: 10000 }).should('exist');
+      cy.get('#contact form button[type="submit"]', { timeout: 10000 }).should('exist');
     });
 
     it('navigasyon menüsü çalışmalı', () => {

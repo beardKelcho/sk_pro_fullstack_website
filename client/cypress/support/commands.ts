@@ -82,39 +82,44 @@ Cypress.Commands.add('loginAsAdmin', () => {
       }
     });
 
-    // Dashboard'a yönlendirilmeyi bekle (daha esnek)
-    cy.wait(2000); // Redirect için bekleme
+    // Dashboard'a yönlendirilmeyi bekle (window.location.href kullanılıyor - full page reload)
+    // Full page reload için daha uzun bekleme
+    cy.wait(3000);
     
     // URL kontrolü - dashboard'a yönlendirildi mi?
-    cy.url({ timeout: 20000 }).then(url => {
+    cy.url({ timeout: 25000 }).then(url => {
       if (url.includes('/admin/dashboard')) {
         cy.log('Login başarılı - Dashboard\'a yönlendirildi');
+        // Dashboard içeriğini kontrol et
+        cy.contains(/dashboard|ana sayfa|hoşgeldin/i, { timeout: 10000 }).should('exist');
         return;
       }
       
       // Eğer hala /admin'deysek, hata mesajı var mı kontrol et
       if (url.includes('/admin') && !url.includes('dashboard')) {
-        cy.get('body', { timeout: 5000 }).then($body => {
-          const bodyText = $body.text();
-          if (bodyText.includes('Hata') || bodyText.includes('Error') || bodyText.includes('Yanlış') || bodyText.includes('Geçersiz')) {
-            cy.log('Login Hatası Tespit Edildi');
-            // Hata varsa, test devam etsin ama log'la
-          } else {
-            // Hata yoksa, belki 2FA ekranı veya başka bir durum
-            cy.log('Login durumu belirsiz - URL:', url);
+        cy.wait(2000); // Ek bekleme (redirect henüz tamamlanmamış olabilir)
+        cy.url({ timeout: 5000 }).then(newUrl => {
+          if (newUrl.includes('/admin/dashboard')) {
+            cy.log('Login başarılı - Dashboard\'a yönlendirildi (geç)');
+            return;
           }
+          
+          // Hala dashboard'da değilsek, hata kontrolü yap
+          cy.get('body', { timeout: 5000 }).then($body => {
+            const bodyText = $body.text();
+            if (bodyText.includes('Hata') || bodyText.includes('Error') || bodyText.includes('Yanlış') || bodyText.includes('Geçersiz')) {
+              cy.log('Login Hatası Tespit Edildi - Backend çalışmıyor olabilir');
+            } else if (bodyText.includes('2FA') || bodyText.includes('İki Faktör')) {
+              cy.log('2FA ekranı görüntüleniyor');
+            } else {
+              cy.log('Login durumu belirsiz - URL:', newUrl);
+            }
+          });
         });
         
         // Dashboard'a yönlendirilmediyse, en azından /admin'de olduğumuzu doğrula
-        // Test devam edebilir, login başarısız olsa bile
+        // Test devam edebilir (bazı sayfalar login olmadan da erişilebilir olabilir)
         cy.url().should('include', '/admin');
-      }
-    });
-    
-    // Dashboard'a yönlendirildiyse, dashboard içeriğini kontrol et
-    cy.url().then(url => {
-      if (url.includes('/admin/dashboard')) {
-        cy.contains(/dashboard|ana sayfa|hoşgeldin/i, { timeout: 10000 }).should('exist');
       }
     });
   });

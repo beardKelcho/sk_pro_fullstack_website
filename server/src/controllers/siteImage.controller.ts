@@ -16,10 +16,23 @@ const fixImageUrls = (image: any): any => {
     return image;
   }
 
-  // Cloudinary URL oluştur (Strict Mode)
-  // Veritabanındaki URL ne olursa olsun, filename ve category'ye göre yeniden oluştur.
-  const buildCloudinaryUrl = (filename: string, category: string): string => {
-    if (!filename) return '';
+  // Cloudinary URL oluştur veya Mevcudu İyileştir
+  const fixUrl = (filename: string, existingUrl: string | undefined, category: string): string => {
+    // 1. Eğer zaten geçerli bir Cloudinary URL'i varsa, onu kullan (Resource Type sorununu çözer)
+    if (existingUrl && existingUrl.includes('cloudinary.com')) {
+      // Protokol kontrolü (HTTPS zorunlu)
+      if (existingUrl.startsWith('http:')) {
+        return existingUrl.replace('http:', 'https:');
+      }
+      if (existingUrl.startsWith('https:')) {
+        return existingUrl;
+      }
+      // Protokol yoksa ekle
+      return `https://${existingUrl}`;
+    }
+
+    // 2. Eğer URL yoksa veya yerel ise, Filename'den oluştur (Fallback)
+    if (!filename) return existingUrl || '';
 
     // Extension kontrolü
     const ext = filename.split('.').pop()?.toLowerCase();
@@ -27,12 +40,10 @@ const fixImageUrls = (image: any): any => {
 
     // Resource Type belirle
     let resourceType = 'image';
-    // Eğer kategori video ise veya uzantı video uzantısıysa
     if (category === 'video' || (hasExt && ['mp4', 'webm', 'mov', 'avi'].includes(ext!))) {
       resourceType = 'video';
     }
 
-    // Uzantı yoksa varsayılan ekle
     let cleanFilename = filename;
     if (!hasExt) {
       if (resourceType === 'video') cleanFilename += '.mp4';
@@ -42,17 +53,13 @@ const fixImageUrls = (image: any): any => {
     const baseUrl = cdnBaseUrl.replace(/\/$/, '');
     const absoluteBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
 
-    // Strict Format: .../resource_type/upload/v1/filename.ext
     return `${absoluteBaseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
   };
 
   const fixedImage = JSON.parse(JSON.stringify(image));
 
-  // URL'i tamamen yok sayıp baştan oluşturuyoruz (filename varsa)
-  if (fixedImage.filename) {
-    fixedImage.url = buildCloudinaryUrl(fixedImage.filename, fixedImage.category || 'gallery');
-  } else {
-    // Filename yoksa (çok düşük ihtimal), eskisini koru ama mümkünse düzelt
+  if (fixedImage.filename || fixedImage.url) {
+    fixedImage.url = fixUrl(fixedImage.filename, fixedImage.url, fixedImage.category || 'gallery');
   }
 
   return fixedImage;

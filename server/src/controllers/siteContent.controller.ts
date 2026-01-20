@@ -83,29 +83,34 @@ const fixContentUrls = async (content: any): Promise<any> => {
   };
 
   const resolveUrlOrFilename = (inputUrl: string | undefined, inputFilename: string | undefined, type: 'image' | 'video'): string | undefined => {
-    // 1. Eğer filename varsa onu kullan (En kesin yöntem)
+    // 1. Eğer input olarak filename verilmişse, direkt onu kullan (Mevcut URL yok kabul edilir)
     if (inputFilename) {
-      return buildCloudinaryUrl(inputFilename, type);
+      return buildCloudinaryUrl(inputFilename, undefined, type);
     }
 
     // 2. Eğer URL yoksa dön
     if (!inputUrl) return inputUrl;
 
-    // 3. Manuel Giriş Temizliği: Eğer URL "http.../ID.mp4" gibiyse ve ID aslında bir MongoID ise, bunu filename ile değiştirmeyi dene
-    // Bu, kullanıcının veritabanına yanlışlıkla ID içeren tam URL kaydettiği durumlar için.
+    // 3. Manuel Giriş Temizliği
     if (inputUrl.startsWith('http')) {
       const parts = inputUrl.split('/');
       const lastPart = parts[parts.length - 1]; // "ID.mp4" veya "ID"
       const potentialId = lastPart.split('.')[0];
 
+      // Eğer bu bir Cloudinary URL'i ise ve HTTPS değilse, HTTPS yap ve dön
+      if (inputUrl.includes('cloudinary.com')) {
+        if (inputUrl.startsWith('http:')) return inputUrl.replace('http:', 'https:');
+        return inputUrl;
+      }
+
       if (mongoose.Types.ObjectId.isValid(potentialId)) {
-        // Bu bir ID! Gerçek filename'i bulmaya çalışalım
-        const resolvedFilename = imageMap.get(potentialId);
-        if (resolvedFilename) {
-          return buildCloudinaryUrl(resolvedFilename, type);
+        // Bu bir MongoID! Gerçek veriyi bul.
+        const resolvedData = imageMap.get(potentialId);
+        if (resolvedData) {
+          return buildCloudinaryUrl(resolvedData.filename, resolvedData.url, type);
         }
       }
-      return inputUrl; // Değilse orijinali dön
+      return inputUrl;
     }
 
     // 4. URL map'ten kontrol et (Local path/ID durumları)
@@ -115,9 +120,9 @@ const fixContentUrls = async (content: any): Promise<any> => {
       id = id.replace(/^\/?uploads\//, '');
       id = id.replace(/^\//, '');
 
-      const resolvedFilename = imageMap.get(id);
-      if (resolvedFilename) {
-        return buildCloudinaryUrl(resolvedFilename, type);
+      const resolvedData = imageMap.get(id);
+      if (resolvedData) {
+        return buildCloudinaryUrl(resolvedData.filename, resolvedData.url, type);
       }
     }
 

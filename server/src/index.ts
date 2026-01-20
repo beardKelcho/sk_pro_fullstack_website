@@ -26,8 +26,14 @@ import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
 import { detectSlowQueries } from './utils/queryOptimizer';
 
+import { setupExpressErrorHandler } from '@sentry/node';
+import { initSentry } from './config/sentry';
+
 // Environment değişkenlerini yapılandır
 dotenv.config();
+
+// Sentry'i başlat
+initSentry();
 
 // Express app oluştur
 const app = express();
@@ -223,6 +229,9 @@ app.use('*', (req, res) => {
     message: 'API endpoint bulunamadı'
   });
 });
+
+// Sentry Error Handler - Custom error handler'dan önce olmalı
+setupExpressErrorHandler(app);
 
 // Error handler middleware (en sonda olmalı)
 app.use(errorHandler);

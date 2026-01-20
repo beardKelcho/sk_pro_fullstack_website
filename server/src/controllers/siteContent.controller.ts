@@ -68,7 +68,14 @@ const fixContentUrls = async (content: any): Promise<any> => {
   }
 
   // URL oluşturma (Builder)
-  const buildCloudinaryUrl = (filename: string, type: 'image' | 'video'): string => {
+  const buildCloudinaryUrl = (filename: string, existingUrl: string | undefined, type: 'image' | 'video'): string => {
+    // 1. Önce mevcut URL'e güven (Resource Type hatasını önler)
+    if (existingUrl && existingUrl.includes('cloudinary.com')) {
+      if (existingUrl.startsWith('http:')) return existingUrl.replace('http:', 'https:');
+      if (existingUrl.startsWith('https:')) return existingUrl;
+      return `https://${existingUrl}`;
+    }
+
     // Hardcoded Base URL
     const baseUrl = 'https://res.cloudinary.com/dmeviky6f';
 

@@ -40,6 +40,14 @@ const nextConfig = {
         port: '5001',
         pathname: '/**',
       },
+      // Cloudinary
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+      // Local network IP'leri için (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
       {
         protocol: 'http',
         hostname: '10.*.*.*',
@@ -175,6 +183,32 @@ const nextConfig = {
       {
         source: '/uploads/:path*',
         destination: `${backendUrl}/uploads/:path*`,
+      },
+    ];
+  },
+  redirects: async () => {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'skproduction.com.tr',
+          },
+        ],
+        destination: 'https://skpro.com.tr/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.skproduction.com.tr',
+          },
+        ],
+        destination: 'https://skpro.com.tr/:path*',
+        permanent: true,
       },
     ];
   },

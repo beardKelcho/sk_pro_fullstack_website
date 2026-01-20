@@ -103,7 +103,7 @@ fi
 
 # Production build testi
 echo "   Production build testi..."
-if ! NODE_ENV=production npm run build > /dev/null 2>&1; then
+if ! NODE_ENV=production npm run build; then
     echo -e "${RED}❌ Client production build başarısız!${NC}"
     exit 1
 fi

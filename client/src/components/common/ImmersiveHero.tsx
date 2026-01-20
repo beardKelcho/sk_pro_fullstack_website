@@ -76,11 +76,11 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
   // Rotating texts için effect
   useEffect(() => {
     if (rotatingTexts.length === 0) return;
-    
+
     const textsCount = rotatingTexts.length;
     // textIndex'i geçerli aralıkta tut
     setTextIndex((prev) => prev % textsCount);
-    
+
     const interval = setInterval(() => {
       setTextIndex((prev) => (prev + 1) % textsCount);
     }, 4000);
@@ -105,7 +105,8 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
       </motion.div>
 
       {/* Video Arka Plan (varsa) */}
-      {content?.backgroundVideo && (
+      {/* Video Arka Plan (varsa ve geçerli URL ise) */}
+      {content?.backgroundVideo && content.backgroundVideo.startsWith('http') && (
         <motion.video
           src={content.backgroundVideo}
           autoPlay

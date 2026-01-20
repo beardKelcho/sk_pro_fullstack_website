@@ -6,16 +6,13 @@ import logger from '../utils/logger';
 import SiteImage from '../models/SiteImage';
 
 // Helper: İçerik URL'lerini düzelt (Async - ID resolution ile)
+// Helper: İçerik URL'lerini düzelt (Async - ID resolution ile)
 const fixContentUrls = async (content: any): Promise<any> => {
   if (!content) return content;
 
-  const storageType = (process.env.STORAGE_TYPE || 'local').toLowerCase();
-  const cdnBaseUrl = process.env.CLOUDINARY_CDN_URL || '';
-
-  // Eğer Cloudinary değilse değişikliğe gerek yok
-  if (storageType !== 'cloudinary' || !cdnBaseUrl) {
-    return content;
-  }
+  // KESİN KURAL: Environment ne olursa olsun Cloudinary kullanıyoruz
+  // Base URL'i hardcode ediyoruz (User request: dmeviky6f)
+  const cdnBaseUrl = 'https://res.cloudinary.com/dmeviky6f';
 
   // Değiştirilecek URL adaylarını ve ID'lerini topla
   const idsToResolve = new Set<string>();
@@ -56,26 +53,24 @@ const fixContentUrls = async (content: any): Promise<any> => {
     fixedContent.services.forEach((service: any) => collectId(service.icon, 'image'));
   }
 
-  // Eğer toplanan ID yoksa direkt dön
-  if (idsToResolve.size === 0) return fixedContent;
+  // Eğer toplanan ID yoksa ve manuel düzeltme gerekmiyorsa
+  // Ama manuel düzeltme (resolveUrlOrFilename içinde) olacağı için devam etmeliyiz.
 
   // Veritabanından dosyaları çek
-  const images = await SiteImage.find({ _id: { $in: Array.from(idsToResolve) } });
   const imageMap = new Map(); // ID -> Filename
-  images.forEach(img => {
-    if (img.filename) {
-      imageMap.set(img._id.toString(), img.filename);
-    }
-  });
+  if (idsToResolve.size > 0) {
+    const images = await SiteImage.find({ _id: { $in: Array.from(idsToResolve) } });
+    images.forEach(img => {
+      if (img.filename) {
+        imageMap.set(img._id.toString(), img.filename);
+      }
+    });
+  }
 
-  // URL oluşturma fonksiyonu (Filename ile)
-  // URL oluşturma (Builder)
   // URL oluşturma (Builder)
   const buildCloudinaryUrl = (filename: string, type: 'image' | 'video'): string => {
-    let baseUrl = cdnBaseUrl.replace(/\/$/, '');
-    if (!baseUrl.startsWith('http')) {
-      baseUrl = `https://${baseUrl}`;
-    }
+    // Hardcoded Base URL
+    const baseUrl = 'https://res.cloudinary.com/dmeviky6f';
 
     const ext = filename.split('.').pop()?.toLowerCase();
     const hasExt = ext && (ext.length === 3 || ext.length === 4);

@@ -171,20 +171,22 @@ const nextConfig = {
   // API rewrites - Backend'i frontend üzerinden proxy et
   rewrites: async () => {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      },
-      {
-        source: '/api-docs/:path*',
-        destination: `${backendUrl}/api-docs/:path*`,
-      },
-      {
-        source: '/uploads/:path*',
-        destination: `${backendUrl}/uploads/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [
+        {
+          source: '/api/:path*',
+          destination: `${backendUrl}/api/:path*`,
+        },
+        {
+          source: '/api-docs/:path*',
+          destination: `${backendUrl}/api-docs/:path*`,
+        },
+        {
+          source: '/uploads/:path*',
+          destination: `${backendUrl}/uploads/:path*`,
+        },
+      ],
+    };
   },
   redirects: async () => {
     return [

@@ -8,6 +8,8 @@ const intlMiddleware = createIntlMiddleware({
   defaultLocale,
   // SEO + sağlıklı yaklaşım: her dil prefix'li olsun (/tr, /en, /fr, /es)
   localePrefix: 'always',
+  // Tarayıcı dilini otomatik algılamayı kapat - Herkes varsayılan dile (TR) gitsin
+  localeDetection: false,
 });
 
 export function middleware(request: NextRequest) {

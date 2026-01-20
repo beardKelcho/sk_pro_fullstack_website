@@ -5,11 +5,42 @@ import logger from '../utils/logger';
 import path from 'path';
 import fs from 'fs';
 
+// Helper: Resim URL'lerini düzelt (Cloudinary uyumluluğu için)
+const fixImageUrls = (image: any): any => {
+  if (!image) return image;
+
+  const storageType = (process.env.STORAGE_TYPE || 'local').toLowerCase();
+  const cdnBaseUrl = process.env.CLOUDINARY_CDN_URL || '';
+
+  if (storageType !== 'cloudinary' || !cdnBaseUrl) {
+    return image;
+  }
+
+  const fixUrl = (url: string): string => {
+    if (!url) return url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+
+    let cleanPath = url;
+    if (cleanPath.startsWith('/api/site-images/')) cleanPath = cleanPath.replace('/api/site-images/', '');
+    if (cleanPath.startsWith('api/site-images/')) cleanPath = cleanPath.replace('api/site-images/', '');
+    if (cleanPath.startsWith('/uploads/')) cleanPath = cleanPath.replace('/uploads/', '');
+    if (cleanPath.startsWith('uploads/')) cleanPath = cleanPath.replace('uploads/', '');
+
+    cleanPath = cleanPath.replace(/^\//, '');
+    return `${cdnBaseUrl.replace(/\/$/, '')}/${cleanPath}`;
+  };
+
+  const fixedImage = JSON.parse(JSON.stringify(image));
+  if (fixedImage.url) fixedImage.url = fixUrl(fixedImage.url);
+
+  return fixedImage;
+};
+
 // Tüm resimleri listele
 export const getAllImages = async (req: Request, res: Response) => {
   try {
     const { category, isActive } = req.query;
-    
+
     const filters: any = {};
     if (category) {
       filters.category = category;
@@ -17,14 +48,20 @@ export const getAllImages = async (req: Request, res: Response) => {
     if (isActive !== undefined) {
       filters.isActive = isActive === 'true';
     }
-    
+
     const images = await SiteImage.find(filters)
       .sort({ category: 1, order: 1, createdAt: -1 });
-    
+
+    // URL'leri düzelt
+    const fixedImages = images.map(img => {
+      const imgObj = img.toObject();
+      return fixImageUrls(imgObj);
+    });
+
     res.status(200).json({
       success: true,
-      count: images.length,
-      images,
+      count: fixedImages.length,
+      images: fixedImages,
     });
   } catch (error) {
     logger.error('Resim listeleme hatası:', error);
@@ -39,26 +76,29 @@ export const getAllImages = async (req: Request, res: Response) => {
 export const getImageById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz resim ID',
       });
     }
-    
+
     const image = await SiteImage.findById(id);
-    
+
     if (!image) {
       return res.status(404).json({
         success: false,
         message: 'Resim bulunamadı',
       });
     }
-    
+
+    const imgObj = image.toObject();
+    const fixedImage = fixImageUrls(imgObj);
+
     res.status(200).json({
       success: true,
-      image,
+      image: fixedImage,
     });
   } catch (error) {
     logger.error('Resim detayları hatası:', error);
@@ -73,22 +113,22 @@ export const getImageById = async (req: Request, res: Response) => {
 export const serveImageById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).send('Geçersiz resim ID');
     }
-    
+
     const image = await SiteImage.findById(id);
-    
+
     if (!image) {
       logger.warn(`Resim bulunamadı: ${id}`);
       return res.status(404).send('Resim bulunamadı');
     }
-    
+
     // Resim dosyasının yolunu oluştur
     // Path formatı: "site-images/filename.jpg" veya "general/filename.jpg" veya "/uploads/site-images/filename.jpg" veya direkt "filename.jpg"
     let filePath: string | undefined;
-    
+
     // Önce image.path'i kontrol et
     if (image.path) {
       // Path varsa, farklı formatları kontrol et
@@ -113,13 +153,13 @@ export const serveImageById = async (req: Request, res: Response) => {
     } else if (image.filename) {
       // Path yoksa, filename'den oluştur - önce category'ye göre, sonra alternatif yolları dene
       const category = image.category || 'general';
-        const possiblePaths = [
-          path.join(process.cwd(), 'uploads', 'general', image.filename), // ÖNCE general (video dosyaları genelde orada)
-          path.join(process.cwd(), 'uploads', 'videos', image.filename), // Sonra videos
-          path.join(process.cwd(), 'uploads', category, image.filename), // category klasörü (videos, site-images, general)
-          path.join(process.cwd(), 'uploads', 'site-images', image.filename),
-        ];
-      
+      const possiblePaths = [
+        path.join(process.cwd(), 'uploads', 'general', image.filename), // ÖNCE general (video dosyaları genelde orada)
+        path.join(process.cwd(), 'uploads', 'videos', image.filename), // Sonra videos
+        path.join(process.cwd(), 'uploads', category, image.filename), // category klasörü (videos, site-images, general)
+        path.join(process.cwd(), 'uploads', 'site-images', image.filename),
+      ];
+
       // İlk bulunan path'i kullan
       for (const possiblePath of possiblePaths) {
         if (fs.existsSync(possiblePath)) {
@@ -127,7 +167,7 @@ export const serveImageById = async (req: Request, res: Response) => {
           break;
         }
       }
-      
+
       // Hiçbiri bulunamazsa, category klasörünü kullan
       if (!filePath) {
         filePath = path.join(process.cwd(), 'uploads', category, image.filename);
@@ -136,24 +176,24 @@ export const serveImageById = async (req: Request, res: Response) => {
       logger.error(`Resim path ve filename eksik: ${id}`, image);
       return res.status(404).send('Resim/video dosya bilgisi bulunamadı');
     }
-    
+
     // filePath kontrolü
     if (!filePath) {
       logger.error(`Resim dosya yolu oluşturulamadı: ${id}`, image);
       return res.status(404).send('Resim/video dosya yolu bulunamadı');
     }
-    
+
     // Dosya var mı kontrol et - birden fazla yerde ara
     if (!fs.existsSync(filePath)) {
       // Alternatif yolları dene - path'ten klasör adını çıkar veya farklı klasörleri dene
       const pathParts = image.path ? image.path.split('/') : [];
       const categoryFromPath = pathParts.length > 0 ? pathParts[0] : null;
-      
+
       const alternativePaths = [
         // Path'teki kategori ile (eğer path varsa)
         categoryFromPath && !image.path.startsWith('images/') ? path.join(process.cwd(), 'uploads', image.path) : null,
         // images/ ile başlayan path'ler için uploads/general (eski resimler)
-        image.path && (image.path.startsWith('images/') || image.path.startsWith('/images/')) 
+        image.path && (image.path.startsWith('images/') || image.path.startsWith('/images/'))
           ? path.join(process.cwd(), 'uploads', 'general', image.filename)
           : null,
         // general klasörü (upload route'u bazen general'a kaydediyor - ÖNCE BUNU KONTROL ET)
@@ -167,7 +207,7 @@ export const serveImageById = async (req: Request, res: Response) => {
         // direkt uploads klasörü
         path.join(process.cwd(), 'uploads', image.filename),
       ].filter((p): p is string => p !== null);
-      
+
       let found = false;
       for (const altPath of alternativePaths) {
         if (fs.existsSync(altPath)) {
@@ -177,10 +217,10 @@ export const serveImageById = async (req: Request, res: Response) => {
           break;
         }
       }
-      
+
       if (!found) {
-        logger.warn(`Resim dosyası bulunamadı: ${filePath}`, { 
-          imageId: id, 
+        logger.warn(`Resim dosyası bulunamadı: ${filePath}`, {
+          imageId: id,
           image: {
             path: image.path,
             filename: image.filename,
@@ -191,7 +231,7 @@ export const serveImageById = async (req: Request, res: Response) => {
         return res.status(404).send('Resim dosyası bulunamadı');
       }
     }
-    
+
     // Content-Type'ı ayarla - hem resim hem video dosyaları için
     const ext = path.extname(image.filename).toLowerCase();
     const contentTypeMap: { [key: string]: string } = {
@@ -208,10 +248,10 @@ export const serveImageById = async (req: Request, res: Response) => {
       '.avi': 'video/x-msvideo',
     };
     const contentType = contentTypeMap[ext] || (image.category === 'video' ? 'video/mp4' : 'image/jpeg');
-    
+
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    
+
     // Dosyayı gönder
     res.sendFile(filePath);
   } catch (error) {
@@ -224,14 +264,14 @@ export const serveImageById = async (req: Request, res: Response) => {
 export const createImage = async (req: Request, res: Response) => {
   try {
     const { filename, originalName, path: filePath, url, category, order } = req.body;
-    
+
     if (!filename || !originalName || !filePath || !url) {
       return res.status(400).json({
         success: false,
         message: 'Dosya bilgileri gereklidir',
       });
     }
-    
+
     const image = await SiteImage.create({
       filename,
       originalName,
@@ -241,7 +281,7 @@ export const createImage = async (req: Request, res: Response) => {
       order: order || 0,
       isActive: true,
     });
-    
+
     res.status(201).json({
       success: true,
       image,
@@ -260,14 +300,14 @@ export const updateImage = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { category, order, isActive } = req.body;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz resim ID',
       });
     }
-    
+
     const image = await SiteImage.findById(id);
     if (!image) {
       return res.status(404).json({
@@ -275,13 +315,13 @@ export const updateImage = async (req: Request, res: Response) => {
         message: 'Resim bulunamadı',
       });
     }
-    
+
     if (category) image.category = category;
     if (order !== undefined) image.order = order;
     if (isActive !== undefined) image.isActive = isActive;
-    
+
     await image.save();
-    
+
     res.status(200).json({
       success: true,
       image,
@@ -299,14 +339,14 @@ export const updateImage = async (req: Request, res: Response) => {
 export const deleteImage = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz resim ID',
       });
     }
-    
+
     const image = await SiteImage.findById(id);
     if (!image) {
       return res.status(404).json({
@@ -314,10 +354,10 @@ export const deleteImage = async (req: Request, res: Response) => {
         message: 'Resim bulunamadı',
       });
     }
-    
+
     // Fiziksel dosyayı sil - path'e göre doğru klasörü bul
     let filePath: string | null = null;
-    
+
     // ÖNCE: Tüm olası path'leri kontrol et (path'e bakmadan)
     const allPossiblePaths = [
       // ÖNCE general klasörünü kontrol et (dosyalar genelde orada)
@@ -325,7 +365,7 @@ export const deleteImage = async (req: Request, res: Response) => {
       // Sonra path'teki klasörü kontrol et
       image.path ? path.join(process.cwd(), 'uploads', image.path) : null,
       // Path formatlarına göre
-      image.path && image.path.startsWith('/uploads/') 
+      image.path && image.path.startsWith('/uploads/')
         ? path.join(process.cwd(), image.path.substring(1))
         : null,
       image.path && image.path.startsWith('uploads/')
@@ -336,7 +376,7 @@ export const deleteImage = async (req: Request, res: Response) => {
       path.join(process.cwd(), 'uploads', 'videos', image.filename),
       path.join(process.cwd(), 'uploads', 'site-images', image.filename),
     ].filter((p): p is string => p !== null);
-    
+
     // İlk bulunan dosyayı kullan
     for (const possiblePath of allPossiblePaths) {
       if (fs.existsSync(possiblePath)) {
@@ -344,7 +384,7 @@ export const deleteImage = async (req: Request, res: Response) => {
         break;
       }
     }
-    
+
     // Dosyayı sil
     if (filePath && fs.existsSync(filePath)) {
       try {
@@ -363,12 +403,12 @@ export const deleteImage = async (req: Request, res: Response) => {
         }
       });
     }
-    
+
     // Veritabanından sil
     await image.deleteOne();
-    
+
     logger.info(`Resim silindi: ${image.filename} by user ${req.user?.id}`);
-    
+
     res.status(200).json({
       success: true,
       message: 'Resim başarıyla silindi',
@@ -386,31 +426,31 @@ export const deleteImage = async (req: Request, res: Response) => {
 export const deleteMultipleImages = async (req: Request, res: Response) => {
   try {
     const { ids } = req.body;
-    
+
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Silinecek resim ID\'leri gereklidir',
       });
     }
-    
+
     // Geçerli ID'leri filtrele
     const validIds = ids.filter((id: string) => mongoose.Types.ObjectId.isValid(id));
-    
+
     if (validIds.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Geçerli resim ID\'si bulunamadı',
       });
     }
-    
+
     // Resimleri bul ve sil
     const images = await SiteImage.find({ _id: { $in: validIds } });
-    
-      // Fiziksel dosyaları sil - path'e göre doğru klasörü bul
+
+    // Fiziksel dosyaları sil - path'e göre doğru klasörü bul
     for (const image of images) {
       let filePath: string | null = null;
-      
+
       // ÖNCE: Tüm olası path'leri kontrol et (path'e bakmadan)
       const allPossiblePaths = [
         // ÖNCE general klasörünü kontrol et (dosyalar genelde orada)
@@ -418,7 +458,7 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
         // Sonra path'teki klasörü kontrol et
         image.path ? path.join(process.cwd(), 'uploads', image.path) : null,
         // Path formatlarına göre
-        image.path && image.path.startsWith('/uploads/') 
+        image.path && image.path.startsWith('/uploads/')
           ? path.join(process.cwd(), image.path.substring(1))
           : null,
         image.path && image.path.startsWith('uploads/')
@@ -429,7 +469,7 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
         path.join(process.cwd(), 'uploads', 'videos', image.filename),
         path.join(process.cwd(), 'uploads', 'site-images', image.filename),
       ].filter((p): p is string => p !== null);
-      
+
       // İlk bulunan dosyayı kullan
       for (const possiblePath of allPossiblePaths) {
         if (fs.existsSync(possiblePath)) {
@@ -437,9 +477,9 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
           break;
         }
       }
-    
-    // Dosyayı sil
-    if (filePath && fs.existsSync(filePath)) {
+
+      // Dosyayı sil
+      if (filePath && fs.existsSync(filePath)) {
         try {
           fs.unlinkSync(filePath);
           logger.info(`Fiziksel dosya silindi: ${filePath}`);
@@ -457,12 +497,12 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
         });
       }
     }
-    
+
     // Veritabanından sil
     const result = await SiteImage.deleteMany({ _id: { $in: validIds } });
-    
+
     logger.info(`${result.deletedCount} resim silindi by user ${req.user?.id}`);
-    
+
     res.status(200).json({
       success: true,
       message: `${result.deletedCount} resim başarıyla silindi`,
@@ -481,20 +521,20 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
 export const updateImageOrder = async (req: Request, res: Response) => {
   try {
     const { images } = req.body; // [{ id, order }, ...]
-    
+
     if (!Array.isArray(images)) {
       return res.status(400).json({
         success: false,
         message: 'Resim listesi gereklidir',
       });
     }
-    
+
     const updatePromises = images.map(({ id, order }: { id: string; order: number }) =>
       SiteImage.findByIdAndUpdate(id, { order }, { new: true })
     );
-    
+
     await Promise.all(updatePromises);
-    
+
     res.status(200).json({
       success: true,
       message: 'Resim sıralaması güncellendi',

@@ -36,11 +36,9 @@ const app = express();
 const httpServer = createServer(app);
 
 // CORS Middleware (en önce - Helmet'ten önce)
-// ngrok URL'lerini de destekle
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:3000',
   process.env.CORS_ORIGIN,
-  process.env.NGROK_URL,
 ].filter(Boolean); // undefined/null değerleri filtrele
 
 // Development modunda local network IP'lerine izin ver
@@ -59,7 +57,7 @@ app.use(cors({
     }
     
     // Production modunda sadece izin verilen origin'lere izin ver
-    if (!origin || allowedOrigins.includes(origin) || origin.includes('.ngrok-free.app') || origin.includes('.ngrok.io')) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else if (isLocalNetworkOrigin(origin)) {
       // Local network IP'lerine izin ver

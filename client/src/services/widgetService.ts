@@ -9,6 +9,7 @@
 import apiClient from './api/axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CacheStrategies, QueryKeys, InvalidationStrategies } from '@/config/queryConfig';
+import logger from '@/utils/logger';
 
 /**
  * Widget interface'i
@@ -57,11 +58,10 @@ export const getUserWidgets = async (): Promise<Widget[]> => {
   try {
     const response = await apiClient.get<WidgetResponse>('/widgets');
     return response.data.widgets || [];
-  } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Widget\'lar getirme hatası:', error);
-    }
-    throw new Error(error.response?.data?.message || 'Widget\'lar getirilemedi');
+  } catch (error: unknown) {
+    logger.error('Widget\'lar getirme hatası:', error);
+    const axiosError = error as { response?: { data?: { message?: string } } };
+    throw new Error(axiosError?.response?.data?.message || 'Widget\'lar getirilemedi');
   }
 };
 
@@ -86,9 +86,7 @@ export const getWidgetById = async (id: string): Promise<Widget> => {
     }
     return response.data.widget;
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Widget getirme hatası:', error);
-    }
+    logger.error('Widget getirme hatası:', error);
     throw new Error(error.response?.data?.message || 'Widget getirilemedi');
   }
 };
@@ -116,9 +114,7 @@ export const createWidget = async (widget: Partial<Widget>): Promise<Widget> => 
     }
     return response.data.widget;
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Widget oluşturma hatası:', error);
-    }
+    logger.error('Widget oluşturma hatası:', error);
     throw new Error(error.response?.data?.message || 'Widget oluşturulamadı');
   }
 };
@@ -144,9 +140,7 @@ export const updateWidget = async (id: string, updates: Partial<Widget>): Promis
     }
     return response.data.widget;
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Widget güncelleme hatası:', error);
-    }
+    logger.error('Widget güncelleme hatası:', error);
     throw new Error(error.response?.data?.message || 'Widget güncellenemedi');
   }
 };
@@ -166,9 +160,7 @@ export const deleteWidget = async (id: string): Promise<void> => {
   try {
     await apiClient.delete(`/widgets/${id}`);
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Widget silme hatası:', error);
-    }
+    logger.error('Widget silme hatası:', error);
     throw new Error(error.response?.data?.message || 'Widget silinemedi');
   }
 };
@@ -192,9 +184,7 @@ export const updateWidgetsBulk = async (widgets: Array<{ id: string; position?: 
   try {
     await apiClient.put('/widgets/bulk', { widgets });
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Toplu widget güncelleme hatası:', error);
-    }
+    logger.error('Toplu widget güncelleme hatası:', error);
     throw new Error(error.response?.data?.message || 'Widget\'lar güncellenemedi');
   }
 };
@@ -217,9 +207,7 @@ export const createDefaultWidgets = async (): Promise<Widget[]> => {
     const response = await apiClient.post<WidgetResponse>('/widgets/defaults');
     return response.data.widgets || [];
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Varsayılan widget oluşturma hatası:', error);
-    }
+    logger.error('Varsayılan widget oluşturma hatası:', error);
     throw new Error(error.response?.data?.message || 'Varsayılan widget\'lar oluşturulamadı');
   }
 };

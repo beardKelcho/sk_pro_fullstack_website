@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { createMaintenance, useCreateMaintenance } from '@/services/maintenanceService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+import { handleApiError, getUserFriendlyMessage } from '@/utils/apiErrorHandler';
 
 // Form tipi
 interface MaintenanceForm {
@@ -162,13 +163,15 @@ export default function AddMaintenance() {
               formData.type === 'Kalibrasyon' ? 'INSPECTION' : 'UPGRADE',
         description: formData.description.trim(),
         scheduledDate: scheduledDateISO,
-        status: 'SCHEDULED',
+        status: 'SCHEDULED' as const,
         assignedTo: formData.assignedTo,
         cost: formData.cost ? Number(formData.cost) : undefined,
-        notes: (formData.notes ?? '').trim() || undefined
+        notes: (formData.notes ?? '').trim() || undefined,
+        parts: formData.parts && formData.parts.length > 0 ? formData.parts : undefined,
+        completedDate: formData.endDate ? new Date(formData.endDate + 'T00:00:00.000Z').toISOString() : undefined
       };
       
-      await createMaintenanceMutation.mutateAsync(maintenanceData as any);
+      await createMaintenanceMutation.mutateAsync(maintenanceData);
       setSuccess(true);
       toast.success('Bakım kaydı başarıyla oluşturuldu');
       
@@ -176,13 +179,14 @@ export default function AddMaintenance() {
         router.push('/admin/maintenance');
       }, 2000);
       
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || error?.message || 'Bakım kaydı eklenirken bir hata oluştu. Lütfen tekrar deneyin.';
+    } catch (error: unknown) {
+      const apiError = handleApiError(error);
+      const errorMessage = getUserFriendlyMessage(apiError);
       setErrors({
         submit: errorMessage
       });
       toast.error(errorMessage);
-      logger.error('Maintenance creation error:', error);
+      logger.error('Maintenance creation error:', apiError);
     } finally {
       setLoading(false);
     }

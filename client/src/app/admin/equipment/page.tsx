@@ -13,6 +13,7 @@ import logger from '@/utils/logger';
 import PermissionButton from '@/components/common/PermissionButton';
 import PermissionLink from '@/components/common/PermissionLink';
 import { Permission } from '@/config/permissions';
+import { handleApiError, getUserFriendlyMessage } from '@/utils/apiErrorHandler';
 
 // Ekipman türü tanımlama
 interface Equipment {
@@ -31,6 +32,24 @@ interface Equipment {
   specs?: Record<string, string>;
   notes?: string;
   image?: string;
+}
+
+// Backend'den gelen ekipman formatı
+interface BackendEquipment {
+  _id?: string;
+  id?: string;
+  name: string;
+  model?: string;
+  serialNumber?: string;
+  type?: string;
+  category?: string;
+  status?: string;
+  currentProject?: { name?: string } | string;
+  purchaseDate?: string;
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
+  location?: string;
+  notes?: string;
 }
 
 // Kategori tanımlamaları
@@ -285,39 +304,45 @@ export default function EquipmentList() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [importModalOpen, setImportModalOpen] = useState(false);
 
+  // Ekipman verilerini yükleme fonksiyonu (yeniden kullanılabilir)
+  const loadEquipment = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getAllEquipment();
+      // Backend'den gelen response formatına göre düzenle
+      const equipmentList = response.equipment || response;
+      // Backend formatını frontend formatına dönüştür
+      const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: BackendEquipment) => ({
+        id: item._id || item.id || '',
+        name: item.name,
+        model: item.model || '',
+        serialNumber: item.serialNumber || '',
+        category: item.type || item.category || '',
+        status: normalizeStatus(item.status),
+        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject 
+          ? item.currentProject.name || '' 
+          : typeof item.currentProject === 'string' 
+            ? item.currentProject 
+            : '',
+        purchaseDate: item.purchaseDate,
+        lastMaintenanceDate: item.lastMaintenanceDate,
+        nextMaintenanceDate: item.nextMaintenanceDate,
+        location: item.location || '',
+        notes: item.notes || ''
+      })) : [];
+      setEquipment(formattedEquipment);
+    } catch (err) {
+      logger.error('Ekipman yükleme hatası:', err);
+      setError('Ekipman verileri alınamadı.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Ekipman verilerini yükleme
   useEffect(() => {
-    const fetchEquipment = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getAllEquipment();
-        // Backend'den gelen response formatına göre düzenle
-        const equipmentList = response.equipment || response;
-        // Backend formatını frontend formatına dönüştür
-        const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: any) => ({
-          id: item._id || item.id,
-          name: item.name,
-          model: item.model || '',
-          serialNumber: item.serialNumber || '',
-          category: item.type || item.category,
-          status: normalizeStatus(item.status),
-          currentProject: item.currentProject?.name || item.currentProject || '',
-          purchaseDate: item.purchaseDate,
-          lastMaintenanceDate: item.lastMaintenanceDate,
-          nextMaintenanceDate: item.nextMaintenanceDate,
-          location: item.location || '',
-          notes: item.notes || ''
-        })) : [];
-        setEquipment(formattedEquipment);
-      } catch (err) {
-        logger.error('Ekipman yükleme hatası:', err);
-        setError('Ekipman verileri alınamadı.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEquipment();
+    loadEquipment();
   }, []);
   
   // Tarihi formatlama
@@ -365,15 +390,16 @@ export default function EquipmentList() {
     if (!equipmentToDelete) return;
     try {
       await deleteEquipmentMutation.mutateAsync(equipmentToDelete);
-      // React Query otomatik olarak cache'i invalidate edecek, manuel refetch gerekmez
-      // Ancak local state'i de güncelle
+      // React Query otomatik olarak cache'i invalidate edecek ve refetch yapacak
+      // Local state'i de güncelle (optimistic update)
       setEquipment(prev => prev.filter(item => item.id !== equipmentToDelete));
       setShowDeleteModal(false);
       setEquipmentToDelete(null);
       toast.success('Ekipman başarıyla silindi');
-    } catch (error: any) {
-      logger.error('Ekipman silme hatası:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Ekipman silinirken bir hata oluştu.';
+    } catch (error: unknown) {
+      const apiError = handleApiError(error);
+      const errorMessage = getUserFriendlyMessage(apiError);
+      logger.error('Ekipman silme hatası:', apiError);
       setError(errorMessage);
       toast.error(errorMessage);
       setShowDeleteModal(false);
@@ -462,14 +488,18 @@ export default function EquipmentList() {
       // Verileri yeniden yükle
       const response = await getAllEquipment();
       const equipmentList = response.equipment || response;
-      const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: any) => ({
-        id: item._id || item.id,
+      const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: BackendEquipment) => ({
+        id: item._id || item.id || '',
         name: item.name,
         model: item.model || '',
         serialNumber: item.serialNumber || '',
-        category: item.type || item.category,
+        category: item.type || item.category || '',
         status: normalizeStatus(item.status),
-        currentProject: item.currentProject?.name || item.currentProject || '',
+        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject 
+          ? item.currentProject.name || '' 
+          : typeof item.currentProject === 'string' 
+            ? item.currentProject 
+            : '',
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
         nextMaintenanceDate: item.nextMaintenanceDate,
@@ -477,8 +507,11 @@ export default function EquipmentList() {
         notes: item.notes || ''
       })) : [];
       setEquipment(formattedEquipment);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Ekipmanlar silinirken bir hata oluştu');
+    } catch (error: unknown) {
+      const apiError = handleApiError(error);
+      const errorMessage = getUserFriendlyMessage(apiError);
+      toast.error(errorMessage);
+      logger.error('Toplu ekipman silme hatası:', apiError);
     }
   };
 
@@ -499,14 +532,18 @@ export default function EquipmentList() {
       // Verileri yeniden yükle
       const response = await getAllEquipment();
       const equipmentList = response.equipment || response;
-      const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: any) => ({
-        id: item._id || item.id,
+      const formattedEquipment = Array.isArray(equipmentList) ? equipmentList.map((item: BackendEquipment) => ({
+        id: item._id || item.id || '',
         name: item.name,
         model: item.model || '',
         serialNumber: item.serialNumber || '',
-        category: item.type || item.category,
+        category: item.type || item.category || '',
         status: normalizeStatus(item.status),
-        currentProject: item.currentProject?.name || item.currentProject || '',
+        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject 
+          ? item.currentProject.name || '' 
+          : typeof item.currentProject === 'string' 
+            ? item.currentProject 
+            : '',
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
         nextMaintenanceDate: item.nextMaintenanceDate,
@@ -716,7 +753,10 @@ export default function EquipmentList() {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => handleToggleSelect(item.id)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleToggleSelect(item.id);
+                        }}
                         onClick={(e) => e.stopPropagation()}
                         className="w-4 h-4 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
                       />
@@ -769,14 +809,12 @@ export default function EquipmentList() {
                         Son: {formatDate(item.lastMaintenanceDate)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-end space-x-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
                         <Link 
                           href={`/admin/equipment/view/${item.id}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            e.preventDefault();
-                            router.push(`/admin/equipment/view/${item.id}`);
                           }}
                           className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80 cursor-pointer"
                         >

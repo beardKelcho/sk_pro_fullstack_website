@@ -60,8 +60,11 @@ class ErrorTracker {
       context,
     };
 
-    // Development'ta konsola yazdır
+    // Development'ta konsola yazdır (logger zaten console.error kullanıyor)
     if (!this.isProduction) {
+      // logger kullanmıyoruz çünkü bu zaten error tracking utility'si
+      // Sentry'ye göndermeden önce development'ta görmek için console kullanıyoruz
+      // eslint-disable-next-line no-console
       console.error('Error logged:', errorInfo);
     }
 
@@ -105,6 +108,7 @@ class ErrorTracker {
       this.sendToBackend(errorInfo).catch((err) => {
         // Backend hatası olursa sessizce devam et
         if (!this.isProduction) {
+          // eslint-disable-next-line no-console
           console.error('Failed to send error to backend:', err);
         }
       });
@@ -152,6 +156,7 @@ class ErrorTracker {
       
       localStorage.setItem('errorLogs', JSON.stringify(errors));
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error tracking failed:', error);
     }
   }
@@ -184,6 +189,7 @@ class ErrorTracker {
       } catch (sentryError) {
         // Sentry hatası olursa sessizce devam et
         if (!this.isProduction) {
+          // eslint-disable-next-line no-console
           console.warn('Sentry error capture failed:', sentryError);
         }
       }
@@ -222,6 +228,7 @@ class ErrorTracker {
       } catch (sentryError) {
         // Sentry hatası olursa sessizce devam et
         if (!this.isProduction) {
+          // eslint-disable-next-line no-console
           console.warn('Sentry error capture failed:', sentryError);
         }
       }

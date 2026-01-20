@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '@/utils/logger';
 
 // Next.js rewrites kullanıyorsak relative path kullan, yoksa tam URL
 // Browser'da çalışıyorsa (client-side) relative path kullan (Next.js rewrites devreye girer)
@@ -43,7 +44,7 @@ apiClient.interceptors.request.use(
         if (tokenParts.length !== 3) {
           // Development modunda detaylı log
           if (process.env.NODE_ENV === 'development') {
-            console.error('Invalid token format detected in interceptor:', {
+            logger.error('Invalid token format detected in interceptor:', {
               parts: tokenParts.length,
               tokenLength: token.length,
               firstChars: token.substring(0, 20),
@@ -67,18 +68,19 @@ apiClient.interceptors.request.use(
           
           // Development modunda token'ın header'a eklendiğini doğrula
           if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
-            console.log('Request interceptor: Token added to header');
-            console.log('Token parts count:', tokenParts.length);
-            console.log('Token length:', token.length);
-            console.log('Token (first 30 chars):', token.substring(0, 30) + '...');
-            console.log('Token (last 10 chars):', '...' + token.substring(token.length - 10));
-            console.log('Authorization header (first 50 chars):', config.headers.Authorization?.substring(0, 50) + '...');
+            logger.debug('Request interceptor: Token added to header', {
+              tokenPartsCount: tokenParts.length,
+              tokenLength: token.length,
+              tokenPreview: token.substring(0, 30) + '...',
+              tokenEnd: '...' + token.substring(token.length - 10),
+              authHeaderPreview: config.headers.Authorization?.substring(0, 50) + '...'
+            });
           }
         }
       } else {
         // Development modunda token yoksa uyar
         if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
-          console.warn('Request interceptor: No token found in storage');
+          logger.warn('Request interceptor: No token found in storage');
         }
       }
     }
@@ -157,7 +159,7 @@ apiClient.interceptors.response.use(
           
           // Development modunda log
           if (process.env.NODE_ENV === 'development') {
-            console.log('Geçersiz token tespit edildi, tüm token\'lar temizlendi');
+            logger.info('Geçersiz token tespit edildi, tüm token\'lar temizlendi');
           }
           
           // Sadece admin sayfalarındaysa yönlendir
@@ -196,12 +198,13 @@ apiClient.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return apiClient(originalRequest);
         }
-      } catch (refreshError: any) {
+      } catch (refreshError: unknown) {
         // Refresh token başarısız
         // Network hatası veya timeout ise, kullanıcıyı hemen logout etme
         // Sadece 401 (Unauthorized) veya 403 (Forbidden) hatası ise logout yap
-        const isAuthError = refreshError?.response?.status === 401 || refreshError?.response?.status === 403;
-        const isNetworkError = !refreshError?.response || refreshError?.code === 'ECONNABORTED' || refreshError?.code === 'ERR_NETWORK';
+        const error = refreshError as { response?: { status?: number }; code?: string };
+        const isAuthError = error?.response?.status === 401 || error?.response?.status === 403;
+        const isNetworkError = !error?.response || error?.code === 'ECONNABORTED' || error?.code === 'ERR_NETWORK';
         
         if (typeof window !== 'undefined') {
           if (isAuthError) {
@@ -219,7 +222,7 @@ apiClient.interceptors.response.use(
           } else if (isNetworkError) {
             // Network hatası - kullanıcıya bilgi ver ama logout etme
             if (process.env.NODE_ENV === 'development') {
-              console.warn('Token refresh network hatası, kullanıcı logout edilmedi:', refreshError);
+              logger.warn('Token refresh network hatası, kullanıcı logout edilmedi:', refreshError);
             }
             // Orijinal hatayı reject et, böylece çağıran kod hatayı handle edebilir
           }
@@ -235,7 +238,7 @@ apiClient.interceptors.response.use(
         
         // Development modunda log
         if (process.env.NODE_ENV === 'development') {
-          console.warn('403 Forbidden hatası:', {
+          logger.warn('403 Forbidden hatası:', {
             message: errorMessage,
             url: originalRequest?.url,
             method: originalRequest?.method,
@@ -255,8 +258,8 @@ apiClient.interceptors.response.use(
             draggable: true,
           });
         }).catch(() => {
-          // Toast yüklenemezse console'a yaz
-          console.error('403 Forbidden:', errorMessage);
+          // Toast yüklenemezse logger'a yaz
+          logger.error('403 Forbidden:', errorMessage);
         });
       }
     }

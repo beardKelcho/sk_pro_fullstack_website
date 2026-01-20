@@ -137,16 +137,6 @@ const nextConfig = {
         port: '5001',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: '**.ngrok-free.app',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.ngrok.io',
-        pathname: '/**',
-      },
     ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
@@ -165,7 +155,7 @@ const nextConfig = {
       exclude: ['error', 'warn'],
     },
   },
-  // API rewrites - Backend'i frontend üzerinden proxy et (ngrok için)
+  // API rewrites - Backend'i frontend üzerinden proxy et
   rewrites: async () => {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
     return [

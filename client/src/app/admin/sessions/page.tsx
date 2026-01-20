@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useActiveSessions, useTerminateSession, useTerminateAllOtherSessions } from '@/services/sessionService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+import { handleApiError, getUserFriendlyMessage } from '@/utils/apiErrorHandler';
 // Basit tarih formatlama fonksiyonları
 const formatDistanceToNow = (date: Date) => {
   const now = new Date();
@@ -86,17 +87,14 @@ export default function SessionsPage() {
 
     try {
       setTerminatingId(sessionId);
-      const result = await terminateSession.mutateAsync(sessionId);
-      if (result && result.success) {
-        toast.success(result.message || 'Oturum başarıyla sonlandırıldı');
-        refetch();
-      } else {
-        toast.error(result?.message || 'Oturum sonlandırılamadı');
-      }
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || error?.message || 'Oturum sonlandırılırken bir hata oluştu';
+      await terminateSession.mutateAsync(sessionId);
+      // mutateAsync başarılı olursa onSuccess callback otomatik çalışır ve query invalidate edilir
+      // refetch() çağırmaya gerek yok, React Query otomatik yeniler
+    } catch (error: unknown) {
+      const apiError = handleApiError(error);
+      const errorMessage = getUserFriendlyMessage(apiError);
       toast.error(errorMessage);
-      logger.error('Session termination error:', error);
+      logger.error('Session termination error:', apiError);
     } finally {
       setTerminatingId(null);
     }
@@ -108,11 +106,15 @@ export default function SessionsPage() {
     }
 
     try {
-      await terminateAllOther.mutateAsync();
-      toast.success('Tüm diğer oturumlar başarıyla sonlandırıldı');
-      refetch();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Oturumlar sonlandırılırken bir hata oluştu');
+      const result = await terminateAllOther.mutateAsync();
+      toast.success(result?.message || `Tüm diğer oturumlar başarıyla sonlandırıldı (${result?.terminatedCount || 0} oturum)`);
+      // mutateAsync başarılı olursa onSuccess callback otomatik çalışır ve query invalidate edilir
+      // refetch() çağırmaya gerek yok, React Query otomatik yeniler
+    } catch (error: unknown) {
+      const apiError = handleApiError(error);
+      const errorMessage = getUserFriendlyMessage(apiError);
+      toast.error(errorMessage);
+      logger.error('Terminate all other sessions error:', apiError);
     }
   };
 

@@ -32,8 +32,6 @@ export const csrfOriginCheck = (allowedOrigins: string[]) => {
 
     // Aynı origin veya allowlist'te ise OK
     const isAllowed = normalized.includes(origin) || 
-                      origin.includes('.ngrok-free.app') || 
-                      origin.includes('.ngrok.io') ||
                       (process.env.NODE_ENV !== 'production' && isLocalNetworkOrigin(origin));
     if (!isAllowed) {
       return res.status(403).json({

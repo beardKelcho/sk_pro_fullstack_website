@@ -37,20 +37,6 @@ else
 fi
 echo ""
 
-# ngrok Port (4040)
-echo "🔗 ngrok Dashboard Port (4040):"
-if lsof -ti:4040 > /dev/null 2>&1; then
-    echo "   ✅ ngrok Dashboard ÇALIŞIYOR"
-    echo "   URL: http://127.0.0.1:4040"
-    # ngrok URL'ini al
-    NGROK_URL=$(curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null | grep -o '"public_url":"[^"]*"' | head -1 | cut -d'"' -f4)
-    if [ ! -z "$NGROK_URL" ]; then
-        echo "   Public URL: $NGROK_URL"
-    fi
-else
-    echo "   ❌ ngrok Dashboard ÇALIŞMIYOR"
-fi
-echo ""
 
 # Environment Variables Kontrolü
 echo "⚙️  Environment Variables:"

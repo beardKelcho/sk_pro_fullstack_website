@@ -1,5 +1,6 @@
 import apiClient from './api/axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import logger from '@/utils/logger';
 
 export interface NotificationSettings {
   _id?: string;
@@ -47,11 +48,10 @@ export const getNotificationSettings = async (): Promise<NotificationSettings> =
   try {
     const response = await apiClient.get<NotificationSettingsResponse>('/notification-settings');
     return response.data.settings;
-  } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Bildirim ayarları getirme hatası:', error);
-    }
-    throw new Error(error.response?.data?.message || 'Bildirim ayarları getirilemedi');
+  } catch (error: unknown) {
+    logger.error('Bildirim ayarları getirme hatası:', error);
+    const axiosError = error as { response?: { data?: { message?: string } } };
+    throw new Error(axiosError?.response?.data?.message || 'Bildirim ayarları getirilemedi');
   }
 };
 
@@ -67,11 +67,10 @@ export const updateNotificationSettings = async (
       settings
     );
     return response.data.settings;
-  } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Bildirim ayarları güncelleme hatası:', error);
-    }
-    throw new Error(error.response?.data?.message || 'Bildirim ayarları güncellenemedi');
+  } catch (error: unknown) {
+    logger.error('Bildirim ayarları güncelleme hatası:', error);
+    const axiosError = error as { response?: { data?: { message?: string } } };
+    throw new Error(axiosError?.response?.data?.message || 'Bildirim ayarları güncellenemedi');
   }
 };
 

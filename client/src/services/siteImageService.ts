@@ -1,5 +1,6 @@
 import apiClient from './api/axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import logger from '@/utils/logger';
 
 export interface SiteImage {
   _id?: string;
@@ -24,12 +25,12 @@ export const getAllImages = async (params?: {
   const endpoint = isPublic ? '/site-images/public' : '/site-images';
   
   // Debug log
-  console.log('🔍 getAllImages çağrılıyor:', { endpoint, params, isPublic });
+  logger.debug('getAllImages çağrılıyor:', { endpoint, params, isPublic });
   
   try {
     const res = await apiClient.get(endpoint, { params });
     
-    console.log('✅ getAllImages response:', {
+    logger.debug('getAllImages response:', {
       status: res.status,
       data: res.data,
       imagesCount: res.data?.images?.length || 0,
@@ -45,22 +46,23 @@ export const getAllImages = async (params?: {
       count: responseData.count || responseData.images?.length || 0,
     };
     
-    console.log('📦 getAllImages normalized result:', result);
+    logger.debug('getAllImages normalized result:', result);
     
     return result;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Hata durumunda detaylı log
-    console.error('❌ getAllImages API hatası:', {
+    const axiosError = error as { response?: { data?: unknown; status?: number; statusText?: string; headers?: unknown }; message?: string; config?: { url?: string; method?: string; headers?: unknown } };
+    logger.error('getAllImages API hatası:', {
       endpoint,
       params,
-      error: error?.response?.data || error?.message,
-      status: error?.response?.status,
-      statusText: error?.response?.statusText,
-      headers: error?.response?.headers,
+      error: axiosError?.response?.data || axiosError?.message,
+      status: axiosError?.response?.status,
+      statusText: axiosError?.response?.statusText,
+      headers: axiosError?.response?.headers,
       config: {
-        url: error?.config?.url,
-        method: error?.config?.method,
-        headers: error?.config?.headers,
+        url: axiosError?.config?.url,
+        method: axiosError?.config?.method,
+        headers: axiosError?.config?.headers,
       },
     });
     throw error;

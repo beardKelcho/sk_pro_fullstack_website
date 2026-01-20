@@ -25,13 +25,6 @@
     "dev": "concurrently --names \"SERVER,CLIENT\" --prefix-colors \"blue,green\" \"cd server && npm run dev\" \"cd client && npm run dev\"",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
-    "dev:ngrok": "node scripts/start-ngrok.js",
-    "dev:with-ngrok": "concurrently --names \"SERVER,CLIENT,NGROK\" --prefix-colors \"blue,green,yellow\" \"cd server && npm run dev\" \"cd client && npm run dev\" \"npm run dev:ngrok\"",
-    "ngrok": "node scripts/start-ngrok.js",
-    "ngrok:frontend": "node scripts/start-ngrok-frontend.js",
-    "ngrok:url": "node scripts/get-ngrok-url.js",
-    "ngrok:urls": "node scripts/get-all-ngrok-urls.js",
-    "ngrok:both": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm run ngrok\" \"npm run ngrok:frontend\"",
     "check-ports": "./scripts/check-ports.sh",
     "check:env": "cd server && npm run check:env",
     "create:test-user": "cd server && npm run create:test-user",
@@ -47,7 +40,6 @@
     "hotfix:create": "./scripts/create-hotfix.sh"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "ngrok": "^5.0.0-beta.2"
+    "concurrently": "^8.2.2"
   }
 }

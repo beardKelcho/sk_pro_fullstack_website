@@ -76,299 +76,335 @@ const fixContentUrls = async (content: any): Promise<any> => {
     const { type } = urlMap.get(url)!;
 
     // ID'yi URL'den tekrar çıkar (map key'i unique olması için url kullandık)
-    let id = url;
-    id = id.replace(/^\/?api\/site-images\//, '');
-    id = id.replace(/^\/?uploads\//, '');
-    id = id.replace(/^\//, '');
+    // URL oluşturma (Builder)
+    const buildCloudinaryUrl = (filename: string, type: 'image' | 'video'): string => {
+      let baseUrl = cdnBaseUrl.replace(/\/$/, '');
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
 
-    const filename = imageMap.get(id);
-    if (!filename) return url; // Dosya bulunamadıysa orijinali kalsın
+      const ext = filename.split('.').pop()?.toLowerCase();
+      const hasExt = ext && (ext.length === 3 || ext.length === 4);
+      let cleanFilename = filename;
+      if (!hasExt) {
+        if (type === 'video') cleanFilename += '.mp4';
+        else cleanFilename += '.jpg';
+      }
+      return `${baseUrl}/${type}/upload/v1/${cleanFilename}`;
+    };
 
-    // Cloudinary URL Formatı
-    const baseUrl = cdnBaseUrl.replace(/\/$/, '');
+    const resolveUrlOrFilename = (inputUrl: string | undefined, inputFilename: string | undefined, type: 'image' | 'video'): string | undefined => {
+      // 1. Eğer filename varsa onu kullan (En kesin yöntem)
+      if (inputFilename) {
+        return buildCloudinaryUrl(inputFilename, type);
+      }
 
-    // Extension kontrolü
-    const ext = filename.split('.').pop()?.toLowerCase();
-    const hasExt = ext && (ext.length === 3 || ext.length === 4);
+      // 2. Eğer URL yoksa dön
+      if (!inputUrl) return inputUrl;
 
-    let cleanFilename = filename;
-    if (!hasExt) {
-      if (type === 'video') cleanFilename += '.mp4';
-      else cleanFilename += '.jpg';
+      // 3. Manuel Giriş Temizliği: Eğer URL "http.../ID.mp4" gibiyse ve ID aslında bir MongoID ise, bunu filename ile değiştirmeyi dene
+      // Bu, kullanıcının veritabanına yanlışlıkla ID içeren tam URL kaydettiği durumlar için.
+      if (inputUrl.startsWith('http')) {
+        const parts = inputUrl.split('/');
+        const lastPart = parts[parts.length - 1]; // "ID.mp4" veya "ID"
+        const potentialId = lastPart.split('.')[0];
+
+        if (mongoose.Types.ObjectId.isValid(potentialId)) {
+          // Bu bir ID! Gerçek filename'i bulmaya çalışalım
+          const resolvedFilename = imageMap.get(potentialId);
+          if (resolvedFilename) {
+            return buildCloudinaryUrl(resolvedFilename, type);
+          }
+        }
+        return inputUrl; // Değilse orijinali dön
+      }
+
+      // 4. URL map'ten kontrol et (Local path/ID durumları)
+      if (urlMap.has(inputUrl)) {
+        let id = inputUrl;
+        id = id.replace(/^\/?api\/site-images\//, '');
+        id = id.replace(/^\/?uploads\//, '');
+        id = id.replace(/^\//, '');
+
+        const resolvedFilename = imageMap.get(id);
+        if (resolvedFilename) {
+          return buildCloudinaryUrl(resolvedFilename, type);
+        }
+      }
+
+      // 5. Fallback
+      return inputUrl;
+    };
+
+    // URL'leri güncelle
+    if (fixedContent.backgroundVideo) fixedContent.backgroundVideo = resolveUrlOrFilename(fixedContent.backgroundVideo, undefined, 'video');
+    if (fixedContent.backgroundImage) fixedContent.backgroundImage = resolveUrlOrFilename(fixedContent.backgroundImage, undefined, 'image');
+    if (fixedContent.selectedVideo) fixedContent.selectedVideo = resolveUrlOrFilename(fixedContent.selectedVideo, undefined, 'video');
+    if (fixedContent.image) fixedContent.image = resolveUrlOrFilename(fixedContent.image, undefined, 'image');
+
+    if (Array.isArray(fixedContent.availableVideos)) {
+      fixedContent.availableVideos = fixedContent.availableVideos.map((video: any) => ({
+        ...video,
+        url: resolveUrlOrFilename(video.url, undefined, 'video')
+      }));
     }
 
-    return `${baseUrl}/${type}/upload/v1/${cleanFilename}`;
+    if (Array.isArray(fixedContent.services)) {
+      fixedContent.services = fixedContent.services.map((service: any) => ({
+        ...service,
+        icon: resolveUrlOrFilename(service.icon, undefined, 'image') || service.icon
+      }));
+    }
+
+    return fixedContent;
   };
 
-  // URL'leri güncelle
-  if (fixedContent.backgroundVideo) fixedContent.backgroundVideo = buildUrl(fixedContent.backgroundVideo);
-  if (fixedContent.backgroundImage) fixedContent.backgroundImage = buildUrl(fixedContent.backgroundImage);
-  if (fixedContent.selectedVideo) fixedContent.selectedVideo = buildUrl(fixedContent.selectedVideo);
-  if (fixedContent.image) fixedContent.image = buildUrl(fixedContent.image);
+  // Tüm içerikleri listele
+  export const getAllContents = async (req: Request, res: Response) => {
+    try {
+      const { section, isActive } = req.query;
 
-  if (Array.isArray(fixedContent.availableVideos)) {
-    fixedContent.availableVideos = fixedContent.availableVideos.map((video: any) => ({
-      ...video,
-      url: buildUrl(video.url)
-    }));
-  }
+      const filters: any = {};
+      if (section) {
+        filters.section = section;
+      }
+      if (isActive !== undefined) {
+        filters.isActive = isActive === 'true';
+      }
 
-  if (Array.isArray(fixedContent.services)) {
-    fixedContent.services = fixedContent.services.map((service: any) => ({
-      ...service,
-      icon: buildUrl(service.icon) || service.icon
-    }));
-  }
+      const contents = await SiteContent.find(filters)
+        .sort({ order: 1, createdAt: -1 });
 
-  return fixedContent;
-};
+      // URL'leri düzelt (Async map için Promise.all kullan)
+      const fixedContents = await Promise.all(contents.map(async (doc) => {
+        const docObj = doc.toObject();
+        docObj.content = await fixContentUrls(docObj.content);
+        return docObj;
+      }));
 
-// Tüm içerikleri listele
-export const getAllContents = async (req: Request, res: Response) => {
-  try {
-    const { section, isActive } = req.query;
-
-    const filters: any = {};
-    if (section) {
-      filters.section = section;
-    }
-    if (isActive !== undefined) {
-      filters.isActive = isActive === 'true';
-    }
-
-    const contents = await SiteContent.find(filters)
-      .sort({ order: 1, createdAt: -1 });
-
-    // URL'leri düzelt (Async map için Promise.all kullan)
-    const fixedContents = await Promise.all(contents.map(async (doc) => {
-      const docObj = doc.toObject();
-      docObj.content = await fixContentUrls(docObj.content);
-      return docObj;
-    }));
-
-    res.status(200).json({
-      success: true,
-      count: fixedContents.length,
-      contents: fixedContents,
-    });
-  } catch (error) {
-    logger.error('İçerik listeleme hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'İçerikler listelenirken bir hata oluştu',
-    });
-  }
-};
-
-// Tek bir içeriği getir
-export const getContentBySection = async (req: Request, res: Response) => {
-  try {
-    const { section } = req.params;
-
-    // Section'ı lowercase yap ve normalize et
-    const normalizedSection = section?.toLowerCase().trim();
-
-    const content = await SiteContent.findOne({
-      section: normalizedSection,
-      isActive: true
-    });
-
-    // Eğer içerik yoksa, boş bir response döndür (404 yerine 200 ile boş data)
-    if (!content) {
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
-        message: 'İçerik bulunamadı, varsayılan içerik kullanılabilir',
-        content: null,
+        count: fixedContents.length,
+        contents: fixedContents,
       });
-    }
-
-    // URL'leri düzelt ve content objesini güncelle
-    const docObj = content.toObject();
-    docObj.content = await fixContentUrls(docObj.content);
-
-    res.status(200).json({
-      success: true,
-      content: docObj,
-    });
-  } catch (error) {
-    logger.error('İçerik detayları hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'İçerik detayları alınırken bir hata oluştu',
-    });
-  }
-};
-
-// Yeni içerik oluştur
-export const createContent = async (req: Request, res: Response) => {
-  try {
-    const { section, content, order, isActive } = req.body;
-
-    if (!section || !content) {
-      return res.status(400).json({
+    } catch (error) {
+      logger.error('İçerik listeleme hatası:', error);
+      res.status(500).json({
         success: false,
-        message: 'Bölüm ve içerik gereklidir',
+        message: 'İçerikler listelenirken bir hata oluştu',
       });
     }
+  };
 
-    // Aynı section'da zaten içerik varsa güncelle
-    const existingContent = await SiteContent.findOne({ section });
-    if (existingContent) {
-      existingContent.content = content;
-      if (order !== undefined) existingContent.order = order;
-      if (isActive !== undefined) existingContent.isActive = isActive;
-      await existingContent.save();
+  // Tek bir içeriği getir
+  export const getContentBySection = async (req: Request, res: Response) => {
+    try {
+      const { section } = req.params;
 
-      const docObj = existingContent.toObject();
+      // Section'ı lowercase yap ve normalize et
+      const normalizedSection = section?.toLowerCase().trim();
+
+      const content = await SiteContent.findOne({
+        section: normalizedSection,
+        isActive: true
+      });
+
+      // Eğer içerik yoksa, boş bir response döndür (404 yerine 200 ile boş data)
+      if (!content) {
+        return res.status(200).json({
+          success: true,
+          message: 'İçerik bulunamadı, varsayılan içerik kullanılabilir',
+          content: null,
+        });
+      }
+
+      // URL'leri düzelt ve content objesini güncelle
+      const docObj = content.toObject();
       docObj.content = await fixContentUrls(docObj.content);
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         content: docObj,
-        message: 'İçerik güncellendi',
       });
-    }
-
-    const newContent = await SiteContent.create({
-      section,
-      content,
-      order: order || 0,
-      isActive: isActive !== undefined ? isActive : true,
-    });
-
-    const docObj = newContent.toObject();
-    docObj.content = await fixContentUrls(docObj.content);
-
-    res.status(201).json({
-      success: true,
-      content: docObj,
-    });
-  } catch (error) {
-    logger.error('İçerik oluşturma hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'İçerik oluşturulurken bir hata oluştu',
-    });
-  }
-};
-
-// İçerik güncelle
-export const updateContent = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { content, order, isActive } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
+    } catch (error) {
+      logger.error('İçerik detayları hatası:', error);
+      res.status(500).json({
         success: false,
-        message: 'Geçersiz içerik ID',
+        message: 'İçerik detayları alınırken bir hata oluştu',
       });
     }
+  };
 
-    const siteContent = await SiteContent.findById(id);
-    if (!siteContent) {
-      return res.status(404).json({
-        success: false,
-        message: 'İçerik bulunamadı',
-      });
-    }
+  // Yeni içerik oluştur
+  export const createContent = async (req: Request, res: Response) => {
+    try {
+      const { section, content, order, isActive } = req.body;
 
-    if (content) siteContent.content = content;
-    if (order !== undefined) siteContent.order = order;
-    if (isActive !== undefined) siteContent.isActive = isActive;
+      if (!section || !content) {
+        return res.status(400).json({
+          success: false,
+          message: 'Bölüm ve içerik gereklidir',
+        });
+      }
 
-    await siteContent.save();
+      // Aynı section'da zaten içerik varsa güncelle
+      const existingContent = await SiteContent.findOne({ section });
+      if (existingContent) {
+        existingContent.content = content;
+        if (order !== undefined) existingContent.order = order;
+        if (isActive !== undefined) existingContent.isActive = isActive;
+        await existingContent.save();
 
-    const docObj = siteContent.toObject();
-    docObj.content = fixContentUrls(docObj.content);
+        const docObj = existingContent.toObject();
+        docObj.content = await fixContentUrls(docObj.content);
 
-    res.status(200).json({
-      success: true,
-      content: docObj,
-    });
-  } catch (error) {
-    logger.error('İçerik güncelleme hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'İçerik güncellenirken bir hata oluştu',
-    });
-  }
-};
+        return res.status(200).json({
+          success: true,
+          content: docObj,
+          message: 'İçerik güncellendi',
+        });
+      }
 
-// Section'a göre içerik güncelle
-export const updateContentBySection = async (req: Request, res: Response) => {
-  try {
-    const { section } = req.params;
-    const { content, order, isActive } = req.body;
-
-    let siteContent = await SiteContent.findOne({ section });
-
-    if (!siteContent) {
-      // Eğer içerik yoksa oluştur
-      siteContent = await SiteContent.create({
+      const newContent = await SiteContent.create({
         section,
-        content: content || {},
+        content,
         order: order || 0,
         isActive: isActive !== undefined ? isActive : true,
       });
-    } else {
-      // Varsa güncelle
+
+      const docObj = newContent.toObject();
+      docObj.content = await fixContentUrls(docObj.content);
+
+      res.status(201).json({
+        success: true,
+        content: docObj,
+      });
+    } catch (error) {
+      logger.error('İçerik oluşturma hatası:', error);
+      res.status(500).json({
+        success: false,
+        message: 'İçerik oluşturulurken bir hata oluştu',
+      });
+    }
+  };
+
+  // İçerik güncelle
+  export const updateContent = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { content, order, isActive } = req.body;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz içerik ID',
+        });
+      }
+
+      const siteContent = await SiteContent.findById(id);
+      if (!siteContent) {
+        return res.status(404).json({
+          success: false,
+          message: 'İçerik bulunamadı',
+        });
+      }
+
       if (content) siteContent.content = content;
       if (order !== undefined) siteContent.order = order;
       if (isActive !== undefined) siteContent.isActive = isActive;
+
       await siteContent.save();
-    }
 
-    const docObj = siteContent.toObject();
-    docObj.content = fixContentUrls(docObj.content);
+      const docObj = siteContent.toObject();
+      docObj.content = fixContentUrls(docObj.content);
 
-    res.status(200).json({
-      success: true,
-      content: docObj,
-    });
-  } catch (error) {
-    logger.error('İçerik güncelleme hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'İçerik güncellenirken bir hata oluştu',
-    });
-  }
-};
-
-// İçerik sil
-export const deleteContent = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
+      res.status(200).json({
+        success: true,
+        content: docObj,
+      });
+    } catch (error) {
+      logger.error('İçerik güncelleme hatası:', error);
+      res.status(500).json({
         success: false,
-        message: 'Geçersiz içerik ID',
+        message: 'İçerik güncellenirken bir hata oluştu',
       });
     }
+  };
 
-    const content = await SiteContent.findById(id);
-    if (!content) {
-      return res.status(404).json({
+  // Section'a göre içerik güncelle
+  export const updateContentBySection = async (req: Request, res: Response) => {
+    try {
+      const { section } = req.params;
+      const { content, order, isActive } = req.body;
+
+      let siteContent = await SiteContent.findOne({ section });
+
+      if (!siteContent) {
+        // Eğer içerik yoksa oluştur
+        siteContent = await SiteContent.create({
+          section,
+          content: content || {},
+          order: order || 0,
+          isActive: isActive !== undefined ? isActive : true,
+        });
+      } else {
+        // Varsa güncelle
+        if (content) siteContent.content = content;
+        if (order !== undefined) siteContent.order = order;
+        if (isActive !== undefined) siteContent.isActive = isActive;
+        await siteContent.save();
+      }
+
+      const docObj = siteContent.toObject();
+      docObj.content = fixContentUrls(docObj.content);
+
+      res.status(200).json({
+        success: true,
+        content: docObj,
+      });
+    } catch (error) {
+      logger.error('İçerik güncelleme hatası:', error);
+      res.status(500).json({
         success: false,
-        message: 'İçerik bulunamadı',
+        message: 'İçerik güncellenirken bir hata oluştu',
       });
     }
+  };
 
-    await content.deleteOne();
+  // İçerik sil
+  export const deleteContent = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
 
-    logger.info(`İçerik silindi: ${content.section} by user ${req.user?.id}`);
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Geçersiz içerik ID',
+        });
+      }
 
-    res.status(200).json({
-      success: true,
-      message: 'İçerik başarıyla silindi',
-    });
-  } catch (error) {
-    logger.error('İçerik silme hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'İçerik silinirken bir hata oluştu',
-    });
-  }
-};
+      const content = await SiteContent.findById(id);
+      if (!content) {
+        return res.status(404).json({
+          success: false,
+          message: 'İçerik bulunamadı',
+        });
+      }
+
+      await content.deleteOne();
+
+      logger.info(`İçerik silindi: ${content.section} by user ${req.user?.id}`);
+
+      res.status(200).json({
+        success: true,
+        message: 'İçerik başarıyla silindi',
+      });
+    } catch (error) {
+      logger.error('İçerik silme hatası:', error);
+      res.status(500).json({
+        success: false,
+        message: 'İçerik silinirken bir hata oluştu',
+      });
+    }
+  };
 

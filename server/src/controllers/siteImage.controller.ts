@@ -40,9 +40,10 @@ const fixImageUrls = (image: any): any => {
     }
 
     const baseUrl = cdnBaseUrl.replace(/\/$/, '');
+    const absoluteBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
 
     // Strict Format: .../resource_type/upload/v1/filename.ext
-    return `${baseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
+    return `${absoluteBaseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
   };
 
   const fixedImage = JSON.parse(JSON.stringify(image));

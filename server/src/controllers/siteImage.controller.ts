@@ -16,22 +16,43 @@ const fixImageUrls = (image: any): any => {
     return image;
   }
 
-  const fixUrl = (url: string): string => {
-    if (!url) return url;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  // Cloudinary URL oluştur (Strict Mode)
+  // Veritabanındaki URL ne olursa olsun, filename ve category'ye göre yeniden oluştur.
+  const buildCloudinaryUrl = (filename: string, category: string): string => {
+    if (!filename) return '';
 
-    let cleanPath = url;
-    if (cleanPath.startsWith('/api/site-images/')) cleanPath = cleanPath.replace('/api/site-images/', '');
-    if (cleanPath.startsWith('api/site-images/')) cleanPath = cleanPath.replace('api/site-images/', '');
-    if (cleanPath.startsWith('/uploads/')) cleanPath = cleanPath.replace('/uploads/', '');
-    if (cleanPath.startsWith('uploads/')) cleanPath = cleanPath.replace('uploads/', '');
+    // Extension kontrolü
+    const ext = filename.split('.').pop()?.toLowerCase();
+    const hasExt = ext && (ext.length === 3 || ext.length === 4);
 
-    cleanPath = cleanPath.replace(/^\//, '');
-    return `${cdnBaseUrl.replace(/\/$/, '')}/${cleanPath}`;
+    // Resource Type belirle
+    let resourceType = 'image';
+    // Eğer kategori video ise veya uzantı video uzantısıysa
+    if (category === 'video' || (hasExt && ['mp4', 'webm', 'mov', 'avi'].includes(ext!))) {
+      resourceType = 'video';
+    }
+
+    // Uzantı yoksa varsayılan ekle
+    let cleanFilename = filename;
+    if (!hasExt) {
+      if (resourceType === 'video') cleanFilename += '.mp4';
+      else cleanFilename += '.jpg';
+    }
+
+    const baseUrl = cdnBaseUrl.replace(/\/$/, '');
+
+    // Strict Format: .../resource_type/upload/v1/filename.ext
+    return `${baseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
   };
 
   const fixedImage = JSON.parse(JSON.stringify(image));
-  if (fixedImage.url) fixedImage.url = fixUrl(fixedImage.url);
+
+  // URL'i tamamen yok sayıp baştan oluşturuyoruz (filename varsa)
+  if (fixedImage.filename) {
+    fixedImage.url = buildCloudinaryUrl(fixedImage.filename, fixedImage.category || 'gallery');
+  } else {
+    // Filename yoksa (çok düşük ihtimal), eskisini koru ama mümkünse düzelt
+  }
 
   return fixedImage;
 };

@@ -52,9 +52,6 @@ const fixContentUrls = async (content: any): Promise<any> => {
     fixedContent.services.forEach((service: any) => collectId(service.icon, 'image'));
   }
 
-  // Eğer toplanan ID yoksa ve manuel düzeltme gerekmiyorsa
-  // Ama manuel düzeltme (resolveUrlOrFilename içinde) olacağı için devam etmeliyiz.
-
   // Veritabanından dosyaları çek
   const imageMap = new Map(); // ID -> Filename
   if (idsToResolve.size > 0) {
@@ -69,36 +66,54 @@ const fixContentUrls = async (content: any): Promise<any> => {
   }
 
   // URL oluşturma (Builder)
-  const buildCloudinaryUrl = (filename: string, existingUrl: string | undefined, type: 'image' | 'video'): string => {
-    // 1. Girdi Kontrolü
-    if (!filename && !existingUrl) return '';
-
-    // 2. Önce mevcut URL'e güven (Resource Type hatasını önler)
-    if (existingUrl && typeof existingUrl === 'string' && existingUrl.includes('cloudinary.com')) {
-      // HTTPS zorunluluğu
-      if (existingUrl.startsWith('http:')) return existingUrl.replace('http:', 'https:');
-      if (existingUrl.startsWith('https:')) return existingUrl;
-      return `https://${existingUrl}`;
-    }
-
-    // 3. Filename Güvenliği
-    if (!filename || typeof filename !== 'string') {
-      // Eğer filename yoksa ama existingUrl varsa (cloudinary olmasa bile) onu dön
-      return typeof existingUrl === 'string' ? existingUrl : '';
-    }
-
-    // 4. Filename varsa Cloudinary URL oluştur
+  const buildCloudinaryUrl = (filename: string | undefined, existingUrl: string | undefined, type: 'image' | 'video'): string => {
+    // Hardcoded Base URL
     const baseUrl = 'https://res.cloudinary.com/dmeviky6f';
-    const ext = filename.split('.').pop()?.toLowerCase();
-    const hasExt = ext && (ext.length === 3 || ext.length === 4);
 
-    let cleanFilename = filename;
-    if (!hasExt) {
-      if (type === 'video') cleanFilename += '.mp4';
-      else cleanFilename += '.jpg';
+    // 1. Filename varsa, SIFIRDAN ve TEMİZ bir URL oluştur
+    if (filename && typeof filename === 'string') {
+      // Filename temizliği: path separatorleri ve resource type'ları kaldır
+      let cleanFilename = filename.split('/').pop() || filename;
+
+      // Extension ve Resource Type belirle
+      const ext = cleanFilename.split('.').pop()?.toLowerCase();
+      const hasExt = ext && (ext.length === 3 || ext.length === 4);
+
+      let resourceType = type;
+      if (!hasExt) {
+        if (resourceType === 'video') cleanFilename += '.mp4';
+        else cleanFilename += '.jpg';
+      }
+
+      return `${baseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
     }
 
-    return `${baseUrl}/${type}/upload/v1/${cleanFilename}`;
+    // 2. Filename yoksa ama URL varsa, onu düzeltmeye çalış
+    if (existingUrl && typeof existingUrl === 'string') {
+      let finalUrl = existingUrl;
+
+      // Sadece path ise başına domain ekle
+      if (!finalUrl.startsWith('http')) {
+        finalUrl = `https://${finalUrl.replace(/^\//, '')}`;
+      }
+
+      // HTTPS zorunlu
+      if (finalUrl.startsWith('http:')) {
+        finalUrl = finalUrl.replace('http:', 'https:');
+      }
+
+      // Eğer domain yoksa ekle (bazı durumlarda path olarak saklanmış olabilir)
+      if (!finalUrl.includes('res.cloudinary.com')) {
+        // Güvenli fallback: Eğer filename yoksa ve URL de bozuksa, video/image tipine göre default bir şey dönmek yerine
+        // boş dönmek daha iyidir ki frontend 404 almasın, hiç render etmesin.
+        // Ancak user "res.cloudinary.com/.../[filename]" istediği için, filename yoksa existingUrl'i döndürmek riskli.
+        return '';
+      }
+
+      return finalUrl;
+    }
+
+    return '';
   };
 
   const resolveUrlOrFilename = (inputUrl: string | undefined, inputFilename: string | undefined, type: 'image' | 'video'): string | undefined => {
@@ -112,25 +127,13 @@ const fixContentUrls = async (content: any): Promise<any> => {
 
     // 3. Manuel Giriş Temizliği
     if (inputUrl.startsWith('http')) {
-      const parts = inputUrl.split('/');
-      const lastPart = parts[parts.length - 1];
-      const potentialId = lastPart.split('.')[0];
-
       // Cloudinary kontrolü
       if (inputUrl.includes('cloudinary.com')) {
         if (inputUrl.startsWith('http:')) return inputUrl.replace('http:', 'https:');
         return inputUrl;
       }
-
-      if (mongoose.Types.ObjectId.isValid(potentialId)) {
-        const resolvedData = imageMap.get(potentialId);
-        if (resolvedData) {
-          // FIX TS2554: Her zaman 3 argüman gönder
-          const fName = resolvedData.filename || '';
-          const eUrl = resolvedData.url || '';
-          return buildCloudinaryUrl(fName, eUrl, type);
-        }
-      }
+      // Eğer http ile başlıyor ama cloudinary değilse ve mongo id değilse olduğu gibi dön
+      // Ancak bu relative path riskini taşır mı? Genelde hayır, absolute external linktir.
       return inputUrl;
     }
 
@@ -143,14 +146,22 @@ const fixContentUrls = async (content: any): Promise<any> => {
 
       const resolvedData = imageMap.get(id);
       if (resolvedData) {
-        // FIX TS2554: Her zaman 3 argüman gönder
         const fName = resolvedData.filename || '';
         const eUrl = resolvedData.url || '';
         return buildCloudinaryUrl(fName, eUrl, type);
       }
     }
 
-    // 5. Fallback
+    // 5. Fallback - ID olabilir
+    if (mongoose.Types.ObjectId.isValid(inputUrl)) {
+      const resolvedData = imageMap.get(inputUrl);
+      if (resolvedData) {
+        const fName = resolvedData.filename || '';
+        const eUrl = resolvedData.url || '';
+        return buildCloudinaryUrl(fName, eUrl, type);
+      }
+    }
+
     return inputUrl;
   };
 
@@ -165,7 +176,7 @@ const fixContentUrls = async (content: any): Promise<any> => {
       // 1. Filename bulmaya çalış (Obje içinde varsa)
       let filename = video.filename;
 
-      // 2. Eğer filename yoksa, URL'deki ID'den bulmaya çalış
+      // 2. Eğer filename yoksa ID'den çöz
       if (!filename && video.url && typeof video.url === 'string') {
         let id = video.url;
         id = id.replace(/^\/?api\/site-images\//, '');
@@ -178,16 +189,15 @@ const fixContentUrls = async (content: any): Promise<any> => {
         }
       }
 
-      // 3. Filename varsa URL'i kesinlikle sıfırdan oluştur
+      // 3. Filename varsa, SIFIRDAN URL oluştur
       if (filename) {
         return {
           ...video,
-          // 2. argüman undefined -> mevcut URL'i görmezden gel ve sıfırdan oluştur
           url: buildCloudinaryUrl(filename, undefined, 'video')
         };
       }
 
-      // 4. Fallback: Standart resolve
+      // Fallback
       return {
         ...video,
         url: resolveUrlOrFilename(video.url, undefined, 'video')

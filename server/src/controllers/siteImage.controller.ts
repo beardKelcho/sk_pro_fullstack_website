@@ -13,21 +13,23 @@ const fixImageUrls = (image: any): any => {
 
   // Cloudinary URL oluştur veya Mevcudu İyileştir
   const fixUrl = (filename: string, existingUrl: string | undefined, category: string): string => {
-    // 1. Filename varsa, kesinlikle SIFIRDAN oluştur (User Request: Strict Construction)
-    // Bu, admin panelindeki 404 hatalarını (bozuk URL'leri) çözer.
+    // Hardcoded Base URL
+    const baseUrl = 'https://res.cloudinary.com/dmeviky6f';
+
+    // 1. Filename varsa, kesinlikle SIFIRDAN oluştur
     if (filename && typeof filename === 'string') {
-      const baseUrl = 'https://res.cloudinary.com/dmeviky6f';
+      // Filename temizliği: path separatorleri ve resource type'ları kaldır (sadece dosya adı)
+      let cleanFilename = filename.split('/').pop() || filename;
 
       // Resource Type belirle
       let resourceType = 'image';
-      const ext = filename.split('.').pop()?.toLowerCase();
+      const ext = cleanFilename.split('.').pop()?.toLowerCase();
       const hasExt = ext && (ext.length === 3 || ext.length === 4);
 
       if (category === 'video' || (hasExt && ['mp4', 'webm', 'mov', 'avi'].includes(ext!))) {
         resourceType = 'video';
       }
 
-      let cleanFilename = filename;
       if (!hasExt) {
         if (resourceType === 'video') cleanFilename += '.mp4';
         else cleanFilename += '.jpg';
@@ -38,12 +40,26 @@ const fixImageUrls = (image: any): any => {
 
     // 2. Filename yoksa, mevcut URL'i iyileştir
     if (existingUrl && typeof existingUrl === 'string' && existingUrl.includes('cloudinary.com')) {
-      if (existingUrl.startsWith('http:')) return existingUrl.replace('http:', 'https:');
-      if (existingUrl.startsWith('https:')) return existingUrl;
-      return `https://${existingUrl}`;
+      let finalUrl = existingUrl;
+
+      // Sadece path ise başına domain ekle (Relative path hatasını engeller)
+      if (!finalUrl.startsWith('http')) {
+        finalUrl = `https://${finalUrl.replace(/^\//, '')}`;
+      }
+
+      if (finalUrl.startsWith('http:')) {
+        finalUrl = finalUrl.replace('http:', 'https:');
+      }
+
+      // Eğer domain hala yoksa (veya path olarak gelmişse), fallback olarak boş dön
+      if (!finalUrl.includes('res.cloudinary.com')) {
+        return ''; // Güvenli fallback, relative path olmasın diye.
+      }
+
+      return finalUrl;
     }
 
-    return existingUrl || '';
+    return '';
   };
 
   const fixedImage = JSON.parse(JSON.stringify(image));
@@ -566,4 +582,3 @@ export const updateImageOrder = async (req: Request, res: Response) => {
     });
   }
 };
-

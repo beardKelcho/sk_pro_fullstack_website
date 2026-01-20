@@ -164,8 +164,8 @@ export default function SiteContentPage() {
                   key={section.key}
                   onClick={() => setActiveSection(section.key)}
                   className={`w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-colors ${activeSection === section.key
-                      ? 'bg-[#0066CC] dark:bg-primary-light text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ? 'bg-[#0066CC] dark:bg-primary-light text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                 >
                   <span className="mr-2">{section.icon}</span>
@@ -1481,16 +1481,14 @@ function VideoSelector({
           };
         }
 
-        // ID yoksa URL'den relative path oluştur
+        // ID yoksa URL'den path oluştur
         let videoUrl = img.url || '';
-        if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
-          // Full URL ise relative path'e çevir
-          const urlObj = new URL(videoUrl);
-          videoUrl = urlObj.pathname;
-        }
 
-        // Relative path olarak kullan (Next.js rewrites proxy eder)
-        if (!videoUrl.startsWith('/')) {
+        // Absolute URL ise (Cloudinary vb.) dokunma, olduğu gibi kullan
+        if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
+          // Absolute URL, değişiklik yapma
+        } else if (videoUrl && !videoUrl.startsWith('/')) {
+          // Relative path ve / ile başlamıyorsa, başına / ekle
           videoUrl = `/${videoUrl}`;
         }
 
@@ -1616,14 +1614,14 @@ function VideoSelector({
           };
         }
 
-        // ID yoksa URL'den relative path oluştur
+        // ID yoksa URL'den path oluştur
         let imgUrl = img.url || '';
-        if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
-          const urlObj = new URL(imgUrl);
-          imgUrl = urlObj.pathname;
-        }
 
-        if (!imgUrl.startsWith('/')) {
+        // Absolute URL ise (Cloudinary vb.) dokunma, olduğu gibi kullan
+        if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+          // Absolute URL, değişiklik yapma
+        } else if (imgUrl && !imgUrl.startsWith('/')) {
+          // Relative path ve / ile başlamıyorsa, başına / ekle
           imgUrl = `/${imgUrl}`;
         }
 
@@ -1681,14 +1679,14 @@ function VideoSelector({
             };
           }
 
-          // ID yoksa URL'den relative path oluştur
+          // ID yoksa URL'den path oluştur
           let imgUrl = img.url || '';
-          if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
-            const urlObj = new URL(imgUrl);
-            imgUrl = urlObj.pathname;
-          }
 
-          if (!imgUrl.startsWith('/')) {
+          // Absolute URL ise (Cloudinary vb.) dokunma, olduğu gibi kullan
+          if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
+            // Absolute URL, değişiklik yapma
+          } else if (imgUrl && !imgUrl.startsWith('/')) {
+            // Relative path ve / ile başlamıyorsa, başına / ekle
             imgUrl = `/${imgUrl}`;
           }
 
@@ -1707,13 +1705,17 @@ function VideoSelector({
       } else {
         let url = video.url || '';
         if (url.startsWith('http://') || url.startsWith('https://')) {
-          const urlObj = new URL(url);
-          url = urlObj.pathname;
+          // Absolute URL, olduğu gibi kullan
+          videoUrl = url;
+        } else {
+          // Relative path
+          if (url && !url.startsWith('/')) {
+            url = `/${url}`;
+            videoUrl = url;
+          } else {
+            videoUrl = url;
+          }
         }
-        if (!url.startsWith('/')) {
-          url = `/${url}`;
-        }
-        videoUrl = url;
       }
 
       // Eğer silinen video seçiliyse, seçimi kaldır
@@ -1783,14 +1785,14 @@ function VideoSelector({
                 return `/api/site-images/public/${videoId}/image`;
               }
 
-              // ID yoksa URL'den relative path oluştur
+              // ID yoksa URL'den path oluştur
               let url = selectedVideoObj.url || '';
+
               if (url.startsWith('http://') || url.startsWith('https://')) {
-                const urlObj = new URL(url);
-                url = urlObj.pathname;
+                return url;
               }
 
-              if (!url.startsWith('/')) {
+              if (url && !url.startsWith('/')) {
                 url = `/${url}`;
               }
 
@@ -1799,8 +1801,7 @@ function VideoSelector({
 
             // selectedVideo string ise
             if (selectedVideo.startsWith('http://') || selectedVideo.startsWith('https://')) {
-              const urlObj = new URL(selectedVideo);
-              return urlObj.pathname;
+              return selectedVideo;
             }
 
             // Relative path ise olduğu gibi kullan
@@ -1881,14 +1882,14 @@ function VideoSelector({
                         };
                       }
 
-                      // ID yoksa URL'den relative path oluştur
+                      // ID yoksa URL'den path oluştur
                       let url = img.url || '';
-                      if (url.startsWith('http://') || url.startsWith('https://')) {
-                        const urlObj = new URL(url);
-                        url = urlObj.pathname;
-                      }
 
-                      if (!url.startsWith('/')) {
+                      // Absolute URL ise (Cloudinary vb.) dokunma
+                      if (url.startsWith('http://') || url.startsWith('https://')) {
+                        // Absolute
+                      } else if (url && !url.startsWith('/')) {
+                        // Relative
                         url = `/${url}`;
                       }
 
@@ -2300,8 +2301,8 @@ function AboutImageSelector({
                             setShowModal(false);
                           }}
                           className={`cursor-pointer border-2 rounded-xl overflow-hidden transition-all modern-card group ${isSelected
-                              ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light shadow-lg scale-105'
-                              : 'border-gray-200 dark:border-gray-700 hover:border-[#0066CC]/50 dark:hover:border-primary-light/50 hover:shadow-md'
+                            ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light shadow-lg scale-105'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-[#0066CC]/50 dark:hover:border-primary-light/50 hover:shadow-md'
                             }`}
                         >
                           <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">

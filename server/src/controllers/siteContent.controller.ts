@@ -12,7 +12,7 @@ const fixContentUrls = (content: any): any => {
   const cdnBaseUrl = process.env.CLOUDINARY_CDN_URL || '';
 
   // URL düzeltme fonksiyonu
-  const fixUrl = (url: string | undefined): string | undefined => {
+  const fixUrl = (url: string | undefined, type: 'image' | 'video' = 'image'): string | undefined => {
     if (!url) return url;
 
     // Zaten tam URL ise (http:// veya https://)
@@ -22,50 +22,63 @@ const fixContentUrls = (content: any): any => {
 
     // Cloudinary aktifse ve local path ise
     if (storageType === 'cloudinary' && cdnBaseUrl) {
-      // /api/site-images/ veya /uploads/ ile başlıyorsa temizle
+      // Path temizleme: /api/site-images/, /uploads/ vb. kaldır
       let cleanPath = url;
-      if (cleanPath.startsWith('/api/site-images/')) cleanPath = cleanPath.replace('/api/site-images/', '');
-      if (cleanPath.startsWith('api/site-images/')) cleanPath = cleanPath.replace('api/site-images/', '');
-      if (cleanPath.startsWith('/uploads/')) cleanPath = cleanPath.replace('/uploads/', '');
-      if (cleanPath.startsWith('uploads/')) cleanPath = cleanPath.replace('uploads/', '');
+      cleanPath = cleanPath.replace(/^\/?api\/site-images\//, '');
+      cleanPath = cleanPath.replace(/^\/?uploads\//, '');
+      cleanPath = cleanPath.replace(/^\//, ''); // Başındaki slash'i kaldır
 
-      // Başındaki slash'i kaldır
-      cleanPath = cleanPath.replace(/^\//, '');
+      // Eğer cleanPath tamamen temizlendiyse veya boşsa orijinali dön
+      if (!cleanPath) return url;
 
-      // CDN URL'ine ekle
-      // Not: cleanPath zaten public_id veya path olmalı
-      // Eğer cleanPath zaten 'site-images/foo.jpg' ise ve CDN URL 'https://res.cloudinary.com/...' ise birleştir
-      return `${cdnBaseUrl.replace(/\/$/, '')}/${cleanPath}`;
+      // Dosya uzantısı kontrolü - eksikse ekle
+      const ext = cleanPath.split('.').pop()?.toLowerCase();
+      const hasExt = ext && (ext.length === 3 || ext.length === 4);
+
+      if (!hasExt) {
+        if (type === 'video') cleanPath += '.mp4';
+        else cleanPath += '.jpg';
+      }
+
+      // Base URL hazırla (sonundaki slash'i kaldır)
+      const baseUrl = cdnBaseUrl.replace(/\/$/, '');
+
+      // Eğer URL zaten 'upload' içeriyorsa direkt birleştir (duplicate önlemek için)
+      if (cleanPath.includes('upload/')) {
+        return `${baseUrl}/${cleanPath}`;
+      }
+
+      // Strict Format: https://res.cloudinary.com/<cloud_name>/<resource_type>/upload/v1/<public_id>.<format>
+      return `${baseUrl}/${type}/upload/v1/${cleanPath}`;
     }
 
     return url;
   };
 
-  // Content objesini kopyala (mutation'dan kaçınmak için)
-  // Mongoose dökümanı ise .toObject() ile çevrilmiş olmalı veya JSON olmalı
+  // Content objesini kopyala
   const fixedContent = JSON.parse(JSON.stringify(content));
 
-  // Bilinen alanları düzelt
-  if (fixedContent.backgroundVideo) fixedContent.backgroundVideo = fixUrl(fixedContent.backgroundVideo);
-  if (fixedContent.backgroundImage) fixedContent.backgroundImage = fixUrl(fixedContent.backgroundImage);
-  if (fixedContent.selectedVideo) fixedContent.selectedVideo = fixUrl(fixedContent.selectedVideo);
+  // Alan bazlı type belirleme
+  if (fixedContent.backgroundVideo) fixedContent.backgroundVideo = fixUrl(fixedContent.backgroundVideo, 'video');
+  if (fixedContent.backgroundImage) fixedContent.backgroundImage = fixUrl(fixedContent.backgroundImage, 'image');
+  if (fixedContent.selectedVideo) fixedContent.selectedVideo = fixUrl(fixedContent.selectedVideo, 'video');
 
-  // Image alanları (About, vs)
-  if (fixedContent.image) fixedContent.image = fixUrl(fixedContent.image);
+  // Image alanları
+  if (fixedContent.image) fixedContent.image = fixUrl(fixedContent.image, 'image');
 
-  // availableVideos array'ini düzelt
+  // availableVideos array'ini düzelt - HER ZAMAN VIDEO
   if (Array.isArray(fixedContent.availableVideos)) {
     fixedContent.availableVideos = fixedContent.availableVideos.map((video: any) => ({
       ...video,
-      url: fixUrl(video.url)
+      url: fixUrl(video.url, 'video')
     }));
   }
 
-  // Services & Equipment (icon alanları bazen URL olabilir)
+  // Services & Equipment (icon alanları)
   if (Array.isArray(fixedContent.services)) {
     fixedContent.services = fixedContent.services.map((service: any) => ({
       ...service,
-      icon: fixUrl(service.icon) || service.icon // Eğer icon URL değilse (class name ise) bozma
+      icon: fixUrl(service.icon, 'image') || service.icon
     }));
   }
 

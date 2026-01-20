@@ -10,50 +10,40 @@ const fixImageUrls = (image: any): any => {
   if (!image) return image;
 
   const storageType = (process.env.STORAGE_TYPE || 'local').toLowerCase();
-  const cdnBaseUrl = process.env.CLOUDINARY_CDN_URL || '';
-
-  if (storageType !== 'cloudinary' || !cdnBaseUrl) {
-    return image;
-  }
 
   // Cloudinary URL oluştur veya Mevcudu İyileştir
   const fixUrl = (filename: string, existingUrl: string | undefined, category: string): string => {
-    // 1. Eğer zaten geçerli bir Cloudinary URL'i varsa, onu kullan (Resource Type sorununu çözer)
-    if (existingUrl && existingUrl.includes('cloudinary.com')) {
-      // Protokol kontrolü (HTTPS zorunlu)
-      if (existingUrl.startsWith('http:')) {
-        return existingUrl.replace('http:', 'https:');
+    // 1. Filename varsa, kesinlikle SIFIRDAN oluştur (User Request: Strict Construction)
+    // Bu, admin panelindeki 404 hatalarını (bozuk URL'leri) çözer.
+    if (filename && typeof filename === 'string') {
+      const baseUrl = 'https://res.cloudinary.com/dmeviky6f';
+
+      // Resource Type belirle
+      let resourceType = 'image';
+      const ext = filename.split('.').pop()?.toLowerCase();
+      const hasExt = ext && (ext.length === 3 || ext.length === 4);
+
+      if (category === 'video' || (hasExt && ['mp4', 'webm', 'mov', 'avi'].includes(ext!))) {
+        resourceType = 'video';
       }
-      if (existingUrl.startsWith('https:')) {
-        return existingUrl;
+
+      let cleanFilename = filename;
+      if (!hasExt) {
+        if (resourceType === 'video') cleanFilename += '.mp4';
+        else cleanFilename += '.jpg';
       }
-      // Protokol yoksa ekle
+
+      return `${baseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
+    }
+
+    // 2. Filename yoksa, mevcut URL'i iyileştir
+    if (existingUrl && typeof existingUrl === 'string' && existingUrl.includes('cloudinary.com')) {
+      if (existingUrl.startsWith('http:')) return existingUrl.replace('http:', 'https:');
+      if (existingUrl.startsWith('https:')) return existingUrl;
       return `https://${existingUrl}`;
     }
 
-    // 2. Eğer URL yoksa veya yerel ise, Filename'den oluştur (Fallback)
-    if (!filename) return existingUrl || '';
-
-    // Extension kontrolü
-    const ext = filename.split('.').pop()?.toLowerCase();
-    const hasExt = ext && (ext.length === 3 || ext.length === 4);
-
-    // Resource Type belirle
-    let resourceType = 'image';
-    if (category === 'video' || (hasExt && ['mp4', 'webm', 'mov', 'avi'].includes(ext!))) {
-      resourceType = 'video';
-    }
-
-    let cleanFilename = filename;
-    if (!hasExt) {
-      if (resourceType === 'video') cleanFilename += '.mp4';
-      else cleanFilename += '.jpg';
-    }
-
-    const baseUrl = cdnBaseUrl.replace(/\/$/, '');
-    const absoluteBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`;
-
-    return `${absoluteBaseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
+    return existingUrl || '';
   };
 
   const fixedImage = JSON.parse(JSON.stringify(image));

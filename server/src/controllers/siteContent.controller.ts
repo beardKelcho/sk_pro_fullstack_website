@@ -161,10 +161,38 @@ const fixContentUrls = async (content: any): Promise<any> => {
   if (fixedContent.image) fixedContent.image = resolveUrlOrFilename(fixedContent.image, undefined, 'image');
 
   if (Array.isArray(fixedContent.availableVideos)) {
-    fixedContent.availableVideos = fixedContent.availableVideos.map((video: any) => ({
-      ...video,
-      url: resolveUrlOrFilename(video.url, undefined, 'video')
-    }));
+    fixedContent.availableVideos = fixedContent.availableVideos.map((video: any) => {
+      // 1. Filename bulmaya çalış (Obje içinde varsa)
+      let filename = video.filename;
+
+      // 2. Eğer filename yoksa, URL'deki ID'den bulmaya çalış
+      if (!filename && video.url && typeof video.url === 'string') {
+        let id = video.url;
+        id = id.replace(/^\/?api\/site-images\//, '');
+        id = id.replace(/^\/?uploads\//, '');
+        id = id.replace(/^\//, '');
+
+        if (imageMap.has(id)) {
+          const data = imageMap.get(id);
+          if (data) filename = data.filename;
+        }
+      }
+
+      // 3. Filename varsa URL'i kesinlikle sıfırdan oluştur
+      if (filename) {
+        return {
+          ...video,
+          // 2. argüman undefined -> mevcut URL'i görmezden gel ve sıfırdan oluştur
+          url: buildCloudinaryUrl(filename, undefined, 'video')
+        };
+      }
+
+      // 4. Fallback: Standart resolve
+      return {
+        ...video,
+        url: resolveUrlOrFilename(video.url, undefined, 'video')
+      };
+    });
   }
 
   if (Array.isArray(fixedContent.services)) {

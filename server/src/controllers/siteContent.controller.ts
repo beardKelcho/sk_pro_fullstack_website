@@ -6,7 +6,6 @@ import logger from '../utils/logger';
 import SiteImage from '../models/SiteImage';
 
 // Helper: İçerik URL'lerini düzelt (Async - ID resolution ile)
-// Helper: İçerik URL'lerini düzelt (Async - ID resolution ile)
 const fixContentUrls = async (content: any): Promise<any> => {
   if (!content) return content;
 
@@ -61,96 +60,93 @@ const fixContentUrls = async (content: any): Promise<any> => {
   if (idsToResolve.size > 0) {
     const images = await SiteImage.find({ _id: { $in: Array.from(idsToResolve) } });
     images.forEach(img => {
-      if (img.filename) {
-        imageMap.set(img._id.toString(), img.filename);
-      }
+      // Hem filename hem de mevcut URL'i sakla
+      imageMap.set(img._id.toString(), {
+        filename: img.filename,
+        url: img.url
+      });
     });
   }
 
   // URL oluşturma (Builder)
   const buildCloudinaryUrl = (filename: string, existingUrl: string | undefined, type: 'image' | 'video'): string => {
-    // 1. Önce mevcut URL'e güven (Resource Type hatasını önler)
+    // 1. Girdi Kontrolü
+    if (!filename && !existingUrl) return '';
+
+    // 2. Önce mevcut URL'e güven (Resource Type hatasını önler)
     if (existingUrl && typeof existingUrl === 'string' && existingUrl.includes('cloudinary.com')) {
+      // HTTPS zorunluluğu
       if (existingUrl.startsWith('http:')) return existingUrl.replace('http:', 'https:');
       if (existingUrl.startsWith('https:')) return existingUrl;
       return `https://${existingUrl}`;
     }
 
-    // Filename kontrolü (CRITICAL FIX: undef check)
+    // 3. Filename Güvenliği
     if (!filename || typeof filename !== 'string') {
-      return existingUrl || '';
+      // Eğer filename yoksa ama existingUrl varsa (cloudinary olmasa bile) onu dön
+      return typeof existingUrl === 'string' ? existingUrl : '';
     }
 
-    // Hardcoded Base URL
+    // 4. Filename varsa Cloudinary URL oluştur
     const baseUrl = 'https://res.cloudinary.com/dmeviky6f';
-
     const ext = filename.split('.').pop()?.toLowerCase();
     const hasExt = ext && (ext.length === 3 || ext.length === 4);
+
     let cleanFilename = filename;
     if (!hasExt) {
       if (type === 'video') cleanFilename += '.mp4';
       else cleanFilename += '.jpg';
     }
+
     return `${baseUrl}/${type}/upload/v1/${cleanFilename}`;
   };
 
   const resolveUrlOrFilename = (inputUrl: string | undefined, inputFilename: string | undefined, type: 'image' | 'video'): string | undefined => {
-    // 1. Eğer input olarak filename verilmişse, direkt onu kullan (Mevcut URL yok kabul edilir)
+    // 1. Eğer input olarak filename verilmişse, direkt onu kullan
     if (inputFilename && typeof inputFilename === 'string') {
       return buildCloudinaryUrl(inputFilename, undefined, type);
     }
 
     // 2. Eğer URL yoksa dön
-    if (!inputUrl) return inputUrl;
+    if (!inputUrl || typeof inputUrl !== 'string') return inputUrl;
 
     // 3. Manuel Giriş Temizliği
-    if (typeof inputUrl === 'string' && inputUrl.startsWith('http')) {
+    if (inputUrl.startsWith('http')) {
       const parts = inputUrl.split('/');
-      const lastPart = parts[parts.length - 1]; // "ID.mp4" veya "ID"
+      const lastPart = parts[parts.length - 1];
       const potentialId = lastPart.split('.')[0];
 
-      // Eğer bu bir Cloudinary URL'i ise ve HTTPS değilse, HTTPS yap ve dön
+      // Cloudinary kontrolü
       if (inputUrl.includes('cloudinary.com')) {
         if (inputUrl.startsWith('http:')) return inputUrl.replace('http:', 'https:');
         return inputUrl;
       }
 
       if (mongoose.Types.ObjectId.isValid(potentialId)) {
-        // Bu bir MongoID! Gerçek veriyi bul.
         const resolvedData = imageMap.get(potentialId);
         if (resolvedData) {
-          // resolvedData.filename'in dolu olduğunu kontrol et
-          if (resolvedData.filename) {
-            return buildCloudinaryUrl(resolvedData.filename, resolvedData.url, type);
-          }
-          // Filename yoksa ama URL varsa onu kullan
-          if (resolvedData.url) {
-            return buildCloudinaryUrl('', resolvedData.url, type);
-          }
+          // FIX TS2554: Her zaman 3 argüman gönder
+          const fName = resolvedData.filename || '';
+          const eUrl = resolvedData.url || '';
+          return buildCloudinaryUrl(fName, eUrl, type);
         }
       }
       return inputUrl;
     }
 
-    // 4. URL map'ten kontrol et (Local path/ID durumları)
+    // 4. URL map'ten kontrol et
     if (urlMap.has(inputUrl)) {
       let id = inputUrl;
-      if (typeof id === 'string') {
-        id = id.replace(/^\/?api\/site-images\//, '');
-        id = id.replace(/^\/?uploads\//, '');
-        id = id.replace(/^\//, '');
+      id = id.replace(/^\/?api\/site-images\//, '');
+      id = id.replace(/^\/?uploads\//, '');
+      id = id.replace(/^\//, '');
 
-        const resolvedData = imageMap.get(id);
-        if (resolvedData) {
-          // resolvedData.filename'in dolu olduğunu kontrol et
-          if (resolvedData.filename) {
-            return buildCloudinaryUrl(resolvedData.filename, resolvedData.url, type);
-          }
-          // Filename yoksa ama URL varsa onu kullan
-          if (resolvedData.url) {
-            return buildCloudinaryUrl('', resolvedData.url, type);
-          }
-        }
+      const resolvedData = imageMap.get(id);
+      if (resolvedData) {
+        // FIX TS2554: Her zaman 3 argüman gönder
+        const fName = resolvedData.filename || '';
+        const eUrl = resolvedData.url || '';
+        return buildCloudinaryUrl(fName, eUrl, type);
       }
     }
 
@@ -172,6 +168,7 @@ const fixContentUrls = async (content: any): Promise<any> => {
   }
 
   if (Array.isArray(fixedContent.services)) {
+    fixedContent.services.forEach((service: any) => collectId(service.icon, 'image'));
     fixedContent.services = fixedContent.services.map((service: any) => ({
       ...service,
       icon: resolveUrlOrFilename(service.icon, undefined, 'image') || service.icon
@@ -429,4 +426,3 @@ export const deleteContent = async (req: Request, res: Response) => {
     });
   }
 };
-

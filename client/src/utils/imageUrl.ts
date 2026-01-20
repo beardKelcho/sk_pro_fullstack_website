@@ -83,54 +83,52 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
 
   // If image object is provided
   if (image) {
-    // If image object is provided
-    if (image) {
-      // 1. ÖNCELİK: Eğer resim objesinde zaten absolute bir URL varsa, onu kullan.
-      // Backend'de "Strict Mode" ile Cloudinary URL'leri zorlandı, frontend bunu ezmemeli.
-      if (image.url && (image.url.startsWith('http://') || image.url.startsWith('https://'))) {
-        return image.url;
-      }
-
-      // 2. Try to use ID for local proxying (fallback)
-      const dbId = image._id || image.id;
-      if (dbId && typeof dbId === 'string' && dbId.trim() !== '' && dbId.length >= 12) {
-        // Next.js internal hash pattern'i kontrolü
-        const isOnlyHex = /^[0-9a-f]+$/i.test(dbId);
-        if (isOnlyHex && dbId.length >= 12 && dbId.length <= 32) {
-          // Bu bir MongoDB ObjectId - Relative path kullan (Next.js rewrites proxy eder)
-          return `/api/site-images/public/${dbId}/image`;
-        }
-      }
-
-      // Fallback to URL, path, or filename
-      let imageUrl = image.url || '';
-      if (!imageUrl && image.path) {
-        imageUrl = image.path;
-      }
-      if (!imageUrl && image.filename) {
-        imageUrl = `/uploads/site-images/${image.filename}`;
-      }
-
-      if (!imageUrl || imageUrl.trim() === '') {
-        // Eğer fallback varsa onu kullan, yoksa boş string döndür
-        return fallback || '';
-      }
-
-      // Eğer zaten full URL ise (http/https ile başlıyorsa), olduğu gibi döndür
-      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-        return imageUrl;
-      }
-
-      // Relative path ise olduğu gibi döndür (Next.js rewrites proxy eder)
-      // /uploads/ ile başlıyorsa veya / ile başlıyorsa relative path olarak kullan
-      if (imageUrl.startsWith('/')) {
-        return imageUrl;
-      }
-
-      // Relative path değilse, / ekle
-      return `/${imageUrl}`;
+    // 1. ÖNCELİK: Eğer resim objesinde zaten absolute bir URL varsa, onu kullan.
+    // Backend'de "Strict Mode" ile Cloudinary URL'leri zorlandı, frontend bunu ezmemeli.
+    if (image.url && (image.url.startsWith('http://') || image.url.startsWith('https://'))) {
+      return image.url;
     }
 
-    return fallback || '';
-  };
+    // 2. Try to use ID for local proxying (fallback)
+    const dbId = image._id || image.id;
+    if (dbId && typeof dbId === 'string' && dbId.trim() !== '' && dbId.length >= 12) {
+      // Next.js internal hash pattern'i kontrolü
+      const isOnlyHex = /^[0-9a-f]+$/i.test(dbId);
+      if (isOnlyHex && dbId.length >= 12 && dbId.length <= 32) {
+        // Bu bir MongoDB ObjectId - Relative path kullan (Next.js rewrites proxy eder)
+        return `/api/site-images/public/${dbId}/image`;
+      }
+    }
+
+    // Fallback to URL, path, or filename
+    let imageUrl = image.url || '';
+    if (!imageUrl && image.path) {
+      imageUrl = image.path;
+    }
+    if (!imageUrl && image.filename) {
+      imageUrl = `/uploads/site-images/${image.filename}`;
+    }
+
+    if (!imageUrl || imageUrl.trim() === '') {
+      // Eğer fallback varsa onu kullan, yoksa boş string döndür
+      return fallback || '';
+    }
+
+    // Eğer zaten full URL ise (http/https ile başlıyorsa), olduğu gibi döndür
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+
+    // Relative path ise olduğu gibi döndür (Next.js rewrites proxy eder)
+    // /uploads/ ile başlıyorsa veya / ile başlıyorsa relative path olarak kullan
+    if (imageUrl.startsWith('/')) {
+      return imageUrl;
+    }
+
+    // Relative path değilse, / ekle
+    return `/${imageUrl}`;
+  }
+
+  return fallback || '';
+};
 

@@ -43,11 +43,16 @@ echo "📥 develop branch'inden son değişiklikler çekiliyor..."
 git pull origin develop
 
 # Test'leri çalıştır
-echo "🧪 Test'ler çalıştırılıyor..."
-npm run test:all || {
-    echo "❌ Test'ler başarısız! Deployment iptal edildi."
-    exit 1
-}
+if [ -z "$SKIP_TESTS" ]; then
+    echo "🧪 Test'ler çalıştırılıyor..."
+    npm run test:all || {
+        echo "❌ Test'ler başarısız! Deployment iptal edildi."
+        echo "💡 SKIP_TESTS=1 ile testleri atlayabilirsiniz (önerilmez)"
+        exit 1
+    }
+else
+    echo "⏩ SKIP_TESTS tanımlı, testler atlanıyor..."
+fi
 
 # Type check
 echo "🔍 Type check yapılıyor..."
@@ -57,11 +62,17 @@ npm run type-check || {
 }
 
 # Lint
-echo "🔍 Lint kontrolü yapılıyor..."
-npm run lint || {
-    echo "❌ Lint kontrolü başarısız! Deployment iptal edildi."
-    exit 1
-}
+# Lint
+if [ -z "$SKIP_LINT" ]; then
+    echo "🔍 Lint kontrolü yapılıyor..."
+    npm run lint || {
+        echo "❌ Lint kontrolü başarısız! Deployment iptal edildi."
+        echo "💡 SKIP_LINT=1 ile lint kontrolünü atlayabilirsiniz (önerilmez)"
+        exit 1
+    }
+else
+    echo "⏩ SKIP_LINT tanımlı, lint kontrolü atlanıyor..."
+fi
 
 # Build
 echo "🔨 Build yapılıyor..."

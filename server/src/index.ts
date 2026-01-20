@@ -55,7 +55,7 @@ app.use(cors({
       callback(null, true);
       return;
     }
-    
+
     // Production modunda sadece izin verilen origin'lere izin ver
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -70,8 +70,8 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
+    'Content-Type',
+    'Authorization',
     'X-Requested-With',
     'Cache-Control',
     'Pragma',
@@ -89,13 +89,13 @@ app.use(
     contentSecurityPolicy:
       process.env.NODE_ENV === 'production'
         ? {
-            directives: {
-              defaultSrc: ["'none'"],
-              frameAncestors: ["'none'"],
-              baseUri: ["'none'"],
-              formAction: ["'none'"],
-            },
-          }
+          directives: {
+            defaultSrc: ["'none'"],
+            frameAncestors: ["'none'"],
+            baseUri: ["'none'"],
+            formAction: ["'none'"],
+          },
+        }
         : false,
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -218,9 +218,9 @@ app.use('/api', metricsMiddleware, requireDbConnection, generalApiLimiter, route
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'API endpoint bulunamadı' 
+  res.status(404).json({
+    success: false,
+    message: 'API endpoint bulunamadı'
   });
 });
 
@@ -261,8 +261,11 @@ const startServer = async () => {
         logger.info(`GraphQL: http://localhost:${PORT}/graphql`);
       }
       logCDNConfig(); // CDN yapılandırmasını logla
+      if (process.env.STORAGE_TYPE === 'cloudinary') {
+        logger.info('☁️  Cloudinary storage active');
+      }
     });
-    
+
     // MongoDB bağlantısını arka planda dene (non-blocking)
     connectDB().then(() => {
       logger.info('MongoDB veritabanına bağlandı');
@@ -280,12 +283,12 @@ const startServer = async () => {
       logger.warn('⚠️  API endpoint\'leri çalışmayabilir. MongoDB bağlantısını kontrol edin.');
       logger.warn('💡 MongoDB Atlas IP whitelist\'e mevcut IP\'nizi ekleyin: https://www.mongodb.com/docs/atlas/security-whitelist/');
     });
-    
+
     // Redis bağlantısı (opsiyonel - yoksa uygulama çalışmaya devam eder)
     connectRedis().catch((redisError) => {
       logger.warn('Redis bağlantısı başarısız (opsiyonel):', redisError);
     });
-    
+
   } catch (error) {
     logger.error('Sunucu başlatılamadı:', error);
     process.exit(1);

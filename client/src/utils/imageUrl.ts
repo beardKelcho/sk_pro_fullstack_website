@@ -63,6 +63,14 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
   const normalized: ImageUrlOptions = typeof options === 'string' ? { imageId: options } : options;
   const { imageId, image, fallback } = normalized;
 
+  // 1. ÖNCELİK: Eğer resim objesinde zaten absolute bir URL varsa, onu kullan.
+  // Backend'de "Strict Mode" ile Cloudinary URL'leri zorlandı, frontend bunu ezmemeli.
+  // Bu kontrolü EN BAŞA alıyoruz, çünkü Carousel gibi komponentler hem imageId hem image objesi gönderebilir.
+  // Eğer image objesi varsa ve içinde valid URL varsa, imageId'ye bakmaksızın bunu kullanmalıyız.
+  if (image && image.url && (image.url.startsWith('http://') || image.url.startsWith('https://'))) {
+    return image.url;
+  }
+
   // If imageId is provided, use it directly
   if (imageId) {
     // Geçersiz ID kontrolü (sadece MongoDB ObjectId formatı veya geçerli string)
@@ -81,14 +89,8 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
     return fallback || '';
   }
 
-  // If image object is provided
+  // If image object is provided (and didn't match absolute URL above)
   if (image) {
-    // 1. ÖNCELİK: Eğer resim objesinde zaten absolute bir URL varsa, onu kullan.
-    // Backend'de "Strict Mode" ile Cloudinary URL'leri zorlandı, frontend bunu ezmemeli.
-    if (image.url && (image.url.startsWith('http://') || image.url.startsWith('https://'))) {
-      return image.url;
-    }
-
     // 2. Try to use ID for local proxying (fallback)
     const dbId = image._id || image.id;
     if (dbId && typeof dbId === 'string' && dbId.trim() !== '' && dbId.length >= 12) {

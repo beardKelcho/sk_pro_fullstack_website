@@ -70,10 +70,15 @@ const fixContentUrls = async (content: any): Promise<any> => {
   // URL oluşturma (Builder)
   const buildCloudinaryUrl = (filename: string, existingUrl: string | undefined, type: 'image' | 'video'): string => {
     // 1. Önce mevcut URL'e güven (Resource Type hatasını önler)
-    if (existingUrl && existingUrl.includes('cloudinary.com')) {
+    if (existingUrl && typeof existingUrl === 'string' && existingUrl.includes('cloudinary.com')) {
       if (existingUrl.startsWith('http:')) return existingUrl.replace('http:', 'https:');
       if (existingUrl.startsWith('https:')) return existingUrl;
       return `https://${existingUrl}`;
+    }
+
+    // Filename kontrolü (CRITICAL FIX: undef check)
+    if (!filename || typeof filename !== 'string') {
+      return existingUrl || '';
     }
 
     // Hardcoded Base URL
@@ -91,7 +96,7 @@ const fixContentUrls = async (content: any): Promise<any> => {
 
   const resolveUrlOrFilename = (inputUrl: string | undefined, inputFilename: string | undefined, type: 'image' | 'video'): string | undefined => {
     // 1. Eğer input olarak filename verilmişse, direkt onu kullan (Mevcut URL yok kabul edilir)
-    if (inputFilename) {
+    if (inputFilename && typeof inputFilename === 'string') {
       return buildCloudinaryUrl(inputFilename, undefined, type);
     }
 
@@ -99,7 +104,7 @@ const fixContentUrls = async (content: any): Promise<any> => {
     if (!inputUrl) return inputUrl;
 
     // 3. Manuel Giriş Temizliği
-    if (inputUrl.startsWith('http')) {
+    if (typeof inputUrl === 'string' && inputUrl.startsWith('http')) {
       const parts = inputUrl.split('/');
       const lastPart = parts[parts.length - 1]; // "ID.mp4" veya "ID"
       const potentialId = lastPart.split('.')[0];
@@ -114,7 +119,14 @@ const fixContentUrls = async (content: any): Promise<any> => {
         // Bu bir MongoID! Gerçek veriyi bul.
         const resolvedData = imageMap.get(potentialId);
         if (resolvedData) {
-          return buildCloudinaryUrl(resolvedData.filename, resolvedData.url, type);
+          // resolvedData.filename'in dolu olduğunu kontrol et
+          if (resolvedData.filename) {
+            return buildCloudinaryUrl(resolvedData.filename, resolvedData.url, type);
+          }
+          // Filename yoksa ama URL varsa onu kullan
+          if (resolvedData.url) {
+            return buildCloudinaryUrl('', resolvedData.url, type);
+          }
         }
       }
       return inputUrl;
@@ -123,13 +135,22 @@ const fixContentUrls = async (content: any): Promise<any> => {
     // 4. URL map'ten kontrol et (Local path/ID durumları)
     if (urlMap.has(inputUrl)) {
       let id = inputUrl;
-      id = id.replace(/^\/?api\/site-images\//, '');
-      id = id.replace(/^\/?uploads\//, '');
-      id = id.replace(/^\//, '');
+      if (typeof id === 'string') {
+        id = id.replace(/^\/?api\/site-images\//, '');
+        id = id.replace(/^\/?uploads\//, '');
+        id = id.replace(/^\//, '');
 
-      const resolvedData = imageMap.get(id);
-      if (resolvedData) {
-        return buildCloudinaryUrl(resolvedData.filename, resolvedData.url, type);
+        const resolvedData = imageMap.get(id);
+        if (resolvedData) {
+          // resolvedData.filename'in dolu olduğunu kontrol et
+          if (resolvedData.filename) {
+            return buildCloudinaryUrl(resolvedData.filename, resolvedData.url, type);
+          }
+          // Filename yoksa ama URL varsa onu kullan
+          if (resolvedData.url) {
+            return buildCloudinaryUrl('', resolvedData.url, type);
+          }
+        }
       }
     }
 

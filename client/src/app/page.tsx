@@ -13,8 +13,8 @@ import Icon from '@/components/common/Icon';
 import ContactForm from '@/components/common/ContactForm';
 import Map from '@/components/common/Map';
 import { getAllImages, SiteImage } from '@/services/siteImageService';
-import { 
-  getAllContents, 
+import {
+  getAllContents,
   getContentBySection,
   HeroContent,
   ServiceItem,
@@ -71,13 +71,13 @@ const VideoBackgroundPlayer = ({
         // Autoplay başarısız - sessizce devam et
       });
     };
-    
+
     const handleCanPlayThrough = () => {
       video.play().catch(() => {
         // Autoplay başarısız - sessizce devam et
       });
     };
-    
+
     video.addEventListener('error', handleError);
     video.addEventListener('loadeddata', handleLoadedData);
     video.addEventListener('canplaythrough', handleCanPlayThrough);
@@ -94,13 +94,13 @@ const VideoBackgroundPlayer = ({
   }
 
   return (
-    <video 
+    <video
       ref={videoRef}
       src={videoUrl}
-      className="absolute inset-0 w-full h-full object-cover z-0" 
-      autoPlay 
-      loop 
-      muted 
+      className="absolute inset-0 w-full h-full object-cover z-0"
+      autoPlay
+      loop
+      muted
       playsInline
       preload="auto"
       poster={poster}
@@ -148,32 +148,32 @@ export default function Home() {
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'services' | 'equipment'>('services');
-  
+
   // Hero bölümündeki değişen metinler için state
   const [textIndex, setTextIndex] = useState(0);
-  
+
   // Carousel için resim dizileri
   const [topImages, setTopImages] = useState<SiteImage[]>([]);
   const [bottomImages, setBottomImages] = useState<SiteImage[]>([]);
   const [allProjectImages, setAllProjectImages] = useState<SiteImage[]>([]);
-  
+
   // Modal/Lightbox için state'ler
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<SiteImage | null>(null);
   const [isTopCarousel, setIsTopCarousel] = useState(true);
   const modalRef = useRef<HTMLDivElement>(null);
-  
+
   // Carousel referansları - scroll pozisyonunu kaydetmek için
   const topCarouselRef = useRef<CarouselRef | null>(null);
   const bottomCarouselRef = useRef<CarouselRef | null>(null);
-  
+
   // Konum bilgileri (fallback) - stable deps
   const defaultLocation = useMemo(() => ({
     address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
     lat: 41.057984,
     lng: 28.987117,
   }), []);
-  
+
   const location = useMemo(() => {
     if (!contactInfo) return defaultLocation;
     return {
@@ -221,7 +221,7 @@ export default function Home() {
   useEffect(() => {
     // Zaten fetch yapıldıysa tekrar yapma (React Strict Mode için)
     if (imagesFetchedRef.current) return;
-    
+
     const fetchImages = async () => {
       try {
         // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
@@ -235,34 +235,34 @@ export default function Home() {
         };
         // Cache-busting kaldırıldı - rate limiting'i önlemek için
         const response = await fetch(`/api/site-images/public?category=project&isActive=true`, fetchOptions);
-        
+
         if (response.ok) {
           const data = await response.json();
           const images = (data.images || data || []);
-          
+
           const activeImages = images.filter((img: SiteImage) => {
             if (!img.isActive || img.category !== 'project') {
               return false;
             }
-            
+
             if (!img.url && !img.path && !img.filename) {
               return false;
             }
-            
+
             return true;
           });
-          
+
           setAllProjectImages(activeImages);
-          
+
           if (activeImages.length > 0) {
             const sortedImages = [...activeImages].sort((a, b) => a.order - b.order);
             const offset = Math.ceil(sortedImages.length / 2);
-            
+
             const topImagesArray = [...sortedImages];
             const bottomImagesArray = sortedImages.length > 1
               ? [...sortedImages.slice(offset), ...sortedImages.slice(0, offset)]
               : [];
-            
+
             if (sortedImages.length === 1) {
               setTopImages(topImagesArray);
               setBottomImages([]);
@@ -270,7 +270,7 @@ export default function Home() {
               setTopImages(topImagesArray);
               setBottomImages(bottomImagesArray);
             }
-            
+
           }
           imagesFetchedRef.current = true; // Fetch tamamlandı
         } else {
@@ -291,7 +291,7 @@ export default function Home() {
         imagesFetchedRef.current = true;
       }
     };
-    
+
     fetchImages();
   }, []);
 
@@ -299,13 +299,13 @@ export default function Home() {
   useEffect(() => {
     // Aynı locale için zaten fetch yapıldıysa tekrar yapma
     if (contentFetchedRef.current === locale) return;
-    
+
     const fetchSiteContent = async () => {
       try {
         setLoading(true);
         // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
         const isTr = locale === 'tr';
-        
+
         // Cache bypass için headers ekle
         const fetchOptions = {
           cache: 'no-store' as RequestCache,
@@ -315,7 +315,7 @@ export default function Home() {
             'Expires': '0',
           },
         };
-        
+
         // Cache-busting kaldırıldı - rate limiting'i önlemek için
         // Next.js cache kontrolü yeterli
         const [heroRes, servicesEquipmentRes, aboutRes, contactRes, socialRes] = await Promise.allSettled([
@@ -433,7 +433,7 @@ export default function Home() {
             }
           }
         }
-        
+
         // Fetch başarılı oldu, locale'i kaydet
         contentFetchedRef.current = locale;
       } catch (error) {
@@ -444,7 +444,7 @@ export default function Home() {
           setLoading(false);
           return;
         }
-        
+
         if (process.env.NODE_ENV === 'development') {
           logger.error('Site içerik yükleme hatası:', error);
         }
@@ -461,17 +461,17 @@ export default function Home() {
 
   // Hero rotating texts için effect
   useEffect(() => {
-    const textsCount = heroContent?.rotatingTexts && heroContent.rotatingTexts.length > 0 
-      ? heroContent.rotatingTexts.length 
+    const textsCount = heroContent?.rotatingTexts && heroContent.rotatingTexts.length > 0
+      ? heroContent.rotatingTexts.length
       : 3;
-    
+
     const interval = setInterval(() => {
       setTextIndex((prevIndex) => (prevIndex + 1) % textsCount);
     }, 5000);
 
     return () => clearInterval(interval);
   }, [heroContent]);
-  
+
   // Resme tıklama işleyicisi
   const handleImageClick = (image: SiteImage, isTop: boolean) => {
     // Carousel scroll pozisyonunu kaydet
@@ -480,17 +480,17 @@ export default function Home() {
     } else if (!isTop && bottomCarouselRef.current) {
       bottomCarouselRef.current.saveScrollPosition();
     }
-    
+
     setSelectedImage(image);
     setIsTopCarousel(isTop);
     setIsModalOpen(true);
   };
-  
+
   // Modal kapatma işleyicisi
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedImage(null);
-    
+
     // Carousel scroll pozisyonunu geri yükle
     setTimeout(() => {
       if (isTopCarousel && topCarouselRef.current) {
@@ -500,26 +500,26 @@ export default function Home() {
       }
     }, 100); // Kısa bir gecikme - modal animasyonu tamamlansın
   }, [isTopCarousel]);
-  
+
   // Carousel'leri durdur/devam ettir (modal açıkken durdur)
   const isCarouselPaused = isModalOpen;
-  
+
   // Modal dışına tıklandığında kapatma
   const handleModalBackdropClick = (e: React.MouseEvent) => {
     if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
       closeModal();
     }
   };
-  
+
   // Klavye ile gezinme
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!isModalOpen || !selectedImage) return;
-    
+
     const currentImages = isTopCarousel ? topImages : bottomImages;
-    const currentIndex = currentImages.findIndex(img => 
+    const currentIndex = currentImages.findIndex(img =>
       (img._id || img.id) === (selectedImage._id || selectedImage.id)
     );
-    
+
     if (e.key === 'ArrowRight') {
       const nextIndex = (currentIndex + 1) % currentImages.length;
       setSelectedImage(currentImages[nextIndex]);
@@ -588,7 +588,7 @@ export default function Home() {
   // Loading durumunda skeleton göster
   // İlk yüklemede heroContent veya images yoksa da loading göster
   const isInitialLoad = loading || (!heroContent && topImages.length === 0);
-  
+
   if (isInitialLoad) {
     return (
       <MainLayout>
@@ -609,7 +609,7 @@ export default function Home() {
       </a>
       {/* Structured Data */}
       <StructuredData type="organization" data={organizationSchema} />
-      
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -630,23 +630,23 @@ export default function Home() {
           }),
         }}
       />
-      
+
       {serviceSchemas.map((schema, index) => (
         <StructuredData key={index} type="service" data={schema} />
       ))}
-      
+
       <StructuredData type="localBusiness" data={localBusinessSchema} />
-      
+
       {/* Video Arkaplan */}
       {heroContent && (heroContent.selectedVideo || heroContent.backgroundVideo) && (
         <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
           {(() => {
             const videoUrl = heroContent.selectedVideo || heroContent.backgroundVideo || '';
-            
+
             if (videoUrl) {
               let fullVideoUrl = videoUrl;
-              
+
               // Eğer zaten full URL ise (http/https ile başlıyorsa), olduğu gibi kullan
               if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
                 // MongoDB ObjectId formatı kontrolü
@@ -667,7 +667,7 @@ export default function Home() {
                   fullVideoUrl = `/uploads/general/${videoUrl}`;
                 }
               }
-              
+
               return (
                 <VideoBackgroundPlayer
                   key={`video-${fullVideoUrl}`}
@@ -682,9 +682,9 @@ export default function Home() {
           })()}
         </div>
       )}
-      
+
       {/* İmmersive Hero Section */}
-      <ImmersiveHero 
+      <ImmersiveHero
         content={heroContent}
         onScrollDown={() => {
           document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
@@ -699,7 +699,7 @@ export default function Home() {
               title={tHome('projectsSection.title')}
               subtitle={tHome('projectsSection.subtitle')}
             />
-            
+
             {/* Üst Container - Sağdan Sola */}
             {topImages.length > 0 && (
               <div className="mb-8" key={`top-carousel-${topImages.length}`}>
@@ -716,14 +716,14 @@ export default function Home() {
             {/* Alt Container - Soldan Sağa */}
             {bottomImages.length > 0 && (
               <div className="mt-8" key={`bottom-carousel-${bottomImages.length}`}>
-                  <Carousel
-                    ref={bottomCarouselRef}
-                    images={bottomImages}
-                    direction="left"
-                    isPaused={isCarouselPaused}
-                    onImageClick={(image) => handleImageClick(image, false)}
-                    isTop={false}
-                  />
+                <Carousel
+                  ref={bottomCarouselRef}
+                  images={bottomImages}
+                  direction="left"
+                  isPaused={isCarouselPaused}
+                  onImageClick={(image) => handleImageClick(image, false)}
+                  isTop={false}
+                />
               </div>
             )}
 
@@ -775,7 +775,7 @@ export default function Home() {
                 onClick={(e) => {
                   e.stopPropagation();
                   const currentImages = isTopCarousel ? topImages : bottomImages;
-                  const currentIndex = currentImages.findIndex(img => 
+                  const currentIndex = currentImages.findIndex(img =>
                     (img._id || img.id) === (selectedImage._id || selectedImage.id)
                   );
                   const prevIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
@@ -790,7 +790,7 @@ export default function Home() {
                 onClick={(e) => {
                   e.stopPropagation();
                   const currentImages = isTopCarousel ? topImages : bottomImages;
-                  const currentIndex = currentImages.findIndex(img => 
+                  const currentIndex = currentImages.findIndex(img =>
                     (img._id || img.id) === (selectedImage._id || selectedImage.id)
                   );
                   const nextIndex = (currentIndex + 1) % currentImages.length;
@@ -802,18 +802,20 @@ export default function Home() {
 
               <div className="p-6 w-full h-full flex items-center justify-center" style={{ minHeight: '400px', height: '85vh' }}>
                 {(() => {
-                  // Image URL'i oluştur - önce ID'yi dene, sonra image objesini
+                  // Image URL'i oluştur - her zaman image objesini gönder (helper içindeki absolute URL kontrolü için)
                   const imageId = selectedImage._id || selectedImage.id;
-                  const imageUrl = imageId 
-                    ? getImageUrl({ imageId: imageId as string, fallback: selectedImage.url || selectedImage.path || '' })
-                    : getImageUrl({ image: selectedImage, fallback: selectedImage.url || selectedImage.path || '' });
-                  
+                  const imageUrl = getImageUrl({
+                    image: selectedImage,
+                    imageId: imageId as string, // ID'yi de gönder, gerekirse (fallback) kullanılır
+                    fallback: selectedImage.url || selectedImage.path || ''
+                  });
+
                   if (!imageUrl || imageUrl.trim() === '') {
-                    logger.warn('Resim URL oluşturulamadı:', { 
-                      selectedImage, 
+                    logger.warn('Resim URL oluşturulamadı:', {
+                      selectedImage,
                       imageId,
                       url: selectedImage.url,
-                      path: selectedImage.path 
+                      path: selectedImage.path
                     });
                     return (
                       <div className="text-white text-center">
@@ -830,9 +832,9 @@ export default function Home() {
                       </div>
                     );
                   }
-                  
+
                   return (
-                    <div 
+                    <div
                       className="relative w-full h-full max-w-[90vw] max-h-[85vh] flex items-center justify-center"
                       style={{ minHeight: '400px', height: '85vh' }}
                     >
@@ -846,10 +848,10 @@ export default function Home() {
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 85vh"
                         quality={90}
                         onError={(e) => {
-                          logger.error('Modal resim yükleme hatası:', { 
-                            imageUrl, 
+                          logger.error('Modal resim yükleme hatası:', {
+                            imageUrl,
                             selectedImage,
-                            error: e 
+                            error: e
                           });
                         }}
                       />
@@ -867,102 +869,100 @@ export default function Home() {
         <ParallaxSection speed={0.3} direction="up">
           <StageExperience>
             <section id="services" className="relative py-32 bg-gradient-to-b from-black/80 via-[#0A1128]/90 to-black/80" style={{ position: 'relative', scrollMarginTop: '100px', paddingBottom: '8rem', minHeight: 'auto' }}>
-            <div className="container mx-auto px-6">
-              <StageSectionTitle
-                title={servicesEquipment?.title || tHome('servicesSection.title')}
-                subtitle={servicesEquipment?.subtitle || tHome('servicesSection.subtitle')}
-              />
-              
-              {/* Tab Navigation */}
-              <div className="flex justify-center mb-12">
-                <div className="inline-flex bg-gray-900/50 backdrop-blur-sm rounded-lg p-1 border border-gray-700">
-                  <button
-                    onClick={() => setActiveTab('services')}
-                    className={`px-8 py-3 rounded-md font-medium transition-all duration-300 ${
-                      activeTab === 'services'
-                        ? 'bg-[#0066CC] text-white shadow-lg shadow-blue-500/50'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    {tHome('servicesSection.tabs.services')}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('equipment')}
-                    className={`px-8 py-3 rounded-md font-medium transition-all duration-300 ${
-                      activeTab === 'equipment'
-                        ? 'bg-[#0066CC] text-white shadow-lg shadow-blue-500/50'
-                        : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    {tHome('servicesSection.tabs.equipment')}
-                  </button>
-                </div>
-              </div>
+              <div className="container mx-auto px-6">
+                <StageSectionTitle
+                  title={servicesEquipment?.title || tHome('servicesSection.title')}
+                  subtitle={servicesEquipment?.subtitle || tHome('servicesSection.subtitle')}
+                />
 
-              {/* Tab Content */}
-              <AnimatePresence mode="wait">
-                {activeTab === 'services' ? (
-                  <motion.div
-                    key="services"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="pb-16 min-h-[400px]"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {(servicesEquipment?.services && servicesEquipment.services.length > 0
-                        ? servicesEquipment.services
-                        : (tHome.raw('servicesSection.fallbackServices') as Array<{ title: string; description: string; icon: string; order: number }>)).sort((a, b) => (a.order || 0) - (b.order || 0)).map((service, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, y: 30 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: index * 0.1, duration: 0.6 }}
-                          whileHover={{ y: -10, scale: 1.02 }}
-                        >
-                          <ServiceCard
-                            title={service.title}
-                            description={service.description}
-                            icon={service.icon as 'video' | 'screen' | 'led'}
-                          />
-                        </motion.div>
-                      ))}
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="equipment"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="pb-20 min-h-[500px]"
-                  >
-                    <div className="space-y-6">
-                      {(servicesEquipment?.equipment && servicesEquipment.equipment.length > 0
-                        ? servicesEquipment.equipment
-                        : (tHome.raw('servicesSection.fallbackEquipment') as Array<{ title: string; items: Array<{ name: string; description: string }>; order: number }>)).sort((a, b) => (a.order || 0) - (b.order || 0)).map((category, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -30 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: index * 0.2, duration: 0.6 }}
-                        >
-                          <EquipmentList
-                            title={category.title}
-                            items={category.items}
-                          />
-                        </motion.div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </section>
+                {/* Tab Navigation */}
+                <div className="flex justify-center mb-12">
+                  <div className="inline-flex bg-gray-900/50 backdrop-blur-sm rounded-lg p-1 border border-gray-700">
+                    <button
+                      onClick={() => setActiveTab('services')}
+                      className={`px-8 py-3 rounded-md font-medium transition-all duration-300 ${activeTab === 'services'
+                          ? 'bg-[#0066CC] text-white shadow-lg shadow-blue-500/50'
+                          : 'text-gray-400 hover:text-white'
+                        }`}
+                    >
+                      {tHome('servicesSection.tabs.services')}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('equipment')}
+                      className={`px-8 py-3 rounded-md font-medium transition-all duration-300 ${activeTab === 'equipment'
+                          ? 'bg-[#0066CC] text-white shadow-lg shadow-blue-500/50'
+                          : 'text-gray-400 hover:text-white'
+                        }`}
+                    >
+                      {tHome('servicesSection.tabs.equipment')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                <AnimatePresence mode="wait">
+                  {activeTab === 'services' ? (
+                    <motion.div
+                      key="services"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="pb-16 min-h-[400px]"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {(servicesEquipment?.services && servicesEquipment.services.length > 0
+                          ? servicesEquipment.services
+                          : (tHome.raw('servicesSection.fallbackServices') as Array<{ title: string; description: string; icon: string; order: number }>)).sort((a, b) => (a.order || 0) - (b.order || 0)).map((service, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, y: 30 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: index * 0.1, duration: 0.6 }}
+                              whileHover={{ y: -10, scale: 1.02 }}
+                            >
+                              <ServiceCard
+                                title={service.title}
+                                description={service.description}
+                                icon={service.icon as 'video' | 'screen' | 'led'}
+                              />
+                            </motion.div>
+                          ))}
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="equipment"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="pb-20 min-h-[500px]"
+                    >
+                      <div className="space-y-6">
+                        {(servicesEquipment?.equipment && servicesEquipment.equipment.length > 0
+                          ? servicesEquipment.equipment
+                          : (tHome.raw('servicesSection.fallbackEquipment') as Array<{ title: string; items: Array<{ name: string; description: string }>; order: number }>)).sort((a, b) => (a.order || 0) - (b.order || 0)).map((category, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, x: -30 }}
+                              whileInView={{ opacity: 1, x: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: index * 0.2, duration: 0.6 }}
+                            >
+                              <EquipmentList
+                                title={category.title}
+                                items={category.items}
+                              />
+                            </motion.div>
+                          ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </section>
           </StageExperience>
         </ParallaxSection>
       </div>
@@ -971,119 +971,119 @@ export default function Home() {
       <div style={{ marginTop: '16rem', marginBottom: '8rem' }}>
         <StageExperience>
           <section id="about" className="relative py-32 bg-gradient-to-b from-black/90 via-[#0A1128]/80 to-black/90" style={{ position: 'relative', scrollMarginTop: '100px', paddingTop: '8rem', minHeight: 'auto' }}>
-          <div className="container mx-auto px-6">
-            <div className="flex flex-col lg:flex-row items-center gap-16">
-              <motion.div
-                className="lg:w-1/2"
-                initial={{ opacity: 0, x: -50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-              >
-                <StageSectionTitle
-                  title={aboutContent?.title || tHome('aboutSection.title')}
-                  subtitle=""
-                />
-                {aboutContent?.description ? (
-                  <div className="text-gray-300 mb-8 text-lg whitespace-pre-line leading-relaxed">
-                    {aboutContent.description}
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                      {tHome('aboutSection.paragraphs.0')}
-                    </p>
-                    <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                      {tHome('aboutSection.paragraphs.1')}
-                    </p>
-                  </>
-                )}
-                <div className="flex gap-8">
-                  {(aboutContent?.stats && aboutContent.stats.length > 0
-                    ? aboutContent.stats
-                    : (tHome.raw('aboutSection.fallbackStats') as Array<{ value: string; label: string }>)).map((stat, index) => (
-                    <motion.div
-                      key={index}
-                      className="text-center"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.1, duration: 0.5 }}
-                      whileHover={{ scale: 1.1 }}
-                    >
-                      <motion.span
-                        className="block text-5xl font-bold bg-gradient-to-r from-[#0066CC] to-[#00C49F] bg-clip-text text-transparent"
-                        animate={{
-                          backgroundPosition: ['0%', '100%', '0%'],
-                        }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          ease: 'linear',
-                        }}
-                      >
-                        {stat.value}
-                      </motion.span>
-                      <span className="text-gray-400 text-sm mt-2 block">{stat.label}</span>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-              <motion.div
-                className="lg:w-1/2"
-                initial={{ opacity: 0, x: 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-              >
-                <div className="relative">
-                  <motion.div
-                    className="absolute -top-4 -right-4 w-full h-full bg-gradient-to-br from-[#0066CC] to-[#00C49F] rounded-2xl blur-xl opacity-50"
-                    animate={{
-                      scale: [1, 1.1, 1],
-                      opacity: [0.5, 0.7, 0.5],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    }}
+            <div className="container mx-auto px-6">
+              <div className="flex flex-col lg:flex-row items-center gap-16">
+                <motion.div
+                  className="lg:w-1/2"
+                  initial={{ opacity: 0, x: -50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8 }}
+                >
+                  <StageSectionTitle
+                    title={aboutContent?.title || tHome('aboutSection.title')}
+                    subtitle=""
                   />
-                  {(() => {
-                    // Relative path kullan - Next.js rewrites backend'e proxy eder
-                    if (aboutContent?.image && aboutContent.image.length === 24 && /^[a-fA-F0-9]{24}$/.test(aboutContent.image)) {
-                      return (
-                        <LazyImage
-                          src={`/api/site-images/public/${aboutContent.image}/image`}
-                          alt="SK Production Ekibi"
-                          className="relative rounded-2xl w-full aspect-[4/3] z-10"
-                          fill
-                          objectFit="cover"
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          quality={85}
-                        />
-                      );
-                    } else if (aboutContent?.image) {
-                      return (
-                        <LazyImage
-                          src={aboutContent.image}
-                          alt="SK Production Ekibi"
-                          className="relative rounded-2xl w-full aspect-[4/3] z-10"
-                          fill
-                          objectFit="cover"
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          quality={85}
-                        />
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              </motion.div>
+                  {aboutContent?.description ? (
+                    <div className="text-gray-300 mb-8 text-lg whitespace-pre-line leading-relaxed">
+                      {aboutContent.description}
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-gray-300 mb-6 text-lg leading-relaxed">
+                        {tHome('aboutSection.paragraphs.0')}
+                      </p>
+                      <p className="text-gray-300 mb-6 text-lg leading-relaxed">
+                        {tHome('aboutSection.paragraphs.1')}
+                      </p>
+                    </>
+                  )}
+                  <div className="flex gap-8">
+                    {(aboutContent?.stats && aboutContent.stats.length > 0
+                      ? aboutContent.stats
+                      : (tHome.raw('aboutSection.fallbackStats') as Array<{ value: string; label: string }>)).map((stat, index) => (
+                        <motion.div
+                          key={index}
+                          className="text-center"
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: index * 0.1, duration: 0.5 }}
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <motion.span
+                            className="block text-5xl font-bold bg-gradient-to-r from-[#0066CC] to-[#00C49F] bg-clip-text text-transparent"
+                            animate={{
+                              backgroundPosition: ['0%', '100%', '0%'],
+                            }}
+                            transition={{
+                              duration: 3,
+                              repeat: Infinity,
+                              ease: 'linear',
+                            }}
+                          >
+                            {stat.value}
+                          </motion.span>
+                          <span className="text-gray-400 text-sm mt-2 block">{stat.label}</span>
+                        </motion.div>
+                      ))}
+                  </div>
+                </motion.div>
+                <motion.div
+                  className="lg:w-1/2"
+                  initial={{ opacity: 0, x: 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8 }}
+                >
+                  <div className="relative">
+                    <motion.div
+                      className="absolute -top-4 -right-4 w-full h-full bg-gradient-to-br from-[#0066CC] to-[#00C49F] rounded-2xl blur-xl opacity-50"
+                      animate={{
+                        scale: [1, 1.1, 1],
+                        opacity: [0.5, 0.7, 0.5],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
+                    />
+                    {(() => {
+                      // Relative path kullan - Next.js rewrites backend'e proxy eder
+                      if (aboutContent?.image && aboutContent.image.length === 24 && /^[a-fA-F0-9]{24}$/.test(aboutContent.image)) {
+                        return (
+                          <LazyImage
+                            src={`/api/site-images/public/${aboutContent.image}/image`}
+                            alt="SK Production Ekibi"
+                            className="relative rounded-2xl w-full aspect-[4/3] z-10"
+                            fill
+                            objectFit="cover"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            quality={85}
+                          />
+                        );
+                      } else if (aboutContent?.image) {
+                        return (
+                          <LazyImage
+                            src={aboutContent.image}
+                            alt="SK Production Ekibi"
+                            className="relative rounded-2xl w-full aspect-[4/3] z-10"
+                            fill
+                            objectFit="cover"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            quality={85}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                </motion.div>
+              </div>
             </div>
-          </div>
-        </section>
-      </StageExperience>
+          </section>
+        </StageExperience>
       </div>
 
       {/* İletişim */}
@@ -1124,7 +1124,7 @@ export default function Home() {
                 ))}
                 <Map location={location} onOpenMobileNavigation={openMobileNavigation} />
               </motion.div>
-              
+
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}

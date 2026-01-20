@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getAllImages, createImage, deleteImage, SiteImage } from '@/services/siteImageService';
-import { 
-  getAllContents, 
-  updateContentBySection, 
+import {
+  getAllContents,
+  updateContentBySection,
   createContent,
   SiteContent,
   HeroContent,
@@ -62,7 +62,7 @@ export default function SiteContentPage() {
     setSaving(true);
     try {
       const existing = getContentBySection(section);
-      
+
       if (existing) {
         await updateContentBySection(section, {
           content: contentData,
@@ -76,7 +76,7 @@ export default function SiteContentPage() {
           order: 0,
         });
       }
-      
+
       toast.success(`${sections.find(s => s.key === section)?.name} başarıyla kaydedildi`);
       fetchContents();
     } catch (error: any) {
@@ -89,42 +89,42 @@ export default function SiteContentPage() {
 
   const renderContentForm = () => {
     const currentContent = getContentBySection(activeSection);
-    
+
     switch (activeSection) {
       case 'hero':
-        return <HeroForm 
-          content={currentContent?.content as HeroContent} 
-          onSave={(data) => handleSave('hero', data)} 
+        return <HeroForm
+          content={currentContent?.content as HeroContent}
+          onSave={(data) => handleSave('hero', data)}
           saving={saving}
         />;
       case 'services-equipment':
-        return <ServicesEquipmentForm 
-          content={currentContent?.content as ServicesEquipmentContent} 
-          onSave={(data) => handleSave('services-equipment', data)} 
+        return <ServicesEquipmentForm
+          content={currentContent?.content as ServicesEquipmentContent}
+          onSave={(data) => handleSave('services-equipment', data)}
           saving={saving}
         />;
       case 'about':
-        return <AboutForm 
-          content={currentContent?.content as AboutContent} 
-          onSave={(data) => handleSave('about', data)} 
+        return <AboutForm
+          content={currentContent?.content as AboutContent}
+          onSave={(data) => handleSave('about', data)}
           saving={saving}
         />;
       case 'contact':
-        return <ContactForm 
-          content={currentContent?.content as ContactInfo} 
-          onSave={(data) => handleSave('contact', data)} 
+        return <ContactForm
+          content={currentContent?.content as ContactInfo}
+          onSave={(data) => handleSave('contact', data)}
           saving={saving}
         />;
       case 'footer':
-        return <FooterForm 
-          content={currentContent?.content as FooterContent} 
-          onSave={(data) => handleSave('footer', data)} 
+        return <FooterForm
+          content={currentContent?.content as FooterContent}
+          onSave={(data) => handleSave('footer', data)}
           saving={saving}
         />;
       case 'social':
-        return <SocialForm 
-          content={currentContent?.content as SocialMedia[]} 
-          onSave={(data) => handleSave('social', data)} 
+        return <SocialForm
+          content={currentContent?.content as SocialMedia[]}
+          onSave={(data) => handleSave('social', data)}
           saving={saving}
         />;
       default:
@@ -163,11 +163,10 @@ export default function SiteContentPage() {
                 <button
                   key={section.key}
                   onClick={() => setActiveSection(section.key)}
-                  className={`w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-colors ${
-                    activeSection === section.key
+                  className={`w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-colors ${activeSection === section.key
                       ? 'bg-[#0066CC] dark:bg-primary-light text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
+                    }`}
                 >
                   <span className="mr-2">{section.icon}</span>
                   {section.name}
@@ -189,9 +188,9 @@ export default function SiteContentPage() {
 }
 
 // Hero Form Bileşeni
-function HeroForm({ content, onSave, saving }: { 
-  content?: HeroContent; 
-  onSave: (data: HeroContent) => void; 
+function HeroForm({ content, onSave, saving }: {
+  content?: HeroContent;
+  onSave: (data: HeroContent) => void;
   saving: boolean;
 }) {
   const [formData, setFormData] = useState<HeroContent>({
@@ -242,7 +241,7 @@ function HeroForm({ content, onSave, saving }: {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Hero Bölümü</h2>
-      
+
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Başlık
@@ -316,8 +315,8 @@ function HeroForm({ content, onSave, saving }: {
           selectedVideo={formData.selectedVideo || formData.backgroundVideo}
           availableVideos={formData.availableVideos || []}
           onVideoSelect={(videoUrl, videoList) => {
-            setFormData({ 
-              ...formData, 
+            setFormData({
+              ...formData,
               selectedVideo: videoUrl,
               backgroundVideo: videoUrl, // Backward compatibility
               availableVideos: videoList || formData.availableVideos || []
@@ -333,8 +332,8 @@ function HeroForm({ content, onSave, saving }: {
             value={formData.selectedVideo || formData.backgroundVideo || ''}
             onChange={(e) => {
               const url = e.target.value;
-              setFormData({ 
-                ...formData, 
+              setFormData({
+                ...formData,
                 selectedVideo: url,
                 backgroundVideo: url // Backward compatibility
               });
@@ -435,9 +434,9 @@ function HeroForm({ content, onSave, saving }: {
 }
 
 // Services Form Bileşeni
-function ServicesForm({ content, onSave, saving }: { 
-  content?: ServiceItem[]; 
-  onSave: (data: ServiceItem[]) => void; 
+function ServicesForm({ content, onSave, saving }: {
+  content?: ServiceItem[];
+  onSave: (data: ServiceItem[]) => void;
   saving: boolean;
 }) {
   const [services, setServices] = useState<ServiceItem[]>(content || [
@@ -492,7 +491,7 @@ function ServicesForm({ content, onSave, saving }: {
               </button>
             )}
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Başlık
@@ -550,9 +549,9 @@ function ServicesForm({ content, onSave, saving }: {
 }
 
 // Services & Equipment Combined Form Bileşeni
-function ServicesEquipmentForm({ content, onSave, saving }: { 
-  content?: ServicesEquipmentContent; 
-  onSave: (data: ServicesEquipmentContent) => void; 
+function ServicesEquipmentForm({ content, onSave, saving }: {
+  content?: ServicesEquipmentContent;
+  onSave: (data: ServicesEquipmentContent) => void;
   saving: boolean;
 }) {
   const [formData, setFormData] = useState<ServicesEquipmentContent>(content || {
@@ -775,7 +774,7 @@ function ServicesEquipmentForm({ content, onSave, saving }: {
                   </button>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Başlık
@@ -1036,9 +1035,9 @@ function ServicesEquipmentForm({ content, onSave, saving }: {
 }
 
 // Equipment Form Bileşeni
-function EquipmentForm({ content, onSave, saving }: { 
-  content?: EquipmentCategory[]; 
-  onSave: (data: EquipmentCategory[]) => void; 
+function EquipmentForm({ content, onSave, saving }: {
+  content?: EquipmentCategory[];
+  onSave: (data: EquipmentCategory[]) => void;
   saving: boolean;
 }) {
   const [categories, setCategories] = useState<EquipmentCategory[]>(content || [
@@ -1187,16 +1186,16 @@ function EquipmentForm({ content, onSave, saving }: {
 }
 
 // Video Thumbnail Component - Video'dan frame çekerek thumbnail oluştur
-const VideoThumbnail = ({ 
-  video, 
-  videoUrl, 
-  isSelected, 
+const VideoThumbnail = ({
+  video,
+  videoUrl,
+  isSelected,
   onSelect,
   onDelete
-}: { 
-  video: SiteImage; 
+}: {
+  video: SiteImage;
   videoUrl: string; // Relative path olarak gelmeli (Next.js rewrites proxy eder)
-  isSelected: boolean; 
+  isSelected: boolean;
   onSelect: () => void;
   onDelete?: () => void;
 }) => {
@@ -1295,8 +1294,8 @@ const VideoThumbnail = ({
       }}
       className={`
         relative group cursor-pointer rounded-xl overflow-hidden border-2 transition-all modern-card
-        ${isSelected 
-          ? 'border-[#0066CC] dark:border-primary-light shadow-xl scale-105 ring-2 ring-[#0066CC] dark:ring-primary-light' 
+        ${isSelected
+          ? 'border-[#0066CC] dark:border-primary-light shadow-xl scale-105 ring-2 ring-[#0066CC] dark:ring-primary-light'
           : 'border-gray-200 dark:border-gray-700 hover:border-[#0066CC]/50 dark:hover:border-primary-light/50 hover:shadow-lg'
         }
       `}
@@ -1329,7 +1328,7 @@ const VideoThumbnail = ({
             <p className="text-xs">{failed ? 'Video bulunamadı' : 'Önizleme yok'}</p>
           </div>
         )}
-        
+
         {/* Video element (gizli, sadece thumbnail için) */}
         {!failed && videoUrl && (
           <video
@@ -1356,16 +1355,16 @@ const VideoThumbnail = ({
           />
         )}
         <canvas ref={canvasRef} className="hidden" />
-        
+
         {/* Play icon overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors">
           <div className="w-14 h-14 rounded-full bg-white/95 dark:bg-gray-800/95 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
             <svg className="w-8 h-8 text-[#0066CC] dark:text-primary-light ml-1" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
+              <path d="M8 5v14l11-7z" />
             </svg>
           </div>
         </div>
-        
+
         {/* Sil butonu */}
         {onDelete && (
           <button
@@ -1380,7 +1379,7 @@ const VideoThumbnail = ({
             Sil
           </button>
         )}
-        
+
         {/* Seçili badge */}
         {isSelected && (
           <div className="absolute top-2 right-2 bg-gradient-to-r from-[#0066CC] to-[#00C49F] dark:from-primary-light dark:to-primary text-white text-xs px-3 py-1.5 rounded-full font-semibold shadow-lg z-10">
@@ -1388,7 +1387,7 @@ const VideoThumbnail = ({
           </div>
         )}
       </div>
-      
+
       {/* Video bilgisi */}
       <div className="p-3 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
         <p className="text-xs font-semibold text-gray-900 dark:text-white truncate mb-1">
@@ -1419,7 +1418,7 @@ function VideoSelector({
   const [previewFailedUrl, setPreviewFailedUrl] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-  
+
   // Rate limiting kontrolü için ref - 429 hatası geldiğinde tekrar deneme
   const rateLimitedRef = useRef(false);
   const fetchAttemptedRef = useRef(false);
@@ -1430,45 +1429,45 @@ function VideoSelector({
       console.warn('⚠️ VideoSelector: Rate limiting hatası var, fetchVideos atlanıyor');
       return;
     }
-    
+
     // Zaten fetch yapıldıysa tekrar yapma (React Strict Mode için)
     if (fetchAttemptedRef.current && videos.length > 0) {
       console.log('ℹ️ VideoSelector: Zaten fetch yapıldı ve videolar var, tekrar fetch atlanıyor');
       return;
     }
-    
+
     try {
       fetchAttemptedRef.current = true;
       setLoading(true);
       console.log('🎬 VideoSelector: fetchVideos başlatılıyor...', { category: 'video', isActive: true });
       logger.debug('Video yükleme başlatılıyor...', { category: 'video', isActive: true });
-      
+
       // Veritabanından video kategorisindeki tüm aktif videoları çek
       // Admin panelinde olduğumuz için getAllImages otomatik olarak /site-images endpoint'ini kullanacak (authentication ile)
       const response = await getAllImages({ category: 'video', isActive: true });
-      
+
       console.log('📥 VideoSelector: getAllImages response alındı:', response);
       logger.debug('Video yükleme response:', response);
-      
+
       // Response formatını kontrol et - getAllImages { images, count } döndürüyor
       const images = response?.images || [];
-      
+
       console.log('🖼️ VideoSelector: Images extracted:', {
         imagesCount: images.length,
         images: images.map(img => ({ id: img._id || img.id, filename: img.filename, category: img.category })),
       });
-      
+
       if (!response || images.length === 0) {
         console.warn('⚠️ VideoSelector: Boş response veya video yok', { response, imagesCount: images.length });
         logger.warn('Video yükleme: Boş response veya video yok', { response, imagesCount: images.length });
         setVideos([]);
         return;
       }
-      
+
       console.log('✅ VideoSelector: Video yükleme başarılı, setVideos çağrılıyor:', images.length, 'video');
       logger.debug('Video yükleme başarılı:', images.length, 'video bulundu');
       setVideos(images);
-      
+
       // availableVideos'u da güncelle (backward compatibility)
       const videoList = images.map(img => {
         // Video ID varsa relative path kullan (Next.js rewrites proxy eder)
@@ -1481,7 +1480,7 @@ function VideoSelector({
             uploadedAt: img.createdAt
           };
         }
-        
+
         // ID yoksa URL'den relative path oluştur
         let videoUrl = img.url || '';
         if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
@@ -1489,12 +1488,12 @@ function VideoSelector({
           const urlObj = new URL(videoUrl);
           videoUrl = urlObj.pathname;
         }
-        
+
         // Relative path olarak kullan (Next.js rewrites proxy eder)
         if (!videoUrl.startsWith('/')) {
           videoUrl = `/${videoUrl}`;
         }
-        
+
         return {
           url: videoUrl,
           filename: img.filename,
@@ -1515,7 +1514,7 @@ function VideoSelector({
         setLoading(false);
         return; // Erken çık - tekrar deneme
       }
-      
+
       logger.error('Video yükleme hatası:', {
         error,
         message: error?.message,
@@ -1539,11 +1538,11 @@ function VideoSelector({
       console.log('ℹ️ VideoSelector: useEffect - fetchVideos atlanıyor (rateLimited veya zaten fetch yapıldı)');
       return;
     }
-    
+
     logger.debug('VideoSelector: useEffect tetiklendi, fetchVideos çağrılıyor');
     fetchVideos();
   }, [fetchVideos, videos.length]);
-  
+
   // Debug: videos state değişikliğini logla
   useEffect(() => {
     logger.debug('VideoSelector: videos state güncellendi', { count: videos.length, videos: videos.map(v => ({ id: v._id || v.id, filename: v.filename })) });
@@ -1552,7 +1551,7 @@ function VideoSelector({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (file.type.startsWith('video/') && file.size <= 100 * 1024 * 1024) {
       setSelectedFile(file);
     } else {
@@ -1581,7 +1580,7 @@ function VideoSelector({
       if (!uploadResponse.ok) throw new Error('Dosya yükleme başarısız');
 
       const uploadData = await uploadResponse.json();
-      
+
       if (!uploadData.success || !uploadData.file) {
         throw new Error('Dosya yükleme başarısız');
       }
@@ -1589,7 +1588,7 @@ function VideoSelector({
       // Video path'ini düzelt (DB'ye kaydetmek için)
       // Path formatı: "videos/filename.mp4" (type: 'videos' olduğu için)
       const imagePath = uploadData.file.url.replace(/^\/uploads\//, '');
-      
+
       // Veritabanına video olarak kaydet
       const newVideoImage = await createImage({
         filename: uploadData.file.filename,
@@ -1600,11 +1599,11 @@ function VideoSelector({
         order: videos.length,
         isActive: true,
       });
-      
+
       // Yeni videoyu havuza ekle ve otomatik olarak seç
       const updatedVideos = [...videos, newVideoImage];
       setVideos(updatedVideos);
-      
+
       // availableVideos formatına çevir - Relative path kullan (Next.js rewrites proxy eder)
       const videoList = updatedVideos.map(img => {
         // Video ID varsa relative path kullan
@@ -1616,29 +1615,29 @@ function VideoSelector({
             uploadedAt: img.createdAt
           };
         }
-        
+
         // ID yoksa URL'den relative path oluştur
         let imgUrl = img.url || '';
         if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
           const urlObj = new URL(imgUrl);
           imgUrl = urlObj.pathname;
         }
-        
+
         if (!imgUrl.startsWith('/')) {
           imgUrl = `/${imgUrl}`;
         }
-        
+
         return {
           url: imgUrl,
           filename: img.filename,
           uploadedAt: img.createdAt
         };
       });
-      
+
       // Veritabanına kaydetmek için video ID kullan
       const videoIdForDb = newVideoImage._id || newVideoImage.id || '';
       onVideoSelect(videoIdForDb, videoList); // Video ID'yi kaydet
-      
+
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -1668,7 +1667,7 @@ function VideoSelector({
       // Videoyu havuzdan çıkar
       const updatedVideos = videos.filter(v => (v._id || v.id) !== videoId);
       setVideos(updatedVideos);
-      
+
       // Video listesini oluştur - Relative path kullan (Next.js rewrites proxy eder)
       const createVideoList = (videos: SiteImage[]) => {
         return videos.map(img => {
@@ -1681,18 +1680,18 @@ function VideoSelector({
               uploadedAt: img.createdAt
             };
           }
-          
+
           // ID yoksa URL'den relative path oluştur
           let imgUrl = img.url || '';
           if (imgUrl.startsWith('http://') || imgUrl.startsWith('https://')) {
             const urlObj = new URL(imgUrl);
             imgUrl = urlObj.pathname;
           }
-          
+
           if (!imgUrl.startsWith('/')) {
             imgUrl = `/${imgUrl}`;
           }
-          
+
           return {
             url: imgUrl,
             filename: img.filename,
@@ -1700,7 +1699,7 @@ function VideoSelector({
           };
         });
       };
-      
+
       // Video URL'ini oluştur (seçili video kontrolü için)
       let videoUrl = '';
       if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
@@ -1716,7 +1715,7 @@ function VideoSelector({
         }
         videoUrl = url;
       }
-      
+
       // Eğer silinen video seçiliyse, seçimi kaldır
       // selectedVideo artık video ID veya video URL olabilir
       if (selectedVideo === videoId || selectedVideo === videoUrl || (selectedVideo && typeof selectedVideo === 'string' && selectedVideo.includes(video.url))) {
@@ -1725,7 +1724,7 @@ function VideoSelector({
         // Sadece video listesini güncelle
         onVideoSelect(selectedVideo || '', createVideoList(updatedVideos));
       }
-      
+
       toast.success('Video başarıyla silindi');
     } catch (error: any) {
       toast.error(error.message || 'Video silinirken bir hata oluştu');
@@ -1744,7 +1743,7 @@ function VideoSelector({
             </span>
           )}
         </div>
-        
+
         {/* Seçili Video Önizleme - Büyük Thumbnail */}
         {selectedVideo ? (() => {
           const isObjectId = (value: string) => /^[a-f0-9]{24}$/i.test(value);
@@ -1753,14 +1752,14 @@ function VideoSelector({
             const videoId = v._id || v.id || '';
             // Video ID ile eşleştir
             if (selectedVideo === videoId) return true;
-            
+
             // URL ile eşleştir (relative path)
             const videoUrl = v.url || '';
             if (selectedVideo === videoUrl || selectedVideo.includes(videoUrl)) return true;
-            
+
             // Full URL ile eşleştir (backward compatibility)
             if (selectedVideo.startsWith('http') && videoUrl && selectedVideo.includes(videoUrl)) return true;
-            
+
             return false;
           });
 
@@ -1783,32 +1782,32 @@ function VideoSelector({
               if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
                 return `/api/site-images/public/${videoId}/image`;
               }
-              
+
               // ID yoksa URL'den relative path oluştur
               let url = selectedVideoObj.url || '';
               if (url.startsWith('http://') || url.startsWith('https://')) {
                 const urlObj = new URL(url);
                 url = urlObj.pathname;
               }
-              
+
               if (!url.startsWith('/')) {
                 url = `/${url}`;
               }
-              
+
               return url;
             }
-            
+
             // selectedVideo string ise
             if (selectedVideo.startsWith('http://') || selectedVideo.startsWith('https://')) {
               const urlObj = new URL(selectedVideo);
               return urlObj.pathname;
             }
-            
+
             // Relative path ise olduğu gibi kullan
             if (selectedVideo.startsWith('/')) {
               return selectedVideo;
             }
-            
+
             // Relative path oluştur
             return `/uploads/${selectedVideo}`;
           })();
@@ -1823,7 +1822,7 @@ function VideoSelector({
               </div>
             );
           }
-          
+
           return (
             <div className="bg-white dark:bg-gray-900 rounded-xl border-2 border-[#0066CC] dark:border-primary-light shadow-lg overflow-hidden">
               <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">
@@ -1856,7 +1855,7 @@ function VideoSelector({
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                   <div className="w-16 h-16 rounded-full bg-white/90 dark:bg-gray-800/90 flex items-center justify-center shadow-lg">
                     <svg className="w-8 h-8 text-[#0066CC] dark:text-primary-light ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
+                      <path d="M8 5v14l11-7z" />
                     </svg>
                   </div>
                 </div>
@@ -1881,18 +1880,18 @@ function VideoSelector({
                           uploadedAt: img.createdAt
                         };
                       }
-                      
+
                       // ID yoksa URL'den relative path oluştur
                       let url = img.url || '';
                       if (url.startsWith('http://') || url.startsWith('https://')) {
                         const urlObj = new URL(url);
                         url = urlObj.pathname;
                       }
-                      
+
                       if (!url.startsWith('/')) {
                         url = `/${url}`;
                       }
-                      
+
                       return {
                         url,
                         filename: img.filename,
@@ -1973,7 +1972,7 @@ function VideoSelector({
             </span>
           )}
         </div>
-        
+
         {loading ? (
           <div className="flex justify-center py-12">
             <svg className="animate-spin h-8 w-8 text-[#0066CC] dark:text-primary-light" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -1987,7 +1986,7 @@ function VideoSelector({
               // Video URL'ini relative path'e çevir (Next.js rewrites proxy eder)
               let videoUrl = '';
               const videoId = video._id || video.id;
-              
+
               if (videoId && typeof videoId === 'string' && /^[0-9a-f]{24}$/i.test(videoId)) {
                 // MongoDB ObjectId - relative path kullan
                 videoUrl = `/api/site-images/public/${videoId}/image`;
@@ -1998,21 +1997,21 @@ function VideoSelector({
                   const urlObj = new URL(url);
                   url = urlObj.pathname;
                 }
-                
+
                 if (!url.startsWith('/')) {
                   url = `/${url}`;
                 }
-                
+
                 videoUrl = url;
               }
-              
+
               // Seçili video kontrolü
               const isSelected: boolean = Boolean(
-                selectedVideo === videoUrl 
+                selectedVideo === videoUrl
                 || selectedVideo === videoId
                 || (selectedVideo && typeof selectedVideo === 'string' && selectedVideo.includes(video.url))
               );
-              
+
               return (
                 <VideoThumbnail
                   key={video._id || video.id}
@@ -2032,18 +2031,18 @@ function VideoSelector({
                           uploadedAt: img.createdAt
                         };
                       }
-                      
+
                       // ID yoksa URL'den relative path oluştur
                       let url = img.url || '';
                       if (url.startsWith('http://') || url.startsWith('https://')) {
                         const urlObj = new URL(url);
                         url = urlObj.pathname;
                       }
-                      
+
                       if (!url.startsWith('/')) {
                         url = `/${url}`;
                       }
-                      
+
                       return {
                         url,
                         filename: img.filename,
@@ -2074,11 +2073,11 @@ function VideoSelector({
 }
 
 // About Image Selector Bileşeni
-function AboutImageSelector({ 
-  selectedImageId, 
-  onImageSelect 
-}: { 
-  selectedImageId?: string; 
+function AboutImageSelector({
+  selectedImageId,
+  onImageSelect
+}: {
+  selectedImageId?: string;
   onImageSelect: (imageId: string) => void;
 }) {
   const [images, setImages] = useState<SiteImage[]>([]);
@@ -2109,14 +2108,14 @@ function AboutImageSelector({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    
+
     const validFiles: File[] = [];
     files.forEach((file) => {
       if (file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024) {
         validFiles.push(file);
       }
     });
-    
+
     setSelectedFiles(validFiles);
   };
 
@@ -2142,7 +2141,7 @@ function AboutImageSelector({
       if (!uploadResponse.ok) throw new Error('Dosya yükleme başarısız');
 
       const uploadData = await uploadResponse.json();
-      
+
       if (!uploadData.success || !uploadData.files || uploadData.files.length === 0) {
         throw new Error('Dosya yükleme başarısız');
       }
@@ -2161,11 +2160,11 @@ function AboutImageSelector({
       });
 
       const createdImages = await Promise.all(uploadPromises);
-      
+
       if (createdImages.length > 0 && createdImages[0]._id) {
         onImageSelect(createdImages[0]._id);
       }
-      
+
       setSelectedFiles([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -2185,7 +2184,7 @@ function AboutImageSelector({
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         Hakkımızda Görseli
       </label>
-      
+
       {selectedImage ? (
         <div className="mb-4 p-4 border-2 border-[#0066CC] dark:border-primary-light rounded-xl bg-white dark:bg-gray-900 shadow-lg">
           <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-3">
@@ -2238,7 +2237,7 @@ function AboutImageSelector({
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div 
+            <div
               className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75"
               onClick={() => !uploading && setShowModal(false)}
             ></div>
@@ -2248,7 +2247,7 @@ function AboutImageSelector({
                 <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
                   Hakkımızda Görseli Seç
                 </h3>
-                
+
                 <div className="mb-4">
                   <input
                     ref={fileInputRef}
@@ -2300,11 +2299,10 @@ function AboutImageSelector({
                             onImageSelect(imageId);
                             setShowModal(false);
                           }}
-                          className={`cursor-pointer border-2 rounded-xl overflow-hidden transition-all modern-card group ${
-                            isSelected
+                          className={`cursor-pointer border-2 rounded-xl overflow-hidden transition-all modern-card group ${isSelected
                               ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light shadow-lg scale-105'
                               : 'border-gray-200 dark:border-gray-700 hover:border-[#0066CC]/50 dark:hover:border-primary-light/50 hover:shadow-md'
-                          }`}
+                            }`}
                         >
                           <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">
                             <LazyImage
@@ -2371,9 +2369,9 @@ function AboutImageSelector({
 }
 
 // About Form Bileşeni
-function AboutForm({ content, onSave, saving }: { 
-  content?: AboutContent; 
-  onSave: (data: AboutContent) => void; 
+function AboutForm({ content, onSave, saving }: {
+  content?: AboutContent;
+  onSave: (data: AboutContent) => void;
   saving: boolean;
 }) {
   const [formData, setFormData] = useState<AboutContent>({
@@ -2505,9 +2503,9 @@ function AboutForm({ content, onSave, saving }: {
 }
 
 // Contact Form Bileşeni
-function ContactForm({ content, onSave, saving }: { 
-  content?: ContactInfo; 
-  onSave: (data: ContactInfo) => void; 
+function ContactForm({ content, onSave, saving }: {
+  content?: ContactInfo;
+  onSave: (data: ContactInfo) => void;
   saving: boolean;
 }) {
   const [formData, setFormData] = useState<ContactInfo>({
@@ -2617,9 +2615,9 @@ function ContactForm({ content, onSave, saving }: {
 }
 
 // Footer Form Bileşeni
-function FooterForm({ content, onSave, saving }: { 
-  content?: FooterContent; 
-  onSave: (data: FooterContent) => void; 
+function FooterForm({ content, onSave, saving }: {
+  content?: FooterContent;
+  onSave: (data: FooterContent) => void;
   saving: boolean;
 }) {
   const [formData, setFormData] = useState<FooterContent>({
@@ -2725,9 +2723,9 @@ function FooterForm({ content, onSave, saving }: {
 }
 
 // Social Form Bileşeni
-function SocialForm({ content, onSave, saving }: { 
-  content?: SocialMedia[]; 
-  onSave: (data: SocialMedia[]) => void; 
+function SocialForm({ content, onSave, saving }: {
+  content?: SocialMedia[];
+  onSave: (data: SocialMedia[]) => void;
   saving: boolean;
 }) {
   const [socials, setSocials] = useState<SocialMedia[]>(content || [

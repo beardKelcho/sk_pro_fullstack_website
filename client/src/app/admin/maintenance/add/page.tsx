@@ -41,7 +41,7 @@ const sampleTechnicians = [
 export default function AddMaintenance() {
   const router = useRouter();
   const createMaintenanceMutation = useCreateMaintenance();
-  
+
   // Form state'i
   const [formData, setFormData] = useState<MaintenanceForm>({
     equipmentId: '',
@@ -56,19 +56,19 @@ export default function AddMaintenance() {
     parts: [],
     nextMaintenanceDate: ''
   });
-  
+
   // Parça girişi için state
   const [partInput, setPartInput] = useState('');
-  
+
   // Yükleme ve hata durumları
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
-  
+
   // Form değişikliği işleyicisi
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Maliyet için özel işlem
     if (name === 'cost') {
       const numericValue = value.replace(/[^0-9]/g, '');
@@ -79,7 +79,7 @@ export default function AddMaintenance() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    
+
     // Hataları temizle
     if (errors[name]) {
       setErrors(prev => {
@@ -89,7 +89,7 @@ export default function AddMaintenance() {
       });
     }
   };
-  
+
   // Parça ekleme
   const handleAddPart = () => {
     if (partInput.trim() && !formData.parts?.includes(partInput.trim())) {
@@ -100,7 +100,7 @@ export default function AddMaintenance() {
       setPartInput('');
     }
   };
-  
+
   // Parça silme
   const handleRemovePart = (partToRemove: string) => {
     setFormData(prev => ({
@@ -108,59 +108,59 @@ export default function AddMaintenance() {
       parts: prev.parts?.filter(part => part !== partToRemove) || []
     }));
   };
-  
+
   // Form doğrulama
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.equipmentId) {
       newErrors.equipmentId = 'Ekipman seçimi zorunludur';
     }
-    
+
     if (!formData.description.trim()) {
       newErrors.description = 'Açıklama zorunludur';
     }
-    
+
     if (!formData.assignedTo) {
       newErrors.assignedTo = 'Teknisyen seçimi zorunludur';
     }
-    
+
     if (!formData.startDate) {
       newErrors.startDate = 'Başlangıç tarihi zorunludur';
     }
-    
+
     if (formData.endDate && new Date(formData.endDate) < new Date(formData.startDate)) {
       newErrors.endDate = 'Bitiş tarihi başlangıç tarihinden önce olamaz';
     }
-    
+
     if (formData.nextMaintenanceDate && new Date(formData.nextMaintenanceDate) < new Date()) {
       newErrors.nextMaintenanceDate = 'Sonraki bakım tarihi bugünden sonra olmalıdır';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   // Form gönderimi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       // API'ye gönderilecek veri - Backend formatına uygun
       // Tarih formatını ISO8601'e çevir
       const scheduledDateISO = formData.startDate ? new Date(formData.startDate + 'T00:00:00.000Z').toISOString() : undefined;
-      
+
       const maintenanceData = {
         equipment: formData.equipmentId,
-        type: formData.type === 'Periyodik' ? 'ROUTINE' :
-              formData.type === 'Arıza' ? 'REPAIR' :
-              formData.type === 'Kalibrasyon' ? 'INSPECTION' : 'UPGRADE',
+        type: (formData.type === 'Periyodik' ? 'ROUTINE' :
+          formData.type === 'Arıza' ? 'REPAIR' :
+            formData.type === 'Kalibrasyon' ? 'INSPECTION' : 'UPGRADE') as 'ROUTINE' | 'REPAIR' | 'INSPECTION' | 'UPGRADE',
         description: formData.description.trim(),
         scheduledDate: scheduledDateISO,
         status: 'SCHEDULED' as const,
@@ -170,15 +170,15 @@ export default function AddMaintenance() {
         parts: formData.parts && formData.parts.length > 0 ? formData.parts : undefined,
         completedDate: formData.endDate ? new Date(formData.endDate + 'T00:00:00.000Z').toISOString() : undefined
       };
-      
+
       await createMaintenanceMutation.mutateAsync(maintenanceData);
       setSuccess(true);
       toast.success('Bakım kaydı başarıyla oluşturuldu');
-      
+
       setTimeout(() => {
         router.push('/admin/maintenance');
       }, 2000);
-      
+
     } catch (error: unknown) {
       const apiError = handleApiError(error);
       const errorMessage = getUserFriendlyMessage(apiError);
@@ -191,7 +191,7 @@ export default function AddMaintenance() {
       setLoading(false);
     }
   };
-  
+
   // Para birimini formatlama
   const formatCurrency = (value?: number) => {
     if (value === undefined) return '';
@@ -202,7 +202,7 @@ export default function AddMaintenance() {
       maximumFractionDigits: 0
     }).format(value);
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Başlık */}
@@ -217,7 +217,7 @@ export default function AddMaintenance() {
           </button>
         </Link>
       </div>
-      
+
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Temel Bilgiler */}
@@ -245,7 +245,7 @@ export default function AddMaintenance() {
               </select>
               {errors.equipmentId && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.equipmentId}</p>}
             </div>
-            
+
             {/* Teknisyen */}
             <div>
               <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -267,7 +267,7 @@ export default function AddMaintenance() {
               </select>
               {errors.assignedTo && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.assignedTo}</p>}
             </div>
-            
+
             {/* Bakım Tipi */}
             <div>
               <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -286,7 +286,7 @@ export default function AddMaintenance() {
                 <option value="Güncelleme">Güncelleme</option>
               </select>
             </div>
-            
+
             {/* Öncelik */}
             <div>
               <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -305,7 +305,7 @@ export default function AddMaintenance() {
                 <option value="Acil">Acil</option>
               </select>
             </div>
-            
+
             {/* Başlangıç Tarihi */}
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -321,7 +321,7 @@ export default function AddMaintenance() {
               />
               {errors.startDate && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.startDate}</p>}
             </div>
-            
+
             {/* Bitiş Tarihi */}
             <div>
               <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -339,7 +339,7 @@ export default function AddMaintenance() {
             </div>
           </div>
         </div>
-        
+
         {/* Detaylar */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Detaylar</h2>
@@ -360,7 +360,7 @@ export default function AddMaintenance() {
               ></textarea>
               {errors.description && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.description}</p>}
             </div>
-            
+
             {/* Notlar */}
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -376,7 +376,7 @@ export default function AddMaintenance() {
                 placeholder="Ek notlar"
               ></textarea>
             </div>
-            
+
             {/* Parçalar */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -399,7 +399,7 @@ export default function AddMaintenance() {
                   Ekle
                 </button>
               </div>
-              
+
               {formData.parts && formData.parts.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {formData.parts.map((part, index) => (
@@ -424,7 +424,7 @@ export default function AddMaintenance() {
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Henüz parça eklenmemiş.</p>
               )}
             </div>
-            
+
             {/* Maliyet */}
             <div>
               <label htmlFor="cost" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -440,7 +440,7 @@ export default function AddMaintenance() {
                 placeholder="₺0"
               />
             </div>
-            
+
             {/* Sonraki Bakım Tarihi */}
             <div>
               <label htmlFor="nextMaintenanceDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -458,14 +458,14 @@ export default function AddMaintenance() {
             </div>
           </div>
         </div>
-        
+
         {/* Gönderme Hatası */}
         {errors.submit && (
           <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-md">
             {errors.submit}
           </div>
         )}
-        
+
         {/* Form Butonları */}
         <div className="flex justify-end space-x-3">
           <Link href="/admin/maintenance">

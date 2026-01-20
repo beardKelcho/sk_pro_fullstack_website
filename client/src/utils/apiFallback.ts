@@ -15,7 +15,7 @@ export const isBackendAvailable = async (): Promise<boolean> => {
 // LocalStorage'dan veri okuma (offline mode için)
 export const getCachedData = <T>(key: string): T | null => {
   if (typeof window === 'undefined') return null;
-  
+
   try {
     const cached = localStorage.getItem(`cache_${key}`);
     if (cached) {
@@ -28,14 +28,14 @@ export const getCachedData = <T>(key: string): T | null => {
   } catch {
     // Cache okuma hatası, null döndür
   }
-  
+
   return null;
 };
 
 // LocalStorage'a veri yazma
 export const setCachedData = <T>(key: string, data: T): void => {
   if (typeof window === 'undefined') return;
-  
+
   try {
     localStorage.setItem(`cache_${key}`, JSON.stringify({
       data,
@@ -49,7 +49,7 @@ export const setCachedData = <T>(key: string, data: T): void => {
 // Offline mode için queue (backend geri geldiğinde gönderilecek)
 export const addToOfflineQueue = (action: string, data: any): void => {
   if (typeof window === 'undefined') return;
-  
+
   try {
     const queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
     queue.push({

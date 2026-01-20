@@ -12,7 +12,7 @@ const getApiUrl = () => {
   }
   // Server-side'da (SSR) tam URL kullan - NEXT_PUBLIC_BACKEND_URL kullan (rewrites için)
   // Eğer NEXT_PUBLIC_BACKEND_URL yoksa, NEXT_PUBLIC_API_URL kullan
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5001');
   return `${backendUrl}/api`;
 };
 
@@ -34,11 +34,11 @@ apiClient.interceptors.request.use(
     if (typeof window !== 'undefined') {
       // Önce localStorage'dan, yoksa sessionStorage'dan token al
       let token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      
+
       if (token) {
         // Token'ı temizle (boşluk, yeni satır, vs. kaldır)
         token = token.trim();
-        
+
         // Token formatını kontrol et (JWT formatı: 3 bölüm, nokta ile ayrılmış)
         const tokenParts = token.split('.');
         if (tokenParts.length !== 3) {
@@ -65,7 +65,7 @@ apiClient.interceptors.request.use(
           }
         } else {
           config.headers.Authorization = `Bearer ${token}`;
-          
+
           // Development modunda token'ın header'a eklendiğini doğrula
           if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
             logger.debug('Request interceptor: Token added to header', {
@@ -108,7 +108,7 @@ apiClient.interceptors.response.use(
         const logger = require('@/utils/logger').default;
         logger.warn('Backend\'e erişilemiyor. Offline mod aktif.', { code: error.code, url: originalRequest?.url });
       }
-      
+
       // Sadece kritik olmayan istekler için retry yap
       if (originalRequest && !originalRequest._retry && originalRequest.method !== 'get') {
         originalRequest._retry = true;
@@ -120,7 +120,7 @@ apiClient.interceptors.response.use(
           // Retry başarısız, hata döndür
         }
       }
-      
+
       // Network hatası için özel hata mesajı
       return Promise.reject({
         ...error,
@@ -136,13 +136,13 @@ apiClient.interceptors.response.use(
       // Invalid signature veya token hatası varsa direkt temizle
       const errorMessage = error.response?.data?.message || '';
       const errorName = error.response?.data?.name || '';
-      const isInvalidToken = errorMessage.includes('invalid') || 
-                            errorMessage.includes('signature') || 
-                            errorMessage.includes('token') ||
-                            errorMessage.includes('Yetkilendirme başarısız') ||
-                            errorMessage.includes('Geçersiz token') ||
-                            errorName === 'JsonWebTokenError' ||
-                            errorName === 'TokenExpiredError';
+      const isInvalidToken = errorMessage.includes('invalid') ||
+        errorMessage.includes('signature') ||
+        errorMessage.includes('token') ||
+        errorMessage.includes('Yetkilendirme başarısız') ||
+        errorMessage.includes('Geçersiz token') ||
+        errorName === 'JsonWebTokenError' ||
+        errorName === 'TokenExpiredError';
 
       if (isInvalidToken) {
         // Geçersiz token, direkt temizle ve login'e yönlendir
@@ -156,12 +156,12 @@ apiClient.interceptors.response.use(
           sessionStorage.removeItem('user');
           sessionStorage.removeItem('refreshToken');
           sessionStorage.removeItem('token');
-          
+
           // Development modunda log
           if (process.env.NODE_ENV === 'development') {
             logger.info('Geçersiz token tespit edildi, tüm token\'lar temizlendi');
           }
-          
+
           // Sadece admin sayfalarındaysa yönlendir
           if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin') {
             window.location.href = '/admin';
@@ -174,19 +174,19 @@ apiClient.interceptors.response.use(
         // Refresh token ile yeni access token al
         // Client-side'da relative path kullan (Next.js rewrites proxy eder)
         // Server-side'da tam URL kullan
-        const refreshUrl = typeof window !== 'undefined' 
-          ? '/api/auth/refresh-token' 
+        const refreshUrl = typeof window !== 'undefined'
+          ? '/api/auth/refresh-token'
           : (() => {
-              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
-              return `${backendUrl}/api/auth/refresh-token`;
-            })();
+            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5001');
+            return `${backendUrl}/api/auth/refresh-token`;
+          })();
         const response = await axios.post(refreshUrl, {}, {
           withCredentials: true,
           timeout: 10000, // Timeout'u 10 saniyeye çıkar (5 saniye çok kısa olabilir)
         });
 
         const { accessToken } = response.data;
-        
+
         if (accessToken) {
           // Token'ı aynı yerde sakla (localStorage veya sessionStorage)
           const existingToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
@@ -205,7 +205,7 @@ apiClient.interceptors.response.use(
         const error = refreshError as { response?: { status?: number }; code?: string };
         const isAuthError = error?.response?.status === 401 || error?.response?.status === 403;
         const isNetworkError = !error?.response || error?.code === 'ECONNABORTED' || error?.code === 'ERR_NETWORK';
-        
+
         if (typeof window !== 'undefined') {
           if (isAuthError) {
             // Gerçek auth hatası - logout yap
@@ -235,7 +235,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 403) {
       if (typeof window !== 'undefined') {
         const errorMessage = error.response?.data?.message || 'Bu işlem için yetkiniz bulunmamaktadır';
-        
+
         // Development modunda log
         if (process.env.NODE_ENV === 'development') {
           logger.warn('403 Forbidden hatası:', {
@@ -245,7 +245,7 @@ apiClient.interceptors.response.use(
             pathname: window.location.pathname
           });
         }
-        
+
         // Toast mesajı göster (forbidden sayfasına yönlendirme yapma)
         // Dinamik import kullanarak toast'ı yükle (SSR uyumluluğu için)
         import('react-toastify').then(({ toast }) => {

@@ -9,12 +9,12 @@
  */
 export const checkApiHealth = async (): Promise<boolean> => {
   try {
-    const apiUrl = typeof window !== 'undefined' 
-      ? '/api/health' 
+    const apiUrl = typeof window !== 'undefined'
+      ? '/api/health'
       : (() => {
-          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
-          return `${backendUrl}/api/health`;
-        })();
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5001');
+        return `${backendUrl}/api/health`;
+      })();
 
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -43,6 +43,6 @@ export const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     return '/api';
   }
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5001');
   return `${backendUrl}/api`;
 };

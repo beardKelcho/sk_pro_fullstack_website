@@ -41,8 +41,8 @@ export interface ImageUrlOptions {
  */
 export const getBaseUrl = (): string => {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-  return API_URL.endsWith('/api') 
-    ? API_URL.replace(/\/api$/, '') 
+  return API_URL.endsWith('/api')
+    ? API_URL.replace(/\/api$/, '')
     : API_URL.replace(/\/api\/?$/, '');
 };
 
@@ -62,7 +62,7 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
 
   const normalized: ImageUrlOptions = typeof options === 'string' ? { imageId: options } : options;
   const { imageId, image, fallback } = normalized;
-  
+
   // If imageId is provided, use it directly
   if (imageId) {
     // Geçersiz ID kontrolü (sadece MongoDB ObjectId formatı veya geçerli string)
@@ -80,7 +80,7 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
     // Geçersiz ID ise fallback döndür
     return fallback || '';
   }
-  
+
   // If image object is provided
   if (image) {
     // First, try to use ID
@@ -93,7 +93,7 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
         return `/api/site-images/public/${dbId}/image`;
       }
     }
-    
+
     // Fallback to URL, path, or filename
     let imageUrl = image.url || '';
     if (!imageUrl && image.path) {
@@ -102,27 +102,27 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
     if (!imageUrl && image.filename) {
       imageUrl = `/uploads/site-images/${image.filename}`;
     }
-    
+
     if (!imageUrl || imageUrl.trim() === '') {
       // Eğer fallback varsa onu kullan, yoksa boş string döndür
       return fallback || '';
     }
-    
+
     // Eğer zaten full URL ise (http/https ile başlıyorsa), olduğu gibi döndür
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    
+
     // Relative path ise olduğu gibi döndür (Next.js rewrites proxy eder)
     // /uploads/ ile başlıyorsa veya / ile başlıyorsa relative path olarak kullan
     if (imageUrl.startsWith('/')) {
       return imageUrl;
     }
-    
+
     // Relative path değilse, / ekle
     return `/${imageUrl}`;
   }
-  
+
   return fallback || '';
 };
 

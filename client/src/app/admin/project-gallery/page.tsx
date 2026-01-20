@@ -37,11 +37,11 @@ export default function ProjectGalleryPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    
+
     // Dosya validasyonu
     const validFiles: File[] = [];
     const errors: string[] = [];
-    
+
     files.forEach((file) => {
       if (!file.type.startsWith('image/')) {
         errors.push(`${file.name}: Resim dosyası değil`);
@@ -53,11 +53,11 @@ export default function ProjectGalleryPage() {
       }
       validFiles.push(file);
     });
-    
+
     if (errors.length > 0) {
       errors.forEach(error => toast.error(error));
     }
-    
+
     if (validFiles.length > 0) {
       setSelectedFiles(validFiles);
     } else {
@@ -96,7 +96,7 @@ export default function ProjectGalleryPage() {
       }
 
       const uploadData = await uploadResponse.json();
-      
+
       if (!uploadData.success || !uploadData.files || uploadData.files.length === 0) {
         throw new Error('Dosya yükleme başarısız');
       }
@@ -104,7 +104,7 @@ export default function ProjectGalleryPage() {
       // Her dosya için veritabanına kayıt oluştur
       const uploadPromises = uploadData.files.map(async (fileData: any, index: number) => {
         const imagePath = fileData.url.replace(/^\/uploads\//, '');
-        
+
         return createImage({
           filename: fileData.filename,
           originalName: fileData.originalname,
@@ -168,8 +168,8 @@ export default function ProjectGalleryPage() {
   };
 
   const handleSelectImage = (id: string) => {
-    setSelectedImageIds(prev => 
-      prev.includes(id) 
+    setSelectedImageIds(prev =>
+      prev.includes(id)
         ? prev.filter(imgId => imgId !== id)
         : [...prev, id]
     );
@@ -322,68 +322,67 @@ export default function ProjectGalleryPage() {
                   return (
                     <div
                       key={imageId}
-                      className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border-2 transition-all relative ${
-                        isSelected
+                      className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border-2 transition-all relative ${isSelected
                           ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light'
                           : 'border-green-200 dark:border-green-800'
-                      }`}
+                        }`}
                     >
-                    {/* Checkbox */}
-                    <div className="absolute top-2 left-2 z-20 bg-white dark:bg-gray-800 rounded p-1 shadow-md">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleSelectImage(imageId)}
-                        className="w-5 h-5 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
-                      />
-                    </div>
-                    <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
-                      {(() => {
-                        const imageUrl = getImageUrl({ image, fallback: '' });
-                        
-                        if (!imageUrl || imageUrl.trim() === '') {
-                          return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
-                        }
-                        
-                        return (
-                          <LazyImage
-                            src={imageUrl}
-                            alt={image.originalName}
-                            fill
-                            objectFit="cover"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            quality={80}
-                          />
-                        );
-                      })()}
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate mb-3">
-                        {image.originalName}
-                      </p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleToggleActive(image)}
-                          className="flex-1 px-3 py-1.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-md hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
-                        >
-                          Pasif Yap
-                        </button>
-                        <button
-                          onClick={() => {
-                            const imageId = image._id || image.id;
-                            if (!imageId) {
-                              toast.error('Resim ID bulunamadı');
-                              return;
-                            }
-                            handleDelete(imageId);
-                          }}
-                          className="px-3 py-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                        >
-                          Sil
-                        </button>
+                      {/* Checkbox */}
+                      <div className="absolute top-2 left-2 z-20 bg-white dark:bg-gray-800 rounded p-1 shadow-md">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSelectImage(imageId)}
+                          className="w-5 h-5 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
+                        />
+                      </div>
+                      <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
+                        {(() => {
+                          const imageUrl = getImageUrl({ image, fallback: '' });
+
+                          if (!imageUrl || imageUrl.trim() === '') {
+                            return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
+                          }
+
+                          return (
+                            <LazyImage
+                              src={imageUrl}
+                              alt={image.originalName}
+                              fill
+                              objectFit="cover"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              quality={80}
+                            />
+                          );
+                        })()}
+                      </div>
+                      <div className="p-4">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate mb-3">
+                          {image.originalName}
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleToggleActive(image)}
+                            className="flex-1 px-3 py-1.5 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 rounded-md hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
+                          >
+                            Pasif Yap
+                          </button>
+                          <button
+                            onClick={() => {
+                              const imageId = image._id || image.id;
+                              if (!imageId) {
+                                toast.error('Resim ID bulunamadı');
+                                return;
+                              }
+                              handleDelete(imageId);
+                            }}
+                            className="px-3 py-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                          >
+                            Sil
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
                   );
                 })}
               </div>
@@ -403,72 +402,71 @@ export default function ProjectGalleryPage() {
                   return (
                     <div
                       key={imageId}
-                      className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border-2 transition-all relative opacity-60 ${
-                        isSelected
+                      className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border-2 transition-all relative opacity-60 ${isSelected
                           ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light'
                           : 'border-gray-200 dark:border-gray-700'
-                      }`}
+                        }`}
                     >
-                    {/* Checkbox */}
-                    <div className="absolute top-2 left-2 z-20 bg-white dark:bg-gray-800 rounded p-1 shadow-md">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleSelectImage(imageId)}
-                        className="w-5 h-5 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
-                      />
-                    </div>
-                    <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
-                      {(() => {
-                        const imageUrl = getImageUrl({ image, fallback: '' });
-                        
-                        if (!imageUrl || imageUrl.trim() === '') {
-                          return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
-                        }
-                        
-                        return (
-                          <>
-                            <LazyImage
-                              src={imageUrl}
-                              alt={image.originalName}
-                              className="absolute inset-0 w-full h-full"
-                              fill
-                              objectFit="cover"
-                            />
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                              <span className="text-white text-sm font-medium">Pasif</span>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate mb-3">
-                        {image.originalName}
-                      </p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleToggleActive(image)}
-                          className="flex-1 px-3 py-1.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-md hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                        >
-                          Aktif Yap
-                        </button>
-                        <button
-                          onClick={() => {
-                            const imageId = image._id || image.id;
-                            if (!imageId) {
-                              toast.error('Resim ID bulunamadı');
-                              return;
-                            }
-                            handleDelete(imageId);
-                          }}
-                          className="px-3 py-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                        >
-                          Sil
-                        </button>
+                      {/* Checkbox */}
+                      <div className="absolute top-2 left-2 z-20 bg-white dark:bg-gray-800 rounded p-1 shadow-md">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSelectImage(imageId)}
+                          className="w-5 h-5 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
+                        />
+                      </div>
+                      <div className="relative aspect-video bg-gray-100 dark:bg-gray-700">
+                        {(() => {
+                          const imageUrl = getImageUrl({ image, fallback: '' });
+
+                          if (!imageUrl || imageUrl.trim() === '') {
+                            return <div className="w-full h-full flex items-center justify-center text-gray-400">Resim yok</div>;
+                          }
+
+                          return (
+                            <>
+                              <LazyImage
+                                src={imageUrl}
+                                alt={image.originalName}
+                                className="absolute inset-0 w-full h-full"
+                                fill
+                                objectFit="cover"
+                              />
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <span className="text-white text-sm font-medium">Pasif</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                      <div className="p-4">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate mb-3">
+                          {image.originalName}
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleToggleActive(image)}
+                            className="flex-1 px-3 py-1.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-md hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                          >
+                            Aktif Yap
+                          </button>
+                          <button
+                            onClick={() => {
+                              const imageId = image._id || image.id;
+                              if (!imageId) {
+                                toast.error('Resim ID bulunamadı');
+                                return;
+                              }
+                              handleDelete(imageId);
+                            }}
+                            className="px-3 py-1.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                          >
+                            Sil
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
                   );
                 })}
               </div>
@@ -501,7 +499,7 @@ export default function ProjectGalleryPage() {
       {showUploadModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div 
+            <div
               className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75"
               onClick={() => !uploading && setShowUploadModal(false)}
             ></div>
@@ -511,7 +509,7 @@ export default function ProjectGalleryPage() {
                 <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
                   Proje Görseli Yükle
                 </h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Görsel Dosyası

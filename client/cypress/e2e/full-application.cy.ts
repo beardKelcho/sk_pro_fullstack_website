@@ -66,7 +66,7 @@ describe('SK Production - Kapsamlı E2E Testler', () => {
 
       // Form'u contact bölümü içinde ara
       cy.get('#contact form', { timeout: 10000 }).should('exist');
-      
+
       // Form alanlarının varlığını kontrol et
       cy.get('#contact form input[name="name"], #contact form input#name', { timeout: 10000 }).should('exist');
       cy.get('#contact form input[name="email"], #contact form input#email, #contact form input[type="email"]', { timeout: 10000 }).should('exist');

@@ -4,6 +4,11 @@ const createNextIntlPlugin = require('next-intl/plugin');
 
 const withNextIntl = createNextIntlPlugin();
 
+// Environment check
+if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_SITE_URL) {
+  console.warn('⚠️  NEXT_PUBLIC_SITE_URL is missing in production! Please add it to your environment variables.');
+}
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
@@ -278,7 +283,7 @@ const configWithIntl = withNextIntl(nextConfig);
 
 // Sentry config (sadece production'da ve DSN varsa)
 // SENTRY_ORG ve SENTRY_PROJECT source map upload için gerekli ama opsiyonel
-const hasSentryDSN = 
+const hasSentryDSN =
   process.env.NODE_ENV === 'production' &&
   (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN);
 
@@ -286,7 +291,7 @@ const hasSentryDSN =
 const hasSentryOrg = process.env.SENTRY_ORG && process.env.SENTRY_ORG.trim() !== '';
 const hasSentryProject = process.env.SENTRY_PROJECT && process.env.SENTRY_PROJECT.trim() !== '';
 
-const hasSentrySourceMapConfig = 
+const hasSentrySourceMapConfig =
   hasSentryDSN &&
   hasSentryOrg &&
   hasSentryProject;
@@ -296,23 +301,23 @@ const hasSentrySourceMapConfig =
 const sentryWebpackPluginOptions = {
   // Sentry webpack plugin options
   silent: true, // Suppresses source map uploading logs during build
-  
+
   // Source maps
   widenClientFileUpload: true,
   transpileClientSDK: true,
   tunnelRoute: '/monitoring',
   hideSourceMaps: true,
   disableLogger: true,
-  
+
   // Automatic release tracking
   automaticVercelReleases: false, // Manuel release tracking kullanıyoruz
-  
+
   // Org ve project sadece geçerli değerler varsa ekle (source map upload için gerekli)
   // Undefined/null/boş string olursa source map upload devre dışı kalır ama Sentry çalışmaya devam eder
   ...(hasSentryOrg && { org: process.env.SENTRY_ORG }),
   ...(hasSentryProject && { project: process.env.SENTRY_PROJECT }),
-  ...(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_AUTH_TOKEN.trim() !== '' && { 
-    authToken: process.env.SENTRY_AUTH_TOKEN 
+  ...(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_AUTH_TOKEN.trim() !== '' && {
+    authToken: process.env.SENTRY_AUTH_TOKEN
   }),
 };
 
@@ -323,11 +328,11 @@ const sentryWebpackPluginOptions = {
 module.exports = hasSentryDSN && hasSentrySourceMapConfig
   ? withSentryConfig(configWithIntl, sentryWebpackPluginOptions)
   : hasSentryDSN && !hasSentrySourceMapConfig
-  ? (() => {
+    ? (() => {
       // DSN var ama org/project yok - sadece error tracking, source map upload yok
       if (process.env.NODE_ENV === 'production') {
         console.warn('⚠️  Sentry: DSN found but SENTRY_ORG/SENTRY_PROJECT missing or empty. Source map upload disabled.');
       }
       return configWithIntl;
     })()
-  : configWithIntl; 
+    : configWithIntl; 

@@ -162,12 +162,12 @@ export default function Dashboard() {
   const dashboardStats = { stats, upcomingProjects: [], upcomingMaintenances };
   const chartData = charts
     ? {
-        equipmentStatus: charts.equipmentStatus || [],
-        projectStatus: charts.projectStatus || [],
-        taskCompletion: (charts as any).taskCompletion || (charts as any).taskCompletionTrend || [],
-        monthlyActivity: (charts as any).monthlyActivity || (charts as any).activityData || [],
-        activityData: (charts as any).activityData || [],
-      }
+      equipmentStatus: charts.equipmentStatus || [],
+      projectStatus: charts.projectStatus || [],
+      taskCompletion: (charts as any).taskCompletion || (charts as any).taskCompletionTrend || [],
+      monthlyActivity: (charts as any).monthlyActivity || (charts as any).activityData || [],
+      activityData: (charts as any).activityData || [],
+    }
     : undefined;
 
   const makeWidget = (w: Pick<Widget, 'type' | 'title' | 'settings'>): Widget => ({

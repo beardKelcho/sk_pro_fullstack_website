@@ -10,19 +10,23 @@ const connectDB = async () => {
 
     // MONGO_URI veya MONGODB_URI destekle (geriye dönük uyumluluk)
     const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/skproduction';
-    
-    if (!mongoUri || mongoUri === 'mongodb://localhost:27017/skproduction') {
-      logger.warn('⚠️  MongoDB URI bulunamadı veya localhost kullanılıyor. MONGO_URI environment variable\'ını kontrol edin.');
+
+    if ((!process.env.MONGO_URI && !process.env.MONGODB_URI)) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('❌ MONGO_URI environment variable is missing in production!');
+      } else {
+        logger.warn('⚠️  MongoDB URI bulunamadı veya localhost kullanılıyor. MONGO_URI environment variable\'ını kontrol edin.');
+      }
     }
-    
+
     logger.info('MongoDB bağlantısı kuruluyor...');
-    
+
     // Connection pool ayarlarını environment variable'lardan al
     const maxPoolSize = parseInt(process.env.MONGODB_MAX_POOL_SIZE || '20', 10);
     const minPoolSize = parseInt(process.env.MONGODB_MIN_POOL_SIZE || '5', 10);
     const maxIdleTimeMS = parseInt(process.env.MONGODB_MAX_IDLE_TIME_MS || '30000', 10);
     const heartbeatFrequencyMS = parseInt(process.env.MONGODB_HEARTBEAT_FREQUENCY_MS || '10000', 10);
-    
+
     const conn = await mongoose.connect(mongoUri, {
       maxPoolSize, // Maksimum bağlantı sayısı (env'den)
       minPoolSize, // Minimum bağlantı sayısı (env'den)
@@ -38,7 +42,7 @@ const connectDB = async () => {
       // Connection pool monitoring
       monitorCommands: process.env.NODE_ENV === 'development', // Development'ta command monitoring
     });
-    
+
     // Connection pool istatistiklerini logla
     if (process.env.NODE_ENV === 'development') {
       logger.info(`📊 MongoDB Connection Pool: max=${maxPoolSize}, min=${minPoolSize}, idle=${maxIdleTimeMS}ms, heartbeat=${heartbeatFrequencyMS}ms`);
@@ -74,7 +78,7 @@ const connectDB = async () => {
 
   } catch (error: unknown) {
     logger.error('❌ MongoDB bağlantı hatası:', error);
-    
+
     // Hata detaylarını analiz et
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('IP') || errorMessage.includes('whitelist')) {
@@ -106,7 +110,7 @@ const connectDB = async () => {
       logger.error('   - İnternet bağlantınızı kontrol edin');
       logger.error('');
     }
-    
+
     throw new AppError('Database connection failed', 500);
   }
 };

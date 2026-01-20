@@ -95,23 +95,23 @@ Cypress.Commands.add('loginAsAdmin', () => {
     // Dashboard'a yönlendirilmeyi bekle (window.location.href kullanılıyor - full page reload)
     // Full page reload için daha uzun bekleme
     cy.wait(3000);
-    
+
     // URL kontrolü - dashboard'a yönlendirildi mi?
     cy.url({ timeout: 25000 }).then(url => {
       if (url.includes('/admin/dashboard')) {
         cy.log('Login başarılı - Dashboard\'a yönlendirildi');
         // Dashboard içeriğini kontrol et (esnek - başarısız olursa devam et)
         cy.get('body', { timeout: 10000 }).then(($body) => {
-          const hasDashboardContent = $body.text().toLowerCase().includes('dashboard') || 
-                                     $body.text().toLowerCase().includes('ana sayfa') ||
-                                     $body.text().toLowerCase().includes('hoşgeldin');
+          const hasDashboardContent = $body.text().toLowerCase().includes('dashboard') ||
+            $body.text().toLowerCase().includes('ana sayfa') ||
+            $body.text().toLowerCase().includes('hoşgeldin');
           if (!hasDashboardContent) {
             cy.log('Dashboard içeriği bulunamadı ama URL doğru');
           }
         });
         return;
       }
-      
+
       // Eğer hala /admin'deysek, hata mesajı var mı kontrol et
       if (url.includes('/admin') && !url.includes('dashboard')) {
         cy.wait(2000); // Ek bekleme (redirect henüz tamamlanmamış olabilir)
@@ -120,7 +120,7 @@ Cypress.Commands.add('loginAsAdmin', () => {
             cy.log('Login başarılı - Dashboard\'a yönlendirildi (geç)');
             return;
           }
-          
+
           // Hala dashboard'da değilsek, hata kontrolü yap
           cy.get('body', { timeout: 5000 }).then($body => {
             const bodyText = $body.text();
@@ -133,7 +133,7 @@ Cypress.Commands.add('loginAsAdmin', () => {
             }
           });
         });
-        
+
         // Dashboard'a yönlendirilmediyse, en azından /admin'de olduğumuzu doğrula
         // Test devam edebilir (bazı sayfalar login olmadan da erişilebilir olabilir)
         cy.url().should('include', '/admin');
@@ -229,10 +229,10 @@ Cypress.Commands.add('ensureLoggedIn', () => {
 
   // Mevcut durumu kontrol et
   cy.get('body', { timeout: 10000 }).then(($body) => {
-    const isLoginPage = $body.text().includes('Giriş Yap') || 
-                       $body.text().includes('Login') || 
-                       $body.find('input[name="email"]').length > 0;
-    
+    const isLoginPage = $body.text().includes('Giriş Yap') ||
+      $body.text().includes('Login') ||
+      $body.find('input[name="email"]').length > 0;
+
     if (!isLoginPage) {
       // Zaten login olmuşsak devam et
       cy.log('✅ Zaten login olunmuş');
@@ -259,9 +259,9 @@ Cypress.Commands.add('ensureLoggedIn', () => {
     cy.wait(3000);
     cy.url({ timeout: 25000 }).should('satisfy', (url) => {
       const cleanUrl = url.replace(/^\/(tr|en)/, '');
-      return cleanUrl.includes('/admin/dashboard') || 
-             cleanUrl.includes('/admin/equipment') || 
-             cleanUrl.includes('/admin');
+      return cleanUrl.includes('/admin/dashboard') ||
+        cleanUrl.includes('/admin/equipment') ||
+        cleanUrl.includes('/admin');
     });
   });
 });

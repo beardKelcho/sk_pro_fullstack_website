@@ -104,6 +104,20 @@ const normalizeStatus = (rawStatus: any): Equipment['status'] => {
   }
 };
 
+// Backend category değerini UI tipine normalize et
+const normalizeCategory = (rawCategory: any): Equipment['category'] => {
+  const validCategories: Equipment['category'][] = [
+    'VideoSwitcher', 'MediaServer', 'Camera', 'Display', 'Audio', 'Lighting', 'Cable', 'Accessory'
+  ];
+
+  if (rawCategory && validCategories.includes(rawCategory as any)) {
+    return rawCategory as Equipment['category'];
+  }
+
+  // Varsayılan değer
+  return 'Accessory';
+};
+
 // Örnek ekipman verileri
 const sampleEquipment: Equipment[] = [
   {
@@ -318,12 +332,12 @@ export default function EquipmentList() {
         name: item.name,
         model: item.model || '',
         serialNumber: item.serialNumber || '',
-        category: item.type || item.category || '',
+        category: normalizeCategory(item.type || item.category),
         status: normalizeStatus(item.status),
-        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject 
-          ? item.currentProject.name || '' 
-          : typeof item.currentProject === 'string' 
-            ? item.currentProject 
+        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject
+          ? item.currentProject.name || ''
+          : typeof item.currentProject === 'string'
+            ? item.currentProject
             : '',
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
@@ -344,44 +358,44 @@ export default function EquipmentList() {
   useEffect(() => {
     loadEquipment();
   }, []);
-  
+
   // Tarihi formatlama
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Belirtilmemiş';
-    
-    const options: Intl.DateTimeFormatOptions = { 
-      day: 'numeric', 
-      month: 'long', 
+
+    const options: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'long',
       year: 'numeric'
     };
     return new Date(dateString).toLocaleDateString('tr-TR', options);
   };
-  
+
   // Bakım uyarısı kontrolü (eğer bakım tarihi 30 gün içindeyse uyarı göster)
   const maintenanceWarning = (nextMaintenanceDate?: string) => {
     if (!nextMaintenanceDate) return false;
-    
+
     const today = new Date();
     const maintenanceDate = new Date(nextMaintenanceDate);
     const diffTime = maintenanceDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays > 0 && diffDays <= 30;
   };
-  
+
   // Filtreleme
   const filteredEquipment = equipment.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesCategory = selectedCategory === '' || item.category === selectedCategory;
     const matchesStatus = selectedStatus === '' || item.status === selectedStatus;
-    
+
     return matchesSearch && matchesCategory && matchesStatus;
   });
-  
+
   // React Query delete hook
   const deleteEquipmentMutation = useDeleteEquipment();
 
@@ -406,11 +420,11 @@ export default function EquipmentList() {
       setEquipmentToDelete(null);
     }
   };
-  
+
   // Bakım işlevi
   const handleSetMaintenance = async () => {
     if (!equipmentForMaintenance || !nextMaintenanceDate) return;
-    
+
     try {
       // API entegrasyonu olduğunda burada backend'e istek gönderilecek
       // const response = await fetch(`/api/admin/equipment/${equipmentForMaintenance}/maintenance`, {
@@ -424,23 +438,23 @@ export default function EquipmentList() {
       // if (!response.ok) {
       //   throw new Error('Bakım tarihi güncellenirken bir hata oluştu');
       // }
-      
+
       // Şimdilik örnek veriyi güncelliyoruz
-      setEquipment(equipment.map(item => 
-        item.id === equipmentForMaintenance 
-          ? { ...item, nextMaintenanceDate: nextMaintenanceDate } 
+      setEquipment(equipment.map(item =>
+        item.id === equipmentForMaintenance
+          ? { ...item, nextMaintenanceDate: nextMaintenanceDate }
           : item
       ));
-      
+
       setShowMaintenanceModal(false);
       setEquipmentForMaintenance(null);
       setNextMaintenanceDate('');
-      
+
     } catch (error) {
       logger.error('Bakım güncelleme hatası:', error);
     }
   };
-  
+
   // Kategori adını görüntüleme
   const getCategoryLabel = (categoryValue: string) => {
     const category = categories.find(cat => cat.value === categoryValue);
@@ -461,8 +475,8 @@ export default function EquipmentList() {
   };
 
   const handleToggleSelect = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) 
+    setSelectedIds(prev =>
+      prev.includes(id)
         ? prev.filter(itemId => itemId !== id)
         : [...prev, id]
     );
@@ -493,12 +507,12 @@ export default function EquipmentList() {
         name: item.name,
         model: item.model || '',
         serialNumber: item.serialNumber || '',
-        category: item.type || item.category || '',
+        category: normalizeCategory(item.type || item.category),
         status: normalizeStatus(item.status),
-        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject 
-          ? item.currentProject.name || '' 
-          : typeof item.currentProject === 'string' 
-            ? item.currentProject 
+        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject
+          ? item.currentProject.name || ''
+          : typeof item.currentProject === 'string'
+            ? item.currentProject
             : '',
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
@@ -537,12 +551,12 @@ export default function EquipmentList() {
         name: item.name,
         model: item.model || '',
         serialNumber: item.serialNumber || '',
-        category: item.type || item.category || '',
+        category: normalizeCategory(item.type || item.category),
         status: normalizeStatus(item.status),
-        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject 
-          ? item.currentProject.name || '' 
-          : typeof item.currentProject === 'string' 
-            ? item.currentProject 
+        currentProject: typeof item.currentProject === 'object' && item.currentProject !== null && 'name' in item.currentProject
+          ? item.currentProject.name || ''
+          : typeof item.currentProject === 'string'
+            ? item.currentProject
             : '',
         purchaseDate: item.purchaseDate,
         lastMaintenanceDate: item.lastMaintenanceDate,
@@ -573,7 +587,7 @@ export default function EquipmentList() {
       variant: 'danger',
     },
   ];
-  
+
   return (
     <div className="space-y-6">
       {/* Üst bölüm - başlık ve ekleme butonu */}
@@ -592,7 +606,7 @@ export default function EquipmentList() {
             </svg>
             Import
           </button>
-          <ExportMenu 
+          <ExportMenu
             baseEndpoint="/api/export/equipment"
             baseFilename="equipment"
             label="Dışa Aktar"
@@ -607,7 +621,7 @@ export default function EquipmentList() {
           </Link>
         </div>
       </div>
-      
+
       {/* Filtreler */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -630,7 +644,7 @@ export default function EquipmentList() {
               />
             </div>
           </div>
-          
+
           {/* Kategori filtresi */}
           <div>
             <label htmlFor="category-filter" className="sr-only">Kategori</label>
@@ -646,7 +660,7 @@ export default function EquipmentList() {
               ))}
             </select>
           </div>
-          
+
           {/* Durum filtresi */}
           <div>
             <label htmlFor="status-filter" className="sr-only">Durum</label>
@@ -664,7 +678,7 @@ export default function EquipmentList() {
           </div>
         </div>
       </div>
-      
+
       {/* Toplu İşlemler */}
       {filteredEquipment.length > 0 && (
         <BulkActions
@@ -748,112 +762,112 @@ export default function EquipmentList() {
                 {filteredEquipment.map((item) => {
                   const isSelected = selectedIds.includes(item.id);
                   return (
-                  <tr key={item.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          handleToggleSelect(item.id);
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-[#0066CC]/10 dark:bg-primary-light/10 rounded-full flex items-center justify-center">
-                          <span className="text-[#0066CC] dark:text-primary-light text-base font-medium">
-                            {item.name.substring(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.model}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {item.serialNumber}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {getCategoryLabel(item.category)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-1">
-                        <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full ${statusColors[item.status]}`}>
-                          {statusLabels[item.status]}
-                        </span>
-                        {item.status === 'InUse' && item.currentProject && (
-                          <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[220px]">
-                            Proje: {item.currentProject}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {maintenanceWarning(item.nextMaintenanceDate) ? (
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 text-yellow-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                            </svg>
-                            <span className="text-yellow-600 dark:text-yellow-400">{formatDate(item.nextMaintenanceDate)}</span>
-                          </div>
-                        ) : (
-                          formatDate(item.nextMaintenanceDate)
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Son: {formatDate(item.lastMaintenanceDate)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Link 
-                          href={`/admin/equipment/view/${item.id}`}
-                          onClick={(e) => {
+                    <tr key={item.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/30 ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
                             e.stopPropagation();
+                            handleToggleSelect(item.id);
                           }}
-                          className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80 cursor-pointer"
-                        >
-                          Görüntüle
-                        </Link>
-                        <PermissionLink
-                          permission={Permission.EQUIPMENT_UPDATE}
-                          href={`/admin/equipment/edit/${item.id}`}
-                          className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                          disabledMessage="Ekipman düzenleme yetkiniz bulunmamaktadır"
-                        >
-                          Düzenle
-                        </PermissionLink>
-                        <PermissionButton
-                          permission={Permission.MAINTENANCE_UPDATE}
-                          onClick={() => {
-                            setEquipmentForMaintenance(item.id);
-                            setNextMaintenanceDate(item.nextMaintenanceDate || '');
-                            setShowMaintenanceModal(true);
-                          }}
-                          className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
-                          disabledMessage="Bakım işlemi için yetkiniz bulunmamaktadır"
-                        >
-                          Bakım
-                        </PermissionButton>
-                        <PermissionButton
-                          permission={Permission.EQUIPMENT_DELETE}
-                          onClick={() => {
-                            setEquipmentToDelete(item.id);
-                            setShowDeleteModal(true);
-                          }}
-                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                          disabledMessage="Ekipman silme yetkiniz bulunmamaktadır"
-                        >
-                          Sil
-                        </PermissionButton>
-                      </div>
-                    </td>
-                  </tr>
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 text-[#0066CC] dark:text-primary-light rounded focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-[#0066CC]/10 dark:bg-primary-light/10 rounded-full flex items-center justify-center">
+                            <span className="text-[#0066CC] dark:text-primary-light text-base font-medium">
+                              {item.name.substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{item.model}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {item.serialNumber}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {getCategoryLabel(item.category)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full ${statusColors[item.status]}`}>
+                            {statusLabels[item.status]}
+                          </span>
+                          {item.status === 'InUse' && item.currentProject && (
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400 truncate max-w-[220px]">
+                              Proje: {item.currentProject}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {maintenanceWarning(item.nextMaintenanceDate) ? (
+                            <div className="flex items-center">
+                              <svg className="w-4 h-4 text-yellow-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                              </svg>
+                              <span className="text-yellow-600 dark:text-yellow-400">{formatDate(item.nextMaintenanceDate)}</span>
+                            </div>
+                          ) : (
+                            formatDate(item.nextMaintenanceDate)
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Son: {formatDate(item.lastMaintenanceDate)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+                          <Link
+                            href={`/admin/equipment/view/${item.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80 cursor-pointer"
+                          >
+                            Görüntüle
+                          </Link>
+                          <PermissionLink
+                            permission={Permission.EQUIPMENT_UPDATE}
+                            href={`/admin/equipment/edit/${item.id}`}
+                            className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                            disabledMessage="Ekipman düzenleme yetkiniz bulunmamaktadır"
+                          >
+                            Düzenle
+                          </PermissionLink>
+                          <PermissionButton
+                            permission={Permission.MAINTENANCE_UPDATE}
+                            onClick={() => {
+                              setEquipmentForMaintenance(item.id);
+                              setNextMaintenanceDate(item.nextMaintenanceDate || '');
+                              setShowMaintenanceModal(true);
+                            }}
+                            className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
+                            disabledMessage="Bakım işlemi için yetkiniz bulunmamaktadır"
+                          >
+                            Bakım
+                          </PermissionButton>
+                          <PermissionButton
+                            permission={Permission.EQUIPMENT_DELETE}
+                            onClick={() => {
+                              setEquipmentToDelete(item.id);
+                              setShowDeleteModal(true);
+                            }}
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                            disabledMessage="Ekipman silme yetkiniz bulunmamaktadır"
+                          >
+                            Sil
+                          </PermissionButton>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -861,7 +875,7 @@ export default function EquipmentList() {
           </div>
         )}
       </div>
-      
+
       {/* Silme onay modalı */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -895,7 +909,7 @@ export default function EquipmentList() {
           </div>
         </div>
       )}
-      
+
       {/* Bakım modalı */}
       {showMaintenanceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

@@ -62,7 +62,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       <Text style={styles.hint}>
-        Not: API base URL için {`EXPO_PUBLIC_API_URL`} ayarlayın. (Varsayılan: http://localhost:5001/api)
+        Not: API base URL için {`EXPO_PUBLIC_API_URL`} ayarlayın. (Varsayılan: {process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001/api'})
       </Text>
     </View>
   );

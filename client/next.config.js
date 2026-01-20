@@ -13,7 +13,7 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['localhost', '127.0.0.1'],
+    domains: ['localhost', '127.0.0.1', 'res.cloudinary.com', 'sk-pro-backend.onrender.com'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -33,7 +33,6 @@ const nextConfig = {
         port: '5001',
         pathname: '/**',
       },
-      // Local network IP'leri için (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
       {
         protocol: 'http',
         hostname: '192.168.*.*',
@@ -44,10 +43,15 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
-        port: '',
         pathname: '/**',
       },
-      // Local network IP'leri için (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+      // Render Backend (Legacy Uploads)
+      {
+        protocol: 'https',
+        hostname: 'sk-pro-backend.onrender.com',
+        pathname: '/**',
+      },
+      // Local network IP ranges
       {
         protocol: 'http',
         hostname: '10.*.*.*',
@@ -56,97 +60,7 @@ const nextConfig = {
       },
       {
         protocol: 'http',
-        hostname: '172.16.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.17.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.18.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.19.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.20.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.21.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.22.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.23.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.24.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.25.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.26.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.27.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.28.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.29.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.30.*.*',
-        port: '5001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '172.31.*.*',
+        hostname: '172.*.*.*',
         port: '5001',
         pathname: '/**',
       },
@@ -170,7 +84,8 @@ const nextConfig = {
   },
   // API rewrites - Backend'i frontend üzerinden proxy et
   rewrites: async () => {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+    // Default to Render backend if env var is missing, as requested
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://sk-pro-backend.onrender.com';
     return {
       beforeFiles: [
         {

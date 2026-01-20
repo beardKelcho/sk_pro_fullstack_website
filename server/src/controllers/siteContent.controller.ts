@@ -19,18 +19,12 @@ const fixContentUrls = async (content: any): Promise<any> => {
   // URL'den ID çıkaran ve listeye ekleyen yardımcı
   const collectId = (url: string | undefined, type: 'image' | 'video' = 'image') => {
     if (!url) return;
-    // Eğer zaten full absolute path ise ve id değilse atla
-    // Ama ID kontrolü için yine de bakmalıyız, belki manual girilmiş bir ID'dir.
+
+    // Cloudinary ise atla (Zaten düzgünse ellemeyeceğiz)
+    if (url.includes('cloudinary.com')) return;
 
     // Local path formatları: /api/site-images/:id, /uploads/:id, :id
     let idCandidate = url;
-    if (url.startsWith('http')) {
-      // HTTP ile başlıyorsa ve Cloudinary değilse ID olabilir mi? Zor.
-      // Genelde local pathler http ile başlamaz backend tarafında (veritabanında)
-      // Ama yine de kontrol edelim.
-      if (url.includes('cloudinary.com')) return;
-    }
-
     idCandidate = idCandidate.replace(/^\/?api\/site-images\//, '');
     idCandidate = idCandidate.replace(/^\/?uploads\//, '');
     idCandidate = idCandidate.replace(/^\//, '');
@@ -64,6 +58,7 @@ const fixContentUrls = async (content: any): Promise<any> => {
   if (idsToResolve.size > 0) {
     const images = await SiteImage.find({ _id: { $in: Array.from(idsToResolve) } });
     images.forEach(img => {
+      // Hem filename hem de mevcut URL'i sakla
       imageMap.set(img._id.toString(), {
         filename: img.filename,
         url: img.url
@@ -71,18 +66,34 @@ const fixContentUrls = async (content: any): Promise<any> => {
     });
   }
 
-  // URL İnşa Edici - Strict Mode
+  // URL İnşa Edici - Hybrid Strict Mode
   const buildStrictUrl = (filename: string | undefined, existingUrl: string | undefined, type: 'image' | 'video'): string => {
-    // 1. Filename varsa SIFIRDAN İNŞA ET (En güvenli yol)
+
+    // 1. ÖNCELİK: Mevcut URL geçerli bir Cloudinary URL'i ise KORU.
+    // (Çünkü içinde 'site-images/' gibi DB filename'de olmayan klasör bilgisi olabilir)
+    if (existingUrl && typeof existingUrl === 'string' && existingUrl.includes('cloudinary.com')) {
+      let finalUrl = existingUrl;
+
+      // Sadece HTTPS düzeltmesi yap
+      if (finalUrl.startsWith('http:')) {
+        finalUrl = finalUrl.replace('http:', 'https:');
+      } else if (!finalUrl.startsWith('https:')) {
+        finalUrl = `https://${finalUrl.replace(/^\/\//, '')}`;
+      }
+      return finalUrl;
+    }
+
+    // 2. Filename varsa ve URL yerel/bozuk ise SIFIRDAN İNŞA ET
     if (filename && typeof filename === 'string') {
       // Klasör yollarını temizle: "videos/intro.mp4" -> "intro.mp4"
+      // User isteği: "fazladan klasör yollarını temizle"
       let cleanFilename = filename.split('/').pop() || filename;
 
+      let resourceType = type;
       const ext = cleanFilename.split('.').pop()?.toLowerCase();
       const hasExt = ext && (ext.length === 3 || ext.length === 4);
 
-      let resourceType = type;
-      // Extension yoksa ekle
+      // Uzantı eksikse ekle
       if (!hasExt) {
         if (resourceType === 'video') cleanFilename += '.mp4';
         else cleanFilename += '.jpg';
@@ -92,54 +103,36 @@ const fixContentUrls = async (content: any): Promise<any> => {
       return `${cdnBaseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
     }
 
-    // 2. Filename yoksa, mevcut URL'i tamir et
-    if (existingUrl && typeof existingUrl === 'string') {
-      let finalUrl = existingUrl;
-
-      // Relative path kontrolü: Başında site adresi yoksa ekleme, directly cloudinary yap.
-      // Eğer "cloudinary.com" içermiyorsa ve http ile başlamıyorsa, bu muhtemelen bozuk bir local pathtir.
-      // Bu durumda boş string dönmek daha güvenlidir (frontend crash olmasın diye) veya default.
-
-      if (finalUrl.includes('cloudinary.com')) {
-        // Protokolü https yap
-        if (finalUrl.startsWith('http:')) {
-          finalUrl = finalUrl.replace('http:', 'https:');
-        } else if (!finalUrl.startsWith('https:')) {
-          // Protokol yoksa ekle
-          return `https://${finalUrl.replace(/^\/\//, '')}`;
-        }
-        return finalUrl;
-      }
-
-      // Cloudinary değilse ve filename de bulunamadıysa...
-      // Belki de external bir link? (Youtube vs.)
-      if (finalUrl.startsWith('http')) return finalUrl;
-
-      // Ne olduğu belirsiz, boş dön.
-      return '';
-    }
-
     return '';
   };
 
   const resolveUrl = (inputUrl: string | undefined, inputFilename: string | undefined, type: 'image' | 'video'): string | undefined => {
-    // Filename varsa direkt build et
-    if (inputFilename) return buildStrictUrl(inputFilename, undefined, type);
+    // 1. Input URL zaten Cloudinary ise direkt onu ver (HTTPS yapıp)
+    if (inputUrl && inputUrl.includes('cloudinary.com')) {
+      return buildStrictUrl(undefined, inputUrl, type);
+    }
 
-    if (!inputUrl) return inputUrl;
+    // 2. Input bir ID mi? (Local path veya direkt ID)
+    let idCandidate = inputUrl;
+    if (idCandidate && typeof idCandidate === 'string') {
+      idCandidate = idCandidate.replace(/^\/?api\/site-images\//, '').replace(/^\/?uploads\//, '').replace(/^\//, '');
 
-    // inputUrl bir ID olabilir mi?
-    let idCandidate = inputUrl.replace(/^\/?api\/site-images\//, '').replace(/^\/?uploads\//, '').replace(/^\//, '');
-
-    // URL map veya doğrudan ID kontrolü
-    if (mongoose.Types.ObjectId.isValid(idCandidate)) {
-      const data = imageMap.get(idCandidate);
-      if (data) {
-        return buildStrictUrl(data.filename, data.url, type);
+      if (mongoose.Types.ObjectId.isValid(idCandidate)) {
+        const data = imageMap.get(idCandidate);
+        if (data) {
+          // Bulunan kayıttaki URL ve Filename'i kullanarak oluştur
+          // Eğer data.url cloudinary ise onu kullanacak (Priority 1)
+          return buildStrictUrl(data.filename, data.url, type);
+        }
       }
     }
 
-    // ID değilse, mevcut URL'i fixle
+    // 3. Fallback: Filename varsa ondan üret
+    if (inputFilename) {
+      return buildStrictUrl(inputFilename, undefined, type);
+    }
+
+    // 4. Input URL varsa ondan üret (ama cloudinary değilse boş dönebilir strict modda)
     return buildStrictUrl(undefined, inputUrl, type);
   };
 
@@ -149,32 +142,26 @@ const fixContentUrls = async (content: any): Promise<any> => {
   if (fixedContent.selectedVideo) fixedContent.selectedVideo = resolveUrl(fixedContent.selectedVideo, undefined, 'video');
   if (fixedContent.image) fixedContent.image = resolveUrl(fixedContent.image, undefined, 'image');
 
-  // Video Pool (availableVideos) - ÖZEL İLGİ
+  // Video Pool (availableVideos)
   if (Array.isArray(fixedContent.availableVideos)) {
     fixedContent.availableVideos = fixedContent.availableVideos.map((video: any) => {
-      // 1. Filename'i bul
+      // ID çözümleme logic'i
       let filename = video.filename;
+      let url = video.url;
 
-      // 2. Filename yoksa ID'den bul
-      if (!filename && video.url) {
-        let id = video.url.replace(/^\/?api\/site-images\//, '').replace(/^\/?uploads\//, '').replace(/^\//, '');
+      // URL local path ise ID'den bulmaya çalış
+      if (url && !url.includes('cloudinary.com')) {
+        let id = url.replace(/^\/?api\/site-images\//, '').replace(/^\/?uploads\//, '').replace(/^\//, '');
         if (imageMap.has(id)) {
-          filename = imageMap.get(id).filename;
+          const data = imageMap.get(id);
+          filename = data.filename;
+          url = data.url; // DB'deki orjinal URL'i al (bu önemli!)
         }
       }
 
-      // 3. Filename bulunduysa SIFIRDAN URL oluştur
-      if (filename) {
-        return {
-          ...video,
-          url: buildStrictUrl(filename, undefined, 'video')
-        };
-      }
-
-      // 4. Bulunamadıysa mevcut URL'i temizle
       return {
         ...video,
-        url: buildStrictUrl(undefined, video.url, 'video')
+        url: buildStrictUrl(filename, url, 'video')
       };
     });
   }
@@ -189,74 +176,52 @@ const fixContentUrls = async (content: any): Promise<any> => {
   return fixedContent;
 };
 
-// Tüm içerikleri listele
+// ... Controller functions remain mostly the same structure, just calling await fixContentUrls ...
+
 export const getAllContents = async (req: Request, res: Response) => {
   try {
     const { section, isActive } = req.query;
-
     const filters: any = {};
     if (section) filters.section = section;
     if (isActive !== undefined) filters.isActive = isActive === 'true';
 
     const contents = await SiteContent.find(filters).sort({ order: 1, createdAt: -1 });
-
+    // URL'leri düzelt
     const fixedContents = await Promise.all(contents.map(async (doc) => {
       const docObj = doc.toObject();
       docObj.content = await fixContentUrls(docObj.content);
       return docObj;
     }));
 
-    res.status(200).json({
-      success: true,
-      count: fixedContents.length,
-      contents: fixedContents,
-    });
+    res.status(200).json({ success: true, count: fixedContents.length, contents: fixedContents });
   } catch (error) {
     logger.error('İçerik listeleme hatası:', error);
     res.status(500).json({ success: false, message: 'Hata oluştu' });
   }
 };
 
-// Tek bir içeriği getir
 export const getContentBySection = async (req: Request, res: Response) => {
   try {
     const { section } = req.params;
     const normalizedSection = section?.toLowerCase().trim();
+    const content = await SiteContent.findOne({ section: normalizedSection, isActive: true });
 
-    const content = await SiteContent.findOne({
-      section: normalizedSection,
-      isActive: true
-    });
-
-    if (!content) {
-      return res.status(200).json({
-        success: true,
-        message: 'İçerik bulunamadı',
-        content: null,
-      });
-    }
+    if (!content) return res.status(200).json({ success: true, message: 'İçerik bulunamadı', content: null });
 
     const docObj = content.toObject();
     docObj.content = await fixContentUrls(docObj.content);
 
-    res.status(200).json({
-      success: true,
-      content: docObj,
-    });
+    res.status(200).json({ success: true, content: docObj });
   } catch (error) {
-    logger.error('İçerik getirme hatası:', error);
+    logger.error('İçerik detayları hatası:', error);
     res.status(500).json({ success: false, message: 'Hata oluştu' });
   }
 };
 
-// Yeni içerik oluştur (Admin)
 export const createContent = async (req: Request, res: Response) => {
   try {
     const { section, content, order, isActive } = req.body;
-
-    if (!section || !content) {
-      return res.status(400).json({ success: false, message: 'Eksik bilgi' });
-    }
+    if (!section || !content) return res.status(400).json({ success: false, message: 'Bölüm ve içerik gereklidir' });
 
     const existingContent = await SiteContent.findOne({ section });
     if (existingContent) {
@@ -267,41 +232,28 @@ export const createContent = async (req: Request, res: Response) => {
 
       const docObj = existingContent.toObject();
       docObj.content = await fixContentUrls(docObj.content);
-
       return res.status(200).json({ success: true, content: docObj });
     }
 
-    const newContent = await SiteContent.create({
-      section,
-      content,
-      order: order || 0,
-      isActive: isActive !== undefined ? isActive : true,
-    });
+    const newContent = await SiteContent.create({ section, content, order: order || 0, isActive: isActive !== undefined ? isActive : true });
 
     const docObj = newContent.toObject();
     docObj.content = await fixContentUrls(docObj.content);
-
     res.status(201).json({ success: true, content: docObj });
   } catch (error) {
     logger.error('İçerik oluşturma hatası:', error);
-    res.status(500).json({ success: false, message: 'Hata oluştu' });
+    res.status(500).json({ success: false, message: 'İçerik oluşturulurken bir hata oluştu' });
   }
 };
 
-// İçerik güncelle (Admin)
 export const updateContent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { content, order, isActive } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ success: false, message: 'Geçersiz ID' });
-    }
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false });
 
     const siteContent = await SiteContent.findById(id);
-    if (!siteContent) {
-      return res.status(404).json({ success: false, message: 'Bulunamadı' });
-    }
+    if (!siteContent) return res.status(404).json({ success: false });
 
     if (content) siteContent.content = content;
     if (order !== undefined) siteContent.order = order;
@@ -311,29 +263,21 @@ export const updateContent = async (req: Request, res: Response) => {
 
     const docObj = siteContent.toObject();
     docObj.content = await fixContentUrls(docObj.content);
-
     res.status(200).json({ success: true, content: docObj });
   } catch (error) {
     logger.error('İçerik güncelleme hatası:', error);
-    res.status(500).json({ success: false, message: 'Hata oluştu' });
+    res.status(500).json({ success: false });
   }
 };
 
-// Section ile güncelle
 export const updateContentBySection = async (req: Request, res: Response) => {
   try {
     const { section } = req.params;
     const { content, order, isActive } = req.body;
-
     let siteContent = await SiteContent.findOne({ section });
 
     if (!siteContent) {
-      siteContent = await SiteContent.create({
-        section,
-        content: content || {},
-        order: order || 0,
-        isActive: isActive !== undefined ? isActive : true,
-      });
+      siteContent = await SiteContent.create({ section, content: content || {}, order: order || 0, isActive: isActive !== undefined ? isActive : true });
     } else {
       if (content) siteContent.content = content;
       if (order !== undefined) siteContent.order = order;
@@ -343,20 +287,17 @@ export const updateContentBySection = async (req: Request, res: Response) => {
 
     const docObj = siteContent.toObject();
     docObj.content = await fixContentUrls(docObj.content);
-
     res.status(200).json({ success: true, content: docObj });
   } catch (error) {
-    logger.error('Section güncelleme hatası:', error);
-    res.status(500).json({ success: false, message: 'Hata oluştu' });
+    logger.error('İçerik güncelleme hatası:', error);
+    res.status(500).json({ success: false });
   }
 };
 
-// Sil
 export const deleteContent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false });
-
     await SiteContent.deleteOne({ _id: id });
     res.status(200).json({ success: true, message: 'Silindi' });
   } catch (error) {

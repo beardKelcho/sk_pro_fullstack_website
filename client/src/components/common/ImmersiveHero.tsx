@@ -104,19 +104,7 @@ export default function ImmersiveHero({ content, onScrollDown }: ImmersiveHeroPr
         <Interactive3DScene className="w-full h-full" showControls={true} />
       </motion.div>
 
-      {/* Video Arka Plan (varsa) */}
-      {/* Video Arka Plan (varsa ve geçerli URL ise) */}
-      {content?.backgroundVideo && content.backgroundVideo.startsWith('http') && (
-        <motion.video
-          src={content.backgroundVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover z-0 opacity-30"
-          style={{ scale }}
-        />
-      )}
+      {/* Video Arka Plan - Parent (page.tsx) tarafından handle ediliyor */}
 
       {/* Gradient Overlay - Daha dramatik */}
       <motion.div

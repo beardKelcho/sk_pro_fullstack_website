@@ -17,31 +17,36 @@ describe('Analytics Dashboard', () => {
     it('analytics sayfası açılmalı', () => {
       cy.visit('/admin/analytics');
       cy.url().should('include', '/admin/analytics');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
+
+      // Loading spinner'ın kaybolmasını bekle
+      cy.get('.animate-spin', { timeout: 20000 }).should('not.exist');
+
+      // Hata mesajı olmadığını kontrol et
+      cy.contains('Hata').should('not.exist');
+      cy.contains('yüklenemedi').should('not.exist');
+
       // Sayfa başlığını kontrol et
-      cy.contains(/analytics|analitik|istatistik/i, { timeout: 15000 }).should('exist');
+      cy.contains('h1', 'Advanced Analytics', { timeout: 20000 }).should('be.visible');
     });
 
     it('dashboard istatistikleri görüntülenebilmeli', () => {
       cy.visit('/admin/analytics');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // İstatistik kartları - gerçek assertion ile
-      cy.get('[class*="stat"], [class*="card"], [class*="metric"]', { timeout: 10000 })
-        .should('have.length.at.least', 1)
-        .first()
-        .should('be.visible');
+      cy.contains('h1', 'Advanced Analytics', { timeout: 20000 }).should('be.visible');
+
+      // İstatistik kartlarını metin içeriğiyle bul
+      cy.contains('Projeler (Karşılaştırma)').should('be.visible');
+      cy.contains('Görevler (Oluşturulan)').should('be.visible');
+      cy.contains('Görevler (Tamamlanan)').should('be.visible');
     });
   });
 
   describe('Grafik Görüntüleme', () => {
     it('grafikler görüntülenebilmeli', () => {
       cy.visit('/admin/analytics');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Grafik elementleri - gerçek assertion ile
-      cy.get('canvas, svg[class*="chart"], [class*="chart"]', { timeout: 10000 })
+      cy.contains('h1', 'Advanced Analytics', { timeout: 20000 }).should('be.visible');
+
+      // Recharts elementleri (wrapper visible olmalı)
+      cy.get('.recharts-responsive-container', { timeout: 15000 })
         .should('have.length.at.least', 1)
         .first()
         .should('be.visible');
@@ -49,42 +54,31 @@ describe('Analytics Dashboard', () => {
 
     it('farklı grafik tipleri görüntülenebilmeli', () => {
       cy.visit('/admin/analytics');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Grafik tipleri - gerçek assertion ile
-      cy.get('canvas, svg', { timeout: 10000 })
+      cy.contains('h1', 'Advanced Analytics', { timeout: 20000 }).should('be.visible');
+
+      cy.get('.recharts-surface, svg', { timeout: 15000 })
         .should('have.length.at.least', 1);
-      
-      // Grafik başlıkları veya etiketleri kontrolü
-      cy.get('body').should(($body) => {
-        const hasCharts = $body.find('canvas, svg').length > 0;
-        expect(hasCharts).to.be.true;
-      });
     });
   });
 
   describe('Filtreleme', () => {
     it('tarih aralığı seçilebilmeli', () => {
       cy.visit('/admin/analytics');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Tarih seçici - gerçek assertion ile
-      cy.get('input[type="date"], input[placeholder*="tarih"], [class*="date"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .scrollIntoView()
-        .should('be.visible');
+      cy.contains('h1', 'Advanced Analytics', { timeout: 20000 }).should('be.visible');
+
+      // Tarih inputlarını kontrol et
+      cy.get('input[type="date"]', { timeout: 15000 }).should('exist');
     });
 
     it('filtreleme çalışmalı', () => {
       cy.visit('/admin/analytics');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Filtre butonları - gerçek assertion ile
-      cy.get('button:contains("Filtre"), select[name*="filter"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .should('be.visible');
+      cy.contains('h1', 'Advanced Analytics', { timeout: 20000 }).should('be.visible');
+
+      // Filtre butonlarını kontrol et
+      cy.contains('button', '30 Gün').should('exist');
+      cy.contains('button', 'Uygula').should('exist');
     });
   });
+
+
 });

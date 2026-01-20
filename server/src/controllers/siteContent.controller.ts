@@ -3,82 +3,120 @@ import SiteContent from '../models/SiteContent';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
 
-// Helper: İçerik URL'lerini düzelt
-const fixContentUrls = (content: any): any => {
+import SiteImage from '../models/SiteImage';
+
+// Helper: İçerik URL'lerini düzelt (Async - ID resolution ile)
+const fixContentUrls = async (content: any): Promise<any> => {
   if (!content) return content;
 
-  // Storage type ve CDN URL'ini al
   const storageType = (process.env.STORAGE_TYPE || 'local').toLowerCase();
   const cdnBaseUrl = process.env.CLOUDINARY_CDN_URL || '';
 
-  // URL düzeltme fonksiyonu
-  const fixUrl = (url: string | undefined, type: 'image' | 'video' = 'image'): string | undefined => {
-    if (!url) return url;
+  // Eğer Cloudinary değilse değişikliğe gerek yok
+  if (storageType !== 'cloudinary' || !cdnBaseUrl) {
+    return content;
+  }
 
-    // Zaten tam URL ise (http:// veya https://)
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
+  // Değiştirilecek URL adaylarını ve ID'lerini topla
+  const idsToResolve = new Set<string>();
+  const urlMap = new Map<string, { type: 'image' | 'video', originalUrl: string }>();
+
+  // URL'den ID çıkaran ve listeye ekleyen yardımcı
+  const collectId = (url: string | undefined, type: 'image' | 'video' = 'image') => {
+    if (!url) return;
+    if (url.startsWith('http://') || url.startsWith('https://')) return;
+
+    // Local path formatları: /api/site-images/:id, /uploads/:id, :id
+    let idCandidate = url;
+    idCandidate = idCandidate.replace(/^\/?api\/site-images\//, '');
+    idCandidate = idCandidate.replace(/^\/?uploads\//, '');
+    idCandidate = idCandidate.replace(/^\//, '');
+
+    // Eğer ID geçerli bir MongoDB ID'si ise listeye ekle
+    if (mongoose.Types.ObjectId.isValid(idCandidate)) {
+      idsToResolve.add(idCandidate);
+      urlMap.set(url, { type, originalUrl: url });
     }
-
-    // Cloudinary aktifse ve local path ise
-    if (storageType === 'cloudinary' && cdnBaseUrl) {
-      // Path temizleme: /api/site-images/, /uploads/ vb. kaldır
-      let cleanPath = url;
-      cleanPath = cleanPath.replace(/^\/?api\/site-images\//, '');
-      cleanPath = cleanPath.replace(/^\/?uploads\//, '');
-      cleanPath = cleanPath.replace(/^\//, ''); // Başındaki slash'i kaldır
-
-      // Eğer cleanPath tamamen temizlendiyse veya boşsa orijinali dön
-      if (!cleanPath) return url;
-
-      // Dosya uzantısı kontrolü - eksikse ekle
-      const ext = cleanPath.split('.').pop()?.toLowerCase();
-      const hasExt = ext && (ext.length === 3 || ext.length === 4);
-
-      if (!hasExt) {
-        if (type === 'video') cleanPath += '.mp4';
-        else cleanPath += '.jpg';
-      }
-
-      // Base URL hazırla (sonundaki slash'i kaldır)
-      const baseUrl = cdnBaseUrl.replace(/\/$/, '');
-
-      // Eğer URL zaten 'upload' içeriyorsa direkt birleştir (duplicate önlemek için)
-      if (cleanPath.includes('upload/')) {
-        return `${baseUrl}/${cleanPath}`;
-      }
-
-      // Strict Format: https://res.cloudinary.com/<cloud_name>/<resource_type>/upload/v1/<public_id>.<format>
-      return `${baseUrl}/${type}/upload/v1/${cleanPath}`;
-    }
-
-    return url;
   };
 
   // Content objesini kopyala
   const fixedContent = JSON.parse(JSON.stringify(content));
 
-  // Alan bazlı type belirleme
-  if (fixedContent.backgroundVideo) fixedContent.backgroundVideo = fixUrl(fixedContent.backgroundVideo, 'video');
-  if (fixedContent.backgroundImage) fixedContent.backgroundImage = fixUrl(fixedContent.backgroundImage, 'image');
-  if (fixedContent.selectedVideo) fixedContent.selectedVideo = fixUrl(fixedContent.selectedVideo, 'video');
+  // Alanları tara ve ID'leri topla
+  collectId(fixedContent.backgroundVideo, 'video');
+  collectId(fixedContent.backgroundImage, 'image');
+  collectId(fixedContent.selectedVideo, 'video');
+  collectId(fixedContent.image, 'image');
 
-  // Image alanları
-  if (fixedContent.image) fixedContent.image = fixUrl(fixedContent.image, 'image');
+  if (Array.isArray(fixedContent.availableVideos)) {
+    fixedContent.availableVideos.forEach((video: any) => collectId(video.url, 'video'));
+  }
 
-  // availableVideos array'ini düzelt - HER ZAMAN VIDEO
+  if (Array.isArray(fixedContent.services)) {
+    fixedContent.services.forEach((service: any) => collectId(service.icon, 'image'));
+  }
+
+  // Eğer toplanan ID yoksa direkt dön
+  if (idsToResolve.size === 0) return fixedContent;
+
+  // Veritabanından dosyaları çek
+  const images = await SiteImage.find({ _id: { $in: Array.from(idsToResolve) } });
+  const imageMap = new Map(); // ID -> Filename
+  images.forEach(img => {
+    if (img.filename) {
+      imageMap.set(img._id.toString(), img.filename);
+    }
+  });
+
+  // URL oluşturma fonksiyonu (Filename ile)
+  const buildUrl = (url: string | undefined): string | undefined => {
+    if (!url) return url;
+    if (!urlMap.has(url)) return url; // ID değilse veya geçerli değilse elleme
+
+    const { type } = urlMap.get(url)!;
+
+    // ID'yi URL'den tekrar çıkar (map key'i unique olması için url kullandık)
+    let id = url;
+    id = id.replace(/^\/?api\/site-images\//, '');
+    id = id.replace(/^\/?uploads\//, '');
+    id = id.replace(/^\//, '');
+
+    const filename = imageMap.get(id);
+    if (!filename) return url; // Dosya bulunamadıysa orijinali kalsın
+
+    // Cloudinary URL Formatı
+    const baseUrl = cdnBaseUrl.replace(/\/$/, '');
+
+    // Extension kontrolü
+    const ext = filename.split('.').pop()?.toLowerCase();
+    const hasExt = ext && (ext.length === 3 || ext.length === 4);
+
+    let cleanFilename = filename;
+    if (!hasExt) {
+      if (type === 'video') cleanFilename += '.mp4';
+      else cleanFilename += '.jpg';
+    }
+
+    return `${baseUrl}/${type}/upload/v1/${cleanFilename}`;
+  };
+
+  // URL'leri güncelle
+  if (fixedContent.backgroundVideo) fixedContent.backgroundVideo = buildUrl(fixedContent.backgroundVideo);
+  if (fixedContent.backgroundImage) fixedContent.backgroundImage = buildUrl(fixedContent.backgroundImage);
+  if (fixedContent.selectedVideo) fixedContent.selectedVideo = buildUrl(fixedContent.selectedVideo);
+  if (fixedContent.image) fixedContent.image = buildUrl(fixedContent.image);
+
   if (Array.isArray(fixedContent.availableVideos)) {
     fixedContent.availableVideos = fixedContent.availableVideos.map((video: any) => ({
       ...video,
-      url: fixUrl(video.url, 'video')
+      url: buildUrl(video.url)
     }));
   }
 
-  // Services & Equipment (icon alanları)
   if (Array.isArray(fixedContent.services)) {
     fixedContent.services = fixedContent.services.map((service: any) => ({
       ...service,
-      icon: fixUrl(service.icon, 'image') || service.icon
+      icon: buildUrl(service.icon) || service.icon
     }));
   }
 
@@ -101,12 +139,12 @@ export const getAllContents = async (req: Request, res: Response) => {
     const contents = await SiteContent.find(filters)
       .sort({ order: 1, createdAt: -1 });
 
-    // URL'leri düzelt
-    const fixedContents = contents.map(doc => {
+    // URL'leri düzelt (Async map için Promise.all kullan)
+    const fixedContents = await Promise.all(contents.map(async (doc) => {
       const docObj = doc.toObject();
-      docObj.content = fixContentUrls(docObj.content);
+      docObj.content = await fixContentUrls(docObj.content);
       return docObj;
-    });
+    }));
 
     res.status(200).json({
       success: true,
@@ -146,7 +184,7 @@ export const getContentBySection = async (req: Request, res: Response) => {
 
     // URL'leri düzelt ve content objesini güncelle
     const docObj = content.toObject();
-    docObj.content = fixContentUrls(docObj.content);
+    docObj.content = await fixContentUrls(docObj.content);
 
     res.status(200).json({
       success: true,
@@ -182,7 +220,7 @@ export const createContent = async (req: Request, res: Response) => {
       await existingContent.save();
 
       const docObj = existingContent.toObject();
-      docObj.content = fixContentUrls(docObj.content);
+      docObj.content = await fixContentUrls(docObj.content);
 
       return res.status(200).json({
         success: true,
@@ -199,7 +237,7 @@ export const createContent = async (req: Request, res: Response) => {
     });
 
     const docObj = newContent.toObject();
-    docObj.content = fixContentUrls(docObj.content);
+    docObj.content = await fixContentUrls(docObj.content);
 
     res.status(201).json({
       success: true,

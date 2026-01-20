@@ -41,5 +41,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@sentry/nextjs": "^10.35.0"
   }
 }

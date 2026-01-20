@@ -173,11 +173,10 @@ const CommandPalette: React.FC = () => {
               <button
                 key={command.id}
                 onClick={command.action}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
-                  index === selectedIndex
+                className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${index === selectedIndex
                     ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 <div className={`flex-shrink-0 ${index === selectedIndex ? 'text-[#0066CC] dark:text-primary-light' : 'text-gray-400'}`}>
                   {command.icon}
@@ -211,7 +210,7 @@ const CommandPalette: React.FC = () => {
           </div>
           <div className="flex items-center gap-1">
             <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">
-              {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}K
+              {(typeof window !== 'undefined' && window.navigator?.platform?.includes('Mac')) ? '⌘' : 'Ctrl'}K
             </kbd>
             <span>to open</span>
           </div>

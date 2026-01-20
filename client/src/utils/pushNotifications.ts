@@ -43,6 +43,9 @@ class PushNotificationService {
   }
 
   private async init(): Promise<void> {
+    // SSR check
+    if (typeof window === 'undefined') return;
+
     try {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         // Önce VAPID public key'i al
@@ -68,6 +71,7 @@ class PushNotificationService {
   }
 
   private async loadVapidKey(): Promise<void> {
+    if (typeof window === 'undefined') return;
     try {
       const res = await apiClient.get('/push/vapid-key');
       this.vapidPublicKey = res.data?.publicKey || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null;
@@ -78,6 +82,7 @@ class PushNotificationService {
   }
 
   private async checkSubscription(): Promise<void> {
+    if (typeof window === 'undefined') return;
     try {
       if (!this.swRegistration) return;
 
@@ -93,6 +98,7 @@ class PushNotificationService {
   }
 
   async subscribe(): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
     try {
       if (!this.swRegistration) {
         throw new Error('Service Worker not available');
@@ -136,6 +142,7 @@ class PushNotificationService {
   }
 
   async unsubscribe(): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
     try {
       if (!this.subscription) return false;
 
@@ -150,6 +157,7 @@ class PushNotificationService {
   }
 
   async showNotification(options: NotificationOptions): Promise<void> {
+    if (typeof window === 'undefined') return;
     try {
       if (!this.swRegistration) return;
 
@@ -177,14 +185,14 @@ class PushNotificationService {
           auth: this.arrayBufferToBase64(subscription.getKey('auth')),
         },
       };
-      
+
       await apiClient.post('/push/subscribe', {
         ...subscriptionData,
         userAgent: typeof window !== 'undefined' ? navigator.userAgent : undefined,
       });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('Update subscription on server failed:', error);
+        process.env.NODE_ENV === 'development' && console.error('Update subscription on server failed:', error);
       }
     }
   }
@@ -206,10 +214,17 @@ class PushNotificationService {
     bytes.forEach((b) => {
       binary += String.fromCharCode(b);
     });
-    return btoa(binary);
+    // SSR check for btoa
+    if (typeof window !== 'undefined') {
+      return window.btoa(binary);
+    }
+    // Node.js fallback (if needed, though this method is mostly client)
+    return Buffer.from(binary, 'binary').toString('base64');
   }
 
   private urlBase64ToUint8Array(base64String: string): Uint8Array {
+    if (typeof window === 'undefined') return new Uint8Array(0);
+
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding)
       .replace(/\-/g, '+')
@@ -226,6 +241,7 @@ class PushNotificationService {
   }
 
   isSupported(): boolean {
+    if (typeof window === 'undefined') return false;
     return 'serviceWorker' in navigator && 'PushManager' in window;
   }
 
@@ -234,7 +250,18 @@ class PushNotificationService {
   }
 }
 
-export const pushNotificationService = PushNotificationService.getInstance();
+// Singleton instance only if on client, otherwise null/mock or handle in usage
+const pushNotificationServiceStub = {
+  subscribe: async () => false,
+  unsubscribe: async () => false,
+  showNotification: async () => { },
+  isSupported: () => false,
+  isSubscribed: () => false
+} as any;
+
+export const pushNotificationService = typeof window !== 'undefined'
+  ? PushNotificationService.getInstance()
+  : pushNotificationServiceStub;
 
 // Push notification için yardımcı fonksiyonlar
 export const pushNotifications = {

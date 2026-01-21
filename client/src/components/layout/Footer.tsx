@@ -3,35 +3,40 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/common/Icon';
-import { SocialMedia } from '@/services/siteContentService';
+import { SocialMedia, ContactInfo } from '@/services/siteContentService';
 import logger from '@/utils/logger';
 import { useLocale, useTranslations } from 'next-intl';
 
 const Footer: React.FC = () => {
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
+  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
   const tFooter = useTranslations('site.footer');
   const tHeader = useTranslations('site.header');
   const locale = useLocale();
   const prefix = `/${locale}`;
 
   useEffect(() => {
-    const fetchSocialMedia = async () => {
+    const fetchData = async () => {
       try {
-        // Relative path kullan - Next.js rewrites proxy eder (farklı bilgisayarlardan erişim için)
-        // Cache-busting kaldırıldı - rate limiting'i önlemek için
-        const response = await fetch(`/api/site-content/public/social`, { cache: 'no-store' });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.content) {
-            setSocialMedia(data.content.content as SocialMedia[]);
-          }
+        const [socialRes, contactRes] = await Promise.all([
+          fetch(`/api/site-content/public/social`, { headers: { 'Cache-Control': 'no-cache' } }),
+          fetch(`/api/site-content/public/contact`, { headers: { 'Cache-Control': 'no-cache' } })
+        ]);
+
+        if (socialRes.ok) {
+          const data = await socialRes.json();
+          if (data.content?.content) setSocialMedia(data.content.content);
+        }
+        if (contactRes.ok) {
+          const data = await contactRes.json();
+          if (data.content?.content) setContactInfo(data.content.content);
         }
       } catch (error) {
-        logger.error('Sosyal medya verileri yüklenirken hata:', error);
+        logger.error('Footer veri yükleme hatası:', error);
       }
     };
 
-    fetchSocialMedia();
+    fetchData();
   }, []);
 
   const getIconName = (platform: string): React.ComponentProps<typeof Icon>['name'] => {
@@ -63,26 +68,15 @@ const Footer: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-white transition-colors"
-                    onClick={(e) => {
-                      if (!social.url || social.url === '#' || social.url.trim() === '') {
-                        e.preventDefault();
-                      }
-                    }}
                   >
                     <Icon name={getIconName(social.platform)} className="h-6 w-6" />
                   </a>
                 ))
               ) : (
                 <>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                    <Icon name="facebook" className="h-6 w-6" />
-                  </a>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                    <Icon name="instagram" className="h-6 w-6" />
-                  </a>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                    <Icon name="linkedin" className="h-6 w-6" />
-                  </a>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors"><Icon name="facebook" className="h-6 w-6" /></a>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors"><Icon name="instagram" className="h-6 w-6" /></a>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors"><Icon name="linkedin" className="h-6 w-6" /></a>
                 </>
               )}
             </div>
@@ -92,21 +86,9 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-xl font-bold mb-4">{tFooter('quickLinks')}</h3>
             <ul className="space-y-2">
-              <li>
-                <Link href={`${prefix}#projects`} className="text-gray-400 hover:text-white transition-colors">
-                  {tHeader('projects')}
-                </Link>
-              </li>
-              <li>
-                <Link href={`${prefix}#services`} className="text-gray-400 hover:text-white transition-colors">
-                  {tHeader('servicesEquipment')}
-                </Link>
-              </li>
-              <li>
-                <Link href={`${prefix}#about`} className="text-gray-400 hover:text-white transition-colors">
-                  {tHeader('about')}
-                </Link>
-              </li>
+              <li><Link href={`${prefix}#projects`} className="text-gray-400 hover:text-white transition-colors">{tHeader('projects')}</Link></li>
+              <li><Link href={`${prefix}#services`} className="text-gray-400 hover:text-white transition-colors">{tHeader('servicesEquipment')}</Link></li>
+              <li><Link href={`${prefix}#about`} className="text-gray-400 hover:text-white transition-colors">{tHeader('about')}</Link></li>
             </ul>
           </div>
 
@@ -116,15 +98,15 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li className="flex items-center text-gray-400">
                 <Icon name="location" className="h-5 w-5 mr-2" />
-                <span>Zincirlidere Caddesi No:52/C Şişli/İstanbul</span>
+                <span>{contactInfo?.address || 'Zincirlidere Caddesi No:52/C Şişli/İstanbul'}</span>
               </li>
               <li className="flex items-center text-gray-400">
                 <Icon name="phone" className="h-5 w-5 mr-2" />
-                <span>+90 532 123 4567</span>
+                <span>{contactInfo?.phone || '+90 532 123 4567'}</span>
               </li>
               <li className="flex items-center text-gray-400">
                 <Icon name="email" className="h-5 w-5 mr-2" />
-                <span>info@skpro.com.tr</span>
+                <span>{contactInfo?.email || 'info@skpro.com.tr'}</span>
               </li>
             </ul>
           </div>
@@ -144,15 +126,11 @@ const Footer: React.FC = () => {
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center text-gray-400">
             <p>
-              &copy; {new Date().getFullYear()} SK Production. {tFooter('copyright')}
+              © Copyright All right Reserved | 2017 Design By SK Production Management
             </p>
             <div className="flex space-x-4 mt-4 md:mt-0">
-              <Link href={`${prefix}/privacy`} className="hover:text-white transition-colors">
-                {tFooter('privacy')}
-              </Link>
-              <Link href={`${prefix}/terms`} className="hover:text-white transition-colors">
-                {tFooter('terms')}
-              </Link>
+              <Link href={`${prefix}/privacy`} className="hover:text-white transition-colors">{tFooter('privacy')}</Link>
+              <Link href={`${prefix}/terms`} className="hover:text-white transition-colors">{tFooter('terms')}</Link>
             </div>
           </div>
         </div>

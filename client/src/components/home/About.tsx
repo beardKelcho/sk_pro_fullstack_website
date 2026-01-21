@@ -1,0 +1,162 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
+import { motion } from 'framer-motion';
+import { AboutContent } from '@/services/siteContentService';
+import LazyImage from '@/components/common/LazyImage';
+import { useTranslations } from 'next-intl';
+import logger from '@/utils/logger';
+
+const About = () => {
+    const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
+    const tHome = useTranslations('site.home');
+
+    useEffect(() => {
+        const fetchAbout = async () => {
+            try {
+                const response = await fetch('/api/site-content/public/about', { headers: { 'Cache-Control': 'no-cache' } });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.content?.content) {
+                        setAboutContent(data.content.content);
+                    }
+                }
+            } catch (error) {
+                logger.error('About fetch error:', error);
+            }
+        };
+        fetchAbout();
+    }, []);
+
+    // Dynamic Year Calculation
+    const experienceYears = new Date().getFullYear() - 2017;
+
+    // Inject into stats
+    const stats = aboutContent?.stats || [];
+    // Verify if we should replace or append. The request says "9+ Yıllık Deneyim olarak yansıt".
+    // I'll prepend it to ensure it's visible.
+    const displayStats = [
+        { value: `${experienceYears}+`, label: 'Yıllık Deneyim' },
+        ...stats.filter(s => !s.label.toLowerCase().includes('deneyim') && !s.label.toLowerCase().includes('experience'))
+    ];
+
+    return (
+        <div style={{ marginTop: '16rem', marginBottom: '8rem' }}>
+            <StageExperience>
+                <section id="about" className="relative py-32 bg-gradient-to-b from-black/90 via-[#0A1128]/80 to-black/90" style={{ position: 'relative', scrollMarginTop: '100px', paddingTop: '8rem', minHeight: 'auto' }}>
+                    <div className="container mx-auto px-6">
+                        <div className="flex flex-col lg:flex-row items-center gap-16">
+                            <motion.div
+                                className="lg:w-1/2"
+                                initial={{ opacity: 0, x: -50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                            >
+                                <StageSectionTitle
+                                    title={aboutContent?.title || tHome('aboutSection.title')}
+                                    subtitle=""
+                                />
+                                {aboutContent?.description ? (
+                                    <div className="text-gray-300 mb-8 text-lg whitespace-pre-line leading-relaxed">
+                                        {aboutContent.description}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="text-gray-300 mb-6 text-lg leading-relaxed">
+                                            {tHome('aboutSection.paragraphs.0')}
+                                        </p>
+                                        <p className="text-gray-300 mb-6 text-lg leading-relaxed">
+                                            {tHome('aboutSection.paragraphs.1')}
+                                        </p>
+                                    </>
+                                )}
+                                <div className="flex gap-8 flex-wrap">
+                                    {displayStats.map((stat, index) => (
+                                        <motion.div
+                                            key={index}
+                                            className="text-center"
+                                            initial={{ opacity: 0, scale: 0.5 }}
+                                            whileInView={{ opacity: 1, scale: 1 }}
+                                            viewport={{ once: true }}
+                                            transition={{ delay: index * 0.1, duration: 0.5 }}
+                                            whileHover={{ scale: 1.1 }}
+                                        >
+                                            <motion.span
+                                                className="block text-5xl font-bold bg-gradient-to-r from-[#0066CC] to-[#00C49F] bg-clip-text text-transparent"
+                                                animate={{
+                                                    backgroundPosition: ['0%', '100%', '0%'],
+                                                }}
+                                                transition={{
+                                                    duration: 3,
+                                                    repeat: Infinity,
+                                                    ease: 'linear',
+                                                }}
+                                            >
+                                                {stat.value}
+                                            </motion.span>
+                                            <span className="text-gray-400 text-sm mt-2 block">{stat.label}</span>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </motion.div>
+                            <motion.div
+                                className="lg:w-1/2"
+                                initial={{ opacity: 0, x: 50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.8 }}
+                            >
+                                <div className="relative">
+                                    <motion.div
+                                        className="absolute -top-4 -right-4 w-full h-full bg-gradient-to-br from-[#0066CC] to-[#00C49F] rounded-2xl blur-xl opacity-50"
+                                        animate={{
+                                            scale: [1, 1.1, 1],
+                                            opacity: [0.5, 0.7, 0.5],
+                                        }}
+                                        transition={{
+                                            duration: 3,
+                                            repeat: Infinity,
+                                            ease: 'easeInOut',
+                                        }}
+                                    />
+                                    {(() => {
+                                        if (aboutContent?.image && aboutContent.image.length === 24 && /^[a-fA-F0-9]{24}$/.test(aboutContent.image)) {
+                                            return (
+                                                <LazyImage
+                                                    src={`/api/site-images/public/${aboutContent.image}/image`}
+                                                    alt="SK Production Ekibi"
+                                                    className="relative rounded-2xl w-full aspect-[4/3] z-10"
+                                                    fill
+                                                    objectFit="cover"
+                                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                                    quality={85}
+                                                />
+                                            );
+                                        } else if (aboutContent?.image) {
+                                            return (
+                                                <LazyImage
+                                                    src={aboutContent.image}
+                                                    alt="SK Production Ekibi"
+                                                    className="relative rounded-2xl w-full aspect-[4/3] z-10"
+                                                    fill
+                                                    objectFit="cover"
+                                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                                    quality={85}
+                                                />
+                                            );
+                                        }
+                                        return null;
+                                    })()}
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
+                </section>
+            </StageExperience>
+        </div>
+    );
+};
+
+export default About;

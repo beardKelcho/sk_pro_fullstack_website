@@ -38,7 +38,11 @@ const About = () => {
     // I'll prepend it to ensure it's visible.
     const displayStats = [
         { value: `${experienceYears}+`, label: 'Yıllık Deneyim' },
-        ...stats.filter(s => !s.label.toLowerCase().includes('deneyim') && !s.label.toLowerCase().includes('experience'))
+        ...stats.filter(s =>
+            !s.label.toLowerCase().includes('deneyim') &&
+            !s.label.toLowerCase().includes('experience') &&
+            !s.label.toLowerCase().includes('ekipman') // Filter out equipment
+        )
     ];
 
     return (
@@ -72,7 +76,7 @@ const About = () => {
                                         </p>
                                     </>
                                 )}
-                                <div className="flex gap-8 flex-wrap">
+                                <div className="flex gap-8 flex-wrap justify-center lg:justify-start">
                                     {displayStats.map((stat, index) => (
                                         <motion.div
                                             key={index}

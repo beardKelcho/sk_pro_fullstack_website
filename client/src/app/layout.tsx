@@ -16,18 +16,18 @@ import PWAInstallPrompt from '@/components/common/PWAInstallPrompt';
 import CommandPalette from '@/components/common/CommandPalette';
 import Script from 'next/script';
 import { errorTracker } from '@/utils/errorTracking';
-import { registerServiceWorker } from '@/utils/serviceWorker';
+// import { registerServiceWorker } from '@/utils/serviceWorker';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 
-const montserrat = Montserrat({ 
+const montserrat = Montserrat({
   subsets: ['latin'],
   display: 'swap',
   preload: false, // Next.js otomatik preload yapıyor, çift preload'ı önlemek için false
   fallback: ['system-ui', 'arial'],
   adjustFontFallback: true,
 });
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   preload: false, // Next.js otomatik preload yapıyor, çift preload'ı önlemek için false
@@ -118,13 +118,13 @@ export default async function RootLayout({
     // Error tracking'i başlat
     errorTracker.logError = errorTracker.logError.bind(errorTracker);
     // Service Worker'ı kaydet
-    registerServiceWorker();
+    // registerServiceWorker();
   }
 
   return (
     <html lang={locale || 'tr'} suppressHydrationWarning dir="ltr">
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        {/* <link rel="manifest" href="/manifest.json" /> */}
         <meta name="theme-color" content="#000000" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -136,7 +136,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale || 'tr'} messages={messages}>
           <LocalizedErrorBoundary>
             <OfflineIndicator />
-            <PWAInstallPrompt />
+            {/* <PWAInstallPrompt /> */}
             {process.env.NEXT_PUBLIC_GA_ID && (
               <>
                 <Script
@@ -160,7 +160,7 @@ export default async function RootLayout({
                 <CommandPalette />
                 {children}
                 <FooterWrapper />
-                <ToastContainer 
+                <ToastContainer
                   position="top-right"
                   autoClose={5000}
                   hideProgressBar={false}

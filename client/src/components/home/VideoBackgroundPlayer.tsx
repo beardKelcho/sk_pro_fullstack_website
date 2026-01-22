@@ -74,7 +74,7 @@ const VideoBackgroundPlayer: React.FC<VideoBackgroundPlayerProps> = ({
             preload="auto"
             poster={poster}
             key={videoUrl}
-            style={{ zIndex: 0 }}
+            style={{ zIndex: 0, objectFit: 'cover' }}
             crossOrigin="anonymous"
         >
             <source src={videoUrl} type="video/mp4" />

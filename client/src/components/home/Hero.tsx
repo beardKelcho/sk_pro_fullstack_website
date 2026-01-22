@@ -38,9 +38,12 @@ const Hero = () => {
             description: '',
             buttonText: 'Projelerimiz',
             buttonLink: '#projects',
-            rotatingTexts: ['Görüntü Rejisi', 'Medya Server', 'LED Ekran'],
         } as any),
-        title: 'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi', // Requested Hardcode
+        rotatingTexts: [
+            'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
+            'Medya Server ve Görüntü Rejisi Çözümleri',
+            'Görsel Mükemmellikte Uzman Ekip'
+        ],
     };
 
     const videoUrl = heroContent?.selectedVideo || heroContent?.backgroundVideo || '';

@@ -129,7 +129,7 @@ class PushNotificationService {
       const applicationServerKey = this.urlBase64ToUint8Array(this.vapidPublicKey);
       const subscription = await this.swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey,
+        applicationServerKey: applicationServerKey as BufferSource,
       });
 
       this.subscription = subscription;

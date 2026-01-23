@@ -226,9 +226,7 @@ const Projects = () => {
                                         />
 
                                         {/* Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-20 p-4 flex flex-col justify-end">
-                                            <h3 className="text-white text-lg font-bold line-clamp-1">{project.originalName}</h3>
-                                        </div>
+
                                     </div>
                                 )) : (
                                     <div className="col-span-full py-12 text-center text-gray-400">
@@ -297,9 +295,7 @@ const Projects = () => {
                                     <Icon name="close" className="w-6 h-6" />
                                 </button>
                                 <video src={selectedVideo.fullVideo} className="w-full h-full" autoPlay controls playsInline />
-                                <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-8 pointer-events-none">
-                                    <h2 className="text-2xl font-bold text-white mb-1">{selectedVideo.originalName}</h2>
-                                </div>
+
                             </div>
                         </motion.div>
                     )}
@@ -350,9 +346,7 @@ const Projects = () => {
                                     const url = getImageUrl({ image: selectedPhoto, imageId: selectedPhoto._id || selectedPhoto.id || '', fallback: '' });
                                     return url ? <img src={url} alt={selectedPhoto.originalName} className="max-w-full max-h-[85vh] rounded-lg shadow-2xl" /> : null;
                                 })()}
-                                <div className="text-center mt-4">
-                                    <h3 className="text-white text-xl font-medium">{selectedPhoto.originalName}</h3>
-                                </div>
+
                             </motion.div>
                         </motion.div>
                     )}

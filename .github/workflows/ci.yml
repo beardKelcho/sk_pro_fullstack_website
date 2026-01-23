@@ -33,13 +33,12 @@ jobs:
       
       - name: Install dependencies
         run: |
-          npm ci
-          cd client && npm ci --legacy-peer-deps
-          cd ../server && npm ci
+          npm install --legacy-peer-deps
+          cd client && npm install --legacy-peer-deps
+          cd ../server && npm install --legacy-peer-deps
 
       - name: Run npm audit
         # Continue on error because audit failures shouldn't always block (unless critical)
-        # You can remove "|| true" to make it strict
         run: npm run audit:ci || true
 
   # ============================================
@@ -58,9 +57,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          cd client && npm ci --legacy-peer-deps
-          cd ../server && npm ci
+          npm install --legacy-peer-deps
+          cd client && npm install --legacy-peer-deps
+          cd ../server && npm install --legacy-peer-deps
 
       - name: Lint (Client & Server)
         run: |
@@ -88,9 +87,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          cd client && npm ci --legacy-peer-deps
-          cd ../server && npm ci
+          npm install --legacy-peer-deps
+          cd client && npm install --legacy-peer-deps
+          cd ../server && npm install --legacy-peer-deps
 
       - name: Client Tests
         run: cd client && npm run test:ci:stable
@@ -120,9 +119,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          cd client && npm ci --legacy-peer-deps
-          cd ../server && npm ci
+          npm install --legacy-peer-deps
+          cd client && npm install --legacy-peer-deps
+          cd ../server && npm install --legacy-peer-deps
 
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.10.0
@@ -188,9 +187,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          cd client && npm ci --legacy-peer-deps
-          cd ../server && npm ci
+          npm install --legacy-peer-deps
+          cd client && npm install --legacy-peer-deps
+          cd ../server && npm install --legacy-peer-deps
 
       - name: Build Client
         run: cd client && npm run build

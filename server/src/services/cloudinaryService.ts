@@ -3,7 +3,7 @@
  * Cloudinary API entegrasyonu için service
  */
 
-import { v2 as cloudinary } from 'cloudinary';
+import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 import path from 'path';
 import logger from '../utils/logger';
@@ -62,7 +62,7 @@ export const uploadToCloudinary = async (
           invalidate: true,
           ...options,
         },
-        (error, result) => {
+        (error, result: UploadApiResponse | undefined) => {
           if (error) {
             logger.error('Cloudinary upload error:', error);
             reject(error);

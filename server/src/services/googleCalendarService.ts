@@ -35,12 +35,12 @@ export interface GoogleCalendarListResponse {
 /**
  * Google Calendar API'ye erişim için access token ile istek yap
  */
-const makeGoogleCalendarRequest = async (
+const makeGoogleCalendarRequest = async <T = any>(
   accessToken: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   endpoint: string,
-  data?: any
-) => {
+  data?: unknown
+): Promise<T> => {
   try {
     const response = await axios({
       method,
@@ -51,7 +51,7 @@ const makeGoogleCalendarRequest = async (
       },
       data,
     });
-    return response.data;
+    return response.data as T;
   } catch (error: any) {
     logger.error('Google Calendar API hatası:', {
       endpoint,
@@ -152,7 +152,7 @@ export const deleteGoogleCalendarEvent = async (
 /**
  * Google Calendar event'ini proje formatına çevir
  */
-export const googleEventToProject = (event: GoogleCalendarEvent, userId: string, clientId: string): any => {
+export const googleEventToProject = (event: GoogleCalendarEvent, userId: string, clientId: string): Record<string, unknown> => {
   const startDate = event.start.date || event.start.dateTime?.split('T')[0];
   const endDate = event.end.date || event.end.dateTime?.split('T')[0];
 
@@ -172,7 +172,7 @@ export const googleEventToProject = (event: GoogleCalendarEvent, userId: string,
 /**
  * Projeyi Google Calendar event formatına çevir
  */
-export const projectToGoogleEvent = (project: any): GoogleCalendarEvent => {
+export const projectToGoogleEvent = (project: Record<string, any>): GoogleCalendarEvent => {
   const startDate = new Date(project.startDate);
   const endDate = project.endDate ? new Date(project.endDate) : startDate;
 

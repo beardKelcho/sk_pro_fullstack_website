@@ -19,10 +19,10 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
-  
+
   const importEquipment = useImportEquipment();
   const importProjects = useImportProjects();
-  
+
   const isImporting = importEquipment.isPending || importProjects.isPending;
   const importMutation = type === 'equipment' ? importEquipment : importProjects;
 
@@ -54,17 +54,19 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
     try {
       const result = await importMutation.mutateAsync(file);
       setImportResult(result.result);
-      
+
       if (result.result.success > 0) {
         toast.success(result.message);
         onSuccess?.();
       }
-      
+
       if (result.result.failed > 0) {
         toast.warning(`${result.result.success} başarılı, ${result.result.failed} başarısız`);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Import işlemi başarısız');
+      // Axios error handling
+      const message = error.response?.data?.message || error.message || 'Import işlemi başarısız';
+      toast.error(message);
     }
   };
 
@@ -209,7 +211,7 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
           {importResult && (
             <div className="border-t pt-6">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Import Sonuçları</h3>
-              
+
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded">
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">

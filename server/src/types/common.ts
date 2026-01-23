@@ -119,3 +119,30 @@ export interface MongooseUpdateResult {
   upsertedCount?: number;
   matchedCount: number;
 }
+
+/**
+ * Mongoose Populated Field Type
+ * T: The base document type
+ * K: The keys that are populated
+ * P: The type of the populated document (defaults to any if not specified, but should be specific)
+ */
+export type Populated<T, K extends keyof T, P> = Omit<T, K> & {
+  [Key in K]: P;
+};
+
+// Also import interfaces to create concrete populated types
+import { IProject } from '../models/Project';
+import { IEquipment } from '../models/Equipment';
+import { IUser } from '../models/User';
+import { IClient } from '../models/Client';
+
+export interface IProjectPopulated extends Omit<IProject, 'client' | 'team' | 'equipment'> {
+  client: IClient;
+  team: IUser[];
+  equipment: IEquipment[];
+}
+
+export interface IEquipmentPopulated extends Omit<IEquipment, 'responsibleUser' | 'currentProject'> {
+  responsibleUser?: IUser; // Optional because it might not be populated or null
+  currentProject?: IProject;
+}

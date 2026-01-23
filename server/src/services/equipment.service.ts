@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 import { Equipment } from '../models';
 import { IEquipment } from '../models/Equipment';
-import { AppError } from '../types/common';
+import { AppError, IEquipmentPopulated } from '../types/common';
 
 
 
 export interface PaginatedEquipment {
-    equipment: IEquipment[];
+    equipment: IEquipmentPopulated[];
     total: number;
     page: number;
     totalPages: number;
@@ -83,7 +83,7 @@ class EquipmentService {
         ]);
 
         return {
-            equipment: equipment,
+            equipment: equipment as unknown as IEquipmentPopulated[],
             total,
             page,
             totalPages: Math.ceil(total / limit)
@@ -93,7 +93,7 @@ class EquipmentService {
     /**
      * Get equipment by ID
      */
-    async getEquipmentById(id: string): Promise<IEquipment> {
+    async getEquipmentById(id: string): Promise<IEquipmentPopulated> {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             throw new AppError('Geçersiz ekipman ID', 400);
         }
@@ -107,7 +107,7 @@ class EquipmentService {
             throw new AppError('Ekipman bulunamadı', 404);
         }
 
-        return equipment as any;
+        return equipment as unknown as IEquipmentPopulated;
     }
 
     /**

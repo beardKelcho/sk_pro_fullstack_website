@@ -1,11 +1,11 @@
 import mongoose, { FilterQuery } from 'mongoose';
 import { Project, Equipment, Client, User } from '../models';
 import { IProject } from '../models/Project';
-import { AppError } from '../types/common';
+import { AppError, IProjectPopulated } from '../types/common';
 
 
 export interface PaginatedProjects {
-    projects: IProject[];
+    projects: IProjectPopulated[];
     total: number;
     page: number;
     totalPages: number;
@@ -46,7 +46,7 @@ class ProjectService {
         excludeProjectId?: string
     ): Promise<{
         available: boolean;
-        conflictingProject?: IProject;
+        conflictingProject?: IProjectPopulated;
         conflictingEquipmentId?: string;
     }> {
         if (!equipmentIds.length || !endDate) return { available: true };
@@ -74,7 +74,7 @@ class ProjectService {
             );
             return {
                 available: false,
-                conflictingProject: conflictingProject as unknown as IProject,
+                conflictingProject: conflictingProject as unknown as IProjectPopulated,
                 conflictingEquipmentId: conflictId
             };
         }
@@ -125,7 +125,7 @@ class ProjectService {
         ]);
 
         return {
-            projects: projects as unknown as IProject[],
+            projects: projects as unknown as IProjectPopulated[],
             total,
             page,
             totalPages: Math.ceil(total / limit)
@@ -135,7 +135,7 @@ class ProjectService {
     /**
      * Get Project by ID
      */
-    async getProjectById(id: string): Promise<IProject> {
+    async getProjectById(id: string): Promise<IProjectPopulated> {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             throw new AppError('Geçersiz proje ID', 400);
         }
@@ -149,13 +149,13 @@ class ProjectService {
             throw new AppError('Proje bulunamadı', 404);
         }
 
-        return project as unknown as IProject;
+        return project as unknown as IProjectPopulated;
     }
 
     /**
      * Create Project
      */
-    async createProject(data: CreateProjectData): Promise<IProject> {
+    async createProject(data: CreateProjectData): Promise<IProjectPopulated> {
         if (!data.name || !data.client || !data.startDate) {
             throw new AppError('Proje adı, müşteri ve başlangıç tarihi gereklidir', 400);
         }
@@ -214,7 +214,7 @@ class ProjectService {
     /**
      * Update Project
      */
-    async updateProject(id: string, data: UpdateProjectData): Promise<IProject> {
+    async updateProject(id: string, data: UpdateProjectData): Promise<IProjectPopulated> {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             throw new AppError('Geçersiz proje ID', 400);
         }

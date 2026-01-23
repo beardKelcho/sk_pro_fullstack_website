@@ -50,12 +50,17 @@ export default function SiteImagesPage() {
     const errors: string[] = [];
 
     files.forEach((file, index) => {
-      if (!file.type.startsWith('image/')) {
-        errors.push(`${file.name}: Resim dosyası değil`);
+      // Resim veya Video kontrolü
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        errors.push(`${file.name}: Sadece resim veya video dosyaları yüklenebilir`);
         return;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        errors.push(`${file.name}: Dosya boyutu 10MB'dan büyük`);
+
+      // Video için daha yüksek limit (50MB), resim için 10MB
+      const limit = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+
+      if (file.size > limit) {
+        errors.push(`${file.name}: Dosya boyutu çok büyük (Limit: ${limit / (1024 * 1024)}MB)`);
         return;
       }
       validFiles.push(file);
@@ -116,6 +121,9 @@ export default function SiteImagesPage() {
           imagePath = `${imageCategory || 'site-images'}/${fileData.filename}`;
         }
 
+        // Uzantı kontrolü ile video ise otomatik kategori belirleme (opsiyonel)
+        // Ancak kullanıcı seçimi öncelikli olsun, 'project' kategorisi hem video hem resim içerebilir.
+
         return createImage({
           filename: fileData.filename,
           originalName: fileData.originalname,
@@ -129,7 +137,7 @@ export default function SiteImagesPage() {
 
       await Promise.all(uploadPromises);
 
-      toast.success(`${uploadData.files.length} resim başarıyla yüklendi`);
+      toast.success(`${uploadData.files.length} dosya başarıyla yüklendi`);
       setShowUploadModal(false);
       setSelectedFiles([]);
       // Varsayılan kategori 'project' - anasayfada gösterilmek için
@@ -139,7 +147,7 @@ export default function SiteImagesPage() {
       }
       fetchImages();
     } catch (error: any) {
-      toast.error(error.message || 'Resimler yüklenirken bir hata oluştu');
+      toast.error(error.message || 'Dosyalar yüklenirken bir hata oluştu');
     } finally {
       setUploading(false);
     }
@@ -261,8 +269,8 @@ export default function SiteImagesPage() {
               key={key}
               onClick={() => setSelectedCategory(key)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedCategory === key
-                  ? 'bg-[#0066CC] dark:bg-primary-light text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                ? 'bg-[#0066CC] dark:bg-primary-light text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
             >
               {name}
@@ -335,10 +343,10 @@ export default function SiteImagesPage() {
                 <div
                   key={imageId}
                   className={`bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border-2 transition-all relative modern-card group ${isSelected
-                      ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light shadow-xl scale-105'
-                      : image.isActive
-                        ? 'border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700'
-                        : 'border-gray-200 dark:border-gray-700 opacity-60 hover:opacity-80'
+                    ? 'border-[#0066CC] dark:border-primary-light ring-2 ring-[#0066CC] dark:ring-primary-light shadow-xl scale-105'
+                    : image.isActive
+                      ? 'border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700'
+                      : 'border-gray-200 dark:border-gray-700 opacity-60 hover:opacity-80'
                     }`}
                 >
                   {/* Checkbox */}
@@ -417,8 +425,8 @@ export default function SiteImagesPage() {
                       <button
                         onClick={() => handleToggleActive(image)}
                         className={`flex-1 px-3 py-1.5 text-xs rounded-lg transition-colors font-medium ${image.isActive
-                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
-                            : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
+                          : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
                           }`}
                       >
                         {image.isActive ? 'Pasif Yap' : 'Aktif Yap'}
@@ -484,12 +492,12 @@ export default function SiteImagesPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Resim Dosyası
+                      Dosya Seçimi
                     </label>
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/mp4,video/webm,video/quicktime"
                       multiple
                       onChange={handleFileSelect}
                       className="block w-full text-sm text-gray-500 dark:text-gray-400
@@ -515,7 +523,7 @@ export default function SiteImagesPage() {
                       </div>
                     )}
                     <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                      Birden fazla resim seçebilirsiniz. Maksimum dosya boyutu: 10MB. Desteklenen formatlar: JPG, PNG, GIF
+                      Birden fazla dosya seçebilirsiniz. Desteklenen formatlar: Resim (JPG, PNG) ve Video (MP4, MOV, WebM). Maksimum: 50MB.
                     </p>
                   </div>
                 </div>

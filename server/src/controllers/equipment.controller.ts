@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { AppError, MongooseFilter, MongooseSortOptions, MongooseUpdateResult } from '../types/common';
-import { IEquipment } from '../models/Equipment';
+import { AppError } from '../types/common';
+
 import { Equipment, QRCode, Project } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
@@ -14,18 +14,18 @@ export const getAllEquipment = async (req: Request, res: Response) => {
   try {
     // Query parametreleri
     const { type, status, search, sort = 'name', page = 1, limit = 10 } = req.query;
-    
+
     // Filtreleme koşulları
     const filters: any = {};
-    
+
     if (type) {
       filters.type = type;
     }
-    
+
     if (status) {
       filters.status = status;
     }
-    
+
     if (search) {
       filters.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -33,21 +33,21 @@ export const getAllEquipment = async (req: Request, res: Response) => {
         { serialNumber: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     // Sayfalama
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;
-    
+
     // Sıralama
-    const sortField = (sort as string).startsWith('-') 
-      ? (sort as string).substring(1) 
+    const sortField = (sort as string).startsWith('-')
+      ? (sort as string).substring(1)
       : (sort as string);
     const sortOrder = (sort as string).startsWith('-') ? -1 : 1;
-    
+
     const sortOptions: any = {};
     sortOptions[sortField] = sortOrder;
-    
+
     // Ekipmanları sorgula
     const [equipment, total] = await Promise.all([
       Equipment.find(filters)
@@ -57,7 +57,7 @@ export const getAllEquipment = async (req: Request, res: Response) => {
         .populate('responsibleUser', 'name email')
         .populate('currentProject', 'name status')
         .lean(),
-        
+
       Equipment.countDocuments(filters)
     ]);
 
@@ -120,7 +120,7 @@ export const getAllEquipment = async (req: Request, res: Response) => {
       }
       return e;
     });
-    
+
     res.status(200).json({
       success: true,
       count: patchedEquipment.length,
@@ -142,14 +142,14 @@ export const getAllEquipment = async (req: Request, res: Response) => {
 export const getEquipmentById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz ekipman ID',
       });
     }
-    
+
     let equipment: any = await Equipment.findById(id)
       .populate('responsibleUser', 'name email')
       .populate('currentProject', 'name status')
@@ -157,7 +157,7 @@ export const getEquipmentById = async (req: Request, res: Response) => {
         path: 'maintenances',
         options: { sort: { scheduledDate: -1 } }
       });
-    
+
     if (!equipment) {
       return res.status(404).json({
         success: false,
@@ -199,7 +199,7 @@ export const getEquipmentById = async (req: Request, res: Response) => {
           .populate({ path: 'maintenances', options: { sort: { scheduledDate: -1 } } });
       }
     }
-    
+
     res.status(200).json({
       success: true,
       equipment,
@@ -217,7 +217,7 @@ export const getEquipmentById = async (req: Request, res: Response) => {
 export const createEquipment = async (req: Request, res: Response) => {
   try {
     const { name, type, model, serialNumber, purchaseDate, status, location, notes, responsibleUser } = req.body;
-    
+
     // Zorunlu alanları kontrol et
     if (!name || !type) {
       return res.status(400).json({
@@ -225,7 +225,7 @@ export const createEquipment = async (req: Request, res: Response) => {
         message: 'Ekipman adı ve tipi gereklidir',
       });
     }
-    
+
     // Ekipmanı oluştur
     const equipment = await Equipment.create({
       name,
@@ -295,10 +295,10 @@ export const createEquipment = async (req: Request, res: Response) => {
 
     // Güncel ekipmanı dön (qr alanları ile)
     const equipmentWithQr = await Equipment.findById(equipment._id).populate('responsibleUser', 'name email');
-    
+
     // Cache'i invalidate et
     await invalidateEquipmentCache();
-    
+
     res.status(201).json({
       success: true,
       equipment: equipmentWithQr || equipment,
@@ -319,17 +319,17 @@ export const updateEquipment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, type, model, serialNumber, purchaseDate, status, location, notes, responsibleUser } = req.body;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz ekipman ID',
       });
     }
-    
+
     // Mevcut ekipmanı al (versiyon geçmişi için)
     const oldEquipment = await Equipment.findById(id).lean();
-    
+
     if (!oldEquipment) {
       return res.status(404).json({
         success: false,
@@ -353,14 +353,14 @@ export const updateEquipment = async (req: Request, res: Response) => {
       },
       { new: true, runValidators: true }
     ).populate('responsibleUser', 'name email');
-    
+
     if (!updatedEquipment) {
       return res.status(404).json({
         success: false,
         message: 'Ekipman bulunamadı',
       });
     }
-    
+
     // Versiyon geçmişi oluştur
     const userId = (req.user as any)?.id || (req.user as any)?._id;
     if (userId && oldEquipment) {
@@ -375,10 +375,10 @@ export const updateEquipment = async (req: Request, res: Response) => {
         logger.error('Versiyon geçmişi oluşturma hatası:', error);
       });
     }
-    
+
     // Cache'i invalidate et
     await invalidateEquipmentCache();
-    
+
     res.status(200).json({
       success: true,
       equipment: updatedEquipment,
@@ -396,23 +396,23 @@ export const updateEquipment = async (req: Request, res: Response) => {
 export const deleteEquipment = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz ekipman ID',
       });
     }
-    
+
     const equipment = await Equipment.findById(id);
-    
+
     if (!equipment) {
       return res.status(404).json({
         success: false,
         message: 'Ekipman bulunamadı',
       });
     }
-    
+
     // Ekipman kullanımda mı kontrol et
     if (equipment.status === 'IN_USE') {
       return res.status(400).json({
@@ -420,15 +420,15 @@ export const deleteEquipment = async (req: Request, res: Response) => {
         message: 'Kullanımda olan ekipman silinemez',
       });
     }
-    
+
     await equipment.deleteOne();
-    
+
     // Cache'i invalidate et
     await invalidateEquipmentCache();
-    
+
     // Audit log
     await logAction(req, 'DELETE', 'Equipment', id);
-    
+
     res.status(200).json({
       success: true,
       message: 'Ekipman başarıyla silindi',

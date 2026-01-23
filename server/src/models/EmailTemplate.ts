@@ -23,13 +23,7 @@ export interface IEmailTemplate extends Document {
   updatedAt: Date;
 }
 
-const LocalizedContentSchema = new Schema<IEmailTemplateLocalizedContent>(
-  {
-    subject: { type: String, required: true, trim: true },
-    html: { type: String, required: true },
-  },
-  { _id: false }
-);
+
 
 const VariantSchema = new Schema<IEmailTemplateVariant>(
   {

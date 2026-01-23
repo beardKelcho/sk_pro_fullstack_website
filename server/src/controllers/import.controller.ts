@@ -18,7 +18,7 @@ interface ImportResult {
  */
 const parseFile = async (file: Express.Multer.File): Promise<any[]> => {
   const ext = file.originalname.split('.').pop()?.toLowerCase();
-  
+
   if (ext === 'xlsx' || ext === 'xls') {
     return await parseExcel(file);
   } else if (ext === 'csv') {
@@ -33,21 +33,21 @@ const parseFile = async (file: Express.Multer.File): Promise<any[]> => {
  */
 const parseExcel = async (file: Express.Multer.File): Promise<any[]> => {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(file.buffer);
-  
+  await workbook.xlsx.load(file.buffer as any);
+
   const worksheet = workbook.worksheets[0];
   const rows: any[] = [];
-  
+
   // İlk satırı header olarak al
   const headers: string[] = [];
   worksheet.getRow(1).eachCell((cell, colNumber) => {
     headers[colNumber - 1] = cell.value?.toString() || '';
   });
-  
+
   // Diğer satırları parse et
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return; // Header'ı atla
-    
+
     const rowData: any = {};
     row.eachCell((cell, colNumber) => {
       const header = headers[colNumber - 1];
@@ -55,12 +55,12 @@ const parseExcel = async (file: Express.Multer.File): Promise<any[]> => {
         rowData[header] = cell.value?.toString() || '';
       }
     });
-    
+
     if (Object.keys(rowData).length > 0) {
       rows.push(rowData);
     }
   });
-  
+
   return rows;
 };
 
@@ -70,27 +70,27 @@ const parseExcel = async (file: Express.Multer.File): Promise<any[]> => {
 const parseCSV = async (file: Express.Multer.File): Promise<any[]> => {
   const content = file.buffer.toString('utf-8');
   const lines = content.split('\n').filter(line => line.trim());
-  
+
   if (lines.length === 0) return [];
-  
+
   // İlk satırı header olarak al
   const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  
+
   // Diğer satırları parse et
   const rows: any[] = [];
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
     const rowData: any = {};
-    
+
     headers.forEach((header, index) => {
       rowData[header] = values[index] || '';
     });
-    
+
     if (Object.keys(rowData).length > 0) {
       rows.push(rowData);
     }
   }
-  
+
   return rows;
 };
 
@@ -166,7 +166,7 @@ export const importEquipment = async (req: Request, res: Response) => {
 
         result.success++;
       } catch (error: unknown) {
-      const appError = error as AppError;
+        const appError = error as AppError;
         result.errors.push({
           row: rowNumber,
           field: 'general',
@@ -193,7 +193,8 @@ export const importEquipment = async (req: Request, res: Response) => {
       result,
     });
   } catch (error: unknown) {
-      const appError = error as AppError;
+
+    const appError = error as AppError;
     logger.error('Ekipman import hatası:', error);
     res.status(500).json({
       success: false,
@@ -279,7 +280,7 @@ export const importProjects = async (req: Request, res: Response) => {
 
         result.success++;
       } catch (error: unknown) {
-      const appError = error as AppError;
+        const appError = error as AppError;
         result.errors.push({
           row: rowNumber,
           field: 'general',
@@ -305,7 +306,8 @@ export const importProjects = async (req: Request, res: Response) => {
       result,
     });
   } catch (error: unknown) {
-      const appError = error as AppError;
+
+    const appError = error as AppError;
     logger.error('Proje import hatası:', error);
     res.status(500).json({
       success: false,
@@ -360,7 +362,7 @@ export const downloadTemplate = async (req: Request, res: Response) => {
     await workbook.xlsx.write(res);
     res.end();
   } catch (error: unknown) {
-      const appError = error as AppError;
+
     logger.error('Template indirme hatası:', error);
     res.status(500).json({
       success: false,

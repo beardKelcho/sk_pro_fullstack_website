@@ -18,7 +18,7 @@ import logger from './logger';
  */
 export const optimizeAggregation = (
   pipeline: any[],
-  options: {
+  _options: {
     allowDiskUse?: boolean;
     explain?: boolean;
     hint?: any;
@@ -44,7 +44,7 @@ export const optimizeAggregation = (
     if (stageKey === '$sort' && !hasSort) {
       hasSort = true;
       optimized.push(stage);
-      
+
       // Sonraki stage $limit ise birleştir
       if (i + 1 < pipeline.length && pipeline[i + 1].$limit) {
         optimized.push(pipeline[i + 1]);
@@ -77,7 +77,7 @@ export const optimizeAggregation = (
   if (!hasMatch && optimized.length > 0) {
     const firstStage = optimized[0];
     const firstKey = Object.keys(firstStage)[0];
-    
+
     // $group veya $lookup'tan önce $match eklenebilir
     if (firstKey === '$group' || firstKey === '$lookup') {
       // İlk stage'e göre $match eklenebilir (opsiyonel)
@@ -93,17 +93,17 @@ export const optimizeAggregation = (
  */
 const optimizeProjectStage = (project: any): any => {
   const optimized: any = {};
-  
+
   for (const [key, value] of Object.entries(project)) {
     // 0 (exclude) değerleri atla (zaten exclude edilmiş)
     if (value === 0 || value === false) {
       continue;
     }
-    
+
     // 1 (include) veya expression'ları ekle
     optimized[key] = value;
   }
-  
+
   return optimized;
 };
 
@@ -113,14 +113,14 @@ const optimizeProjectStage = (project: any): any => {
 export const explainAggregation = async (
   model: mongoose.Model<any>,
   pipeline: any[],
-  options: {
+  _options: {
     allowDiskUse?: boolean;
     hint?: any;
   } = {}
 ): Promise<any> => {
   try {
     const explainResult = await model.aggregate(pipeline).explain('executionStats');
-    
+
     if (process.env.NODE_ENV === 'development' && process.env.DEBUG_QUERIES === 'true') {
       logger.debug('Aggregation Explain:', {
         stages: explainResult.stages || [],
@@ -128,7 +128,7 @@ export const explainAggregation = async (
         queryPlanner: explainResult.queryPlanner,
       });
     }
-    
+
     return explainResult;
   } catch (error) {
     logger.error('Aggregation explain error:', error);
@@ -164,7 +164,7 @@ export const suggestIndexesForAggregation = (pipeline: any[]): string[] => {
   // $match ve $sort alanlarını birleştirerek index öner
   if (matchFields.size > 0 || sortFields.size > 0) {
     const allFields = Array.from(new Set([...matchFields, ...sortFields]));
-    
+
     // Compound index öner (match alanları + sort alanları)
     if (allFields.length > 0) {
       suggestions.push(`Compound index: ${allFields.join(', ')}`);
@@ -183,7 +183,7 @@ export const optimizeForMemory = (
   estimatedDataSize: number = 0
 ): { pipeline: any[]; options: any } => {
   const options: any = {};
-  
+
   // Büyük veri setleri için allowDiskUse öner
   if (estimatedDataSize > 100 * 1024 * 1024) { // 100MB
     options.allowDiskUse = true;

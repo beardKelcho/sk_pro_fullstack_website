@@ -14,7 +14,7 @@ export const streamRealtime = async (req: Request, res: Response) => {
   });
 
   // flush headers if available
-  // @ts-ignore
+
   if (typeof res.flushHeaders === 'function') res.flushHeaders();
 
   const user = req.user as any;

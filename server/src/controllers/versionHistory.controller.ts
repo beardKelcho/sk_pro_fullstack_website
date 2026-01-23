@@ -137,7 +137,7 @@ export const rollbackVersion = async (req: Request, res: Response) => {
       message: `Versiyon ${versionNumber}'a rollback yapıldı`,
     });
   } catch (error: unknown) {
-      const appError = error as AppError;
+    const appError = error as AppError;
     logger.error('Rollback hatası:', error);
     res.status(500).json({
       success: false,

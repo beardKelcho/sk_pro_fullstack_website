@@ -89,7 +89,7 @@ const fixContentUrls = async (content: any): Promise<any> => {
       // User isteği: "fazladan klasör yollarını temizle"
       let cleanFilename = filename.split('/').pop() || filename;
 
-      let resourceType = type;
+      const resourceType = type;
       const ext = cleanFilename.split('.').pop()?.toLowerCase();
       const hasExt = ext && (ext.length === 3 || ext.length === 4);
 
@@ -151,7 +151,7 @@ const fixContentUrls = async (content: any): Promise<any> => {
 
       // URL local path ise ID'den bulmaya çalış
       if (url && !url.includes('cloudinary.com')) {
-        let id = url.replace(/^\/?api\/site-images\//, '').replace(/^\/?uploads\//, '').replace(/^\//, '');
+        const id = url.replace(/^\/?api\/site-images\//, '').replace(/^\/?uploads\//, '').replace(/^\//, '');
         if (imageMap.has(id)) {
           const data = imageMap.get(id);
           filename = data.filename;

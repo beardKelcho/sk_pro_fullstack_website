@@ -49,7 +49,7 @@ export const uploadToCloudinary = async (
   try {
     // Resource type'ı dosya uzantısından belirle
     const resourceType = options.resource_type || getResourceType(filename);
-    
+
     // Folder'ı type'dan oluştur
     const folder = options.folder || getFolderFromType(filename);
 
@@ -129,7 +129,7 @@ const getResourceType = (filename: string): 'image' | 'video' | 'raw' => {
 /**
  * Dosya type'ından folder belirle
  */
-const getFolderFromType = (filename: string): string => {
+const getFolderFromType = (_filename: string): string => {
   // Bu fonksiyon request'ten gelen type'a göre folder belirleyecek
   // Şimdilik genel bir folder yapısı kullanıyoruz
   return 'skproduction';

@@ -12,7 +12,7 @@ import logger from '../utils/logger';
 /**
  * Socket.io authentication middleware
  */
-export const authenticateSocket = async (socket: Socket, next: Function) => {
+export const authenticateSocket = async (socket: Socket, next: (err?: any) => void) => {
   try {
     const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(' ')[1];
 

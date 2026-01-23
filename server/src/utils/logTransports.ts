@@ -17,9 +17,9 @@ export const createCloudWatchTransport = (): winston.transport | null => {
       return null;
     }
 
-    // @ts-ignore - winston-cloudwatch paketi type tanımları eksik olabilir
+    // winston-cloudwatch paketi type tanımları eksik olabilir
     const CloudWatchTransport = require('winston-cloudwatch');
-    
+
     return new CloudWatchTransport({
       logGroupName: process.env.CLOUDWATCH_LOG_GROUP || 'sk-production-api',
       logStreamName: process.env.CLOUDWATCH_LOG_STREAM || `${process.env.NODE_ENV}-${new Date().toISOString().split('T')[0]}`,
@@ -64,8 +64,8 @@ export const createElasticsearchTransport = (): winston.transport | null => {
       logger.warn('winston-elasticsearch paketi bulunamadı. Elasticsearch transport devre dışı. Yüklemek için: npm install winston-elasticsearch --save');
       return null;
     }
-    
-    // @ts-ignore - winston-elasticsearch paketi type tanımları eksik olabilir
+
+    // winston-elasticsearch paketi type tanımları eksik olabilir
     return new ElasticsearchTransport({
       level: process.env.LOG_LEVEL || 'info',
       clientOpts: {
@@ -118,7 +118,7 @@ export const createFileTransport = (): winston.transport | null => {
     const logDir = process.env.LOG_DIR || 'logs';
     const fs = require('fs');
     const path = require('path');
-    
+
     // Log klasörünü oluştur
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
@@ -150,9 +150,9 @@ export const createLogTransports = (): winston.transport[] => {
       format: process.env.LOG_CONSOLE_FORMAT === 'json'
         ? winston.format.json()
         : winston.format.combine(
-            winston.format.colorize(),
-            winston.format.simple()
-          ),
+          winston.format.colorize(),
+          winston.format.simple()
+        ),
     })
   );
 

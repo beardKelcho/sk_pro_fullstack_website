@@ -5,7 +5,7 @@ import { IUser } from '../models/User';
 import logger from '../utils/logger';
 import { logLoginAction } from '../utils/auditLogger';
 import { createTokenHash, generateTokenPair, isMobileClient } from '../utils/authTokens';
-import { AppError, AuthenticatedRequest } from '../types/common';
+import { AppError } from '../types/common';
 
 const getClientIp = (req: Request): string | undefined => {
   const xf = req.headers['x-forwarded-for'];

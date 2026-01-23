@@ -16,14 +16,14 @@ export const explainQuery = async <T>(
 ): Promise<any> => {
   try {
     const explainResult = await query.explain('executionStats') as any;
-    
+
     if (process.env.NODE_ENV === 'development' && process.env.DEBUG_QUERIES === 'true') {
       logger.debug(`Query Explain (${label || 'unnamed'}):`, {
         executionStats: explainResult?.executionStats,
         queryPlanner: explainResult?.queryPlanner,
       });
     }
-    
+
     return explainResult;
   } catch (error) {
     logger.error('Query explain error:', error);
@@ -42,18 +42,18 @@ export const checkIndexUsage = async (
     if (!mongoose.connection.db) {
       return false;
     }
-    
+
     const explainResult = await mongoose.connection.db
       .collection(collectionName)
       .find(query)
       .explain('executionStats') as any;
-    
+
     const executionStats = explainResult?.executionStats || explainResult?.queryPlanner?.winningPlan;
     const stage = executionStats?.stage || executionStats?.inputStage?.stage;
-    
+
     // Index kullanıldı mı?
     const usesIndex = stage === 'IXSCAN' || stage === 'FETCH' || executionStats?.totalDocsExamined < executionStats?.totalDocsReturned;
-    
+
     if (!usesIndex && process.env.NODE_ENV === 'development') {
       logger.warn(`⚠️  Query on ${collectionName} may not be using an index:`, {
         query,
@@ -61,7 +61,7 @@ export const checkIndexUsage = async (
         executionStats,
       });
     }
-    
+
     return usesIndex;
   } catch (error) {
     logger.error('Index usage check error:', error);
@@ -114,18 +114,18 @@ export const batchProcess = async <T>(
 ): Promise<void> => {
   let skip = 0;
   let hasMore = true;
-  
+
   while (hasMore) {
     const batch = await (query.skip(skip).limit(batchSize).lean().exec() as Promise<any[]>);
-    
+
     if (batch.length === 0) {
       hasMore = false;
       break;
     }
-    
+
     await processor(batch);
     skip += batchSize;
-    
+
     if (batch.length < batchSize) {
       hasMore = false;
     }
@@ -144,14 +144,14 @@ export const cachedQuery = async <T>(
   ttl: number = CACHE_TTL
 ): Promise<T> => {
   const cached = queryCache.get(key);
-  
+
   if (cached && Date.now() - cached.timestamp < ttl) {
     return cached.data;
   }
-  
+
   const data = await queryFn();
   queryCache.set(key, { data, timestamp: Date.now() });
-  
+
   return data;
 };
 
@@ -176,15 +176,16 @@ export const clearQueryCache = (pattern?: string): void => {
  */
 export const detectSlowQueries = (threshold: number = 1000) => {
   const originalExec = mongoose.Query.prototype.exec;
-  
+
   mongoose.Query.prototype.exec = function (this: any, ...args: any[]) {
     const startTime = Date.now();
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const query = this;
-    
-    // @ts-ignore - Mongoose exec method signature
+
+    // Mongoose exec method signature override
     return (originalExec.apply(this, args as any) as Promise<any>).then((result: any) => {
       const duration = Date.now() - startTime;
-      
+
       if (duration > threshold) {
         logger.warn(`⚠️  Slow query detected (${duration}ms):`, {
           model: query.model?.modelName,
@@ -193,7 +194,7 @@ export const detectSlowQueries = (threshold: number = 1000) => {
           duration,
         });
       }
-      
+
       return result;
     });
   };

@@ -10,7 +10,7 @@ import { getImageUrl } from '@/utils/imageUrl';
 import { useTranslations } from 'next-intl';
 import logger from '@/utils/logger';
 
-// Extended type for local use until backend is updated
+// Types
 interface VideoProject extends SiteImage {
     previewVideo?: string;
     fullVideo?: string;
@@ -25,10 +25,17 @@ const PLACEHOLDER_VIDEOS = [
     'https://assets.mixkit.co/videos/preview/mixkit-abstract-rendering-of-a-ball-of-energy-26131-large.mp4',
 ];
 
+type TabType = 'videos' | 'photos';
+
 const Projects = () => {
     const tHome = useTranslations('site.home');
+    const [activeTab, setActiveTab] = useState<TabType>('videos');
     const [projects, setProjects] = useState<VideoProject[]>([]);
-    const [selectedProject, setSelectedProject] = useState<VideoProject | null>(null);
+
+    // Lightbox States
+    const [selectedVideo, setSelectedVideo] = useState<VideoProject | null>(null);
+    const [selectedPhoto, setSelectedPhoto] = useState<VideoProject | null>(null);
+
     const [hoveredProject, setHoveredProject] = useState<string | null>(null);
     const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
     const imagesFetchedRef = useRef(false);
@@ -49,7 +56,6 @@ const Projects = () => {
                         return true;
                     });
 
-                    // Enhance with dummy video data
                     const enhancedProjects = activeImages.map((img: SiteImage, index: number) => ({
                         ...img,
                         previewVideo: PLACEHOLDER_VIDEOS[index % PLACEHOLDER_VIDEOS.length],
@@ -67,19 +73,17 @@ const Projects = () => {
         fetchImages();
     }, []);
 
-    // Hover logic for preview videos
+    // Video Hover Logic
     useEffect(() => {
         Object.entries(videoRefs.current).forEach(([id, video]) => {
             if (!video) return;
-
             if (id === hoveredProject) {
                 video.currentTime = 0;
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
-                    playPromise.catch(error => {
+                    playPromise.catch(() => {
                         // Auto-play might be blocked
-                        logger.warn('Video play prevented:', error);
-                    });
+                    })
                 }
             } else {
                 video.pause();
@@ -88,10 +92,32 @@ const Projects = () => {
         });
     }, [hoveredProject]);
 
+    // Keyboard Navigation for Photo Lightbox
+    const handlePhotoKeyDown = useCallback((e: KeyboardEvent) => {
+        if (!selectedPhoto) return;
+        const currentIndex = projects.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
+
+        if (e.key === 'ArrowRight') {
+            const nextIndex = (currentIndex + 1) % projects.length;
+            setSelectedPhoto(projects[nextIndex]);
+        } else if (e.key === 'ArrowLeft') {
+            const prevIndex = (currentIndex - 1 + projects.length) % projects.length;
+            setSelectedPhoto(projects[prevIndex]);
+        } else if (e.key === 'Escape') {
+            setSelectedPhoto(null);
+        }
+    }, [selectedPhoto, projects]);
+
+    useEffect(() => {
+        if (selectedPhoto) {
+            window.addEventListener('keydown', handlePhotoKeyDown);
+            return () => window.removeEventListener('keydown', handlePhotoKeyDown);
+        }
+    }, [selectedPhoto, handlePhotoKeyDown]);
+
     return (
         <StageExperience>
-            <section id="projects" className="relative py-24 bg-black overflow-hidden"
-                style={{ scrollMarginTop: '100px' }}>
+            <section id="projects" className="relative py-24 bg-black overflow-hidden" style={{ scrollMarginTop: '100px' }}>
 
                 {/* Background Decor */}
                 <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-900/20 rounded-full blur-[120px] pointer-events-none" />
@@ -103,113 +129,189 @@ const Projects = () => {
                         subtitle={tHome('projectsSection.subtitle')}
                     />
 
-                    {/* Masonry Grid */}
-                    <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-                        {projects.map((project, index) => (
-                            <motion.div
-                                key={project._id || project.id || index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
-                                className="break-inside-avoid"
-                            >
-                                <div
-                                    className="relative group rounded-2xl overflow-hidden cursor-pointer bg-gray-900 shadow-lg hover:shadow-[0_0_30px_rgba(0,102,204,0.3)] transition-all duration-300 transform hover:-translate-y-1"
-                                    onClick={() => setSelectedProject(project)}
-                                    onMouseEnter={() => setHoveredProject(project._id || project.id || '')}
-                                    onMouseLeave={() => setHoveredProject(null)}
+                    {/* Tabs */}
+                    <div className="flex justify-center mb-16">
+                        <div className="bg-white/5 backdrop-blur-md rounded-full p-1 border border-white/10 flex space-x-2">
+                            {(['videos', 'photos'] as const).map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`relative px-8 py-3 rounded-full text-sm font-medium transition-colors duration-300 ${activeTab === tab ? 'text-white' : 'text-gray-400 hover:text-white'
+                                        }`}
                                 >
-                                    {/* Aspect Ratio Container */}
-                                    <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-                                        {/* Cover Image */}
-                                        <div className={`absolute inset-0 z-10 transition-opacity duration-500 ${hoveredProject === (project._id || project.id) ? 'opacity-0' : 'opacity-100'}`}>
+                                    {activeTab === tab && (
+                                        <motion.div
+                                            layoutId="activeTab"
+                                            className="absolute inset-0 bg-[#0066CC] rounded-full shadow-[0_0_20px_rgba(0,102,204,0.4)]"
+                                            transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                                        />
+                                    )}
+                                    <span className="relative z-10 flex items-center gap-2 capitalize">
+                                        <Icon name={tab === 'videos' ? 'video' : 'screen'} className="w-4 h-4" />
+                                        {tab === 'videos' ? 'Videolar' : 'Fotoğraflar'}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'videos' ? (
+                            <motion.div
+                                key="videos"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.4 }}
+                                className="grid grid-cols-1 md:grid-cols-2 gap-8"
+                            >
+                                {projects.map((project, index) => (
+                                    <div
+                                        key={`vid-${project._id || index}`}
+                                        className="group relative aspect-video bg-gray-900 rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#0066CC]/50 transition-all duration-500 shadow-lg hover:shadow-[0_0_40px_rgba(0,102,204,0.25)]"
+                                        onMouseEnter={() => setHoveredProject(project._id || project.id || '')}
+                                        onMouseLeave={() => setHoveredProject(null)}
+                                        onClick={() => setSelectedVideo(project)}
+                                    >
+                                        {/* Cover */}
+                                        <div className={`absolute inset-0 z-10 transition-opacity duration-700 ${hoveredProject === (project._id || project.id) ? 'opacity-0' : 'opacity-100'}`}>
                                             {(() => {
-                                                const imageId = project._id || project.id;
-                                                const imageUrl = getImageUrl({
-                                                    image: project,
-                                                    imageId: imageId as string,
-                                                    fallback: project.url || project.path || ''
-                                                });
-                                                if (!imageUrl) return null;
-                                                return (
-                                                    <LazyImage
-                                                        src={imageUrl}
-                                                        alt={project.originalName || 'Project Cover'}
-                                                        className="w-full h-full object-cover"
-                                                        fill
-                                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                                    />
-                                                );
+                                                const url = getImageUrl({ image: project, imageId: project._id || project.id || '', fallback: '' });
+                                                return url ? <LazyImage src={url} alt={project.originalName} className="object-cover w-full h-full" fill /> : null;
                                             })()}
                                         </div>
 
                                         {/* Preview Video */}
                                         <video
-                                            ref={el => {
-                                                if (project._id || project.id) {
-                                                    videoRefs.current[project._id || project.id || ''] = el;
-                                                }
-                                            }}
+                                            ref={el => { if (project._id || project.id) videoRefs.current[project._id || project.id || ''] = el }}
                                             src={project.previewVideo}
-                                            className="absolute inset-0 w-full h-full object-cover z-0"
-                                            muted
-                                            loop
-                                            playsInline
+                                            className="absolute inset-0 w-full h-full object-cover z-0 opacity-80"
+                                            muted loop playsInline
                                         />
 
-                                        {/* Overlay Content */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-6">
+                                        {/* Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-20 p-6 flex flex-col justify-end">
                                             <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                                                <div className="bg-[#0066CC] w-10 h-10 rounded-full flex items-center justify-center mb-3">
-                                                    <Icon name="video" className="text-white w-5 h-5" />
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <div className="w-10 h-10 rounded-full bg-[#0066CC] flex items-center justify-center text-white">
+                                                        <Icon name="video" className="w-5 h-5" />
+                                                    </div>
+                                                    <span className="text-white/80 text-sm tracking-wider uppercase font-medium">Video Galeri</span>
                                                 </div>
-                                                <h3 className="text-white font-bold text-lg mb-1 line-clamp-1">{project.originalName}</h3>
-                                                <p className="text-gray-300 text-sm line-clamp-2">{project.description}</p>
+                                                <h3 className="text-white text-xl font-bold line-clamp-1">{project.originalName}</h3>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                ))}
                             </motion.div>
-                        ))}
-                    </div>
+                        ) : (
+                            <motion.div
+                                key="photos"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.4 }}
+                                className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6"
+                            >
+                                {projects.map((project, index) => (
+                                    <div
+                                        key={`pho-${project._id || index}`}
+                                        className="break-inside-avoid relative group rounded-2xl overflow-hidden cursor-zoom-in border border-white/5 hover:border-white/20 transition-all duration-300"
+                                        onClick={() => setSelectedPhoto(project)}
+                                    >
+                                        <div className="relative w-full bg-gray-900">
+                                            {(() => {
+                                                const url = getImageUrl({ image: project, imageId: project._id || project.id || '', fallback: '' });
+                                                return url ? (
+                                                    <img
+                                                        src={url}
+                                                        alt={project.originalName}
+                                                        className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
+                                                        loading="lazy"
+                                                    />
+                                                ) : null;
+                                            })()}
+                                        </div>
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                            <Icon name="link" className="text-white w-8 h-8 opacity-80" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
-                {/* Lightbox / Video Modal */}
+                {/* Video Lightbox */}
                 <AnimatePresence>
-                    {selectedProject && (
+                    {selectedVideo && (
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4 md:p-10"
-                            onClick={() => setSelectedProject(null)}
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10"
+                            onClick={() => setSelectedVideo(null)}
                         >
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="relative w-full max-w-6xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10"
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <button
-                                    className="absolute top-4 right-4 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-white/20 transition-colors"
-                                    onClick={() => setSelectedProject(null)}
-                                >
+                            <div className="relative w-full max-w-6xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => setSelectedVideo(null)} className="absolute top-4 right-4 z-50 p-2 bg-black/50 text-white rounded-full hover:bg-white/20 transition-colors">
                                     <Icon name="close" className="w-6 h-6" />
                                 </button>
-
-                                <video
-                                    src={selectedProject.fullVideo}
-                                    className="w-full h-full"
-                                    autoPlay
-                                    controls
-                                    playsInline
-                                />
-
+                                <video src={selectedVideo.fullVideo} className="w-full h-full" autoPlay controls playsInline />
                                 <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-8 pointer-events-none">
-                                    <h2 className="text-2xl font-bold text-white mb-2">{selectedProject.originalName}</h2>
-                                    <p className="text-gray-300">{selectedProject.description}</p>
+                                    <h2 className="text-2xl font-bold text-white mb-1">{selectedVideo.originalName}</h2>
+                                    <p className="text-gray-400">{selectedVideo.description}</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Photo Lightbox */}
+                <AnimatePresence>
+                    {selectedPhoto && (
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[60] bg-black/98 backdrop-blur-xl flex items-center justify-center"
+                            onClick={() => setSelectedPhoto(null)}
+                        >
+                            <button onClick={() => setSelectedPhoto(null)} className="absolute top-6 right-6 z-50 p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors">
+                                <Icon name="close" className="w-8 h-8" />
+                            </button>
+
+                            {/* Navigation */}
+                            <button
+                                className="absolute left-6 top-1/2 -translate-y-1/2 p-4 text-white hover:text-[#0066CC] transition-colors z-50"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const idx = projects.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
+                                    setSelectedPhoto(projects[(idx - 1 + projects.length) % projects.length]);
+                                }}
+                            >
+                                <Icon name="arrow-left" className="w-10 h-10" />
+                            </button>
+                            <button
+                                className="absolute right-6 top-1/2 -translate-y-1/2 p-4 text-white hover:text-[#0066CC] transition-colors z-50"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const idx = projects.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
+                                    setSelectedPhoto(projects[(idx + 1) % projects.length]);
+                                }}
+                            >
+                                <Icon name="arrow-right" className="w-10 h-10" />
+                            </button>
+
+                            <motion.div
+                                key={selectedPhoto._id || selectedPhoto.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="relative max-w-[90vw] max-h-[90vh]"
+                                onClick={e => e.stopPropagation()}
+                            >
+                                {(() => {
+                                    const url = getImageUrl({ image: selectedPhoto, imageId: selectedPhoto._id || selectedPhoto.id || '', fallback: '' });
+                                    return url ? <img src={url} alt={selectedPhoto.originalName} className="max-w-full max-h-[85vh] rounded-lg shadow-2xl" /> : null;
+                                })()}
+                                <div className="text-center mt-4">
+                                    <h3 className="text-white text-xl font-medium">{selectedPhoto.originalName}</h3>
                                 </div>
                             </motion.div>
                         </motion.div>

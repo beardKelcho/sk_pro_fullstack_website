@@ -24,14 +24,18 @@ const Services = () => {
     ];
 
     return (
-        <section id="services" className="py-24 bg-white dark:bg-[#0A1128] transition-colors duration-300">
-            <div className="container mx-auto px-6">
+        <section id="services" className="py-24 bg-gradient-to-b from-[#0A1128] to-black relative overflow-hidden">
+            {/* Background Gradient Orbs */}
+            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
+
+            <div className="container mx-auto px-6 relative z-10">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
-                        Hizmetlerimiz & Çözümlerimiz
+                    <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+                        Profesyonel Görüntü ve Medya Çözümleri
                     </h2>
-                    <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                        Profesyonel görüntü teknolojileri ve teknik yönetim hizmetleri
+                    <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                        Etkinlikleriniz için dünya standartlarında medya sunucuları, görüntü işleme teknolojileri ve uzman reji hizmetleri sunuyoruz.
                     </p>
                 </div>
 

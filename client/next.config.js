@@ -276,22 +276,4 @@ const sentryWebpackPluginOptions = {
 // - DSN varsa: Sentry aktif (error tracking çalışır)
 // - DSN + Org + Project varsa: Sentry aktif + source map upload çalışır
 // - Hiçbiri yoksa: Sentry devre dışı
-/* 
-   NOTE: withSentryConfig wrapper is temporarily disabled because it causes 'ReferenceError: self is not defined' 
-   during the build process (vendor chunk issues). 
-   Runtime Sentry (error capturing) will still work because Sentry.init is called in instrumentation.ts/sentry.client.config.ts.
-   Source map uploads are disabled.
-*/
-// module.exports = hasSentryDSN && hasSentrySourceMapConfig
-//   ? withSentryConfig(configWithIntl, sentryWebpackPluginOptions)
-//   : hasSentryDSN && !hasSentrySourceMapConfig
-//     ? (() => {
-//       // DSN var ama org/project yok - sadece error tracking, source map upload yok
-//       if (process.env.NODE_ENV === 'production') {
-//         console.warn('⚠️  Sentry: DSN found but SENTRY_ORG/SENTRY_PROJECT missing or empty. Source map upload disabled.');
-//       }
-//       return configWithIntl;
-//     })()
-//     : configWithIntl;
-
 module.exports = configWithIntl; 

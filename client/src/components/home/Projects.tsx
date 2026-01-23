@@ -14,7 +14,6 @@ import logger from '@/utils/logger';
 interface VideoProject extends SiteImage {
     previewVideo?: string;
     fullVideo?: string;
-    description?: string;
 }
 
 // Sample placeholder videos
@@ -74,7 +73,6 @@ const Projects = () => {
                                 ...img,
                                 previewVideo: img.url,
                                 fullVideo: img.url,
-                                description: img.originalName
                             });
                         } else {
                             photos.push(img);
@@ -87,7 +85,6 @@ const Projects = () => {
                             ...img,
                             previewVideo: PLACEHOLDER_VIDEOS[index % PLACEHOLDER_VIDEOS.length],
                             fullVideo: PLACEHOLDER_VIDEOS[index % PLACEHOLDER_VIDEOS.length],
-                            description: `Demo Video Project #${index + 1}`
                         }));
                         setVideoList(placeholders);
                     } else {
@@ -310,7 +307,6 @@ const Projects = () => {
                                 <video src={selectedVideo.fullVideo} className="w-full h-full" autoPlay controls playsInline />
                                 <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-8 pointer-events-none">
                                     <h2 className="text-2xl font-bold text-white mb-1">{selectedVideo.originalName}</h2>
-                                    <p className="text-gray-400">{selectedVideo.description}</p>
                                 </div>
                             </div>
                         </motion.div>

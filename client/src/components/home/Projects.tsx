@@ -30,7 +30,10 @@ type TabType = 'videos' | 'photos';
 const Projects = () => {
     const tHome = useTranslations('site.home');
     const [activeTab, setActiveTab] = useState<TabType>('videos');
-    const [projects, setProjects] = useState<VideoProject[]>([]);
+
+    // Split States
+    const [videoList, setVideoList] = useState<VideoProject[]>([]);
+    const [photoList, setPhotoList] = useState<VideoProject[]>([]);
 
     // Lightbox States
     const [selectedVideo, setSelectedVideo] = useState<VideoProject | null>(null);
@@ -56,14 +59,42 @@ const Projects = () => {
                         return true;
                     });
 
-                    const enhancedProjects = activeImages.map((img: SiteImage, index: number) => ({
-                        ...img,
-                        previewVideo: PLACEHOLDER_VIDEOS[index % PLACEHOLDER_VIDEOS.length],
-                        fullVideo: PLACEHOLDER_VIDEOS[index % PLACEHOLDER_VIDEOS.length],
-                        description: `Proje #${index + 1} - İleri Teknoloji Görüntü Çözümü`
-                    }));
+                    // Filtering Logic
+                    const videoExtensions = ['.mp4', '.mov', '.webm', '.avi', '.mkv'];
+                    const videos: VideoProject[] = [];
+                    const photos: VideoProject[] = [];
 
-                    setProjects(enhancedProjects);
+                    activeImages.forEach((img: SiteImage) => {
+                        const filename = (img.filename || '').toLowerCase();
+                        const url = (img.url || '').toLowerCase();
+                        const isVideo = videoExtensions.some(ext => filename.endsWith(ext) || url.endsWith(ext));
+
+                        if (isVideo) {
+                            videos.push({
+                                ...img,
+                                previewVideo: img.url,
+                                fullVideo: img.url,
+                                description: img.originalName
+                            });
+                        } else {
+                            photos.push(img);
+                        }
+                    });
+
+                    // Placeholder fallback if no videos found
+                    if (videos.length === 0) {
+                        const placeholders = activeImages.slice(0, 4).map((img: SiteImage, index: number) => ({
+                            ...img,
+                            previewVideo: PLACEHOLDER_VIDEOS[index % PLACEHOLDER_VIDEOS.length],
+                            fullVideo: PLACEHOLDER_VIDEOS[index % PLACEHOLDER_VIDEOS.length],
+                            description: `Demo Video Project #${index + 1}`
+                        }));
+                        setVideoList(placeholders);
+                    } else {
+                        setVideoList(videos);
+                    }
+
+                    setPhotoList(photos);
                     imagesFetchedRef.current = true;
                 }
             } catch (error) {
@@ -73,7 +104,7 @@ const Projects = () => {
         fetchImages();
     }, []);
 
-    // Video Hover Logic
+    // Video Hover Logic (Target videoList)
     useEffect(() => {
         Object.entries(videoRefs.current).forEach(([id, video]) => {
             if (!video) return;
@@ -92,21 +123,21 @@ const Projects = () => {
         });
     }, [hoveredProject]);
 
-    // Keyboard Navigation for Photo Lightbox
+    // Keyboard Navigation for Photo Lightbox (Target photoList)
     const handlePhotoKeyDown = useCallback((e: KeyboardEvent) => {
         if (!selectedPhoto) return;
-        const currentIndex = projects.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
+        const currentIndex = photoList.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
 
         if (e.key === 'ArrowRight') {
-            const nextIndex = (currentIndex + 1) % projects.length;
-            setSelectedPhoto(projects[nextIndex]);
+            const nextIndex = (currentIndex + 1) % photoList.length;
+            setSelectedPhoto(photoList[nextIndex]);
         } else if (e.key === 'ArrowLeft') {
-            const prevIndex = (currentIndex - 1 + projects.length) % projects.length;
-            setSelectedPhoto(projects[prevIndex]);
+            const prevIndex = (currentIndex - 1 + photoList.length) % photoList.length;
+            setSelectedPhoto(photoList[prevIndex]);
         } else if (e.key === 'Escape') {
             setSelectedPhoto(null);
         }
-    }, [selectedPhoto, projects]);
+    }, [selectedPhoto, photoList]);
 
     useEffect(() => {
         if (selectedPhoto) {
@@ -166,7 +197,7 @@ const Projects = () => {
                                 transition={{ duration: 0.4 }}
                                 className="grid grid-cols-1 md:grid-cols-2 gap-8"
                             >
-                                {projects.map((project, index) => (
+                                {videoList.length > 0 ? videoList.map((project, index) => (
                                     <div
                                         key={`vid-${project._id || index}`}
                                         className="group relative aspect-video bg-gray-900 rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#0066CC]/50 transition-all duration-500 shadow-lg hover:shadow-[0_0_40px_rgba(0,102,204,0.25)]"
@@ -178,7 +209,14 @@ const Projects = () => {
                                         <div className={`absolute inset-0 z-10 transition-opacity duration-700 ${hoveredProject === (project._id || project.id) ? 'opacity-0' : 'opacity-100'}`}>
                                             {(() => {
                                                 const url = getImageUrl({ image: project, imageId: project._id || project.id || '', fallback: '' });
-                                                return url ? <LazyImage src={url} alt={project.originalName} className="object-cover w-full h-full" fill /> : null;
+                                                // Avoid rendering LazyImage if the url is a video file; video element below handles preview.
+                                                // But usually video cards have a thumbnail.
+                                                // For now, if it's a video file, we risk showing a broken image unless we have a thumbnail field.
+                                                // Assuming typical use case: if it IS a video file, maybe don't show LazyImage? 
+                                                // Or rely on object-cover. 
+                                                // Let's keep it safe:
+                                                const isVideo = ['.mp4', '.mov', '.webm'].some(ext => (url || '').toLowerCase().endsWith(ext));
+                                                return (!isVideo && url) ? <LazyImage src={url} alt={project.originalName} className="object-cover w-full h-full" fill /> : null;
                                             })()}
                                         </div>
 
@@ -203,7 +241,14 @@ const Projects = () => {
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="col-span-full py-12 text-center text-gray-400">
+                                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-4">
+                                            <Icon name="video" className="w-8 h-8 opacity-50" />
+                                        </div>
+                                        <p>Henüz video eklenmemiş.</p>
+                                    </div>
+                                )}
                             </motion.div>
                         ) : (
                             <motion.div
@@ -214,7 +259,7 @@ const Projects = () => {
                                 transition={{ duration: 0.4 }}
                                 className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6"
                             >
-                                {projects.map((project, index) => (
+                                {photoList.length > 0 ? photoList.map((project, index) => (
                                     <div
                                         key={`pho-${project._id || index}`}
                                         className="break-inside-avoid relative group rounded-2xl overflow-hidden cursor-zoom-in border border-white/5 hover:border-white/20 transition-all duration-300"
@@ -237,7 +282,14 @@ const Projects = () => {
                                             <Icon name="link" className="text-white w-8 h-8 opacity-80" />
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="col-span-full py-12 text-center text-gray-400 w-full">
+                                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 mb-4">
+                                            <Icon name="screen" className="w-8 h-8 opacity-50" />
+                                        </div>
+                                        <p>Henüz fotoğraf eklenmemiş.</p>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -282,8 +334,8 @@ const Projects = () => {
                                 className="absolute left-6 top-1/2 -translate-y-1/2 p-4 text-white hover:text-[#0066CC] transition-colors z-50"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    const idx = projects.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
-                                    setSelectedPhoto(projects[(idx - 1 + projects.length) % projects.length]);
+                                    const idx = photoList.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
+                                    setSelectedPhoto(photoList[(idx - 1 + photoList.length) % photoList.length]);
                                 }}
                             >
                                 <Icon name="arrow-left" className="w-10 h-10" />
@@ -292,8 +344,8 @@ const Projects = () => {
                                 className="absolute right-6 top-1/2 -translate-y-1/2 p-4 text-white hover:text-[#0066CC] transition-colors z-50"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    const idx = projects.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
-                                    setSelectedPhoto(projects[(idx + 1) % projects.length]);
+                                    const idx = photoList.findIndex(p => (p._id || p.id) === (selectedPhoto._id || selectedPhoto.id));
+                                    setSelectedPhoto(photoList[(idx + 1) % photoList.length]);
                                 }}
                             >
                                 <Icon name="arrow-right" className="w-10 h-10" />
@@ -318,7 +370,7 @@ const Projects = () => {
                     )}
                 </AnimatePresence>
             </section>
-        </StageExperience>
+        </StageExperience >
     );
 };
 

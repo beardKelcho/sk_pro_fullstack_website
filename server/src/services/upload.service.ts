@@ -10,6 +10,34 @@ import logger from '../utils/logger';
 // Upload klasörünü tanımla
 const uploadDir = path.join(process.cwd(), 'uploads');
 
+export interface FileInfo {
+    filename: string;
+    path: string;
+    size: number;
+    uploadedAt: Date;
+    modifiedAt: Date;
+    type: 'image' | 'video' | 'document';
+    url: string;
+    mimetype: string;
+}
+
+export interface PaginatedFiles {
+    files: FileInfo[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+}
+
+export interface UploadResult {
+    filename: string;
+    originalname: string;
+    mimetype: string;
+    size: number;
+    url: string;
+    path: string;
+}
+
 // MIME type helper
 const getMimeType = (ext: string): string => {
     const mimeTypes: { [key: string]: string } = {
@@ -53,7 +81,7 @@ export class UploadService {
         }
 
         // Local storage için dosya listesi
-        const files: any[] = [];
+        const files: FileInfo[] = [];
         const typeDir = fileType === 'all' ? uploadDir : path.join(uploadDir, fileType);
 
         if (fs.existsSync(typeDir)) {
@@ -81,7 +109,7 @@ export class UploadService {
     /**
      * Recursive directory scanning
      */
-    private scanDirectory(dir: string, basePath: string, files: any[], searchTerm: string) {
+    private scanDirectory(dir: string, basePath: string, files: FileInfo[], searchTerm: string) {
         if (!fs.existsSync(dir)) return;
 
         const items = fs.readdirSync(dir, { withFileTypes: true });

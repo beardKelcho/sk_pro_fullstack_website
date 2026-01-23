@@ -106,10 +106,12 @@ export class UploadController {
                 success: true,
                 message: 'Dosya başarıyla silindi',
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('Dosya silme hatası:', error);
 
-            if (error.message === 'File not found') {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+            if (errorMessage === 'File not found') {
                 return res.status(404).json({
                     success: false,
                     message: 'Dosya bulunamadı',

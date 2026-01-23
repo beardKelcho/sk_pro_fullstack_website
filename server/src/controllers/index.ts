@@ -1,7 +1,7 @@
 // Controller re-exports
 import authController from './auth.controller';
-import * as equipmentController from './equipment.controller';
-import * as projectController from './project.controller';
+import equipmentController from './equipment.controller';
+import projectController from './project.controller';
 import * as clientController from './client.controller';
 import userController from './user.controller';
 import * as maintenanceController from './maintenance.controller';

@@ -226,16 +226,8 @@ const Projects = () => {
                                         />
 
                                         {/* Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-20 p-6 flex flex-col justify-end">
-                                            <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <div className="w-10 h-10 rounded-full bg-[#0066CC] flex items-center justify-center text-white">
-                                                        <Icon name="video" className="w-5 h-5" />
-                                                    </div>
-                                                    <span className="text-white/80 text-sm tracking-wider uppercase font-medium">Video Galeri</span>
-                                                </div>
-                                                <h3 className="text-white text-xl font-bold line-clamp-1">{project.originalName}</h3>
-                                            </div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-20 p-4 flex flex-col justify-end">
+                                            <h3 className="text-white text-lg font-bold line-clamp-1">{project.originalName}</h3>
                                         </div>
                                     </div>
                                 )) : (

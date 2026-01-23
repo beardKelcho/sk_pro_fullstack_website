@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          cd client && npm ci
+          cd client && npm ci --legacy-peer-deps
           cd ../server && npm ci
 
       - name: Run npm audit
@@ -59,7 +59,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          cd client && npm ci
+          cd client && npm ci --legacy-peer-deps
           cd ../server && npm ci
 
       - name: Lint (Client & Server)
@@ -89,7 +89,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          cd client && npm ci
+          cd client && npm ci --legacy-peer-deps
           cd ../server && npm ci
 
       - name: Client Tests
@@ -121,7 +121,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          cd client && npm ci
+          cd client && npm ci --legacy-peer-deps
           cd ../server && npm ci
 
       - name: Start MongoDB
@@ -189,7 +189,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          cd client && npm ci
+          cd client && npm ci --legacy-peer-deps
           cd ../server && npm ci
 
       - name: Build Client

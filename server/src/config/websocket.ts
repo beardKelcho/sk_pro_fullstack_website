@@ -4,7 +4,7 @@
  */
 
 import { Server as HttpServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
+import { Server as SocketIOServer, Socket } from 'socket.io';
 import { authenticateSocket } from '../middleware/socketAuth.middleware';
 import logger from '../utils/logger';
 
@@ -30,10 +30,19 @@ export const initWebSocket = (httpServer: HttpServer): SocketIOServer => {
   // Authentication middleware
   io.use(authenticateSocket);
 
+  interface AuthenticatedSocket extends Socket {
+    user?: {
+      id?: string;
+      _id?: string;
+      role?: string;
+    };
+  }
+
   // Connection handler
-  io.on('connection', (socket: any) => {
-    const userId = socket.user?.id || socket.user?._id;
-    const userRole = socket.user?.role;
+  io.on('connection', (socket: Socket) => {
+    const authSocket = socket as AuthenticatedSocket;
+    const userId = authSocket.user?.id || authSocket.user?._id;
+    const userRole = authSocket.user?.role;
 
     logger.info(`WebSocket: Kullanıcı bağlandı`, { userId, userRole, socketId: socket.id });
 

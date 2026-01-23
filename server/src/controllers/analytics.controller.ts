@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import mongoose from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { Client, Equipment, Maintenance, Project, Task, User } from '../models';
 import logger from '../utils/logger';
 import { optimizeAggregation } from '../utils/aggregationOptimizer';
@@ -21,7 +21,7 @@ const clampRange = (start: Date, end: Date, maxDays = 365) => {
 
 const toDayKey = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 
-const collectionName = (model: any, fallback: string) => {
+const collectionName = (model: Model<any>, fallback: string) => {
   return model?.collection?.name || fallback;
 };
 
@@ -48,14 +48,14 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
 
     // --- Projects ---
     const projectMatch = { startDate: { $gte: rangeStart, $lte: rangeEnd } };
-    
+
     // Optimize edilmiş aggregation pipeline'ları
     const projectByStatusPipeline = optimizeAggregation([
       { $match: projectMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
-    
+
     const projectByStatus = await Project.aggregate(projectByStatusPipeline, { allowDiskUse: true });
 
     const projectTrendPipeline = optimizeAggregation([
@@ -68,7 +68,7 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
       },
       { $sort: { _id: 1 } },
     ]);
-    
+
     const projectTrend = await Project.aggregate(projectTrendPipeline, { allowDiskUse: true });
 
     // $lookup'tan önce $limit kullanarak performansı artır
@@ -88,7 +88,7 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
       { $unwind: { path: '$client', preserveNullAndEmptyArrays: true } },
       { $project: { clientId: '$_id', count: 1, name: '$client.name' } },
     ]);
-    
+
     const topClients = await Project.aggregate(topClientsPipeline, { allowDiskUse: true });
 
     // Avg project duration (days) - optimize edilmiş
@@ -106,20 +106,20 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
       },
       { $group: { _id: null, avg: { $avg: '$durationDays' } } },
     ]);
-    
+
     const avgProjectDurationAgg = await Project.aggregate(avgProjectDurationPipeline, { allowDiskUse: true });
     const avgProjectDurationDays = avgProjectDurationAgg?.[0]?.avg ? Number(avgProjectDurationAgg[0].avg) : 0;
 
     // --- Tasks ---
     const taskMatch = { createdAt: { $gte: rangeStart, $lte: rangeEnd } };
-    
+
     const tasksByStatusPipeline = optimizeAggregation([
       { $match: taskMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
     const tasksByStatus = await Task.aggregate(tasksByStatusPipeline, { allowDiskUse: true });
-    
+
     const tasksByPriorityPipeline = optimizeAggregation([
       { $match: taskMatch },
       { $group: { _id: '$priority', count: { $sum: 1 } } },
@@ -183,13 +183,13 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
       { $sort: { count: -1 } },
     ]);
     const equipmentByStatus = await Equipment.aggregate(equipmentByStatusPipeline);
-    
+
     const equipmentByTypePipeline = optimizeAggregation([
       { $group: { _id: '$type', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
     const equipmentByType = await Equipment.aggregate(equipmentByTypePipeline);
-    
+
     // $lookup'tan önce $limit kullanarak performansı artır
     const inUseByProjectPipeline = optimizeAggregation([
       { $match: { status: 'IN_USE', currentProject: { $exists: true, $ne: null } } },
@@ -211,21 +211,21 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
 
     // --- Maintenance ---
     const maintenanceMatch = { scheduledDate: { $gte: rangeStart, $lte: rangeEnd } };
-    
+
     const maintenanceByStatusPipeline = optimizeAggregation([
       { $match: maintenanceMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
     const maintenanceByStatus = await Maintenance.aggregate(maintenanceByStatusPipeline, { allowDiskUse: true });
-    
+
     const maintenanceByTypePipeline = optimizeAggregation([
       { $match: maintenanceMatch },
       { $group: { _id: '$type', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
     const maintenanceByType = await Maintenance.aggregate(maintenanceByTypePipeline, { allowDiskUse: true });
-    
+
     const maintenanceCostPipeline = optimizeAggregation([
       { $match: maintenanceMatch },
       { $group: { _id: null, total: { $sum: { $ifNull: ['$cost', 0] } }, avg: { $avg: '$cost' } } },
@@ -265,26 +265,26 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
         tasksCompleted: { current: curTasksCompleted, previous: prevTasksCompleted, changePct: pct(curTasksCompleted, prevTasksCompleted) },
       },
       projects: {
-        byStatus: projectByStatus.map((x: any) => ({ status: x._id, count: x.count })),
-        trendByMonth: projectTrend.map((x: any) => ({ month: x._id, count: x.count })),
+        byStatus: projectByStatus.map((x: { _id: string; count: number }) => ({ status: x._id, count: x.count })),
+        trendByMonth: projectTrend.map((x: { _id: string; count: number }) => ({ month: x._id, count: x.count })),
         topClients,
         avgDurationDays: avgProjectDurationDays,
       },
       tasks: {
-        byStatus: tasksByStatus.map((x: any) => ({ status: x._id, count: x.count })),
-        byPriority: tasksByPriority.map((x: any) => ({ priority: x._id, count: x.count })),
+        byStatus: tasksByStatus.map((x: { _id: string; count: number }) => ({ status: x._id, count: x.count })),
+        byPriority: tasksByPriority.map((x: { _id: string; count: number }) => ({ priority: x._id, count: x.count })),
         byAssignee: tasksByAssignee,
-        completedTrendByDay: tasksCompletedTrend.map((x: any) => ({ day: x._id, count: x.count })),
+        completedTrendByDay: tasksCompletedTrend.map((x: { _id: string; count: number }) => ({ day: x._id, count: x.count })),
         forecastNext7Days: forecastNext7,
       },
       equipment: {
-        byStatus: equipmentByStatus.map((x: any) => ({ status: x._id, count: x.count })),
-        byType: equipmentByType.map((x: any) => ({ type: x._id, count: x.count })),
+        byStatus: equipmentByStatus.map((x: { _id: string; count: number }) => ({ status: x._id, count: x.count })),
+        byType: equipmentByType.map((x: { _id: string; count: number }) => ({ type: x._id, count: x.count })),
         inUseByProject,
       },
       maintenance: {
-        byStatus: maintenanceByStatus.map((x: any) => ({ status: x._id, count: x.count })),
-        byType: maintenanceByType.map((x: any) => ({ type: x._id, count: x.count })),
+        byStatus: maintenanceByStatus.map((x: { _id: string; count: number }) => ({ status: x._id, count: x.count })),
+        byType: maintenanceByType.map((x: { _id: string; count: number }) => ({ type: x._id, count: x.count })),
         cost: { total: maintenanceCostTotal, avg: maintenanceCostAvg },
         upcoming14d: upcomingMaintenanceCount,
       },

@@ -1,223 +1,76 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - main      # Production
-      - develop   # Staging
-  workflow_dispatch: # Manuel tetikleme
-
-env:
-  NODE_VERSION: '20.x'
-  # VSCode/GitHub Actions linter'ının `env.VERSION` uyarısını engellemek ve
-  # her durumda bir VERSION değeri olmasını sağlamak için default veriyoruz.
-  # Production job'unda "Create release tag" step'i çalışırsa bu değer $GITHUB_ENV ile override edilir.
-  VERSION: ${{ github.sha }}
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main, develop]
+    types: 
+      - completed
+  workflow_dispatch:
 
 jobs:
+  on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - run: echo "CI passed, starting deployment logic..."
+
   # ============================================
   # STAGING DEPLOYMENT
   # ============================================
   deploy-staging:
-    if: github.ref == 'refs/heads/develop'
+    needs: [on-success]
+    if: ${{ github.event.workflow_run.head_branch == 'develop' || github.ref == 'refs/heads/develop' }}
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            client/package-lock.json
-            server/package-lock.json
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd client && npm ci
-          cd ../server && npm ci
-
-      - name: Run tests
-        run: |
-          npm run test:ci || true
-
-      - name: Build
-        run: |
-          cd client && npm run build
-          cd ../server && npm run build
-
-      # Render/Vercel tarafında en güvenilir yaklaşım: Git entegrasyonu (push ile otomatik deploy).
-      # İstersen ekstra güvence olarak Deploy Hook'ları da tetikleyebiliriz.
-      # Secret tanımlı değilse bu step'ler otomatik olarak SKIP edilir.
+      - uses: actions/checkout@v4
+      
+      # Just trigger the hooks, no need to rebuild/retest if CI passed
       - name: Trigger Render deploy hook (staging)
         if: secrets.RENDER_STAGING_DEPLOY_HOOK_URL != ''
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }}
         run: |
-          echo "Triggering Render deploy hook (staging)..."
-          curl --fail --show-error --silent -X POST "$RENDER_DEPLOY_HOOK_URL" \
-            --retry 5 --retry-delay 2 --retry-all-errors
+          curl -X POST "${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }}"
 
       - name: Trigger Vercel deploy hook (staging)
         if: secrets.VERCEL_STAGING_DEPLOY_HOOK_URL != ''
-        env:
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_STAGING_DEPLOY_HOOK_URL }}
         run: |
-          echo "Triggering Vercel deploy hook (staging)..."
-          curl --fail --show-error --silent -X POST "$VERCEL_DEPLOY_HOOK_URL" \
-            --retry 5 --retry-delay 2 --retry-all-errors
+          curl -X POST "${{ secrets.VERCEL_STAGING_DEPLOY_HOOK_URL }}"
 
-      - name: Deploy notification
-        run: |
-          echo "✅ Staging deployment triggered for branch: ${{ github.ref }}"
-          echo "📦 Commit: ${{ github.sha }}"
-          echo "👤 Author: ${{ github.actor }}"
-
-      - name: Deployment status
-        run: |
-          echo "🚀 Staging deployment will be handled by Vercel and Render"
-          echo "🔗 Frontend: https://skproduction-staging.vercel.app"
-          echo "🔗 Backend: https://skproduction-api-staging.onrender.com"
+      - name: Notification
+        run: echo "🚀 Staging deployment triggered"
 
   # ============================================
   # PRODUCTION DEPLOYMENT
   # ============================================
   deploy-production:
-    if: github.ref == 'refs/heads/main'
+    needs: [on-success]
+    if: ${{ github.event.workflow_run.head_branch == 'main' || github.ref == 'refs/heads/main' }}
     name: Deploy to Production
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://skproduction.com
-    
+      url: https://skpro.com.tr
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: |
-            package-lock.json
-            client/package-lock.json
-            server/package-lock.json
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd client && npm ci
-          cd ../server && npm ci
-
-      - name: Run all tests
-        run: |
-          npm run test:ci
-
-      - name: Type check
-        run: |
-          npm run type-check
-
-      - name: Lint
-        run: |
-          npm run lint
-
-      - name: Build
-        run: |
-          cd client && npm run build
-          cd ../server && npm run build
+      - uses: actions/checkout@v4
 
       - name: Trigger Render deploy hook (production)
         if: secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL != ''
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL }}
         run: |
-          echo "Triggering Render deploy hook (production)..."
-          curl --fail --show-error --silent -X POST "$RENDER_DEPLOY_HOOK_URL" \
-            --retry 5 --retry-delay 2 --retry-all-errors
+          curl -X POST "${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL }}"
 
       - name: Trigger Vercel deploy hook (production)
         if: secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL != ''
-        env:
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL }}
         run: |
-          echo "Triggering Vercel deploy hook (production)..."
-          curl --fail --show-error --silent -X POST "$VERCEL_DEPLOY_HOOK_URL" \
-            --retry 5 --retry-delay 2 --retry-all-errors
-
-      - name: Create release tag
-        if: success()
+          curl -X POST "${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL }}"
+      
+      - name: Create Release Tag
         run: |
-          VERSION=$(date +%Y.%m.%d)-$(echo ${{ github.sha }} | cut -c1-7)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git tag -a "v$VERSION" -m "Production deployment: ${{ github.sha }}"
-          git push origin "v$VERSION" || true
+          git tag -a "v$(date +%Y.%m.%d)-${{ github.sha }}" -m "Deploy"
+          git push origin --tags
+        continue-on-error: true
 
-      - name: Deployment notification
-        run: |
-          echo "✅ Production deployment triggered"
-          echo "📦 Commit: ${{ github.sha }}"
-          echo "👤 Author: ${{ github.actor }}"
-          echo "🏷️  Version: ${{ env.VERSION }}"
-
-      - name: Deployment status
-        run: |
-          echo "🚀 Production deployment will be handled by Vercel and Render"
-          echo "🔗 Frontend: https://skproduction.com"
-          echo "🔗 Backend: https://api.skproduction.com"
-
-  # ============================================
-  # HOTFIX DEPLOYMENT
-  # ============================================
-  deploy-hotfix:
-    if: startsWith(github.ref, 'refs/heads/hotfix/')
-    name: Deploy Hotfix
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: https://skproduction.com
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Run critical tests
-        run: |
-          cd server && npm test -- --testPathPattern="auth|security" || true
-
-      - name: Hotfix notification
-        run: |
-          echo "🚨 Hotfix deployment: ${{ github.ref }}"
-          echo "📦 Commit: ${{ github.sha }}"
-          echo "⚠️  This is a hotfix - production deployment will be triggered"
-
-      - name: Trigger Render deploy hook (production)
-        if: secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL != ''
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL }}
-        run: |
-          echo "Triggering Render deploy hook (production)..."
-          curl --fail --show-error --silent -X POST "$RENDER_DEPLOY_HOOK_URL" \
-            --retry 5 --retry-delay 2 --retry-all-errors
-
-      - name: Trigger Vercel deploy hook (production)
-        if: secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL != ''
-        env:
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL }}
-        run: |
-          echo "Triggering Vercel deploy hook (production)..."
-          curl --fail --show-error --silent -X POST "$VERCEL_DEPLOY_HOOK_URL" \
-            --retry 5 --retry-delay 2 --retry-all-errors
+      - name: Notification
+        run: echo "🚀 Production deployment triggered"

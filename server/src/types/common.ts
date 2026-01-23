@@ -50,10 +50,19 @@ export type ApiResponseType = Response<ApiResponse>;
 /**
  * Error Type (catch blokları için)
  */
-export interface AppError extends Error {
-  statusCode?: number;
+export class AppError extends Error {
+  statusCode: number;
   code?: string;
   details?: unknown;
+
+  constructor(message: string, statusCode: number = 500, code?: string, details?: unknown) {
+    super(message);
+    this.name = 'AppError';
+    this.statusCode = statusCode;
+    this.code = code;
+    this.details = details;
+    Object.setPrototypeOf(this, AppError.prototype);
+  }
 }
 
 /**

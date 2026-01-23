@@ -1,403 +1,213 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import { Session, User } from '../models';
-import { IUser } from '../models/User';
+import authService, { LoginResult, RefreshResult } from '../services/auth.service';
 import logger from '../utils/logger';
 import { logLoginAction } from '../utils/auditLogger';
-import { createTokenHash, generateTokenPair, isMobileClient } from '../utils/authTokens';
-import { AppError } from '../types/common';
+import { isMobileClient } from '../utils/authTokens';
+import { AppError, AuthenticatedRequest } from '../types/common';
 
-const getClientIp = (req: Request): string | undefined => {
+const getClientIp = (req: Request): string => {
   const xf = req.headers['x-forwarded-for'];
   if (typeof xf === 'string' && xf.length) return xf.split(',')[0].trim();
   if (Array.isArray(xf) && xf.length) return xf[0];
-  return req.ip;
+  return (req.ip || 'unknown');
 };
 
-// Kullanıcı giriş işlemi
-export const login = async (req: Request, res: Response) => {
-  const requestId = req.headers['x-request-id'] || 'unknown';
-  logger.info('Login attempt started', { requestId, email: req.body?.email ? 'provided' : 'missing' });
-  
-  try {
-    const { email, password } = req.body;
-    logger.debug('Login request body received', { requestId, hasEmail: !!email, hasPassword: !!password });
-    const identifierRaw = typeof email === 'string' ? email.trim() : '';
-    const isEmail = identifierRaw.includes('@');
-    const identifierEmail = isEmail ? identifierRaw.toLowerCase() : '';
-    const identifierPhone = !isEmail ? identifierRaw.replace(/[^\d+]/g, '') : '';
+export class AuthController {
+  // Kullanıcı giriş işlemi
+  async login(req: Request, res: Response): Promise<Response | void> {
+    const requestId = (req.headers['x-request-id'] as string) || 'unknown';
+    logger.info('Login attempt started', { requestId, email: req.body?.email ? 'provided' : 'missing' });
 
-    // Gerekli alanları kontrol et
-    if (!identifierRaw || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email ve şifre gereklidir',
-      });
-    }
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email ve şifre gereklidir' });
+      }
 
-    // Email veya telefon ile kullanıcıyı bul
-    const user = await User.findOne({
-      $or: [
-        ...(identifierEmail ? [{ email: identifierEmail }] : []),
-        ...(identifierPhone ? [{ phone: identifierPhone }, { phone: identifierRaw }] : []),
-      ],
-    });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz email ya da şifre',
-      });
-    }
+      const ip = getClientIp(req);
+      const userAgent = (req.headers['user-agent'] as string) || 'unknown';
 
-    // Kullanıcı aktif mi kontrol et
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Hesabınız devre dışı bırakılmış',
-      });
-    }
+      const result: LoginResult = await authService.login(email, password, ip, userAgent);
 
-    // Şifreyi doğrula
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz email ya da şifre',
-      });
-    }
+      // 2FA Handling
+      if (result.requires2FA) {
+        return res.status(200).json({
+          success: true,
+          requires2FA: true,
+          message: '2FA doğrulaması gerekiyor',
+          email: result.user.email,
+        });
+      }
 
-    // 2FA kontrolü - Eğer 2FA aktifse, token yerine 2FA doğrulaması gerektiğini belirt
-    if (user.is2FAEnabled) {
-      return res.status(200).json({
+      // Safe access to tokens
+      if (!result.tokens) {
+        throw new AppError('Token üretilemedi', 500);
+      }
+
+      // Tokens
+      const { accessToken, refreshToken } = result.tokens;
+      const mobile = isMobileClient(req);
+
+      // Set Cookie
+      try {
+        res.cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+      } catch (cookieError: unknown) {
+        logger.warn('Cookie ayarlama hatası (non-blocking):', cookieError);
+      }
+
+      // Send Response
+      logger.info('Login successful, sending response', { requestId, userId: result.user._id.toString(), mobile });
+
+      res.status(200).json({
         success: true,
-        requires2FA: true,
-        message: '2FA doğrulaması gerekiyor',
-        email: user.email, // Frontend'de kullanmak için
-      });
-    }
-
-    // Token üret
-    let accessToken: string;
-    let refreshToken: string;
-    try {
-      logger.debug('Generating token pair', { requestId, userId: user._id.toString() });
-      const tokens = generateTokenPair(user as unknown as IUser);
-      accessToken = tokens.accessToken;
-      refreshToken = tokens.refreshToken;
-      logger.debug('Token pair generated successfully', { requestId, accessTokenLength: accessToken.length });
-    } catch (tokenError: unknown) {
-      const error = tokenError as AppError;
-      logger.error('Token üretme hatası:', { requestId, error, message: error?.message, stack: error?.stack });
-      throw new Error('Token üretilemedi: ' + (error?.message || 'Bilinmeyen hata'));
-    }
-
-    // Session oluştur (hash'li token/refreshToken)
-    try {
-      await Session.create({
-        userId: user._id,
-        token: createTokenHash(accessToken),
-        refreshToken: createTokenHash(refreshToken),
-        deviceInfo: {
-          userAgent: req.headers['user-agent'],
-          ipAddress: getClientIp(req),
+        accessToken,
+        ...(mobile ? { refreshToken } : {}),
+        user: {
+          id: result.user._id,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
         },
-        lastActivity: new Date(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        isActive: true,
       });
-    } catch (sessionError) {
-      logger.warn('Session create failed (non-blocking):', sessionError);
-    }
 
-    // Cookie olarak refresh token'ı ayarla
+      // Audit Log (Async)
+      setImmediate(() => {
+        logLoginAction(result.user._id.toString(), req).catch((auditError: unknown) => {
+          logger.warn('Login audit log oluşturulamadı (non-blocking):', auditError);
+        });
+      });
+
+    } catch (error: unknown) {
+      const appError = error instanceof AppError ? error : new AppError(error instanceof Error ? error.message : 'Unknown error');
+
+      logger.error('Login hatası:', {
+        requestId,
+        error: appError.toString(),
+        message: appError.message,
+        stack: appError.stack,
+        email: req.body?.email,
+      });
+
+      if (!res.headersSent) {
+        const status = appError.statusCode || (appError.message.includes('Geçersiz') ? 401 : 500);
+        return res.status(status).json({
+          success: false,
+          message: appError.message || 'Sunucu hatası',
+        });
+      }
+    }
+  }
+
+  // Kullanıcı çıkış işlemi
+  async logout(req: Request, res: Response): Promise<Response | void> {
     try {
-      res.cookie('refreshToken', refreshToken, {
+      const refreshTokenRaw = (req.cookies?.refreshToken as string) || (req.body?.refreshToken as string);
+
+      await authService.logout(refreshTokenRaw);
+
+      res.clearCookie('refreshToken');
+      return res.status(200).json({ success: true, message: 'Başarıyla çıkış yapıldı' });
+
+    } catch (e: unknown) {
+      logger.warn('Logout hatası:', e);
+      // Still return success for logout to clear client state
+      res.clearCookie('refreshToken');
+      return res.status(200).json({ success: true, message: 'Çıkış yapıldı' });
+    }
+  }
+
+  // Token yenileme
+  async refreshToken(req: Request, res: Response): Promise<Response | void> {
+    try {
+      const refreshTokenRaw = (req.cookies?.refreshToken as string) || (req.body?.refreshToken as string);
+      const mobile = isMobileClient(req) || Boolean(req.body?.refreshToken);
+
+      if (!refreshTokenRaw) {
+        return res.status(401).json({ success: false, message: 'Yenileme token\'ı bulunamadı' });
+      }
+
+      const result: RefreshResult = await authService.refreshToken(refreshTokenRaw);
+
+      // Set Cookie
+      res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-    } catch (cookieError) {
-      logger.warn('Cookie ayarlama hatası (non-blocking):', cookieError);
-    }
 
-    // Başarılı yanıt - ÖNCE response gönder, sonra audit log
-    const mobile = isMobileClient(req);
-    
-    logger.info('Login successful, sending response', { requestId, userId: user._id.toString(), mobile });
-    
-    // Response'u gönder
-    res.status(200).json({
-      success: true,
-      accessToken,
-      ...(mobile ? { refreshToken } : {}),
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-    
-    logger.debug('Login response sent successfully', { requestId });
-    
-    // Audit log - Response gönderildikten SONRA (non-blocking)
-    // Bu şekilde audit log hatası login'i engellemez
-    setImmediate(() => {
-      logLoginAction(user._id.toString(), req).catch((auditError) => {
-        logger.warn('Login audit log oluşturulamadı (non-blocking):', auditError);
+      return res.status(200).json({
+        success: true,
+        accessToken: result.accessToken,
+        ...(mobile ? { refreshToken: result.refreshToken } : {}),
       });
-    });
-  } catch (error: unknown) {
-    const appError = error as AppError;
-    const requestId = req.headers['x-request-id'] || 'unknown';
-    logger.error('Login hatası:', {
-      requestId,
-      error: appError?.toString() || String(error),
-      message: appError?.message,
-      stack: appError?.stack,
-      name: appError?.name,
-      email: req.body?.email,
-    });
-    
-    // Response henüz gönderilmediyse gönder
-    if (!res.headersSent) {
-      res.status(500).json({
-        success: false,
-        message: appError?.message || 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.',
-        ...(process.env.NODE_ENV === 'development' ? { details: appError?.stack } : {}),
-      });
-    } else {
-      logger.warn('Login error but response already sent', { requestId });
+
+    } catch (error: unknown) {
+      logger.error('Token yenileme hatası:', error);
+      const message = error instanceof Error ? error.message : 'Geçersiz token';
+      return res.status(401).json({ success: false, message });
     }
   }
-};
 
-// Kullanıcı çıkış işlemi
-export const logout = async (req: Request, res: Response) => {
-  try {
-    const refreshTokenRaw: string | undefined = req.cookies?.refreshToken || req.body?.refreshToken;
-    if (refreshTokenRaw) {
-      const refreshHash = createTokenHash(refreshTokenRaw);
-      await Session.updateMany(
-        { refreshToken: refreshHash, isActive: true },
-        { isActive: false }
-      );
-    }
-  } catch (e) {
-    logger.warn('Logout session invalidate failed (non-blocking):', e);
-  }
-  
-  // Refresh token cookie'sini temizle
-  res.clearCookie('refreshToken');
-  
-  res.status(200).json({
-    success: true,
-    message: 'Başarıyla çıkış yapıldı',
-  });
-};
-
-// Token yenileme işlemi
-export const refreshToken = async (req: Request, res: Response) => {
-  try {
-    // Web: cookie'den, Mobile: body'den (SecureStore) gelebilir
-    const refreshTokenRaw: string | undefined = req.cookies?.refreshToken || req.body?.refreshToken;
-    const mobile = isMobileClient(req) || Boolean(req.body?.refreshToken);
-    
-    if (!refreshTokenRaw) {
-      return res.status(401).json({
-        success: false,
-        message: 'Yenileme token\'ı bulunamadı',
-      });
-    }
-    
-    // Token'ı doğrula - Merkezi JWT_REFRESH_SECRET kullan
-    const { JWT_REFRESH_SECRET } = require('../utils/authTokens');
-    const decoded = jwt.verify(
-      refreshTokenRaw,
-      JWT_REFRESH_SECRET
-    ) as jwt.JwtPayload;
-    
-    // Session kontrolü (refresh token hash)
-    const refreshHash = createTokenHash(refreshTokenRaw);
-    const session = await Session.findOne({
-      userId: decoded.id,
-      refreshToken: refreshHash,
-      isActive: true,
-      expiresAt: { $gt: new Date() },
-    });
-    if (!session) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz token',
-      });
-    }
-
-    // Kullanıcıyı bul
-    const user = await User.findById(decoded.id);
-    
-    if (!user || !user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz token',
-      });
-    }
-    
-    // Yeni token üret
-    const { accessToken, refreshToken: newRefreshToken } = generateTokenPair(user as unknown as IUser);
-    
-    // Yeni refresh token'ı cookie olarak ayarla
-    res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
-    });
-
-    // Session rotate
+  // Profil getir
+  async getProfile(req: Request, res: Response): Promise<Response | void> {
     try {
-      await Session.updateOne(
-        { _id: session._id },
-        {
-          token: createTokenHash(accessToken),
-          refreshToken: createTokenHash(newRefreshToken),
-          lastActivity: new Date(),
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        }
-      );
-    } catch (sessionError) {
-      logger.warn('Session rotate failed (non-blocking):', sessionError);
-    }
-    
-    // Başarılı yanıt
-    res.status(200).json({
-      success: true,
-      accessToken,
-      ...(mobile ? { refreshToken: newRefreshToken } : {}),
-    });
-  } catch (error) {
-    logger.error('Token yenileme hatası:', error);
-    res.status(401).json({
-      success: false,
-      message: 'Geçersiz veya süresi dolmuş token',
-    });
-  }
-};
+      const userId = (req as AuthenticatedRequest).user?.id;
+      if (!userId) throw new AppError('Yetkisiz', 401);
 
-// Kullanıcı profil bilgilerini getirme
-export const getProfile = async (req: Request, res: Response) => {
-  try {
-    // Middleware'den gelen kullanıcı id'si
-    const userId = req.user.id;
-    
-    // Kullanıcıyı bul (hassas bilgileri hariç tut)
-    const user = await User.findById(userId).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'Kullanıcı bulunamadı',
-      });
-    }
-    
-    res.status(200).json({
-      success: true,
-      user,
-    });
-  } catch (error) {
-    logger.error('Profil bilgileri hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Sunucu hatası. Lütfen daha sonra tekrar deneyin.',
-    });
-  }
-};
+      const user = await authService.getProfile(userId);
 
-// Profil güncelleme
-export const updateProfile = async (req: Request, res: Response) => {
-  try {
-    const userId = req.user.id;
-    const { name, email } = req.body;
-    
-    const updateData: any = {};
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-password');
-    
-    if (!updatedUser) {
-      return res.status(404).json({
-        success: false,
-        message: 'Kullanıcı bulunamadı',
-      });
+      return res.status(200).json({ success: true, user });
+    } catch (error: unknown) {
+      logger.error('Profil bilgileri hatası:', error);
+      const appError = error instanceof AppError ? error : new AppError('Sunucu hatası');
+      return res.status(appError.statusCode || 500).json({ success: false, message: appError.message });
     }
-    
-    res.status(200).json({
-      success: true,
-      user: updatedUser,
-    });
-  } catch (error) {
-    logger.error('Profil güncelleme hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Profil güncellenirken bir hata oluştu',
-    });
   }
-};
 
-// Şifre değiştirme
-export const changePassword = async (req: Request, res: Response) => {
-  try {
-    const userId = req.user.id;
-    const { currentPassword, newPassword } = req.body;
-    
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mevcut şifre ve yeni şifre gereklidir',
-      });
+  // Profil güncelle
+  async updateProfile(req: Request, res: Response): Promise<Response | void> {
+    try {
+      const userId = (req as AuthenticatedRequest).user?.id;
+      if (!userId) throw new AppError('Yetkisiz', 401);
+
+      const { name, email } = req.body;
+
+      const user = await authService.updateProfile(userId, { name, email });
+      return res.status(200).json({ success: true, user });
+    } catch (error: unknown) {
+      logger.error('Profil güncelleme hatası:', error);
+      return res.status(500).json({ success: false, message: 'Profil güncellenirken bir hata oluştu' });
     }
-    
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Yeni şifre en az 6 karakter olmalıdır',
-      });
-    }
-    
-    // Kullanıcıyı bul
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'Kullanıcı bulunamadı',
-      });
-    }
-    
-    // Mevcut şifreyi doğrula
-    const isPasswordValid = await user.comparePassword(currentPassword);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Mevcut şifre yanlış',
-      });
-    }
-    
-    // Yeni şifreyi güncelle (pre-save hook otomatik hash'leyecek)
-    user.password = newPassword;
-    await user.save();
-    
-    res.status(200).json({
-      success: true,
-      message: 'Şifre başarıyla değiştirildi',
-    });
-  } catch (error) {
-    logger.error('Şifre değiştirme hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Şifre değiştirilirken bir hata oluştu',
-    });
   }
-}; 
+
+  // Şifre değiştir
+  async changePassword(req: Request, res: Response): Promise<Response | void> {
+    try {
+      const userId = (req as AuthenticatedRequest).user?.id;
+      if (!userId) throw new AppError('Yetkisiz', 401);
+
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ success: false, message: 'Mevcut şifre ve yeni şifre gereklidir' });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ success: false, message: 'Yeni şifre en az 6 karakter olmalıdır' });
+      }
+
+      await authService.changePassword(userId, currentPassword, newPassword);
+      return res.status(200).json({ success: true, message: 'Şifre başarıyla değiştirildi' });
+
+    } catch (error: unknown) {
+      logger.error('Şifre değiştirme hatası:', error);
+      const appError = error instanceof AppError ? error : new AppError(error instanceof Error ? error.message : 'Hata oluştu');
+      return res.status(appError.statusCode || 500).json({ success: false, message: appError.message });
+    }
+  }
+}
+
+export default new AuthController();

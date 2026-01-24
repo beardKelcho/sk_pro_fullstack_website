@@ -4,6 +4,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface LocalizedString {
   tr: string;
   en: string;
+  fr?: string;
+  es?: string;
 }
 
 // Hero bölümü için

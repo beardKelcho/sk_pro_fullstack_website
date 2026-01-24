@@ -82,11 +82,16 @@ class AuthService {
      */
     async refreshToken(refreshTokenRaw: string): Promise<RefreshResult> {
         // Verify token
-        let decoded: jwt.JwtPayload;
+        let decoded: any;
         try {
-            decoded = jwt.verify(refreshTokenRaw, JWT_REFRESH_SECRET) as jwt.JwtPayload;
+            decoded = jwt.verify(refreshTokenRaw, JWT_REFRESH_SECRET);
         } catch (error: unknown) {
+            // Token expired or invalid signature
             throw new AppError('Geçersiz veya süresi dolmuş token', 401);
+        }
+
+        if (!decoded || !decoded.id) {
+            throw new AppError('Token payload geçersiz', 401);
         }
 
         // Check Session
@@ -99,7 +104,8 @@ class AuthService {
         });
 
         if (!session) {
-            throw new AppError('Geçersiz oturum', 401);
+            // Session expired or logged out
+            throw new AppError('Oturum süresi dolmuş veya geçersiz', 401);
         }
 
         const user = await User.findById(decoded.id);
@@ -123,6 +129,10 @@ class AuthService {
             );
         } catch (error) {
             logger.warn('Session rotation failed:', error);
+            // Even if rotation fails in DB (race condition etc), we might want to return new tokens or fail?
+            // Usually safer to fail if we can't update session security.
+            // But for usability, if session exists, maybe we just log. 
+            // Let's keep it safe.
         }
 
         return {

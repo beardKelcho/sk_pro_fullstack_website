@@ -25,19 +25,15 @@ router.get(
   siteContentController.getAllContents
 );
 
-// Section'a göre içerik getir (admin)
+// Section'a göre içerik getir (public)
 router.get(
   '/section/:section',
-  authenticate,
-  requirePermission(Permission.EQUIPMENT_VIEW),
   siteContentController.getContentBySection
 );
 
-// Tek bir içeriği getir
+// Tek bir içeriği getir (public)
 router.get(
   '/:id',
-  authenticate,
-  requirePermission(Permission.EQUIPMENT_VIEW),
   siteContentController.getContentBySection
 );
 

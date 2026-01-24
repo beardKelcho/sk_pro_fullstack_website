@@ -31,7 +31,11 @@ class Logger {
    * Debug seviyesinde log yazdırır
    * @param args - Log mesajları
    */
-  debug(...args: any[]): void {
+  /**
+   * Debug seviyesinde log yazdırır
+   * @param args - Log mesajları
+   */
+  debug(...args: unknown[]): void {
     if (this.shouldLog('debug')) {
       console.debug('[DEBUG]', ...args);
     }
@@ -41,7 +45,7 @@ class Logger {
    * Info seviyesinde log yazdırır
    * @param args - Log mesajları
    */
-  info(...args: any[]): void {
+  info(...args: unknown[]): void {
     if (this.shouldLog('info')) {
       console.info('[INFO]', ...args);
     }
@@ -51,7 +55,7 @@ class Logger {
    * Warning seviyesinde log yazdırır
    * @param args - Log mesajları
    */
-  warn(...args: any[]): void {
+  warn(...args: unknown[]): void {
     if (this.shouldLog('warn')) {
       console.warn('[WARN]', ...args);
     }
@@ -61,7 +65,7 @@ class Logger {
    * Error seviyesinde log yazdırır
    * @param args - Log mesajları
    */
-  error(...args: any[]): void {
+  error(...args: unknown[]): void {
     if (this.shouldLog('error')) {
       console.error('[ERROR]', ...args);
     }
@@ -71,7 +75,7 @@ class Logger {
    * Genel log yazdırır (info seviyesi kullanır)
    * @param args - Log mesajları
    */
-  log(...args: any[]): void {
+  log(...args: unknown[]): void {
     // log() için info seviyesini kullan
     this.info(...args);
   }

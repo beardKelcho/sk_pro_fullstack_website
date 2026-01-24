@@ -2,49 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getAllProjects, deleteProject, updateProject } from '@/services/projectService';
 import ExportMenu from '@/components/admin/ExportMenu';
-import ImportModal from '@/components/admin/ImportModal';
-import { Project, ProjectStatus, ProjectStatusDisplay, Client } from '@/types/project';
-import logger from '@/utils/logger';
-import { toast } from 'react-toastify';
-import { getStoredUserPermissions, getStoredUserRole } from '@/utils/authStorage';
+import { ProjectDisplay, ProjectStatusDisplay } from '@/types/project';
+import { getStoredUserRole, getStoredUserPermissions } from '@/utils/authStorage';
 import { hasPermission, Permission } from '@/config/permissions';
 import PermissionButton from '@/components/common/PermissionButton';
 import PermissionLink from '@/components/common/PermissionLink';
-
-// Backend enum'larını Türkçe string'e çeviren yardımcı fonksiyon
-const getStatusDisplay = (status: ProjectStatus): ProjectStatusDisplay => {
-  const statusMap: Record<ProjectStatus, ProjectStatusDisplay> = {
-    'PLANNING': 'Onay Bekleyen', // legacy
-    'PENDING_APPROVAL': 'Onay Bekleyen',
-    'APPROVED': 'Onaylanan',
-    'ACTIVE': 'Devam Ediyor',
-    'ON_HOLD': 'Ertelendi',
-    'COMPLETED': 'Tamamlandı',
-    'CANCELLED': 'İptal Edildi'
-  };
-  return statusMap[status] || 'Onay Bekleyen';
-};
-
-// Türkçe string'i backend enum'a çeviren yardımcı fonksiyon
-const getStatusFromDisplay = (display: ProjectStatusDisplay): ProjectStatus => {
-  const displayMap: Record<ProjectStatusDisplay, ProjectStatus> = {
-    'Onay Bekleyen': 'PENDING_APPROVAL',
-    'Onaylanan': 'APPROVED',
-    'Devam Ediyor': 'ACTIVE',
-    'Tamamlandı': 'COMPLETED',
-    'Ertelendi': 'ON_HOLD',
-    'İptal Edildi': 'CANCELLED'
-  };
-  return displayMap[display] || 'PENDING_APPROVAL';
-};
-
-// Görüntüleme için genişletilmiş Project tipi
-interface ProjectDisplay extends Omit<Project, 'status' | 'client'> {
-  status: ProjectStatusDisplay;
-  customer: Client; // Görüntüleme için 'customer' alias'ı
-}
+import { useProjects } from '@/hooks/useProjects';
+import { API_ENDPOINTS } from '@/constants/api';
+import { MESSAGES } from '@/constants/messages';
 
 // Durum renkleri (Türkçe görüntüleme için)
 const statusColors: Record<ProjectStatusDisplay, string> = {
@@ -57,108 +23,31 @@ const statusColors: Record<ProjectStatusDisplay, string> = {
 };
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<ProjectDisplay[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    projects,
+    loading,
+    error: apiError,
+    updatingStatusId,
+    removeProject,
+    changeStatus
+  } = useProjects();
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [importModalOpen, setImportModalOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [projectToDelete, setProjectToDelete] = useState<ProjectDisplay | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+
   const [userRole, setUserRole] = useState<string>('');
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
 
   const canUpdateProject = hasPermission(userRole, Permission.PROJECT_UPDATE, userPermissions);
 
-  // Proje verilerini getirme
   useEffect(() => {
     setUserRole(getStoredUserRole());
     setUserPermissions(getStoredUserPermissions());
-
-    const fetchProjects = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getAllProjects();
-        // Backend'den gelen response formatına göre düzenle
-        const projectsList = response.projects || response;
-        // Backend formatını frontend formatına dönüştür
-        const formattedProjects: ProjectDisplay[] = Array.isArray(projectsList) ? projectsList.map((item: any) => {
-          const backendStatus = item.status as ProjectStatus;
-          const clientData = typeof item.client === 'object' && item.client ? item.client : null;
-
-          return {
-            id: item._id || item.id || '',
-            _id: item._id,
-            name: item.name || '',
-            description: item.description || '',
-            customer: clientData ? {
-              id: clientData._id || clientData.id || '',
-              _id: clientData._id,
-              name: clientData.name || '',
-              companyName: clientData.companyName || clientData.name || '',
-              email: clientData.email || '',
-              phone: clientData.phone || '',
-              address: clientData.address,
-              industry: clientData.industry,
-              city: clientData.city,
-              status: clientData.status
-            } : {
-              id: '',
-              name: '',
-              companyName: '',
-              email: '',
-              phone: ''
-            },
-            startDate: item.startDate || '',
-            endDate: item.endDate || '',
-            status: getStatusDisplay(backendStatus),
-            budget: item.budget || 0,
-            location: item.location || '',
-            team: Array.isArray(item.team) ? item.team.map((t: any) => typeof t === 'string' ? t : (t._id || t.id || '')) : [],
-            equipment: Array.isArray(item.equipment) ? item.equipment.map((e: any) => typeof e === 'string' ? e : (e._id || e.id || '')) : [],
-            notes: item.notes || '',
-            createdAt: item.createdAt || new Date().toISOString(),
-            updatedAt: item.updatedAt || new Date().toISOString()
-          };
-        }) : [];
-        setProjects(formattedProjects);
-      } catch (err) {
-        logger.error('Proje yükleme hatası:', err);
-        setError('Projeler alınamadı.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProjects();
   }, []);
-
-  const handleQuickStatusChange = async (projectId: string, newDisplay: ProjectStatusDisplay) => {
-    const old = projects.find((p) => p.id === projectId);
-    if (!old) return;
-    if (old.status === newDisplay) return;
-
-    const nextBackendStatus = getStatusFromDisplay(newDisplay);
-
-    // Optimistic UI
-    setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, status: newDisplay } : p)));
-    setUpdatingStatusId(projectId);
-
-    try {
-      await updateProject(projectId, { status: nextBackendStatus } as any);
-      toast.success('Proje durumu güncellendi');
-    } catch (err: any) {
-      logger.error('Proje durum quick update hatası:', err);
-      // Revert
-      setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, status: old.status } : p)));
-      toast.error(err?.message || 'Proje durumu güncellenemedi');
-    } finally {
-      setUpdatingStatusId(null);
-    }
-  };
 
   // Tarihi formatlama
   const formatDate = (dateString: string) => {
@@ -176,20 +65,12 @@ export default function ProjectsPage() {
   const handleDeleteConfirm = async () => {
     if (!projectToDelete) return;
     setIsDeleting(true);
-    try {
-      await deleteProject(projectToDelete.id);
-      setProjects(prevProjects => prevProjects.filter(p => p.id !== projectToDelete.id));
+    const success = await removeProject(projectToDelete.id);
+    if (success) {
       setShowDeleteModal(false);
       setProjectToDelete(null);
-      toast.success('Proje başarıyla silindi');
-    } catch (error: any) {
-      logger.error('Proje silme hatası:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Proje silinirken bir hata oluştu.';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsDeleting(false);
     }
+    setIsDeleting(false);
   };
 
   // Filtreleme
@@ -232,7 +113,7 @@ export default function ProjectsPage() {
         </div>
         <div className="mt-4 md:mt-0 flex gap-2">
           <ExportMenu
-            baseEndpoint="/api/export/projects"
+            baseEndpoint={API_ENDPOINTS.EXPORT.PROJECTS}
             baseFilename="projects"
             label="Dışa Aktar"
           />
@@ -240,7 +121,7 @@ export default function ProjectsPage() {
             permission={Permission.PROJECT_CREATE}
             href="/admin/projects/add"
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
-            disabledMessage="Yeni proje oluşturma yetkiniz bulunmamaktadır"
+            disabledMessage={MESSAGES.ERRORS.UNAUTHORIZED}
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -308,25 +189,31 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Yükleniyor */}
+      {/* Yükleniyor veya Hata */}
       {loading && (
         <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-sm">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
-            <span className="ml-3 text-gray-700 dark:text-gray-300">Projeler yükleniyor...</span>
+            <span className="ml-3 text-gray-700 dark:text-gray-300">{MESSAGES.UI.LOADING}</span>
           </div>
         </div>
       )}
 
+      {apiError && !loading && (
+        <div className="bg-red-50 p-4 border-l-4 border-red-500 rounded-md mb-6">
+          <p className="text-red-700">{apiError}</p>
+        </div>
+      )}
+
       {/* Projeler Listesi */}
-      {!loading && (
+      {!loading && !apiError && (
         <div className="bg-white dark:bg-gray-800 overflow-hidden rounded-lg shadow-sm">
           {filteredProjects.length === 0 ? (
             <div className="p-8 text-center">
               <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Proje bulunamadı</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{MESSAGES.UI.NO_DATA}</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Filtreleri temizleyin veya yeni bir proje ekleyin.</p>
               <div className="mt-6">
                 <Link href="/admin/projects/add">
@@ -390,7 +277,7 @@ export default function ProjectsPage() {
                           <select
                             value={project.status}
                             disabled={updatingStatusId === project.id}
-                            onChange={(e) => handleQuickStatusChange(project.id, e.target.value as ProjectStatusDisplay)}
+                            onChange={(e) => changeStatus(project.id, e.target.value as ProjectStatusDisplay)}
                             className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${statusColors[project.status]
                               } ${updatingStatusId === project.id ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                             aria-label="Proje durumunu değiştir"
@@ -422,7 +309,7 @@ export default function ProjectsPage() {
                             permission={Permission.PROJECT_UPDATE}
                             href={`/admin/projects/edit/${project.id}`}
                             className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                            disabledMessage="Proje düzenleme yetkiniz bulunmamaktadır"
+                            disabledMessage={MESSAGES.ERRORS.UNAUTHORIZED}
                           >
                             Düzenle
                           </PermissionLink>
@@ -430,7 +317,7 @@ export default function ProjectsPage() {
                             permission={Permission.PROJECT_DELETE}
                             onClick={() => handleDeleteClick(project)}
                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            disabledMessage="Proje silme yetkiniz bulunmamaktadır"
+                            disabledMessage={MESSAGES.ERRORS.UNAUTHORIZED}
                           >
                             Sil
                           </PermissionButton>
@@ -507,4 +394,4 @@ export default function ProjectsPage() {
       )}
     </div>
   );
-} 
+}

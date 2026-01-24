@@ -58,7 +58,7 @@ export interface Project {
 export interface ProjectForm {
   name: string;
   description: string;
-  client: string; // Formda genellikle ID gönderilir
+  client: string;
   startDate: string;
   endDate: string;
   status: ProjectStatus;
@@ -67,4 +67,10 @@ export interface ProjectForm {
   team: string[];
   equipment: string[];
   notes?: string;
+}
+
+// Görüntüleme için genişletilmiş Project tipi
+export interface ProjectDisplay extends Omit<Project, 'status' | 'client'> {
+  status: ProjectStatusDisplay;
+  customer: Client;
 }

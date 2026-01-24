@@ -1,5 +1,7 @@
-import { Client } from './client';
-import { Equipment } from './equipment';
+import type { Client } from './client';
+import type { Equipment } from './equipment';
+
+export type { Client, Equipment };
 
 // Proje durumu için tip tanımı (Backend enum'ları ile uyumlu)
 // PLANNING legacy (geriye uyumluluk)

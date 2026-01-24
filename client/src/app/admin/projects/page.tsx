@@ -89,7 +89,7 @@ export default function ProjectsPage() {
         const formattedProjects: ProjectDisplay[] = Array.isArray(projectsList) ? projectsList.map((item: any) => {
           const backendStatus = item.status as ProjectStatus;
           const clientData = typeof item.client === 'object' && item.client ? item.client : null;
-          
+
           return {
             id: item._id || item.id || '',
             _id: item._id,
@@ -196,28 +196,29 @@ export default function ProjectsPage() {
   const filteredProjects = projects.filter(project => {
     // Arama filtresi
     if (searchQuery && !project.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !project.customer.companyName.toLowerCase().includes(searchQuery.toLowerCase())) {
+      !(project.customer.companyName || '').toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !(project.customer.name || '').toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
-    
+
     // Durum filtresi
     if (statusFilter && project.status !== statusFilter) {
       return false;
     }
-    
+
     // Tarih filtresi
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const startDate = new Date(project.startDate);
-    
+
     if (dateFilter === 'upcoming' && startDate < today) {
       return false;
     }
-    
+
     if (dateFilter === 'past' && startDate >= today) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -230,7 +231,7 @@ export default function ProjectsPage() {
           <p className="mt-1 text-gray-600 dark:text-gray-300">Tüm etkinlik ve organizasyon projelerini yönetin</p>
         </div>
         <div className="mt-4 md:mt-0 flex gap-2">
-          <ExportMenu 
+          <ExportMenu
             baseEndpoint="/api/export/projects"
             baseFilename="projects"
             label="Dışa Aktar"
@@ -266,7 +267,7 @@ export default function ProjectsPage() {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
-          
+
           {/* Durum Filtresi */}
           <div>
             <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -287,7 +288,7 @@ export default function ProjectsPage() {
               <option value="İptal Edildi">İptal Edildi</option>
             </select>
           </div>
-          
+
           {/* Tarih Filtresi */}
           <div>
             <label htmlFor="dateFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -369,8 +370,8 @@ export default function ProjectsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">{project.name}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                          {project.description.length > 60 
-                            ? `${project.description.substring(0, 60)}...` 
+                          {project.description.length > 60
+                            ? `${project.description.substring(0, 60)}...`
                             : project.description}
                         </div>
                       </td>
@@ -390,9 +391,8 @@ export default function ProjectsPage() {
                             value={project.status}
                             disabled={updatingStatusId === project.id}
                             onChange={(e) => handleQuickStatusChange(project.id, e.target.value as ProjectStatusDisplay)}
-                            className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${
-                              statusColors[project.status]
-                            } ${updatingStatusId === project.id ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                            className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${statusColors[project.status]
+                              } ${updatingStatusId === project.id ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                             aria-label="Proje durumunu değiştir"
                           >
                             <option value="Onay Bekleyen">Onay Bekleyen</option>

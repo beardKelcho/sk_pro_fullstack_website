@@ -1,3 +1,6 @@
+import { Client } from './client';
+import { Equipment } from './equipment';
+
 // Proje durumu için tip tanımı (Backend enum'ları ile uyumlu)
 // PLANNING legacy (geriye uyumluluk)
 export type ProjectStatus =
@@ -18,7 +21,7 @@ export type ProjectStatusDisplay =
   | 'Ertelendi'
   | 'İptal Edildi';
 
-// Ekip üyesi tipi
+// Ekip üyesi tipi - Should probably be in user.ts but keeping here for now or extracting if user.ts exists
 export interface TeamMember {
   _id?: string;
   id: string;
@@ -28,32 +31,6 @@ export interface TeamMember {
   phone: string;
   status: string;
   avatar?: string;
-}
-
-// Ekipman tipi
-export interface Equipment {
-  _id?: string;
-  id: string;
-  name: string;
-  model: string;
-  serialNumber: string;
-  category: string;
-  status: string;
-  specs?: Record<string, string>;
-}
-
-// Müşteri tipi
-export interface Client {
-  _id?: string;
-  id: string;
-  name: string;
-  companyName: string;
-  email: string;
-  phone: string;
-  address?: string;
-  industry?: string;
-  city?: string;
-  status?: string;
 }
 
 // Proje tipi
@@ -79,7 +56,7 @@ export interface Project {
 export interface ProjectForm {
   name: string;
   description: string;
-  client: string;
+  client: string; // Formda genellikle ID gönderilir
   startDate: string;
   endDate: string;
   status: ProjectStatus;
@@ -88,4 +65,4 @@ export interface ProjectForm {
   team: string[];
   equipment: string[];
   notes?: string;
-} 
+}

@@ -5,12 +5,18 @@ import { useImportEquipment, useImportProjects, downloadTemplate, ImportResult }
 import { toast } from 'react-toastify';
 import Icon from '@/components/common/Icon';
 import { useModalA11y } from '@/hooks/useModalA11y';
+import { AxiosError } from 'axios';
 
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: 'equipment' | 'project';
   onSuccess?: () => void;
+}
+
+interface ApiErrorResponse {
+  message?: string;
+  success?: boolean;
 }
 
 export default function ImportModal({ isOpen, onClose, type, onSuccess }: ImportModalProps) {
@@ -63,9 +69,10 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
       if (result.result.failed > 0) {
         toast.warning(`${result.result.success} başarılı, ${result.result.failed} başarısız`);
       }
-    } catch (error: any) {
-      // Axios error handling
-      const message = error.response?.data?.message || error.message || 'Import işlemi başarısız';
+    } catch (error: unknown) {
+      // Improved error handling
+      const err = error as AxiosError<ApiErrorResponse>;
+      const message = err.response?.data?.message || err.message || 'Import işlemi başarısız';
       toast.error(message);
     }
   };
@@ -82,7 +89,7 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       toast.success('Template dosyası indirildi');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error('Template indirilemedi');
     }
   };

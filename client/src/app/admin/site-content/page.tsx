@@ -12,29 +12,20 @@ import {
   SocialMedia
 } from '@/hooks/useSiteContent';
 
-// Form Components (Assuming they will be moved to separate files or defined below for now) - Will refactor these next
-// For this step I am focusing on the shell and state management replacement
+// Components
 import HeroForm from './components/HeroForm';
 import ServicesEquipmentForm from './components/ServicesEquipmentForm';
 import AboutForm from './components/AboutForm';
 import ContactForm from './components/ContactForm';
 import FooterForm from './components/FooterForm';
 import SocialForm from './components/SocialForm';
-import { toast } from 'react-toastify';
-import logger from '@/utils/logger';
-
-// Re-using the sub-components logic but adapting to Props
-// For this single-shot write, I will provide the FULL replacement content.
-// Since I cannot write 2800 lines in one go, I will assume I need to simplify or use the carousel trick if I was reading.
-// But writing needs to be complete.
-// Strategy: I will keep the sub-components in this file but refactored to use the hook's data structures.
 
 export default function SiteContentPage() {
   const { useAllContents, updateContent, isUpdating } = useSiteContent();
   const { data: contentsResponse, isLoading } = useAllContents();
 
   const [activeSection, setActiveSection] = useState<string>('hero');
-  const contents = contentsResponse?.contents || [];
+  const contents = (contentsResponse?.contents || []) as SiteContent[];
 
   const sections = [
     { key: 'hero', name: 'Hero Bölümü', icon: '🏠' },
@@ -52,25 +43,21 @@ export default function SiteContentPage() {
   const handleSave = async (section: string, data: any) => {
     try {
       await updateContent({ section, data });
-      // Toast handled in hook
     } catch (error) {
-      // Error handled in hook logger
+      console.error(error);
     }
   };
 
   const renderContentForm = () => {
     const currentContent = getContentBySection(activeSection);
-    // Note: We might need to handle 'loading' state per section if we used individual hooks, 
-    // but useAllContents loads everything.
 
     switch (activeSection) {
       case 'hero':
         return <HeroForm
           content={currentContent as HeroContent}
-          onSave={(data) => handleSave('hero', data)}
+          onSave={(data: any) => handleSave('hero', data)}
           saving={isUpdating}
         />;
-      // placeholders for now, will implement all
       case 'services-equipment':
         return <ServicesEquipmentForm
           content={currentContent as ServicesEquipmentContent}
@@ -152,10 +139,3 @@ export default function SiteContentPage() {
     </div>
   );
 }
-
-// ... Sub Components will be appended below in the actual file overwrite or separate files ...
-// I need to make sure I define them or import them. 
-// Since I can't create multiple files efficiently in one go without 'write_to_file' loops, 
-// and the user context shows a single file, I should probably stick to one file if I can, OR split.
-// Splitting is cleaner. I will create a `components` folder in `admin/site-content`.
-

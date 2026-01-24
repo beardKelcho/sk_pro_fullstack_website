@@ -1,57 +1,69 @@
-import apiClient from './api/axios';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/services/api/axios';
+import { SiteImage } from '@/services/siteImageService';
 
-export interface HeroContent {
-  title: string;
-  subtitle: string;
-  description: string;
-  buttonText: string;
-  buttonLink: string;
-  backgroundVideo?: string; // Seçili video URL'i (backward compatibility için)
-  selectedVideo?: string; // Aktif olarak gösterilen video URL'i
-  availableVideos?: Array<{ url: string; filename: string; uploadedAt?: string }>; // Video havuzu
-  backgroundImage?: string;
-  rotatingTexts?: string[];
+// Re-export SiteImage so consumers don't break
+export type { SiteImage };
+
+// Localized String Helper
+export interface LocalizedString {
+  tr: string;
+  en: string;
 }
 
+// Hero bölümü için
+export interface HeroContent {
+  title: LocalizedString;
+  subtitle: LocalizedString;
+  description: LocalizedString;
+  buttonText: LocalizedString;
+  buttonLink: string;
+  backgroundVideo?: string;
+  selectedVideo?: string;
+  availableVideos?: Array<{ url: string; filename: string; uploadedAt?: string }>;
+  backgroundImage?: string;
+  rotatingTexts?: LocalizedString[];
+}
+
+// Hizmet bölümü için
 export interface ServiceItem {
-  title: string;
-  description: string;
+  title: LocalizedString;
+  description: LocalizedString;
   icon: string;
-  image?: string;
   order: number;
 }
 
+// Ekipman kategori bölümü için
 export interface EquipmentCategory {
-  title: string;
+  title: LocalizedString;
   items: {
     name: string;
-    description: string;
-    image?: string; // Ekipman görseli
+    description: LocalizedString;
   }[];
   order: number;
-  image?: string; // Kategori görseli
 }
 
+// Hizmetler ve Ekipmanlar birleşik
 export interface ServicesEquipmentContent {
-  title: string;
-  subtitle: string;
+  title: LocalizedString;
+  subtitle: LocalizedString;
   services: ServiceItem[];
   equipment: EquipmentCategory[];
   backgroundImage?: string;
   order: number;
 }
 
+// Hakkımızda
 export interface AboutContent {
-  title: string;
-  description: string;
+  title: LocalizedString;
+  description: LocalizedString;
   image?: string;
   stats: {
-    label: string;
+    label: LocalizedString;
     value: string;
   }[];
 }
 
+// İletişim
 export interface ContactInfo {
   address: string;
   phone: string;
@@ -61,142 +73,51 @@ export interface ContactInfo {
   mapLink?: string;
 }
 
+// Sosyal Medya
 export interface SocialMedia {
   platform: string;
   url: string;
   icon?: string;
 }
 
+// Footer
 export interface FooterContent {
-  copyright: string;
+  copyright: LocalizedString;
   links?: {
-    text: string;
+    text: LocalizedString;
     url: string;
   }[];
 }
 
-export type SiteContentData = 
-  | HeroContent 
-  | ServiceItem[] 
-  | EquipmentCategory[] 
-  | ServicesEquipmentContent
-  | AboutContent 
-  | ContactInfo 
-  | FooterContent 
-  | SocialMedia[] 
-  | any;
-
-export interface SiteContent {
-  _id?: string;
-  id?: string;
-  section: 'hero' | 'services' | 'equipment' | 'services-equipment' | 'about' | 'contact' | 'footer' | 'social' | 'projects';
-  content: SiteContentData;
+// Ana içerik wrapper
+export interface SiteContentData {
+  section: string;
+  content: HeroContent | ServicesEquipmentContent | AboutContent | ContactInfo | FooterContent | SocialMedia[] | any;
   isActive: boolean;
   order: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
-export const getAllContents = async (params?: {
-  section?: string;
-  isActive?: boolean;
-}): Promise<{ contents: SiteContent[]; count: number }> => {
-  // Public endpoint kullan (anasayfa için)
-  const isPublic = !params || Object.keys(params).length === 0;
-  const endpoint = isPublic ? '/site-content/public' : '/site-content';
-  const res = await apiClient.get(endpoint, { params });
-  return res.data;
+export interface SiteContent {
+  _id: string;
+  section: string;
+  content: any; // Dynamic content based on section
+  isActive: boolean;
+  order: number;
+}
+
+// --- API Calls ---
+
+export const getSiteContent = async (section: string) => {
+  const response = await api.get(`/site-content/${section}`);
+  return response.data;
 };
 
-export const getContentBySection = async (section: string): Promise<SiteContent> => {
-  const res = await apiClient.get(`/site-content/public/${section}`);
-  return res.data.content || res.data;
+export const updateSiteContent = async (section: string, data: any) => {
+  const response = await api.put(`/site-content/${section}`, data);
+  return response.data;
 };
 
-export const createContent = async (data: Partial<SiteContent>): Promise<SiteContent> => {
-  const res = await apiClient.post('/site-content', data);
-  return res.data.content || res.data;
+export const getAllSiteContents = async () => {
+  const response = await api.get('/site-content');
+  return response.data;
 };
-
-export const updateContent = async (id: string, data: Partial<SiteContent>): Promise<SiteContent> => {
-  const res = await apiClient.put(`/site-content/${id}`, data);
-  return res.data.content || res.data;
-};
-
-export const updateContentBySection = async (section: string, data: Partial<SiteContent>): Promise<SiteContent> => {
-  const res = await apiClient.put(`/site-content/section/${section}`, data);
-  return res.data.content || res.data;
-};
-
-export const deleteContent = async (id: string): Promise<void> => {
-  await apiClient.delete(`/site-content/${id}`);
-};
-
-// React Query Hooks
-export const useSiteContents = (params?: {
-  section?: string;
-  isActive?: boolean;
-}) => {
-  return useQuery({
-    queryKey: ['site-contents', params],
-    queryFn: () => getAllContents(params),
-    staleTime: 2 * 60 * 1000, // 2 dakika
-  });
-};
-
-export const useSiteContentBySection = (section: string | null) => {
-  return useQuery({
-    queryKey: ['site-content', 'section', section],
-    queryFn: () => getContentBySection(section!),
-    enabled: !!section,
-    staleTime: 2 * 60 * 1000,
-  });
-};
-
-export const useCreateSiteContent = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: createContent,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['site-contents'] });
-    },
-  });
-};
-
-export const useUpdateSiteContent = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<SiteContent> }) => updateContent(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['site-content', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['site-contents'] });
-    },
-  });
-};
-
-export const useUpdateSiteContentBySection = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ section, data }: { section: string; data: Partial<SiteContent> }) => 
-      updateContentBySection(section, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['site-content', 'section', variables.section] });
-      queryClient.invalidateQueries({ queryKey: ['site-contents'] });
-    },
-  });
-};
-
-export const useDeleteSiteContent = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: deleteContent,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['site-contents'] });
-    },
-  });
-};
-

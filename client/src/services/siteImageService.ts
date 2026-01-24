@@ -23,31 +23,31 @@ export const getAllImages = async (params?: {
   // Public endpoint kullan (anasayfa için)
   const isPublic = !params || Object.keys(params).length === 0;
   const endpoint = isPublic ? '/site-images/public' : '/site-images';
-  
+
   // Debug log
   logger.debug('getAllImages çağrılıyor:', { endpoint, params, isPublic });
-  
+
   try {
     const res = await apiClient.get(endpoint, { params });
-    
+
     logger.debug('getAllImages response:', {
       status: res.status,
       data: res.data,
       imagesCount: res.data?.images?.length || 0,
     });
-    
+
     // Backend response formatı: { success: true, count: number, images: [] }
     // Axios response formatı: { data: { success, count, images } }
     const responseData = res.data || {};
-    
+
     // Response formatını normalize et
     const result = {
       images: responseData.images || [],
       count: responseData.count || responseData.images?.length || 0,
     };
-    
+
     logger.debug('getAllImages normalized result:', result);
-    
+
     return result;
   } catch (error: unknown) {
     // Hata durumunda detaylı log
@@ -120,7 +120,7 @@ export const useSiteImageById = (id: string | null) => {
 
 export const useCreateSiteImage = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createImage,
     onSuccess: () => {
@@ -131,7 +131,7 @@ export const useCreateSiteImage = () => {
 
 export const useUpdateSiteImage = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<SiteImage> }) => updateImage(id, data),
     onSuccess: (_, variables) => {
@@ -143,7 +143,7 @@ export const useUpdateSiteImage = () => {
 
 export const useDeleteSiteImage = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: deleteImage,
     onSuccess: () => {
@@ -154,7 +154,7 @@ export const useDeleteSiteImage = () => {
 
 export const useDeleteMultipleSiteImages = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: deleteMultipleImages,
     onSuccess: () => {
@@ -165,7 +165,7 @@ export const useDeleteMultipleSiteImages = () => {
 
 export const useUpdateImageOrder = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: updateImageOrder,
     onSuccess: () => {
@@ -174,3 +174,11 @@ export const useUpdateImageOrder = () => {
   });
 };
 
+// Alias for createImage as uploadImage (legacy support)
+export const uploadImage = (data: FormData | Partial<SiteImage>) => {
+  // If FormData, we might need a different endpoint or handle it here.
+  // Assuming backend handles FormData at /site-images endpoint if POST
+  // BUT axios call in createImage uses 'data'. 
+  // If data is FormData, axios handles content-type.
+  return apiClient.post('/site-images', data).then(res => res.data.image || res.data);
+};

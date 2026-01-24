@@ -10,7 +10,7 @@ import { useSiteContent, ContactInfo } from '@/hooks/useSiteContent';
 import { useTranslations } from 'next-intl';
 
 const Contact = () => {
-    const { useContent } = useSiteContent();
+    const { useContent, resolveLocalized } = useSiteContent();
     const { data: contactData } = useContent('contact');
     const contactInfo = contactData?.content as ContactInfo | undefined;
     const tHome = useTranslations('site.home');

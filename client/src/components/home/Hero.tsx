@@ -7,19 +7,19 @@ import { useTranslations } from 'next-intl';
 import VideoBackgroundPlayer from './VideoBackgroundPlayer';
 
 const Hero = () => {
-    const { useContent } = useSiteContent();
+    const { useContent, resolveLocalized } = useSiteContent();
     const { data: heroData } = useContent('hero');
     const heroContent = heroData?.content as HeroContent | undefined;
     const tHome = useTranslations('site.home');
 
     // Default content if loading or empty (or use skeleton)
-    const displayContent: HeroContent = {
-        title: heroContent?.title || '',
-        subtitle: heroContent?.subtitle || '',
-        description: heroContent?.description || '',
-        buttonText: heroContent?.buttonText || 'Projelerimiz',
+    const displayContent = {
+        title: resolveLocalized(heroContent?.title),
+        subtitle: resolveLocalized(heroContent?.subtitle),
+        description: resolveLocalized(heroContent?.description),
+        buttonText: resolveLocalized(heroContent?.buttonText) || 'Projelerimiz',
         buttonLink: heroContent?.buttonLink || '#projects',
-        rotatingTexts: heroContent?.rotatingTexts || [
+        rotatingTexts: heroContent?.rotatingTexts?.map(t => resolveLocalized(t)) || [
             'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
             'Medya Server ve Görüntü Rejisi Çözümleri',
             'Görsel Mükemmellikte Uzman Ekip'
@@ -62,7 +62,7 @@ const Hero = () => {
             )}
 
             <ImmersiveHero
-                content={displayContent}
+                content={displayContent as any} // Temporary cast as common component might expect strict type
                 onScrollDown={() => {
                     document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
                 }}

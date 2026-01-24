@@ -1,44 +1,50 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Localized String Helper
+export interface LocalizedString {
+  tr: string;
+  en: string;
+}
+
 // Hero bölümü için
 export interface HeroContent {
-  title: string;
-  subtitle: string;
-  description: string;
-  buttonText: string;
+  title: LocalizedString;
+  subtitle: LocalizedString;
+  description: LocalizedString;
+  buttonText: LocalizedString;
   buttonLink: string;
-  backgroundVideo?: string; // Seçili video URL'i (backward compatibility için)
+  backgroundVideo?: string; // Seçili video URL'i
   selectedVideo?: string; // Aktif olarak gösterilen video URL'i
-  availableVideos?: Array<{ url: string; filename: string; uploadedAt?: string }>; // Video havuzu
+  availableVideos?: Array<{ url: string; filename: string; uploadedAt?: string }>;
   backgroundImage?: string;
-  rotatingTexts?: string[];
+  rotatingTexts?: LocalizedString[];
 }
 
 // Hizmet bölümü için
 export interface ServiceItem {
-  title: string;
-  description: string;
+  title: LocalizedString;
+  description: LocalizedString;
   icon: string;
   order: number;
 }
 
 // Ekipman bölümü için
 export interface EquipmentCategory {
-  title: string;
+  title: LocalizedString;
   items: {
     name: string;
-    description: string;
+    description: LocalizedString;
   }[];
   order: number;
 }
 
 // Hakkımızda bölümü için
 export interface AboutContent {
-  title: string;
-  description: string;
+  title: LocalizedString;
+  description: LocalizedString;
   image?: string;
   stats: {
-    label: string;
+    label: LocalizedString;
     value: string;
   }[];
 }
@@ -62,17 +68,17 @@ export interface SocialMedia {
 
 // Footer içeriği için
 export interface FooterContent {
-  copyright: string;
+  copyright: LocalizedString;
   links?: {
-    text: string;
+    text: LocalizedString;
     url: string;
   }[];
 }
 
 // Hizmetler ve Ekipmanlar birleşik bölümü için
 export interface ServicesEquipmentContent {
-  title: string;
-  subtitle: string;
+  title: LocalizedString;
+  subtitle: LocalizedString;
   services: ServiceItem[];
   equipment: EquipmentCategory[];
   backgroundImage?: string;
@@ -119,4 +125,3 @@ const SiteContentSchema: Schema = new Schema(
 SiteContentSchema.index({ section: 1, order: 1 });
 
 export default mongoose.model<ISiteContent>('SiteContent', SiteContentSchema);
-

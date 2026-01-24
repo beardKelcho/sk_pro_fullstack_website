@@ -1,13 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    useQuery,
-    useMutation,
-    useQueryClient
-} from '@tanstack/react-query';
-import {
-    getAllContents,
-    getContentBySection,
-    updateContentBySection,
+    getSiteContent,
+    updateSiteContent,
+    getAllSiteContents,
     SiteContent,
     SiteContentData,
     HeroContent,
@@ -17,18 +12,18 @@ import {
     AboutContent,
     ContactInfo,
     FooterContent,
-    SocialMedia
+    SocialMedia,
+    SiteImage,
+    LocalizedString
 } from '@/services/siteContentService';
 import {
     getAllImages,
-    createImage,
-    deleteImage,
-    SiteImage
+    uploadImage,
+    deleteImage
 } from '@/services/siteImageService';
-import { toast } from 'react-toastify';
-import logger from '@/utils/logger';
+import { useLocale } from 'next-intl';
 
-// Re-export types for convenience
+// Re-export types
 export type {
     SiteContent,
     SiteContentData,
@@ -40,118 +35,98 @@ export type {
     AboutContent,
     ContactInfo,
     FooterContent,
-    SocialMedia
+    SocialMedia,
+    LocalizedString
 };
+
+// --- Standalone Image Hooks ---
+
+export const useSiteImages = (section?: string) => {
+    return useQuery({
+        queryKey: ['siteImages', section],
+        queryFn: () => getAllImages(section ? { category: section } : undefined),
+    });
+};
+
+export const useUploadSiteImage = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (formData: FormData) => uploadImage(formData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['siteImages'] });
+        }
+    });
+};
+
+export const useDeleteSiteImage = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteImage(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['siteImages'] });
+        }
+    });
+};
+
+// --- Main Content Hook ---
 
 export const useSiteContent = () => {
     const queryClient = useQueryClient();
+    const locale = useLocale();
 
-    // --- Content Queries ---
+    // Helper to resolve localized string
+    const resolveLocalized = (content: LocalizedString | string | undefined): string => {
+        if (!content) return '';
+        if (typeof content === 'string') return content;
+        return content[locale as 'tr' | 'en'] || content['tr'] || ''; // Fallback to TR
+    };
 
+    // 1. Fetch content by section
     const useContent = (section: string) => {
         return useQuery({
-            queryKey: ['site-content', section],
-            queryFn: () => getContentBySection(section),
-            staleTime: 5 * 60 * 1000, // 5 minutes
+            queryKey: ['siteContent', section],
+            queryFn: () => getSiteContent(section),
+            staleTime: 5 * 60 * 1000,
         });
     };
 
+    // 2. Fetch all content
     const useAllContents = () => {
         return useQuery({
-            queryKey: ['site-contents'],
-            queryFn: () => getAllContents(),
+            queryKey: ['siteContent', 'all'],
+            queryFn: getAllSiteContents,
+            staleTime: 5 * 60 * 1000,
         });
     };
 
-    // --- Content Mutations ---
-
-    const mutationUpdateContent = useMutation({
-        mutationFn: ({ section, data }: { section: string; data: SiteContentData }) =>
-            updateContentBySection(section, { content: data }),
+    // 3. Update content
+    const updateMutation = useMutation({
+        mutationFn: ({ section, data }: { section: string; data: any }) => updateSiteContent(section, data),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['site-content', variables.section] });
-            queryClient.invalidateQueries({ queryKey: ['site-contents'] });
-            toast.success('İçerik başarıyla güncellendi');
+            queryClient.invalidateQueries({ queryKey: ['siteContent', variables.section] });
+            queryClient.invalidateQueries({ queryKey: ['siteContent', 'all'] });
         },
-        onError: (error: any) => {
-            logger.error('Content update error:', error);
-            toast.error('İçerik güncellenirken hata oluştu');
-        }
     });
 
-    // --- Image Queries and Mutations ---
-
-    const useImages = (category?: string) => {
-        return useQuery({
-            queryKey: ['site-images', category],
-            queryFn: async () => {
-                const res = await getAllImages({ category });
-                return res.images;
-            },
-        });
-    };
-
-    const mutationUploadImage = useMutation({
-        mutationFn: async ({ file, category, order }: { file: File; category: SiteImage['category']; order?: number }) => {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('category', category);
-            if (order !== undefined) formData.append('order', String(order));
-
-            // We need to use raw axios or a modified service for FormData if createContent doesn't support it directly
-            // Looking at service, createImage takes Partial<SiteImage> which usually implies JSON.
-            // However, usually image upload requires FormData and specific headers.
-            // Let's assume the service handles it or we might need to adjust the service.
-            // Checking siteImageService.ts... it uses apiClient.post('/site-images', data).
-            // If the backend expects multipart/form-data, we need to send FormData.
-            // Let's update this to assume the service helper needs to be capable or we do it here.
-            // PROBABLY better to do it here if service is generic.
-
-            // Actually, let's look at how it's likely implemented. 
-            // Most likely siteImageService needs to support FormData.
-            // For now, let's wrap it here properly.
-
-            // NOTE: We will assume we need to bypass the service type strictness or cast it 
-            // OR better, we simply use the apiClient here for upload if service is strict JSON.
-            // But typically `createImage` calls `apiClient.post`, which supports FormData.
-            return createImage(formData as any);
-        },
+    const createMutation = useMutation({
+        mutationFn: ({ section, data }: { section: string; data: any }) => updateSiteContent(section, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['site-images'] });
-            toast.success('Görsel yüklendi');
-        },
-        onError: (err) => {
-            logger.error('Upload error', err);
-            toast.error('Görsel yüklenemedi');
-        }
-    });
-
-    const mutationDeleteImage = useMutation({
-        mutationFn: deleteImage,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['site-images'] });
-            toast.success('Görsel silindi');
-        },
-        onError: (err) => {
-            logger.error('Delete image error', err);
-            toast.error('Görsel silinemedi');
+            queryClient.invalidateQueries({ queryKey: ['siteContent'] });
         }
     });
 
     return {
-        // Hooks for fetching
         useContent,
         useAllContents,
-        useImages,
-
-        // Actions
-        updateContent: mutationUpdateContent.mutateAsync,
-        isUpdating: mutationUpdateContent.isPending,
-
-        uploadImage: mutationUploadImage.mutateAsync,
-        isUploading: mutationUploadImage.isPending,
-
-        deleteImage: mutationDeleteImage.mutateAsync,
-        isDeleting: mutationDeleteImage.isPending,
+        updateContent: updateMutation.mutate,
+        updateContentAsync: updateMutation.mutateAsync,
+        createContent: createMutation.mutate,
+        isUpdating: updateMutation.isPending,
+        isCreating: createMutation.isPending,
+        error: updateMutation.error || createMutation.error,
+        createMutation,
+        updateMutation,
+        resolveLocalized,
+        currentLocale: locale
     };
 };

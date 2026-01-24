@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { useSiteContent, ServicesEquipmentContent } from '@/hooks/useSiteContent';
 
 const Services = () => {
-    const { useContent } = useSiteContent();
+    const { useContent, resolveLocalized } = useSiteContent();
     const { data: servicesData } = useContent('services-equipment');
     const content = servicesData?.content as ServicesEquipmentContent | undefined;
 
@@ -29,8 +29,8 @@ const Services = () => {
         },
     ];
 
-    const title = content?.title || 'Profesyonel Görüntü ve Medya Çözümleri';
-    const subtitle = content?.subtitle || 'Etkinlikleriniz için dünya standartlarında medya sunucuları, görüntü işleme teknolojileri ve uzman reji hizmetleri sunuyoruz.';
+    const title = resolveLocalized(content?.title) || 'Profesyonel Görüntü ve Medya Çözümleri';
+    const subtitle = resolveLocalized(content?.subtitle) || 'Etkinlikleriniz için dünya standartlarında medya sunucuları, görüntü işleme teknolojileri ve uzman reji hizmetleri sunuyoruz.';
 
     return (
         <section id="services" className="py-24 bg-gradient-to-b from-[#0A1128] to-black relative overflow-hidden">
@@ -40,12 +40,23 @@ const Services = () => {
 
             <div className="container mx-auto px-6 relative z-10">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+                    <motion.h2
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 mb-6"
+                    >
                         {title}
-                    </h2>
-                    <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                    </motion.h2>
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.1 }}
+                        className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
+                    >
                         {subtitle}
-                    </p>
+                    </motion.p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -58,8 +69,8 @@ const Services = () => {
                             transition={{ delay: index * 0.2 }}
                         >
                             <ServiceCard
-                                title={service.title}
-                                description={service.description}
+                                title={resolveLocalized(service.title)}
+                                description={resolveLocalized(service.description)}
                                 icon={service.icon as any}
                             />
                         </motion.div>

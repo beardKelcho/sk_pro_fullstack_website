@@ -8,7 +8,7 @@ import LazyImage from '@/components/common/LazyImage';
 import { useTranslations } from 'next-intl';
 
 const About = () => {
-    const { useContent } = useSiteContent();
+    const { useContent, resolveLocalized } = useSiteContent();
     const { data: aboutData } = useContent('about');
     const aboutContent = aboutData?.content as AboutContent | undefined;
     const tHome = useTranslations('site.home');
@@ -21,12 +21,15 @@ const About = () => {
     // Verify if we should replace or append. The request says "9+ Yıllık Deneyim olarak yansıt".
     // I'll prepend it to ensure it's visible.
     const displayStats = [
-        { value: `${experienceYears}+`, label: 'Yıllık Deneyim' },
-        ...stats.filter((s: { label: string; value: string }) =>
-            !s.label.toLowerCase().includes('deneyim') &&
-            !s.label.toLowerCase().includes('experience') &&
-            !s.label.toLowerCase().includes('ekipman') // Filter out equipment
-        )
+        { value: `${experienceYears}+`, label: 'Yıllık Deneyim' }, // Fixed label for now, or use tHome if available
+        ...stats.filter((s: any) =>
+            !resolveLocalized(s.label).toLowerCase().includes('deneyim') &&
+            !resolveLocalized(s.label).toLowerCase().includes('experience') &&
+            !resolveLocalized(s.label).toLowerCase().includes('ekipman')
+        ).map((s: any) => ({
+            label: resolveLocalized(s.label),
+            value: s.value
+        }))
     ];
 
     return (
@@ -43,12 +46,12 @@ const About = () => {
                                 transition={{ duration: 0.8 }}
                             >
                                 <StageSectionTitle
-                                    title={aboutContent?.title || tHome('aboutSection.title')}
+                                    title={resolveLocalized(aboutContent?.title) || tHome('aboutSection.title')}
                                     subtitle=""
                                 />
                                 {aboutContent?.description ? (
                                     <div className="text-gray-300 mb-8 text-lg whitespace-pre-line leading-relaxed">
-                                        {aboutContent.description}
+                                        {resolveLocalized(aboutContent.description)}
                                     </div>
                                 ) : (
                                     <>

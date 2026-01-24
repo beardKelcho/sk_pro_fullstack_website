@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { HeroContent, SiteImage } from '@/hooks/useSiteContent';
-import { useSiteContent } from '@/hooks/useSiteContent'; // for useImages hook
+import { HeroContent, SiteImage, useSiteImages } from '@/hooks/useSiteContent';
 import VideoSelector from './VideoSelector';
 import LazyImage from '@/components/common/LazyImage';
+import LocalizedInput from '@/components/common/LocalizedInput';
 import { getImageUrl } from '@/utils/imageUrl';
 
 interface HeroFormProps {
@@ -14,22 +14,22 @@ interface HeroFormProps {
 export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
     // Initialize with defaults
     const [formData, setFormData] = useState<HeroContent>({
-        title: '',
-        subtitle: '',
-        description: '',
-        buttonText: 'İletişime Geçin',
+        title: { tr: '', en: '' },
+        subtitle: { tr: '', en: '' },
+        description: { tr: '', en: '' },
+        buttonText: { tr: 'İletişime Geçin', en: 'Contact Us' },
         buttonLink: '#contact',
         backgroundVideo: '',
         selectedVideo: '',
         availableVideos: [],
         backgroundImage: '',
         rotatingTexts: [],
-        ...content // override with actual content
+        ...content
     });
 
     // Load images for modal
-    const { useImages } = useSiteContent();
-    const { data: images = [] } = useImages('hero'); // Fetch only hero images
+    const { data: imagesData } = useSiteImages('hero');
+    const images: SiteImage[] = imagesData?.images || [];
 
     const [showImageModal, setShowImageModal] = useState(false);
 
@@ -50,43 +50,35 @@ export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Hero Bölümü</h2>
 
             {/* Title */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Başlık</label>
-                <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white"
-                />
-            </div>
+            <LocalizedInput
+                label="Başlık"
+                value={formData.title}
+                onChange={(val) => setFormData({ ...formData, title: val })}
+            />
 
             {/* Subtitle */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alt Başlık</label>
-                <input
-                    type="text"
-                    value={formData.subtitle}
-                    onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white"
-                />
-            </div>
+            <LocalizedInput
+                label="Alt Başlık"
+                value={formData.subtitle}
+                onChange={(val) => setFormData({ ...formData, subtitle: val })}
+            />
 
             {/* Description */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Açıklama</label>
-                <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={4}
-                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white"
-                />
-            </div>
+            <LocalizedInput
+                label="Açıklama"
+                value={formData.description}
+                onChange={(val) => setFormData({ ...formData, description: val })}
+                type="textarea"
+            />
 
             {/* Buttons */}
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Buton Metni</label>
-                    <input value={formData.buttonText} onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })} className="w-full px-3 py-2 border rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white" />
+                    <LocalizedInput
+                        label="Buton Metni"
+                        value={formData.buttonText}
+                        onChange={(val) => setFormData({ ...formData, buttonText: val })}
+                    />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Buton Linki</label>
@@ -135,9 +127,9 @@ export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto p-6">
                         <div className="grid grid-cols-4 gap-4">
-                            {images.map(img => (
-                                <div key={img.id} onClick={() => { setFormData({ ...formData, backgroundImage: img.id || img._id }); setShowImageModal(false); }} className="aspect-square relative cursor-pointer border border-gray-200">
-                                    <LazyImage src={getImageUrl(img.id || img._id)} alt="img" fill className="object-cover" />
+                            {images.map((img: SiteImage) => (
+                                <div key={img._id || img.id} onClick={() => { setFormData({ ...formData, backgroundImage: img._id || img.id }); setShowImageModal(false); }} className="aspect-square relative cursor-pointer border border-gray-200">
+                                    <LazyImage src={getImageUrl(img._id || img.id)} alt="img" fill className="object-cover" />
                                 </div>
                             ))}
                             {images.length === 0 && <p className="col-span-4 text-center">Görsel bulunamadı.</p>}

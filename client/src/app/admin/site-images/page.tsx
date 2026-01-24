@@ -1,19 +1,20 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Link from 'next/link';
-import { useSiteContent, SiteImage } from '@/hooks/useSiteContent';
+import { useSiteImages, useUploadSiteImage, useDeleteSiteImage, SiteImage } from '@/hooks/useSiteContent';
 import LazyImage from '@/components/common/LazyImage';
 import { getImageUrl } from '@/utils/imageUrl';
-import { toast } from 'react-toastify';
 
 export default function SiteImagesPage() {
-  const { useImages, uploadImage, deleteImage, isUploading } = useSiteContent();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Conditionally fetch based on category (or fetch all and filter client side if 'all')
-  // The hook logic uses 'category' param. If 'all', pass undefined.
-  const { data: images = [], isLoading } = useImages(selectedCategory === 'all' ? undefined : selectedCategory);
+  // Fetch images matches hook signature
+  const { data: imagesData, isLoading } = useSiteImages(selectedCategory === 'all' ? undefined : selectedCategory);
+  const images = imagesData?.images || [];
+
+  const uploadImageMutation = useUploadSiteImage();
+  const deleteImageMutation = useDeleteSiteImage();
+  const isUploading = uploadImageMutation.isPending;
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -27,9 +28,11 @@ export default function SiteImagesPage() {
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
 
-    // Upload serially or parallel
     for (const file of selectedFiles) {
-      await uploadImage({ file, category: uploadCategory });
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('category', uploadCategory);
+      await uploadImageMutation.mutateAsync(formData);
     }
 
     setShowUploadModal(false);
@@ -38,7 +41,7 @@ export default function SiteImagesPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Silmek istediğinize emin misiniz?')) {
-      await deleteImage(id);
+      deleteImageMutation.mutate(id);
     }
   };
 

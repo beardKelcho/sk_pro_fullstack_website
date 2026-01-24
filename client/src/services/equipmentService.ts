@@ -12,7 +12,7 @@ export interface Equipment {
   model?: string;
   serialNumber?: string;
   purchaseDate?: string;
-  status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DAMAGED';
+  status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DAMAGED' | 'RETIRED';
   location?: string;
   notes?: string;
   responsibleUser?: string;
@@ -132,7 +132,7 @@ export const useEquipmentById = (id: string | null) => {
 
 export const useCreateEquipment = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createEquipment,
     onSuccess: () => {
@@ -143,7 +143,7 @@ export const useCreateEquipment = () => {
 
 export const useUpdateEquipment = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Equipment> }) => updateEquipment(id, data),
     onSuccess: (_, variables) => {
@@ -155,7 +155,7 @@ export const useUpdateEquipment = () => {
 
 export const useDeleteEquipment = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: deleteEquipment,
     onSuccess: () => {

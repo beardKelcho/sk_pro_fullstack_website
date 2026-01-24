@@ -12,6 +12,7 @@ interface ImportModalProps {
   onClose: () => void;
   type: 'equipment' | 'project';
   onSuccess?: () => void;
+  title?: string;
 }
 
 interface ApiErrorResponse {
@@ -19,7 +20,7 @@ interface ApiErrorResponse {
   success?: boolean;
 }
 
-export default function ImportModal({ isOpen, onClose, type, onSuccess }: ImportModalProps) {
+export default function ImportModal({ isOpen, onClose, type, onSuccess, title }: ImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -121,7 +122,7 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess }: Import
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 id="import-modal-title" className="text-2xl font-bold text-gray-900 dark:text-white">
-              {type === 'equipment' ? 'Ekipman' : 'Proje'} Import
+              {title || (type === 'equipment' ? 'Ekipman' : 'Proje') + ' Import'}
             </h2>
             <button
               onClick={handleClose}

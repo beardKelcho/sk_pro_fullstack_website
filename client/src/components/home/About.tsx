@@ -1,33 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { motion } from 'framer-motion';
-import { AboutContent } from '@/services/siteContentService';
+import { useSiteContent, AboutContent } from '@/hooks/useSiteContent';
 import LazyImage from '@/components/common/LazyImage';
 import { useTranslations } from 'next-intl';
-import logger from '@/utils/logger';
 
 const About = () => {
-    const [aboutContent, setAboutContent] = useState<AboutContent | null>(null);
+    const { useContent } = useSiteContent();
+    const { data: aboutData } = useContent('about');
+    const aboutContent = aboutData?.content as AboutContent | undefined;
     const tHome = useTranslations('site.home');
-
-    useEffect(() => {
-        const fetchAbout = async () => {
-            try {
-                const response = await fetch('/api/site-content/public/about', { headers: { 'Cache-Control': 'no-cache' } });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.content?.content) {
-                        setAboutContent(data.content.content);
-                    }
-                }
-            } catch (error) {
-                logger.error('About fetch error:', error);
-            }
-        };
-        fetchAbout();
-    }, []);
 
     // Dynamic Year Calculation
     const experienceYears = new Date().getFullYear() - 2017;
@@ -38,7 +22,7 @@ const About = () => {
     // I'll prepend it to ensure it's visible.
     const displayStats = [
         { value: `${experienceYears}+`, label: 'Yıllık Deneyim' },
-        ...stats.filter(s =>
+        ...stats.filter((s: { label: string; value: string }) =>
             !s.label.toLowerCase().includes('deneyim') &&
             !s.label.toLowerCase().includes('experience') &&
             !s.label.toLowerCase().includes('ekipman') // Filter out equipment

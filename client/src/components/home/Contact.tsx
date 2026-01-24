@@ -1,31 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { motion } from 'framer-motion';
 import Icon from '@/components/common/Icon';
 import Map from '@/components/common/Map';
 import ContactForm from '@/components/common/ContactForm';
-import { ContactInfo } from '@/services/siteContentService';
+import { useSiteContent, ContactInfo } from '@/hooks/useSiteContent';
 import { useTranslations } from 'next-intl';
-import logger from '@/utils/logger';
 
 const Contact = () => {
-    const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
+    const { useContent } = useSiteContent();
+    const { data: contactData } = useContent('contact');
+    const contactInfo = contactData?.content as ContactInfo | undefined;
     const tHome = useTranslations('site.home');
-
-    useEffect(() => {
-        const fetchContact = async () => {
-            try {
-                const response = await fetch('/api/site-content/public/contact', { headers: { 'Cache-Control': 'no-cache' } });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.content?.content) setContactInfo(data.content.content);
-                }
-            } catch (e) { logger.error(e); }
-        };
-        fetchContact();
-    }, []);
 
     const defaultLocation = useMemo(() => ({
         address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',

@@ -1,49 +1,33 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import ImmersiveHero from '@/components/common/ImmersiveHero';
-import { HeroContent as HeroContentType } from '@/services/siteContentService';
+import { useSiteContent, HeroContent } from '@/hooks/useSiteContent';
 import { useTranslations } from 'next-intl';
-import logger from '@/utils/logger';
 import VideoBackgroundPlayer from './VideoBackgroundPlayer';
 
 const Hero = () => {
-    const [heroContent, setHeroContent] = useState<HeroContentType | null>(null);
+    const { useContent } = useSiteContent();
+    const { data: heroData } = useContent('hero');
+    const heroContent = heroData?.content as HeroContent | undefined;
     const tHome = useTranslations('site.home');
 
-    useEffect(() => {
-        const fetchHeroContent = async () => {
-            try {
-                const response = await fetch('/api/site-content/public/hero', {
-                    headers: { 'Cache-Control': 'no-cache' },
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.content?.content) {
-                        setHeroContent(data.content.content);
-                    }
-                }
-            } catch (error) {
-                logger.error('Hero content fetch error:', error);
-            }
-        };
-
-        fetchHeroContent();
-    }, []);
-
-    // Override content with requested title
-    const displayContent: HeroContentType = {
-        ...(heroContent || {
-            subtitle: '',
-            description: '',
-            buttonText: 'Projelerimiz',
-            buttonLink: '#projects',
-        } as any),
-        rotatingTexts: [
+    // Default content if loading or empty (or use skeleton)
+    const displayContent: HeroContent = {
+        title: heroContent?.title || '',
+        subtitle: heroContent?.subtitle || '',
+        description: heroContent?.description || '',
+        buttonText: heroContent?.buttonText || 'Projelerimiz',
+        buttonLink: heroContent?.buttonLink || '#projects',
+        rotatingTexts: heroContent?.rotatingTexts || [
             'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
             'Medya Server ve Görüntü Rejisi Çözümleri',
             'Görsel Mükemmellikte Uzman Ekip'
         ],
+        backgroundVideo: heroContent?.backgroundVideo,
+        selectedVideo: heroContent?.selectedVideo,
+        backgroundImage: heroContent?.backgroundImage,
+        availableVideos: heroContent?.availableVideos
     };
 
     const videoUrl = heroContent?.selectedVideo || heroContent?.backgroundVideo || '';

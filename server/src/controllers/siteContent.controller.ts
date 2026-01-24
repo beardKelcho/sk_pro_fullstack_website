@@ -20,8 +20,15 @@ export const getAllContents = async (req: Request, res: Response) => {
 
 export const getContentBySection = async (req: Request, res: Response) => {
   try {
-    const { section } = req.params;
-    const content = await siteService.getContentBySection(section);
+    // Route parameter can be 'section' (from /section/:section) or 'id' (from /:id)
+    // Both represent the section name (e.g., 'hero', 'about')
+    const sectionName = req.params.section || req.params.id;
+
+    if (!sectionName) {
+      return res.status(400).json({ success: false, message: 'Bölüm adı gereklidir' });
+    }
+
+    const content = await siteService.getContentBySection(sectionName);
 
     if (!content) {
       return res.status(200).json({ success: true, message: 'İçerik bulunamadı', content: null });

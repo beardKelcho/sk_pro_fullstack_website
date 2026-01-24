@@ -43,7 +43,7 @@ router.get('/', (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'SK Production API',
-    version: '1.0.0',
+    version: '1.0.1', // Bumped for deployment verification
   });
 });
 

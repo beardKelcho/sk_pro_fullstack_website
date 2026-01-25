@@ -57,30 +57,13 @@ export const serveImageById = async (req: Request, res: Response) => {
 
     const image = await siteService.getImageById(id); // Throws 404 if missing
 
-    const category = image.category || 'general';
-    const possiblePaths = [
-      image.path ? path.join(process.cwd(), 'uploads', image.path.replace(/^\/?uploads\//, '')) : null,
-      path.join(process.cwd(), 'uploads', category, image.filename),
-      path.join(process.cwd(), 'uploads', 'general', image.filename),
-    ].filter(p => p);
-
-    let filePath: string | undefined;
-    for (const p of possiblePaths) {
-      if (p && fs.existsSync(p)) {
-        filePath = p;
-        break;
-      }
+    if (image.url) {
+      // Redirect to Cloudinary or external URL
+      return res.redirect(image.url);
     }
 
-    if (!filePath) return res.status(404).send('Dosya bulunamadı');
-
-    const ext = path.extname(image.filename).toLowerCase();
-    let contentType = 'image/jpeg';
-    if (ext === '.mp4') contentType = 'video/mp4';
-    else if (ext === '.png') contentType = 'image/png';
-
-    res.setHeader('Content-Type', contentType);
-    res.sendFile(filePath);
+    // Fallback for very old local images if any (this part mostly won't work on Vercel but keeps type safety)
+    return res.status(404).send('Resim URL bulunamadı');
   } catch (error: unknown) {
     // AppErrors threw by service
     const appError = error instanceof AppError ? error : new AppError('Hata');

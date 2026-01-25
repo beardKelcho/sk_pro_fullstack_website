@@ -61,14 +61,12 @@ export const updateContent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // ID validasyonu - Eğer geçerli bir ObjectId değilse
+    // ID validasyonu - Eğer geçerli bir ObjectId değilse section olarak güncellemeyi dene
     if (!require('mongoose').Types.ObjectId.isValid(id)) {
-      // Belki section ismiyle güncelleme deneniyordur?
-      // Kullanıcıya net hata dön
-      return res.status(400).json({
-        success: false,
-        message: 'Geçersiz ID formatı. ID 24 karakterlik hex string olmalıdır.'
-      });
+      // Eğer id bir section ismiyse (valid objectId değilse), section update fonksiyonunu çağır
+      // req.params.section parametresini id'den gelen değerle set et ve diğer fonksiyonu çağır
+      req.params.section = id;
+      return updateContentBySection(req, res);
     }
 
     const result = await siteService.updateContentById(id, req.body);

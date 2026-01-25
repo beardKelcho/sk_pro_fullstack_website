@@ -37,11 +37,11 @@ router.get(
   siteContentController.getContentBySection
 );
 
-// Yeni içerik oluştur
+// Yeni içerik oluştur (Public değil, admin/editor)
 router.post(
   '/',
   authenticate,
-  requirePermission(Permission.FILE_UPLOAD),
+  requirePermission(Permission.EQUIPMENT_UPDATE), // Fallback permission for content
   siteContentController.createContent
 );
 
@@ -49,7 +49,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  requirePermission(Permission.FILE_UPLOAD),
+  requirePermission(Permission.EQUIPMENT_UPDATE),
   siteContentController.updateContent
 );
 
@@ -57,7 +57,7 @@ router.put(
 router.put(
   '/section/:section',
   authenticate,
-  requirePermission(Permission.FILE_UPLOAD),
+  requirePermission(Permission.EQUIPMENT_UPDATE),
   siteContentController.updateContentBySection
 );
 

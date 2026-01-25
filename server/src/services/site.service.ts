@@ -46,7 +46,10 @@ class SiteService {
                         .replace(/^\/?uploads\//, '')
                         .replace(/^\//, '');
 
-                    if (mongoose.Types.ObjectId.isValid(idCandidate)) {
+                    // Strict MongoDB ObjectId validation (24 hex characters)
+                    const isObjectId = /^[0-9a-fA-F]{24}$/.test(idCandidate);
+
+                    if (isObjectId) {
                         idsToResolve.add(idCandidate);
                         urlMap.set(url, { type, originalUrl: url });
                     }

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import siteService from '../services/site.service';
 import logger from '../utils/logger';
 import { AppError } from '../types/common';
@@ -62,7 +63,7 @@ export const updateContent = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     // ID validasyonu - Eğer geçerli bir ObjectId değilse section olarak güncellemeyi dene
-    if (!require('mongoose').Types.ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       // Eğer id bir section ismiyse (valid objectId değilse), section update fonksiyonunu çağır
       // req.params.section parametresini id'den gelen değerle set et ve diğer fonksiyonu çağır
       req.params.section = id;

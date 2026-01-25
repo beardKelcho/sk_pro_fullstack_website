@@ -4,6 +4,7 @@ import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { motion } from 'framer-motion';
 import { useSiteContent, AboutContent } from '@/hooks/useSiteContent';
+import { getImageUrl } from '@/utils/imageUrl';
 import LazyImage from '@/components/common/LazyImage';
 import { useTranslations } from 'next-intl';
 
@@ -113,22 +114,11 @@ const About = () => {
                                         }}
                                     />
                                     {(() => {
-                                        if (aboutContent?.image && aboutContent.image.length === 24 && /^[a-fA-F0-9]{24}$/.test(aboutContent.image)) {
+                                        const imgUrl = getImageUrl(aboutContent?.image);
+                                        if (imgUrl) {
                                             return (
                                                 <LazyImage
-                                                    src={`/api/site-images/public/${aboutContent.image}/image`}
-                                                    alt="SK Production Ekibi"
-                                                    className="relative rounded-2xl w-full aspect-[4/3] z-10"
-                                                    fill
-                                                    objectFit="cover"
-                                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                                    quality={85}
-                                                />
-                                            );
-                                        } else if (aboutContent?.image) {
-                                            return (
-                                                <LazyImage
-                                                    src={aboutContent.image}
+                                                    src={imgUrl}
                                                     alt="SK Production Ekibi"
                                                     className="relative rounded-2xl w-full aspect-[4/3] z-10"
                                                     fill

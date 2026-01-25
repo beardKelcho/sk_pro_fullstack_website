@@ -156,9 +156,31 @@ const nextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin'
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*'
           }
         ],
       },
+      {
+        source: '/:path*.css',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css'
+          }
+        ]
+      },
+      {
+        source: '/:path*.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript'
+          }
+        ]
+      }
     ]
   },
   webpack: (config, { dev, isServer }) => {

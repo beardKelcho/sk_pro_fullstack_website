@@ -112,7 +112,7 @@ const SiteContentSchema: Schema = new Schema(
         const section = this.section;
         if (section === 'hero') {
           return {
-            title: { tr: "Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi", en: "Beyond Pixels, Seamless Visual Management" },
+            title: { tr: "Piksellerin Ötesinde Görüntü Çözümleri", en: "Visual Solutions Beyond Pixels" },
             subtitle: { tr: "Profesyonel Sahne Teknolojileri", en: "Professional Stage Technologies" },
             description: {
               tr: "SK Production ile etkinliklerinize profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz.",
@@ -136,7 +136,8 @@ const SiteContentSchema: Schema = new Schema(
             },
             stats: [
               { label: { tr: "Yıllık Deneyim", en: "Years Experience" }, value: "10+" },
-              { label: { tr: "Mutlu Müşteriler", en: "Happy Clients" }, value: "100+" },
+              { label: { tr: "Sektör Tecrübesi", en: "Industry Experience" }, value: "9+ Yıl" },
+              { label: { tr: "Mutlu Müşteriler", en: "Happy Clients" }, value: "250+" },
               { label: { tr: "Tamamlanan Proje", en: "Completed Projects" }, value: "500+" }
             ]
           };

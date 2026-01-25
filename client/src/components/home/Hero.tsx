@@ -5,6 +5,7 @@ import ImmersiveHero from '@/components/common/ImmersiveHero';
 import { useSiteContent, HeroContent } from '@/hooks/useSiteContent';
 import { useTranslations } from 'next-intl';
 import VideoBackgroundPlayer from './VideoBackgroundPlayer';
+import { getImageUrl } from '@/utils/imageUrl';
 
 const Hero = () => {
     const { useContent, resolveLocalized } = useSiteContent();
@@ -33,18 +34,8 @@ const Hero = () => {
     const videoUrl = heroContent?.selectedVideo || heroContent?.backgroundVideo || '';
     let fullVideoUrl = videoUrl;
 
-    if (videoUrl && !videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
-        if (/^[0-9a-fA-F]{24}$/.test(videoUrl)) {
-            fullVideoUrl = `/api/site-images/public/${videoUrl}/image`;
-        } else if (videoUrl.startsWith('/uploads/')) {
-            fullVideoUrl = videoUrl;
-        } else if (videoUrl.startsWith('/')) {
-            fullVideoUrl = videoUrl;
-        } else if (videoUrl.includes('/')) {
-            fullVideoUrl = `/uploads/${videoUrl}`;
-        } else {
-            fullVideoUrl = `/uploads/general/${videoUrl}`;
-        }
+    if (videoUrl) {
+        fullVideoUrl = getImageUrl(videoUrl);
     }
 
     return (

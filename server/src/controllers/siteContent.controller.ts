@@ -45,8 +45,12 @@ export const getContentBySection = async (req: Request, res: Response) => {
 
 export const createContent = async (req: Request, res: Response) => {
   try {
-    const { section, content, order, isActive } = req.body;
-    if (!section || !content) return res.status(400).json({ success: false, message: 'Bölüm ve içerik gereklidir' });
+    const { section, order, isActive } = req.body;
+    const content = req.body.content || req.body; // Falback if flat body
+
+    if (!section) return res.status(400).json({ success: false, message: 'Bölüm adı gereklidir' });
+    // Content can be empty object via schema default, so relax check or check if undefined
+    if (content === undefined) return res.status(400).json({ success: false, message: 'İçerik verisi gereklidir' });
 
     // Reusing createOrUpdate logic which was split in old controller but logically similar
     const result = await siteService.createOrUpdateContent(section, content, order, isActive);
@@ -70,7 +74,12 @@ export const updateContent = async (req: Request, res: Response) => {
       return updateContentBySection(req, res);
     }
 
-    const result = await siteService.updateContentById(id, req.body);
+    // Check for nested content payload (frontend sends { content: { ... } })
+    const contentPayload = req.body.content || req.body;
+
+    logger.info(`Updating content for ${id}. Payload keys: ${Object.keys(req.body).join(',')}`);
+
+    const result = await siteService.updateContentById(id, { ...req.body, content: contentPayload });
     res.status(200).json({ success: true, content: result });
   } catch (error: unknown) {
     logger.error('İçerik güncelleme hatası:', error);

@@ -94,7 +94,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jest-watch-typeahead": "^2.2.2",
     "lighthouse": "^11.6.0",
-    "lint-staged": "^15.0.0",
+    "lint-staged": "^16.2.7",
     "postcss": "^8.4.33",
     "prettier": "^3.0.0",
     "start-server-and-test": "^2.1.3",

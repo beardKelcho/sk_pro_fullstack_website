@@ -114,7 +114,15 @@ class AuthService {
             throw new AppError('Oturum süresi dolmuş veya geçersiz', 401);
         }
 
-        const user = await User.findById(decoded.id);
+        // Check User
+        let user;
+        try {
+            user = await User.findById(decoded.id);
+        } catch (dbError) {
+            logger.error('User lookup failed during refresh:', dbError);
+            throw new AppError('Kullanıcı doğrulanamadı', 401);
+        }
+
         if (!user || !user.isActive) {
             throw new AppError('Kullanıcı bulunamadı veya pasif', 401);
         }
@@ -135,10 +143,9 @@ class AuthService {
             );
         } catch (error) {
             logger.warn('Session rotation failed:', error);
-            // Even if rotation fails in DB (race condition etc), we might want to return new tokens or fail?
-            // Usually safer to fail if we can't update session security.
-            // But for usability, if session exists, maybe we just log. 
-            // Let's keep it safe.
+            // Even if rotation fails, we continue as returning tokens is priority
+            // But we should probably not fail the request if we can't rotate, 
+            // just log it as we did. 
         }
 
         return {

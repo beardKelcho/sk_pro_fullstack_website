@@ -73,6 +73,11 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
 
   // If imageId is provided, use it directly
   if (imageId) {
+    // Check if it's actually a URL
+    if (imageId.startsWith('http://') || imageId.startsWith('https://') || imageId.startsWith('/uploads/')) {
+      return imageId;
+    }
+
     // Geçersiz ID kontrolü (sadece MongoDB ObjectId formatı veya geçerli string)
     // Ayrıca Next.js internal hash'leri (12-32 karakterlik hex) olmadığından emin ol
     if (typeof imageId === 'string' && imageId.trim() !== '' && imageId.length >= 12) {

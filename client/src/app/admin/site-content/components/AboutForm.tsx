@@ -15,8 +15,7 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
     const [formData, setFormData] = useState<AboutContent>({
         title: { tr: '', en: '' },
         description: { tr: '', en: '' },
-        image: '',
-        features: [],
+        stats: [],
         ...content
     });
 

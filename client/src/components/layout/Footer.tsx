@@ -3,11 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/common/Icon';
-import { SocialMedia, ContactInfo } from '@/services/siteContentService';
+import { useSiteContent, SocialMedia, ContactInfo } from '@/hooks/useSiteContent'; // Update import
 import logger from '@/utils/logger';
 import { useLocale, useTranslations } from 'next-intl';
 
 const Footer: React.FC = () => {
+  // Use hook instead of manual fetch
+  const { resolveLocalized, useContent, useAllContents } = useSiteContent();
+
+  // Use independent queries or a combined one. 
+  // Let's use the hook's useContent pattern if applicable or just fix the helper.
+  // Actually, since this is a Server/Client component mix, let's keep it simple.
+  // We need resolveLocalized.
+
   const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
   const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
   const tFooter = useTranslations('site.footer');
@@ -16,6 +24,7 @@ const Footer: React.FC = () => {
   const prefix = `/${locale}`;
 
   useEffect(() => {
+    // Keep existing fetch logic but consider using hook in future refactor
     const fetchData = async () => {
       try {
         const [socialRes, contactRes] = await Promise.all([
@@ -98,7 +107,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li className="flex items-center text-gray-400">
                 <Icon name="location" className="h-5 w-5 mr-2" />
-                <span>{contactInfo?.address || 'Zincirlidere Caddesi No:52/C Şişli/İstanbul'}</span>
+                <span>{resolveLocalized(contactInfo?.address) || 'Zincirlidere Caddesi No:52/C Şişli/İstanbul'}</span>
               </li>
               <li className="flex items-center text-gray-400">
                 <Icon name="phone" className="h-5 w-5 mr-2" />

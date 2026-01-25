@@ -64,13 +64,16 @@ export interface AboutContent {
 }
 
 // İletişim
+// İletişim
 export interface ContactInfo {
-  address: string;
+  details: LocalizedString; // Added
+  address: LocalizedString; // Changed from string
   phone: string;
   email: string;
+  whatsapp?: string; // Added
+  mapUrl?: string; // Added (was mapLink, but form uses mapUrl)
   latitude?: number;
   longitude?: number;
-  mapLink?: string;
 }
 
 // Sosyal Medya
@@ -82,8 +85,9 @@ export interface SocialMedia {
 
 // Footer
 export interface FooterContent {
-  copyright: LocalizedString;
-  links?: {
+  aboutText: LocalizedString; // Added
+  copyrightText: LocalizedString; // Renamed from copyright roughly
+  quickLinks?: {
     text: LocalizedString;
     url: string;
   }[];

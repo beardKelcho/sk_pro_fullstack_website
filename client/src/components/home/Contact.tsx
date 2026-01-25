@@ -7,13 +7,14 @@ import Icon from '@/components/common/Icon';
 import Map from '@/components/common/Map';
 import ContactForm from '@/components/common/ContactForm';
 import { useSiteContent, ContactInfo } from '@/hooks/useSiteContent';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 const Contact = () => {
     const { useContent, resolveLocalized } = useSiteContent();
     const { data: contactData } = useContent('contact');
     const contactInfo = contactData?.content as ContactInfo | undefined;
     const tHome = useTranslations('site.home');
+    const locale = useLocale();
 
     const defaultLocation = useMemo(() => ({
         address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
@@ -24,11 +25,11 @@ const Contact = () => {
     const location = useMemo(() => {
         if (!contactInfo) return defaultLocation;
         return {
-            address: contactInfo.address,
+            address: resolveLocalized(contactInfo.address) || defaultLocation.address,
             lat: contactInfo.latitude || defaultLocation.lat,
             lng: contactInfo.longitude || defaultLocation.lng
         };
-    }, [contactInfo, defaultLocation]);
+    }, [contactInfo, defaultLocation, resolveLocalized]);
 
     const openMobileNavigation = () => {
         if (typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
@@ -37,7 +38,6 @@ const Contact = () => {
                 { name: 'Apple Maps', url: `maps://maps.apple.com/?daddr=${location.lat},${location.lng}` },
             ];
             navigationApps.forEach(app => window.open(app.url, '_blank'));
-        } else {
             window.open(`https://www.google.com/maps/place/${encodeURIComponent(location.address)}`, '_blank');
         }
     };
@@ -59,7 +59,7 @@ const Contact = () => {
                             transition={{ duration: 0.8 }}
                         >
                             {[
-                                { icon: 'location', title: tHome('contactSection.labels.address'), content: contactInfo?.address || tHome('contactSection.fallback.address') },
+                                { icon: 'location', title: tHome('contactSection.labels.address'), content: resolveLocalized(contactInfo?.address) || tHome('contactSection.fallback.address') },
                                 { icon: 'phone', title: tHome('contactSection.labels.phone'), content: contactInfo?.phone || tHome('contactSection.fallback.phone') },
                                 { icon: 'email', title: tHome('contactSection.labels.email'), content: contactInfo?.email || tHome('contactSection.fallback.email') },
                             ].map((item, index) => (

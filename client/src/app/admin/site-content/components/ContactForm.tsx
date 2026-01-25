@@ -90,7 +90,7 @@ export default function ContactForm({ content, onSave, saving }: ContactFormProp
                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono text-xs"
                     placeholder="https://www.google.com/maps/embed?..."
                 />
-                <p className="text-xs text-gray-500 mt-1">Google Maps'ten 'Haritayı yerleştir' seçeneğindeki src linkini yapıştırın.</p>
+                <p className="text-xs text-gray-500 mt-1">Google Maps&apos;ten &apos;Haritayı yerleştir&apos; seçeneğindeki src linkini yapıştırın.</p>
             </div>
 
             <div className="pt-4">

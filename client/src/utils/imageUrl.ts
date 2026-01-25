@@ -86,7 +86,8 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
       // Ama eğer bu bir Next.js internal hash ise, bunu handle etme
       const isOnlyHex = /^[0-9a-f]+$/i.test(imageId);
       if (isOnlyHex && imageId.length >= 12 && imageId.length <= 32) {
-        // Bu bir MongoDB ObjectId veya benzer bir ID - Relative path kullan (Next.js rewrites proxy eder)
+        // Bu bir MongoDB ObjectId veya benzer bir ID 
+        // DEPRECATED: Proxy kullanımı azaltılıyor. Ancak eski kayıtlar için destek devam ediyor.
         return `/api/site-images/public/${imageId}/image`;
       }
     }

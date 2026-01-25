@@ -108,7 +108,7 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
                                     className="aspect-square relative cursor-pointer border-2 border-transparent hover:border-blue-500 focus:border-blue-500 rounded-lg overflow-hidden group w-full p-0"
                                     aria-label="Görsel seç"
                                 >
-                                    <LazyImage src={getImageUrl(img.id || img._id)} alt="img" fill className="object-cover transition-transform group-hover:scale-105 group-focus:scale-105" />
+                                    <LazyImage src={img.url || getImageUrl(img.id || img._id)} alt="img" fill className="object-cover transition-transform group-hover:scale-105 group-focus:scale-105" />
                                 </button>
                             ))}
                             {images.length === 0 && <p className="col-span-full text-center py-8 text-gray-500">Bu kategoride görsel bulunamadı.</p>}

@@ -49,9 +49,11 @@ export default function SiteContentPage() {
       // Backend expects { content: ... } wrapper
       await updateContent({ section, data: { content: data } });
       toast.success('İçerik başarıyla güncellendi');
-    } catch (error) {
+      toast.error('İçerik güncellenirken hata oluştu'); // Fallback logic will be enhanced below due to tool limitations on block replacement, see next step if needed or just replace block.
+    } catch (error: any) {
       console.error(error);
-      toast.error('İçerik güncellenirken hata oluştu');
+      const errorMessage = error.response?.data?.message || error.message || 'İçerik güncellenirken bilinmeyen bir hata oluştu';
+      toast.error(`Hata: ${errorMessage}`);
     }
   };
 

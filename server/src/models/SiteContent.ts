@@ -107,7 +107,42 @@ const SiteContentSchema: Schema = new Schema(
     },
     content: {
       type: Schema.Types.Mixed,
-      default: {},
+      default: function () {
+        // @ts-ignore
+        const section = this.section;
+        if (section === 'hero') {
+          return {
+            title: { tr: "Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi", en: "Beyond Pixels, Seamless Visual Management" },
+            subtitle: { tr: "Profesyonel Sahne Teknolojileri", en: "Professional Stage Technologies" },
+            description: {
+              tr: "SK Production ile etkinliklerinize profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz.",
+              en: "We offer professional visual direction and media server solutions for your events with SK Production."
+            },
+            buttonText: { tr: "Projelerimiz", en: "Our Projects" },
+            buttonLink: "#projects",
+            rotatingTexts: [
+              { tr: "Piksellerin Ötesinde", en: "Beyond Pixels" },
+              { tr: "Görüntü Yönetimi", en: "Visual Management" },
+              { tr: "Medya Server", en: "Media Server" }
+            ]
+          };
+        }
+        if (section === 'about') {
+          return {
+            title: { tr: "Hakkımızda", en: "About Us" },
+            description: {
+              tr: "10+ Yıllık sektör tecrübemizle, en son teknoloji medya sunucu sistemleri ve profesyonel ekibimizle hizmetinizdeyiz.",
+              en: "With over 10 years of industry experience, we are at your service with state-of-the-art media server systems and our professional team."
+            },
+            stats: [
+              { label: { tr: "Yıllık Deneyim", en: "Years Experience" }, value: "10+" },
+              { label: { tr: "Mutlu Müşteriler", en: "Happy Clients" }, value: "100+" },
+              { label: { tr: "Tamamlanan Proje", en: "Completed Projects" }, value: "500+" }
+            ]
+          };
+        }
+        return {};
+      },
     },
     isActive: {
       type: Boolean,

@@ -78,7 +78,9 @@ export const createImage = async (req: Request, res: Response) => {
     // Eğer dosya yüklendiyse, uploadService ile işle ve veriyi hazırla
     if (req.file) {
       const uploadService = require('../services/upload.service').default;
-      const fileType = imageData.category === 'video' ? 'video' : 'general'; // category'den tip belirle
+      // Allow specific categories like 'hero', 'about', 'project' to be used as folders
+      // If category is 'video', it puts it in 'video' folder. If 'hero', in 'hero' folder.
+      const fileType = imageData.category || 'general';
 
       const uploadedFile = await uploadService.uploadFile(req.file, fileType, req.user?.id);
 
@@ -116,9 +118,52 @@ export const updateImage = async (req: Request, res: Response) => {
 export const deleteImage = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    // Resim bilgisini al
+    const image = await siteService.getImageById(id);
+
+    // Cloudinary veya Local'dan sil
+    // Not: image.path genellikle Cloudinary public_id'si veya local path'idir.
+    // Ancak uploadService'imiz filename veya public_id üzerinden çalışıyor.
+    // Cloudinary için path veya filename'i public_id olarak kullanabiliriz.
+    const uploadService = require('../services/upload.service').default;
+
+    // image.path: "project/xyz123" (Cloudinary public_id) veya "project/file.jpg" (Local)
+    // image.filename: "xyz123" veya "file.jpg"
+
+    // Upload service deleteFile fonksiyonu "filename" ve "type" alıyor.
+    // Cloudinary için filename aslında path'in kendisi gibi davranmalı veya public_id olmalı.
+    // Eğer image.path bir public_id ise (klasör içeriyorsa), bunu filename olarak gönderemeyiz çünkü
+    // deleteFile fonksiyonu tip + filename birleştiriyor.
+
+    // Bu yüzden direkt Cloudinary service'i çağırmak veya logic'i düzeltmek gerek.
+    // En temizi uploadService'i güncellemek ama şimdilik controller içinde çözelim:
+
+    if (image.path) {
+      try {
+        // Eğer path 'uploads/' ile başlamıyorsa ve cloud storage ise, bu bir public_id'dir.
+        // Veya direkt uploadService.deleteFile çağırabiliriz, o içeride logic kurabilir.
+        // Mevcut uploadService.deleteFile:
+        // Cloudinary -> publicId = `${type}/${filename}`
+        // Bu logic "project/myimage.jpg" gibi bir public_id varsayıyor.
+
+        // Bizim image.path'imiz muhtemelen "project/myimage.jpg" formatında.
+        // image.filename ise "myimage.jpg" olabilir.
+        // image.category ise "project" olabilir.
+
+        // UploadService.deleteFile(image.filename, image.category) çağırırsak:
+        // -> "project/myimage.jpg" silinir. Bu doğru görünüyor.
+
+        await uploadService.deleteFile(image.filename, image.category || 'general');
+      } catch (err) {
+        logger.warn(`Dosya silinirken hata (DB'den silinecek): ${err}`);
+      }
+    }
+
     await siteService.deleteImage(id);
     res.status(200).json({ success: true, message: 'Silindi' });
   } catch (error: unknown) {
+    logger.error('Resim silme hatası:', error);
     const appError = error instanceof AppError ? error : new AppError('Hata oluştu');
     res.status(appError.statusCode || 500).json({ success: false, message: appError.message });
   }
@@ -128,9 +173,26 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
   try {
     const { ids } = req.body;
     if (!Array.isArray(ids)) return res.status(400).json({ success: false });
+
+    // Her bir resmi bul ve dosyasını sil
+    const uploadService = require('../services/upload.service').default;
+
+    // Paralel işlem yapma, tek tek güvenli gitsin
+    for (const id of ids) {
+      try {
+        const image = await siteService.getImageById(id);
+        if (image && image.filename) {
+          await uploadService.deleteFile(image.filename, image.category || 'general');
+        }
+      } catch (err) {
+        logger.warn(`Toplu silme sırasında dosya silme hatası (ID: ${id}):`, err);
+      }
+    }
+
     await siteService.deleteMultipleImages(ids);
     res.status(200).json({ success: true, message: 'Silindi' });
   } catch (error: unknown) {
+    logger.error('Toplu resim silme hatası:', error);
     const appError = error instanceof AppError ? error : new AppError('Hata oluştu');
     res.status(appError.statusCode || 500).json({ success: false, message: appError.message });
   }

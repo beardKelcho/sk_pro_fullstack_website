@@ -16,6 +16,11 @@ export function middleware(request: NextRequest) {
   // Static dosyalar ve Next.js internal dosyaları için middleware'i bypass et
   const pathname = request.nextUrl.pathname;
 
+  // API rotaları için middleware'i bypass et (Authentication ve diğer işlemler backend'de yapılır)
+  if (pathname.startsWith('/api')) {
+    return NextResponse.next();
+  }
+
   // Static dosyaları, Next.js internal dosyalarını ve asset'leri bypass et
   // Next.js internal hash'leri (6-40 karakterlik hex string'ler) de bypass et
   // Bu hash'ler RSC (React Server Component) payload'ları için kullanılıyor

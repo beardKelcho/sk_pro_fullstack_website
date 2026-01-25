@@ -181,11 +181,13 @@ export default function EquipmentList() {
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           className="border p-2 rounded dark:bg-gray-900/50 dark:border-gray-600 dark:text-white"
+          aria-label="Ekipman ara"
         />
         <select
           value={selectedCategory}
           onChange={e => setSelectedCategory(e.target.value)}
           className="border p-2 rounded dark:bg-gray-900/50 dark:border-gray-600 dark:text-white"
+          aria-label="Kategori filtrele"
         >
           <option value="">Tüm Kategoriler</option>
           {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -194,6 +196,7 @@ export default function EquipmentList() {
           value={selectedStatus}
           onChange={e => setSelectedStatus(e.target.value)}
           className="border p-2 rounded dark:bg-gray-900/50 dark:border-gray-600 dark:text-white"
+          aria-label="Durum filtrele"
         >
           <option value="">Tüm Durumlar</option>
           {Object.entries(statusLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -214,7 +217,7 @@ export default function EquipmentList() {
       {/* Table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         {filteredEquipment.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">Ekipman bulunamadı.</div>
+          <div className="p-8 text-center text-gray-600 dark:text-gray-400">Ekipman bulunamadı.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -226,13 +229,14 @@ export default function EquipmentList() {
                       checked={selectedIds.length === filteredEquipment.length && filteredEquipment.length > 0}
                       onChange={handleSelectAll}
                       className="w-4 h-4 rounded text-blue-600"
+                      aria-label="Tümünü seç"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ekipman</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seri No</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">İşlemler</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Ekipman</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Seri No</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Kategori</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Durum</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -244,14 +248,15 @@ export default function EquipmentList() {
                         checked={selectedIds.includes(item.id)}
                         onChange={() => handleToggleSelect(item.id)}
                         className="w-4 h-4 rounded text-blue-600"
+                        aria-label={`${item.name} seç`}
                       />
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</div>
-                      <div className="text-sm text-gray-500">{item.model}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{item.model}</div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{item.serialNumber}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{getCategoryLabel(item.category)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{item.serialNumber}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{getCategoryLabel(item.category)}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${statusColors[item.status as EquipmentStatus] || 'bg-gray-100'}`}>
                         {statusLabels[item.status as EquipmentStatus] || item.status}

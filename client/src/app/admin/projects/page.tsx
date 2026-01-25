@@ -214,7 +214,7 @@ export default function ProjectsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{MESSAGES.UI.NO_DATA}</h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Filtreleri temizleyin veya yeni bir proje ekleyin.</p>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Filtreleri temizleyin veya yeni bir proje ekleyin.</p>
               <div className="mt-6">
                 <Link href="/admin/projects/add">
                   <button className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
@@ -231,22 +231,22 @@ export default function ProjectsPage() {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Proje
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Müşteri
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Tarih
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Durum
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Konum
                     </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       İşlemler
                     </th>
                   </tr>
@@ -256,7 +256,7 @@ export default function ProjectsPage() {
                     <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">{project.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                        <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
                           {project.description.length > 60
                             ? `${project.description.substring(0, 60)}...`
                             : project.description}
@@ -264,12 +264,12 @@ export default function ProjectsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">{project.customer.companyName}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{project.customer.name}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{project.customer.name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">{formatDate(project.startDate)}</div>
                         {project.startDate !== project.endDate && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{formatDate(project.endDate)}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">{formatDate(project.endDate)}</div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -295,7 +295,7 @@ export default function ProjectsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         <div className="truncate max-w-xs">{project.location}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

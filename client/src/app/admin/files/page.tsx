@@ -89,11 +89,11 @@ const FileManagementPage: React.FC = () => {
     try {
       setUploading(true);
       const formData = new FormData();
-      
+
       if (selectedFiles.length === 1) {
         formData.append('file', selectedFiles[0]);
         formData.append('type', fileType === 'all' ? 'general' : fileType);
-        
+
         const response = await axios.post('/upload/single', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -113,7 +113,7 @@ const FileManagementPage: React.FC = () => {
           formData.append('files', file);
         });
         formData.append('type', fileType === 'all' ? 'general' : fileType);
-        
+
         const response = await axios.post('/upload/multiple', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -146,7 +146,7 @@ const FileManagementPage: React.FC = () => {
     try {
       // Path'den type'ı çıkar
       const type = path.split('/')[0] || 'general';
-      
+
       await axios.delete(`/upload/${encodeURIComponent(filename)}`, {
         params: { type },
       });
@@ -314,16 +314,16 @@ const FileManagementPage: React.FC = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Dosya
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Boyut
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       Yüklenme Tarihi
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                       İşlemler
                     </th>
                   </tr>
@@ -338,16 +338,16 @@ const FileManagementPage: React.FC = () => {
                             <div className="text-sm font-medium text-gray-900 dark:text-white">
                               {file.filename}
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
                               {file.path}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {formatFileSize(file.size)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {formatDate(file.uploadedAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

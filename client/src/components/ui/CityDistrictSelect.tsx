@@ -120,13 +120,11 @@ export default function CityDistrictSelect({
             value={cityValue}
             readOnly
             onClick={() => !cityDisabled && setShowCityDropdown(!showCityDropdown)}
-            className={`w-full px-4 py-2 border ${
-              cityError
+            className={`w-full px-4 py-2 border ${cityError
                 ? 'border-red-500 dark:border-red-500'
                 : 'border-gray-300 dark:border-gray-600'
-            } rounded-lg focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white cursor-pointer ${
-              cityDisabled ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+              } rounded-lg focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white cursor-pointer ${cityDisabled ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             placeholder="İl seçiniz"
             disabled={cityDisabled}
             required={cityRequired}
@@ -137,7 +135,7 @@ export default function CityDistrictSelect({
             </svg>
           </div>
         </div>
-        
+
         {showCityDropdown && (
           <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden">
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
@@ -148,6 +146,7 @@ export default function CityDistrictSelect({
                 placeholder="İl ara..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:outline-none dark:bg-gray-700 dark:text-white"
                 autoFocus
+                aria-label="İl ara"
               />
             </div>
             <div className="max-h-48 overflow-y-auto">
@@ -157,9 +156,8 @@ export default function CityDistrictSelect({
                     key={city.id}
                     type="button"
                     onClick={() => handleCitySelect(city.name)}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                      cityValue === city.name ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                    }`}
+                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${cityValue === city.name ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      }`}
                   >
                     {city.name}
                   </button>
@@ -191,13 +189,11 @@ export default function CityDistrictSelect({
             value={districtValue}
             readOnly
             onClick={() => !districtDisabled && cityValue && setShowDistrictDropdown(!showDistrictDropdown)}
-            className={`w-full px-4 py-2 border ${
-              districtError
+            className={`w-full px-4 py-2 border ${districtError
                 ? 'border-red-500 dark:border-red-500'
                 : 'border-gray-300 dark:border-gray-600'
-            } rounded-lg focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white cursor-pointer ${
-              districtDisabled || !cityValue ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+              } rounded-lg focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light dark:bg-gray-700 dark:text-white cursor-pointer ${districtDisabled || !cityValue ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             placeholder={cityValue ? 'İlçe seçiniz' : 'Önce il seçiniz'}
             disabled={districtDisabled || !cityValue}
             required={districtRequired}
@@ -208,7 +204,7 @@ export default function CityDistrictSelect({
             </svg>
           </div>
         </div>
-        
+
         {showDistrictDropdown && cityValue && (
           <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-hidden">
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
@@ -219,6 +215,7 @@ export default function CityDistrictSelect({
                 placeholder="İlçe ara..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:outline-none dark:bg-gray-700 dark:text-white"
                 autoFocus
+                aria-label="İlçe ara"
               />
             </div>
             <div className="max-h-48 overflow-y-auto">
@@ -228,9 +225,8 @@ export default function CityDistrictSelect({
                     key={district}
                     type="button"
                     onClick={() => handleDistrictSelect(district)}
-                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                      districtValue === district ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                    }`}
+                    className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${districtValue === district ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      }`}
                   >
                     {district}
                   </button>

@@ -25,11 +25,11 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationPanel, setShowNotificationPanel] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  
+
   // Ref'ler
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationPanelRef = useRef<HTMLDivElement>(null);
-  
+
   // Click-outside handlers
   useClickOutside(profileMenuRef, () => setShowProfileMenu(false));
   useClickOutside(notificationPanelRef, () => setShowNotificationPanel(false));
@@ -55,12 +55,12 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
     setShowNotificationPanel(false);
     setShowProfileMenu(false);
   }, [pathname]);
-  
+
   // Sayfa başlığını bulma
   const getPageTitle = () => {
     const path = pathname.split('/');
     const lastSegment = path[path.length - 1];
-    
+
     const titles: { [key: string]: string } = {
       'dashboard': 'Dashboard',
       'equipment': 'Ekipman Yönetimi',
@@ -73,10 +73,10 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
       'users': 'Kullanıcılar',
       'settings': 'Ayarlar',
     };
-    
+
     return titles[lastSegment] || 'SK Admin';
   };
-  
+
   const { data: unreadCount = 0 } = useUnreadCount();
   const { data: notificationList, isLoading: notificationsLoading } = useNotifications({ page: 1, limit: 10 });
   const markAllAsReadMutation = useMarkAllAsRead();
@@ -116,14 +116,14 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
       setShowNotificationPanel(false);
     }
   };
-  
+
   return (
     <header className="h-16 glass dark:glass-dark shadow-lg border-b border-white/20 dark:border-white/10 flex items-center justify-between px-4 md:px-6 relative z-50 backdrop-blur-xl">
       {/* Sol bölüm */}
       <div className="flex items-center">
-        <button 
+        <button
           className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
-            focus:outline-none transition-all duration-300 hover:scale-110 hover-glow"
+            focus:outline-none transition-all duration-300 hover:scale-110 focus:scale-110 hover-glow"
           onClick={onToggleSidebar}
           aria-label="Menüyü aç/kapat"
         >
@@ -131,19 +131,19 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        
+
         <h1 className="ml-4 text-lg font-bold text-gradient">
           {getPageTitle()}
         </h1>
       </div>
-      
+
       {/* Sağ bölüm */}
       <div className="flex items-center space-x-3">
         {/* Arama butonu */}
-        <button 
+        <button
           onClick={onSearchClick}
           className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
-            relative group transition-all duration-300 hover:scale-110 hover-glow"
+            relative group transition-all duration-300 hover:scale-110 focus:scale-110 hover-glow"
           title="Ara (Ctrl+K)"
           aria-label="Arama"
         >
@@ -155,12 +155,12 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
             ⌘K
           </span>
         </button>
-        
+
         {/* Bildirimler */}
         <div className="relative" ref={notificationPanelRef}>
-          <button 
+          <button
             className="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 
-              relative transition-all duration-300 hover:scale-110 hover-glow"
+              relative transition-all duration-300 hover:scale-110 focus:scale-110 hover-glow"
             onClick={() => setShowNotificationPanel(!showNotificationPanel)}
             aria-label="Bildirimler"
             aria-expanded={showNotificationPanel}
@@ -168,7 +168,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
-            
+
             {/* Bildirim sayısı */}
             {unreadCount > 0 && (
               <span className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full 
@@ -177,7 +177,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
               </span>
             )}
           </button>
-          
+
           {/* Bildirim paneli */}
           {showNotificationPanel && (
             <div className="absolute right-0 mt-2 w-80 glass dark:glass-dark rounded-2xl shadow-2xl overflow-hidden z-50 
@@ -192,7 +192,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
                   Tümünü Okundu İşaretle
                 </button>
               </div>
-              
+
               <div className="max-h-72 overflow-y-auto">
                 {notificationsLoading ? (
                   <p className="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">
@@ -201,11 +201,10 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
                 ) : notifications.length > 0 ? (
                   <div className="divide-y divide-gray-200 dark:divide-gray-700">
                     {notifications.map((notification) => (
-                      <div 
-                        key={notification._id} 
-                        className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
-                          !notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
-                        } ${markAsReadMutation.isPending ? 'opacity-80' : ''}`}
+                      <div
+                        key={notification._id}
+                        className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
+                          } ${markAsReadMutation.isPending ? 'opacity-80' : ''}`}
                         onClick={() => handleNotificationClick(notification)}
                       >
                         <div className="flex items-start">
@@ -233,9 +232,9 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
                   </p>
                 )}
               </div>
-              
+
               <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-                <Link 
+                <Link
                   href="/admin/notifications"
                   onClick={() => setShowNotificationPanel(false)}
                   className="text-sm text-blue-600 dark:text-blue-400 hover:underline block text-center"
@@ -246,12 +245,12 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
             </div>
           )}
         </div>
-        
+
         {/* Profil menüsü */}
         <div className="relative" ref={profileMenuRef}>
-          <button 
+          <button
             className="flex items-center space-x-2 p-1 rounded-xl hover:bg-white/10 dark:hover:bg-white/5 
-              transition-all duration-300 hover:scale-105 hover-glow"
+              transition-all duration-300 hover:scale-105 focus:scale-105 hover-glow"
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             aria-label="Profil menüsü"
             aria-expanded={showProfileMenu}
@@ -262,13 +261,13 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
             <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">
               {user?.name || 'Kullanıcı'}
             </span>
-            <svg className="w-4 h-4 hidden md:block text-gray-600 dark:text-gray-400 transition-transform" 
+            <svg className="w-4 h-4 hidden md:block text-gray-600 dark:text-gray-400 transition-transform"
               style={{ transform: showProfileMenu ? 'rotate(180deg)' : 'rotate(0deg)' }}
               fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          
+
           {/* Profil açılır menüsü */}
           {showProfileMenu && (
             <div className="absolute right-0 mt-2 w-48 glass dark:glass-dark rounded-2xl shadow-2xl overflow-hidden z-50 
@@ -277,9 +276,9 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
                 <p className="text-sm font-medium text-gray-800 dark:text-white">{user?.name || 'Kullanıcı'}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{user?.email || 'email@example.com'}</p>
               </div>
-              
+
               <div className="py-1">
-                <Link 
+                <Link
                   href="/admin/profile"
                   className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
@@ -288,8 +287,8 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
                   </svg>
                   Profil
                 </Link>
-                
-                <Link 
+
+                <Link
                   href="/admin/settings"
                   className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
@@ -300,7 +299,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
                   Ayarlar
                 </Link>
               </div>
-              
+
               <div className="border-t border-gray-200 dark:border-gray-700 py-1">
                 <button
                   onClick={async () => {

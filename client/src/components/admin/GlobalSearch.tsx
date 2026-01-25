@@ -110,7 +110,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
         const allResults = searchData?.all || [];
-        setSelectedIndex(prev => 
+        setSelectedIndex(prev =>
           prev < allResults.length - 1 ? prev + 1 : prev
         );
       } else if (e.key === 'ArrowUp') {
@@ -148,7 +148,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         resource: 'All',
         filters: { query },
       });
-      
+
       if (result && result.success) {
         toast.success('Arama kaydedildi');
         setActiveTab('saved');
@@ -202,22 +202,22 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* Search Modal */}
-      <div 
+      <div
         ref={containerRef}
         className="relative w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700"
       >
         {/* Search Input */}
         <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <svg 
-            className="w-5 h-5 text-gray-400 mr-3" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="w-5 h-5 text-gray-400 mr-3"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -230,6 +230,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             placeholder="Ara... (Ekipman, Proje, Görev, Müşteri, vb.)"
             className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400"
             autoComplete="off"
+            aria-label="Global arama"
           />
           {query && (
             <>
@@ -237,6 +238,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                 onClick={handleSaveSearch}
                 className="ml-2 p-1 text-gray-400 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors"
                 title="Aramayı kaydet"
+                aria-label="Aramayı kaydet"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -248,6 +250,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                   setSelectedIndex(-1);
                 }}
                 className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                aria-label="Aramayı temizle"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -262,31 +265,28 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
           <div className="border-b border-gray-200 dark:border-gray-700 flex">
             <button
               onClick={() => setActiveTab('search')}
-              className={`flex-1 px-4 py-2 text-sm font-medium ${
-                activeTab === 'search'
+              className={`flex-1 px-4 py-2 text-sm font-medium ${activeTab === 'search'
                   ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+                }`}
             >
               Arama
             </button>
             <button
               onClick={() => setActiveTab('saved')}
-              className={`flex-1 px-4 py-2 text-sm font-medium ${
-                activeTab === 'saved'
+              className={`flex-1 px-4 py-2 text-sm font-medium ${activeTab === 'saved'
                   ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+                }`}
             >
               Kaydedilmiş ({savedSearches.length})
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`flex-1 px-4 py-2 text-sm font-medium ${
-                activeTab === 'history'
+              className={`flex-1 px-4 py-2 text-sm font-medium ${activeTab === 'history'
                   ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+                }`}
             >
               Geçmiş ({searchHistory.length})
             </button>
@@ -419,9 +419,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                         <button
                           key={`${result.type}-${result.id}`}
                           onClick={() => handleResultClick(result)}
-                          className={`w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-                            isSelected ? 'bg-gray-100 dark:bg-gray-700' : ''
-                          }`}
+                          className={`w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isSelected ? 'bg-gray-100 dark:bg-gray-700' : ''
+                            }`}
                         >
                           <div className="flex items-start">
                             <span className={`px-2 py-1 text-xs font-medium rounded ${typeColors[result.type] || 'bg-gray-100'}`}>

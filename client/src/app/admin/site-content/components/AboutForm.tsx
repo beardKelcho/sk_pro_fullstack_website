@@ -101,13 +101,15 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
                         </div>
                         <div className="p-4 overflow-y-auto flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
                             {images.map((img: SiteImage) => (
-                                <div
+                                <button
+                                    type="button"
                                     key={img.id || img._id}
                                     onClick={() => { setFormData({ ...formData, image: img.id || img._id }); setShowImageModal(false); }}
-                                    className="aspect-square relative cursor-pointer border-2 border-transparent hover:border-blue-500 rounded-lg overflow-hidden group"
+                                    className="aspect-square relative cursor-pointer border-2 border-transparent hover:border-blue-500 focus:border-blue-500 rounded-lg overflow-hidden group w-full p-0"
+                                    aria-label="Görsel seç"
                                 >
-                                    <LazyImage src={getImageUrl(img.id || img._id)} alt="img" fill className="object-cover transition-transform group-hover:scale-105" />
-                                </div>
+                                    <LazyImage src={getImageUrl(img.id || img._id)} alt="img" fill className="object-cover transition-transform group-hover:scale-105 group-focus:scale-105" />
+                                </button>
                             ))}
                             {images.length === 0 && <p className="col-span-full text-center py-8 text-gray-500">Bu kategoride görsel bulunamadı.</p>}
                         </div>

@@ -85,7 +85,7 @@ export const updateContentBySection = async (req: Request, res: Response) => {
     const result = await siteService.createOrUpdateContent(section, content, order, isActive);
     res.status(200).json({ success: true, content: result });
   } catch (error: unknown) {
-    logger.error('İçerik güncelleme hatası:', error);
+    logger.error(`İçerik güncelleme hatası (Section: ${req.params.section}):`, error);
     const appError = error instanceof AppError ? error : new AppError('Hata oluştu');
     res.status(appError.statusCode || 500).json({ success: false, message: appError.message });
   }

@@ -73,9 +73,30 @@ export const serveImageById = async (req: Request, res: Response) => {
 
 export const createImage = async (req: Request, res: Response) => {
   try {
-    const image = await siteService.createImage(req.body);
+    let imageData = req.body;
+
+    // Eğer dosya yüklendiyse, uploadService ile işle ve veriyi hazırla
+    if (req.file) {
+      const uploadService = require('../services/upload.service').default;
+      const fileType = imageData.category === 'video' ? 'video' : 'general'; // category'den tip belirle
+
+      const uploadedFile = await uploadService.uploadFile(req.file, fileType, req.user?.id);
+
+      imageData = {
+        ...imageData,
+        filename: uploadedFile.filename,
+        originalName: uploadedFile.originalname,
+        path: uploadedFile.path,
+        url: uploadedFile.url,
+        mimetype: uploadedFile.mimetype,
+        size: uploadedFile.size
+      };
+    }
+
+    const image = await siteService.createImage(imageData);
     res.status(201).json({ success: true, image });
   } catch (error: unknown) {
+    logger.error('Resim oluşturma hatası:', error); // Add Logging
     const appError = error instanceof AppError ? error : new AppError('Hata oluştu');
     res.status(appError.statusCode || 500).json({ success: false, message: appError.message });
   }

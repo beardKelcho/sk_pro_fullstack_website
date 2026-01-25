@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import SiteContent from '../models/SiteContent';
 import SiteImage from '../models/SiteImage';
 import { AppError } from '../types/common';
+import logger from '../utils/logger';
 
 
 // Interface definitions (would ideally be in types/site.ts or models)
@@ -29,55 +30,64 @@ class SiteService {
      * Helper: Fix Content URLs (moved from controller)
      */
     async fixContentUrls(content: unknown): Promise<unknown> {
-        if (!content) return content;
+        try {
+            if (!content) return content;
 
-        const idsToResolve = new Set<string>();
-        const urlMap = new Map<string, { type: 'image' | 'video', originalUrl: string }>();
+            const idsToResolve = new Set<string>();
+            const urlMap = new Map<string, { type: 'image' | 'video', originalUrl: string }>();
 
-        // Recursive or structured collection could be better, but sticking to existing logic for parity
-        const collectId = (url: unknown, type: 'image' | 'video' = 'image') => {
-            if (typeof url !== 'string' || !url) return;
-            if (url.includes('cloudinary.com')) return;
+            // Recursive or structured collection could be better, but sticking to existing logic for parity
+            const collectId = (url: unknown, type: 'image' | 'video' = 'image') => {
+                try {
+                    if (typeof url !== 'string' || !url) return;
+                    if (url.includes('cloudinary.com')) return;
 
-            const idCandidate = url.replace(/^\/?api\/site-images\//, '')
-                .replace(/^\/?uploads\//, '')
-                .replace(/^\//, '');
+                    const idCandidate = url.replace(/^\/?api\/site-images\//, '')
+                        .replace(/^\/?uploads\//, '')
+                        .replace(/^\//, '');
 
-            if (mongoose.Types.ObjectId.isValid(idCandidate)) {
-                idsToResolve.add(idCandidate);
-                urlMap.set(url, { type, originalUrl: url });
+                    if (mongoose.Types.ObjectId.isValid(idCandidate)) {
+                        idsToResolve.add(idCandidate);
+                        urlMap.set(url, { type, originalUrl: url });
+                    }
+                } catch (err) {
+                    // Ignore parsing errors for individual fields
+                }
+            };
+
+            const fixedContent = JSON.parse(JSON.stringify(content));
+
+            // Scan specific known fields
+            collectId(fixedContent.backgroundVideo, 'video');
+            collectId(fixedContent.backgroundImage, 'image');
+            collectId(fixedContent.selectedVideo, 'video');
+            collectId(fixedContent.image, 'image');
+
+            if (Array.isArray(fixedContent.availableVideos)) {
+                fixedContent.availableVideos.forEach((video: any) => collectId(video?.url, 'video'));
             }
-        };
 
-        const fixedContent = JSON.parse(JSON.stringify(content));
+            if (Array.isArray(fixedContent.services)) {
+                fixedContent.services.forEach((service: any) => collectId(service?.icon, 'image'));
+            }
 
-        // Scan specific known fields
-        collectId(fixedContent.backgroundVideo, 'video');
-        collectId(fixedContent.backgroundImage, 'image');
-        collectId(fixedContent.selectedVideo, 'video');
-        collectId(fixedContent.image, 'image');
-
-        if (Array.isArray(fixedContent.availableVideos)) {
-            fixedContent.availableVideos.forEach((video: any) => collectId(video.url, 'video'));
-        }
-
-        if (Array.isArray(fixedContent.services)) {
-            fixedContent.services.forEach((service: any) => collectId(service.icon, 'image'));
-        }
-
-        // Fetch resolving images
-        const imageMap = new Map<string, { filename: string, url: string }>();
-        if (idsToResolve.size > 0) {
-            const images = await SiteImage.find({ _id: { $in: Array.from(idsToResolve) } });
-            images.forEach(img => {
-                imageMap.set(img._id.toString(), {
-                    filename: img.filename,
-                    url: img.url
+            // Fetch resolving images
+            const imageMap = new Map<string, { filename: string, url: string }>();
+            if (idsToResolve.size > 0) {
+                const images = await SiteImage.find({ _id: { $in: Array.from(idsToResolve) } });
+                images.forEach(img => {
+                    imageMap.set(img._id.toString(), {
+                        filename: img.filename,
+                        url: img.url
+                    });
                 });
-            });
-        }
+            }
 
-        return this.applyUrlFixes(fixedContent, imageMap);
+            return this.applyUrlFixes(fixedContent, imageMap);
+        } catch (error) {
+            logger.error('Content URL fix failed, returning original content:', error);
+            return content;
+        }
     }
 
     private buildStrictUrl(filename: string | undefined, existingUrl: string | undefined, type: 'image' | 'video'): string {

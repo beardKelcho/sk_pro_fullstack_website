@@ -39,6 +39,7 @@ router.post(
   '/',
   authenticate,
   requirePermission(Permission.FILE_UPLOAD),
+  require('../middleware/upload.middleware').upload.single('image'),
   siteImageController.createImage
 );
 

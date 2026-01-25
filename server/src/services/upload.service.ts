@@ -164,9 +164,9 @@ export class UploadService {
                     resource_type: 'auto',
                 });
 
-                fileUrl = result.secure_url;
-                filePath = result.public_id;
-                filename = result.public_id.split('/').pop() || file.originalname;
+                fileUrl = result.secure_url || '';
+                filePath = result.public_id || '';
+                filename = (result.public_id ? result.public_id.split('/').pop() : file.originalname) || file.originalname;
             } else if (storageType === 's3') {
                 // S3'e upload
                 const result = await uploadToS3(file.buffer, file.originalname, {

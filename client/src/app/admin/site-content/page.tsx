@@ -43,7 +43,8 @@ export default function SiteContentPage() {
 
   const handleSave = async (section: string, data: any) => {
     try {
-      await updateContent({ section, data });
+      // Backend expects { content: ... } wrapper
+      await updateContent({ section, data: { content: data } });
     } catch (error) {
       console.error(error);
     }

@@ -11,7 +11,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_SITE_URL) 
 
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  swcMinify: false,
   images: {
     domains: ['localhost', '127.0.0.1', 'res.cloudinary.com', 'sk-pro-backend.onrender.com'],
     remotePatterns: [
@@ -72,7 +72,6 @@ const nextConfig = {
     minimumCacheTTL: 60, // 60 saniye cache
   },
   experimental: {
-    optimizeCss: false,
     scrollRestoration: true,
     optimizePackageImports: ['@vercel/analytics', 'framer-motion'],
   },

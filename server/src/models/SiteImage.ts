@@ -16,19 +16,19 @@ const SiteImageSchema: Schema = new Schema(
   {
     filename: {
       type: String,
-      required: [true, 'Dosya adı gereklidir'],
+      default: '',
     },
     originalName: {
       type: String,
-      required: [true, 'Orijinal dosya adı gereklidir'],
+      default: '',
     },
     path: {
       type: String,
-      required: [true, 'Dosya yolu gereklidir'],
+      default: '',
     },
     url: {
       type: String,
-      required: [true, 'URL gereklidir'],
+      default: '',
     },
     category: {
       type: String,

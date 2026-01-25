@@ -107,7 +107,7 @@ const SiteContentSchema: Schema = new Schema(
     },
     content: {
       type: Schema.Types.Mixed,
-      required: [true, 'İçerik gereklidir'],
+      default: {},
     },
     isActive: {
       type: Boolean,

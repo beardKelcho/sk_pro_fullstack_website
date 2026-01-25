@@ -95,13 +95,19 @@ class AuthService {
         }
 
         // Check Session
-        const refreshHash = createTokenHash(refreshTokenRaw);
-        const session = await Session.findOne({
-            userId: decoded.id,
-            refreshToken: refreshHash,
-            isActive: true,
-            expiresAt: { $gt: new Date() },
-        });
+        let session;
+        try {
+            const refreshHash = createTokenHash(refreshTokenRaw);
+            session = await Session.findOne({
+                userId: decoded.id,
+                refreshToken: refreshHash,
+                isActive: true,
+                expiresAt: { $gt: new Date() },
+            });
+        } catch (dbError) {
+            logger.error('Session lookup failed during refresh:', dbError);
+            throw new AppError('Oturum doğrulanamadı', 401);
+        }
 
         if (!session) {
             // Session expired or logged out

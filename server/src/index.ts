@@ -36,6 +36,12 @@ dotenv.config();
 // Sentry'i başlat
 initSentry();
 
+// Critical Config Check
+if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
+  logger.error('CRITICAL: CLIENT_URL environment variable is not defined!');
+  // We don't exit process here to avoid crash loop, but it's a critical configuration error.
+}
+
 // Express app oluştur
 const app = express();
 

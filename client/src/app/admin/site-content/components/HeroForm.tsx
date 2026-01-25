@@ -43,11 +43,11 @@ export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
 
     const handleMediaSelect = (id: string, url: string) => {
         if (modalConfig.type === 'image') {
-            setFormData(prev => ({ ...prev, backgroundImage: id })); // Storing ID for images usually
+            // Fix: Store URL directly to avoid /api/site-images/... proxy 404s
+            setFormData(prev => ({ ...prev, backgroundImage: url }));
         } else if (modalConfig.type === 'video') {
-            // For videos, better to store ID if using new system, but keep backward compat with URL if needed
-            // Assuming new system stores ID.
-            setFormData(prev => ({ ...prev, selectedVideo: id, backgroundVideo: id }));
+            // Fix: Store URL directly
+            setFormData(prev => ({ ...prev, selectedVideo: url, backgroundVideo: url }));
         }
         setModalConfig({ open: false, type: null });
     };

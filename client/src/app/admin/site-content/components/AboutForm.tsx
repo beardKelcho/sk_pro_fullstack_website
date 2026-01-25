@@ -104,7 +104,7 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
                                 <button
                                     type="button"
                                     key={img.id || img._id}
-                                    onClick={() => { setFormData({ ...formData, image: img.id || img._id }); setShowImageModal(false); }}
+                                    onClick={() => { setFormData({ ...formData, image: img.url || img.id || img._id }); setShowImageModal(false); }}
                                     className="aspect-square relative cursor-pointer border-2 border-transparent hover:border-blue-500 focus:border-blue-500 rounded-lg overflow-hidden group w-full p-0"
                                     aria-label="Görsel seç"
                                 >

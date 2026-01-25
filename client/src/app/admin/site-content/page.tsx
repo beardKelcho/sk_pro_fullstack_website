@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import {
   useSiteContent,
   SiteContent,
@@ -41,12 +42,16 @@ export default function SiteContentPage() {
     return contents.find(c => c.section === section)?.content;
   };
 
+  // ... (keep existing imports)
+
   const handleSave = async (section: string, data: any) => {
     try {
       // Backend expects { content: ... } wrapper
       await updateContent({ section, data: { content: data } });
+      toast.success('İçerik başarıyla güncellendi');
     } catch (error) {
       console.error(error);
+      toast.error('İçerik güncellenirken hata oluştu');
     }
   };
 

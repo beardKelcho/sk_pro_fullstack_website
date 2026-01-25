@@ -102,7 +102,7 @@ const SiteContentSchema: Schema = new Schema(
     section: {
       type: String,
       enum: ['hero', 'services', 'equipment', 'services-equipment', 'about', 'contact', 'footer', 'social', 'projects'],
-      required: [true, 'Bölüm adı gereklidir'],
+      default: 'hero', // Default added instead of required
       unique: true,
     },
     content: {

@@ -19,7 +19,8 @@ import {
 import {
     getAllImages,
     uploadImage,
-    deleteImage
+    deleteImage,
+    deleteMultipleImages
 } from '@/services/siteImageService';
 import { useLocale } from 'next-intl';
 
@@ -62,6 +63,16 @@ export const useDeleteSiteImage = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (id: string) => deleteImage(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['siteImages'] });
+        }
+    });
+};
+
+export const useDeleteMultipleSiteImages = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (ids: string[]) => deleteMultipleImages(ids),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['siteImages'] });
         }

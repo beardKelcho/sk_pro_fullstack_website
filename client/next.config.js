@@ -72,7 +72,7 @@ const nextConfig = {
     minimumCacheTTL: 60, // 60 saniye cache
   },
   experimental: {
-    optimizeCss: true,
+    optimizeCss: false,
     scrollRestoration: true,
     optimizePackageImports: ['@vercel/analytics', 'framer-motion'],
   },

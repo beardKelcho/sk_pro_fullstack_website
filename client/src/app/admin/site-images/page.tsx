@@ -1,12 +1,16 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { useSiteImages, useUploadSiteImage, useDeleteSiteImage, SiteImage } from '@/hooks/useSiteContent';
-import LazyImage from '@/components/common/LazyImage';
-import { getImageUrl } from '@/utils/imageUrl';
+import React, { useState } from 'react';
+import { useSiteImages, useUploadSiteImage, useDeleteSiteImage, useDeleteMultipleSiteImages, SiteImage } from '@/hooks/useSiteContent';
+import AssetCard from '@/components/admin/media/AssetCard';
+import UploadZone from '@/components/admin/media/UploadZone';
+import { LayoutGrid, Image as ImageIcon, Video, Layers, Trash2 } from 'lucide-react';
 
 export default function SiteImagesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [uploadCategory, setUploadCategory] = useState<SiteImage['category']>('project');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   // Fetch images matches hook signature
   const { data: imagesData, isLoading } = useSiteImages(selectedCategory === 'all' ? undefined : selectedCategory);
@@ -14,106 +18,164 @@ export default function SiteImagesPage() {
 
   const uploadImageMutation = useUploadSiteImage();
   const deleteImageMutation = useDeleteSiteImage();
+  const deleteMultipleMutation = useDeleteMultipleSiteImages();
   const isUploading = uploadImageMutation.isPending;
 
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadCategory, setUploadCategory] = useState<SiteImage['category']>('project');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleUpload = async (files: File[]) => {
+    if (files.length === 0) return;
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setSelectedFiles(Array.from(e.target.files));
-  };
-
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) return;
-
-    for (const file of selectedFiles) {
+    // Sequential upload for simplicity, parallel could be better but riskier for rate limits
+    for (const file of files) {
       const formData = new FormData();
       formData.append('image', file);
       formData.append('category', uploadCategory);
       await uploadImageMutation.mutateAsync(formData);
     }
-
-    setShowUploadModal(false);
-    setSelectedFiles([]);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Silmek istediğinize emin misiniz?')) {
+    if (confirm('Bu görseli silmek istediğinize emin misiniz?')) {
       deleteImageMutation.mutate(id);
     }
   };
 
-  const categoryNames: Record<string, string> = {
-    all: 'Tümü',
-    project: 'Proje',
-    gallery: 'Galeri',
-    hero: 'Hero',
-    other: 'Diğer',
+  const toggleSelect = (id: string) => {
+    if (!isSelectionMode) return;
+
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
   };
 
-  if (isLoading) return <div className="p-12 text-center">Yükleniyor...</div>;
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (confirm(`Seçili ${selectedIds.size} görseli silmek istediğinize emin misiniz?`)) {
+      await deleteMultipleMutation.mutateAsync(Array.from(selectedIds));
+      setSelectedIds(new Set());
+      setIsSelectionMode(false);
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedIds(new Set());
+  };
+
+  const categories = [
+    { key: 'all', label: 'Tümü', icon: <LayoutGrid size={18} /> },
+    { key: 'project', label: 'Proje', icon: <ImageIcon size={18} /> },
+    { key: 'gallery', label: 'Galeri', icon: <ImageIcon size={18} /> },
+    // { key: 'video', label: 'Video', icon: <Video size={18} /> }, // If video category exists differently
+    { key: 'hero', label: 'Hero', icon: <Layers size={18} /> },
+    { key: 'other', label: 'Diğer', icon: <Layers size={18} /> },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold dark:text-white">Görsel Yönetimi</h1>
-        <button onClick={() => setShowUploadModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded">Görsel Ekle</button>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Medya Kütüphanesi</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Görsel ve video içeriklerinizi yönetin.</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <select
+            value={uploadCategory}
+            onChange={e => setUploadCategory(e.target.value as any)}
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+          >
+            <option value="project">Yükleme Hedefi: Proje</option>
+            <option value="gallery">Yükleme Hedefi: Galeri</option>
+            <option value="hero">Yükleme Hedefi: Hero</option>
+            <option value="other">Yükleme Hedefi: Diğer</option>
+          </select>
+        </div>
       </div>
 
-      {/* Filter */}
-      <div className="flex gap-2">
-        {Object.entries(categoryNames).map(([key, label]) => (
-          <button key={key} onClick={() => setSelectedCategory(key)} className={`px-3 py-1 rounded ${selectedCategory === key ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-            {label}
+      {/* Upload Section */}
+      <UploadZone onUpload={handleUpload} isUploading={isUploading} />
+
+      {/* Toolbar & Filter */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
+        {/* Category Tabs */}
+        <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-x-auto max-w-full no-scrollbar">
+          {categories.map((cat) => (
+            <button
+              key={cat.key}
+              onClick={() => setSelectedCategory(cat.key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
+                ${selectedCategory === cat.key
+                  ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+            >
+              {cat.icon}
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          {isSelectionMode && selectedIds.size > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Trash2 size={16} />
+              Seçilileri Sil ({selectedIds.size})
+            </button>
+          )}
+          <button
+            onClick={toggleSelectionMode}
+            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors
+                 ${isSelectionMode
+                ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+              }`}
+          >
+            {isSelectionMode ? 'Vazgeç' : 'Seçim Yap'}
           </button>
-        ))}
+        </div>
+      </div>
+
+      {/* Results Info */}
+      <div className="text-sm text-gray-500 dark:text-gray-400">
+        Toplam <strong>{images.length}</strong> medya ögesi gösteriliyor.
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {images.map((img) => (
-          <div key={img.id || img._id} className="relative group border rounded overflow-hidden">
-            <div className="aspect-square relative">
-              <LazyImage src={getImageUrl(img.id || img._id)} alt="img" fill className="object-cover" />
-            </div>
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <button onClick={() => handleDelete(img.id || img._id || '')} className="bg-red-600 text-white px-2 py-1 rounded text-xs">Sil</button>
-            </div>
-            <div className="p-2 text-xs truncate dark:text-gray-300">{img.filename}</div>
-          </div>
+          <AssetCard
+            key={img.id || img._id}
+            asset={img}
+            isSelected={selectedIds.has(img.id || img._id || '')}
+            onToggleSelect={toggleSelect}
+            onDelete={handleDelete}
+            selectionMode={isSelectionMode}
+          />
         ))}
-        {images.length === 0 && <p className="col-span-full text-center py-8 text-gray-500">Görsel yok.</p>}
-      </div>
-
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4 dark:text-white">Görsel Yükle</h3>
-            <div className="space-y-4">
-              <select
-                value={uploadCategory}
-                onChange={e => setUploadCategory(e.target.value as any)}
-                className="w-full border p-2 rounded dark:bg-gray-900 dark:border-gray-600 dark:text-white"
-              >
-                <option value="project">Proje</option>
-                <option value="gallery">Galeri</option>
-                <option value="hero">Hero</option>
-                <option value="other">Diğer</option>
-              </select>
-              <input type="file" multiple onChange={handleFileSelect} className="block w-full text-sm dark:text-gray-300" />
-              <div className="flex justify-end gap-2">
-                <button onClick={() => setShowUploadModal(false)} className="px-4 py-2 bg-gray-200 rounded">İptal</button>
-                <button onClick={handleUpload} disabled={isUploading} className="px-4 py-2 bg-blue-600 text-white rounded">
-                  {isUploading ? 'Yükleniyor...' : 'Yükle'}
-                </button>
-              </div>
-            </div>
+        {images.length === 0 && (
+          <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
+            <ImageIcon size={48} className="mb-4 opacity-50" />
+            <p>Bu kategoride henüz görsel bulunmuyor.</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

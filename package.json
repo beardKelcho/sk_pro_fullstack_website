@@ -40,7 +40,7 @@
     "hotfix:create": "./scripts/create-hotfix.sh"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^9.2.1"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.35.0"

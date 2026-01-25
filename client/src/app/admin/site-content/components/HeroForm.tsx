@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { HeroContent, SiteImage, useSiteImages } from '@/hooks/useSiteContent';
-import VideoSelector from './VideoSelector';
-import LazyImage from '@/components/common/LazyImage';
+import { HeroContent } from '@/hooks/useSiteContent';
 import LocalizedInput from '@/components/common/LocalizedInput';
 import { getImageUrl } from '@/utils/imageUrl';
+import LazyImage from '@/components/common/LazyImage';
+import MediaPickerModal from '@/components/admin/media/MediaPickerModal';
+import { Play, Image as ImageIcon, Video, X } from 'lucide-react';
 
 interface HeroFormProps {
     content: HeroContent | undefined;
@@ -12,7 +13,6 @@ interface HeroFormProps {
 }
 
 export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
-    // Initialize with defaults
     const [formData, setFormData] = useState<HeroContent>({
         title: { tr: '', en: '' },
         subtitle: { tr: '', en: '' },
@@ -27,13 +27,9 @@ export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
         ...content
     });
 
-    // Load images for modal
-    const { data: imagesData } = useSiteImages('hero');
-    const images: SiteImage[] = imagesData?.images || [];
+    // Modals
+    const [modalConfig, setModalConfig] = useState<{ open: boolean; type: 'image' | 'video' | null }>({ open: false, type: null });
 
-    const [showImageModal, setShowImageModal] = useState(false);
-
-    // Sync content props to state if they change (e.g. data load after render)
     useEffect(() => {
         if (content) {
             setFormData((prev: HeroContent) => ({ ...prev, ...content }));
@@ -45,99 +41,156 @@ export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
         onSave(formData);
     };
 
+    const handleMediaSelect = (id: string, url: string) => {
+        if (modalConfig.type === 'image') {
+            setFormData(prev => ({ ...prev, backgroundImage: id })); // Storing ID for images usually
+        } else if (modalConfig.type === 'video') {
+            // For videos, better to store ID if using new system, but keep backward compat with URL if needed
+            // Assuming new system stores ID.
+            setFormData(prev => ({ ...prev, selectedVideo: id, backgroundVideo: id }));
+        }
+        setModalConfig({ open: false, type: null });
+    };
+
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Hero Bölümü</h2>
+        <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl">
+            {/* Header */}
+            <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="p-2 bg-blue-100 rounded-lg text-blue-600"><Play size={20} /></span>
+                    Hero / Giriş Bölümü
+                </h2>
+                <p className="text-sm text-gray-500 mt-1 pl-11">Anasayfanın en üstünde yer alan tam ekran tanıtım alanı.</p>
+            </div>
 
-            {/* Title */}
-            <LocalizedInput
-                label="Başlık"
-                value={formData.title}
-                onChange={(val) => setFormData({ ...formData, title: val })}
-            />
 
-            {/* Subtitle */}
-            <LocalizedInput
-                label="Alt Başlık"
-                value={formData.subtitle}
-                onChange={(val) => setFormData({ ...formData, subtitle: val })}
-            />
+            {/* Content Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <div className="space-y-4">
+                    <LocalizedInput
+                        label="Ana Başlık (H1)"
+                        value={formData.title}
+                        onChange={(val) => setFormData({ ...formData, title: val })}
+                        placeholder="Örn: Profesyonel Görüntü Çözümleri"
+                    />
+                    <LocalizedInput
+                        label="Alt Başlık"
+                        value={formData.subtitle}
+                        onChange={(val) => setFormData({ ...formData, subtitle: val })}
+                    />
+                </div>
+                <div className="space-y-4">
+                    <LocalizedInput
+                        label="Açıklama Metni"
+                        value={formData.description}
+                        onChange={(val) => setFormData({ ...formData, description: val })}
+                        type="textarea"
+                    />
+                </div>
+            </div>
 
-            {/* Description */}
-            <LocalizedInput
-                label="Açıklama"
-                value={formData.description}
-                onChange={(val) => setFormData({ ...formData, description: val })}
-                type="textarea"
-            />
+            {/* Media Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Background Video */}
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Arkaplan Video</label>
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group relative min-h-[160px] flex flex-col items-center justify-center text-center">
+                        {formData.selectedVideo ? (
+                            <div className="w-full h-full flex items-center justify-center bg-black/5 rounded-lg">
+                                <Video size={40} className="text-blue-500 mb-2" />
+                                <span className="text-xs text-gray-500 block w-full truncate px-4">{formData.selectedVideo}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, selectedVideo: '', backgroundVideo: '' })}
+                                    className="absolute top-2 right-2 p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="pointer-events-none">
+                                <Video size={32} className="mx-auto text-gray-400 mb-2" />
+                                <span className="text-sm text-gray-500">Video Seçilmedi</span>
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setModalConfig({ open: true, type: 'video' })}
+                            className="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors z-10"
+                        >
+                            {formData.selectedVideo ? 'Videoyu Değiştir' : 'Video Kütüphanesini Aç'}
+                        </button>
+                    </div>
+                    <p className="text-xs text-gray-400">Önerilen: 1920x1080 MP4, Maks 50MB.</p>
+                </div>
 
-            {/* Buttons */}
-            <div className="grid grid-cols-2 gap-4">
-                <div>
+                {/* Background Image (Poster) */}
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Poster / Yedek Görsel</label>
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group relative min-h-[160px] flex flex-col items-center justify-center">
+                        {formData.backgroundImage ? (
+                            <div className="relative w-full h-32 rounded-lg overflow-hidden bg-gray-100">
+                                <LazyImage src={getImageUrl(formData.backgroundImage)} alt="Bg" fill className="object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, backgroundImage: '' })}
+                                    className="absolute top-2 right-2 p-1 bg-red-100/80 text-red-600 rounded-full hover:bg-red-200"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="pointer-events-none text-center">
+                                <ImageIcon size={32} className="mx-auto text-gray-400 mb-2" />
+                                <span className="text-sm text-gray-500">Görsel Seçilmedi</span>
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setModalConfig({ open: true, type: 'image' })}
+                            className={`mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors z-10 ${formData.backgroundImage ? 'mt-2' : ''}`}
+                        >
+                            {formData.backgroundImage ? 'Görseli Değiştir' : 'Görsel Kütüphanesini Aç'}
+                        </button>
+                    </div>
+                    <p className="text-xs text-gray-400">Videodan önce veya video yüklenemezse gösterilir.</p>
+                </div>
+            </div>
+
+            {/* Buttons & Links */}
+            <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Aksiyon Butonu</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <LocalizedInput
                         label="Buton Metni"
                         value={formData.buttonText}
                         onChange={(val) => setFormData({ ...formData, buttonText: val })}
                     />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Buton Linki</label>
-                    <input value={formData.buttonLink} onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })} className="w-full px-3 py-2 border rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white" />
-                </div>
-            </div>
-
-            {/* Video */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Arkaplan Video</label>
-                <VideoSelector
-                    selectedVideo={formData.selectedVideo || formData.backgroundVideo}
-                    availableVideos={formData.availableVideos || []}
-                    onVideoSelect={(url) => setFormData({ ...formData, selectedVideo: url, backgroundVideo: url })}
-                />
-                <input
-                    type="text"
-                    placeholder="Manuel Video URL"
-                    value={formData.selectedVideo || ''}
-                    onChange={(e) => setFormData({ ...formData, selectedVideo: e.target.value, backgroundVideo: e.target.value })}
-                    className="mt-2 w-full px-3 py-2 border rounded-md text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white"
-                />
-            </div>
-
-            {/* Background Image */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Arkaplan Görsel</label>
-                <div className="flex gap-3 items-start">
-                    {formData.backgroundImage && (
-                        <div className="relative w-32 h-20 rounded border overflow-hidden">
-                            <LazyImage src={getImageUrl(formData.backgroundImage)} alt="Bg" fill className="object-cover" />
-                        </div>
-                    )}
-                    <button type="button" onClick={() => setShowImageModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm">
-                        {formData.backgroundImage ? 'Değiştir' : 'Görsel Seç'}
-                    </button>
-                </div>
-            </div>
-
-            <button type="submit" disabled={saving} className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50">
-                {saving ? 'Kaydediliyor...' : 'Kaydet'}
-            </button>
-
-            {/* Image Modal */}
-            {showImageModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto p-6">
-                        <div className="grid grid-cols-4 gap-4">
-                            {images.map((img: SiteImage) => (
-                                <div key={img._id || img.id} onClick={() => { setFormData({ ...formData, backgroundImage: img._id || img.id }); setShowImageModal(false); }} className="aspect-square relative cursor-pointer border border-gray-200">
-                                    <LazyImage src={getImageUrl(img._id || img.id)} alt="img" fill className="object-cover" />
-                                </div>
-                            ))}
-                            {images.length === 0 && <p className="col-span-4 text-center">Görsel bulunamadı.</p>}
-                        </div>
-                        <button onClick={() => setShowImageModal(false)} className="mt-4 px-4 py-2 bg-gray-200 rounded">Kapat</button>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Buton Linki</label>
+                        <input
+                            value={formData.buttonLink}
+                            onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-xl dark:bg-gray-900 dark:text-white"
+                            placeholder="#contact"
+                        />
                     </div>
                 </div>
-            )}
+            </div>
+
+            <div className="pt-4 flex justify-end sticky bottom-4">
+                <button type="submit" disabled={saving} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-600/20 disabled:opacity-50 transition-all">
+                    {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+                </button>
+            </div>
+
+            <MediaPickerModal
+                isOpen={modalConfig.open}
+                onClose={() => setModalConfig({ ...modalConfig, open: false })}
+                allowedTypes={modalConfig.type === 'video' ? 'video' : 'image'}
+                onSelect={handleMediaSelect}
+                title={modalConfig.type === 'video' ? 'Video Seç' : 'Görsel Seç'}
+            />
         </form>
     );
 }

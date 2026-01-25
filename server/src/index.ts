@@ -72,12 +72,13 @@ app.use(cors({
     // Production modunda sadece izin verilen origin'lere izin ver
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
-    } else if (isLocalNetworkOrigin(origin)) {
-      // Local network IP'lerine izin ver
+    } else if (isLocalNetworkOrigin(origin) || /\.vercel\.app$/.test(origin)) {
+      // Local network IP'lerine ve Vercel preview URL'lerine izin ver
+      logger.info(`CORS allowed dynamic origin: ${origin}`);
       callback(null, true);
     } else {
-      logger.warn('CORS blocked origin:', origin);
-      callback(new Error('CORS policy: Origin not allowed'));
+      logger.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error(`CORS policy: Origin ${origin} not allowed`));
     }
   },
   credentials: true,

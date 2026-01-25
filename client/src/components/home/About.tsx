@@ -8,30 +8,38 @@ import { getImageUrl } from '@/utils/imageUrl';
 import LazyImage from '@/components/common/LazyImage';
 import { useTranslations } from 'next-intl';
 
+import { FALLBACK_CONTENT } from '@/data/fallbackContent';
+// ... imports
+
 const About = () => {
     const { useContent, resolveLocalized } = useSiteContent();
     const { data: aboutData } = useContent('about');
-    const aboutContent = aboutData?.content as AboutContent | undefined;
+
+    const rawContent = aboutData?.content as AboutContent | undefined;
+    const fallback = FALLBACK_CONTENT.about;
+
+    const aboutContent: AboutContent = {
+        title: {
+            tr: rawContent?.title?.tr || fallback.title.tr,
+            en: rawContent?.title?.en || fallback.title.en
+        },
+        description: {
+            tr: rawContent?.description?.tr || fallback.description.tr,
+            en: rawContent?.description?.en || fallback.description.en
+        },
+        stats: (rawContent?.stats && rawContent.stats.length > 0)
+            ? rawContent.stats
+            : fallback.stats,
+        image: rawContent?.image || '',
+    };
+
     const tHome = useTranslations('site.home');
 
-    // Dynamic Year Calculation
-    const experienceYears = new Date().getFullYear() - 2017;
-
-    // Inject into stats
-    const stats = aboutContent?.stats || [];
-    // Verify if we should replace or append. The request says "9+ Yıllık Deneyim olarak yansıt".
-    // I'll prepend it to ensure it's visible.
-    const displayStats = [
-        { value: `${experienceYears}+`, label: 'Yıllık Deneyim' }, // Fixed label for now, or use tHome if available
-        ...stats.filter((s: any) =>
-            !resolveLocalized(s.label).toLowerCase().includes('deneyim') &&
-            !resolveLocalized(s.label).toLowerCase().includes('experience') &&
-            !resolveLocalized(s.label).toLowerCase().includes('ekipman')
-        ).map((s: any) => ({
-            label: resolveLocalized(s.label),
-            value: s.value
-        }))
-    ];
+    // Use stats directly from content (which is now guaranteed to have fallback)
+    const displayStats = aboutContent.stats.map(s => ({
+        label: resolveLocalized(s.label),
+        value: s.value
+    }));
 
     return (
         <div style={{ marginTop: '16rem', marginBottom: '8rem' }}>

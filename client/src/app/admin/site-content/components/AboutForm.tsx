@@ -11,18 +11,35 @@ interface AboutFormProps {
     saving: boolean;
 }
 
+import { FALLBACK_CONTENT } from '@/data/fallbackContent';
+
+// ... imports
+
 export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
-    const [formData, setFormData] = useState<AboutContent>({
-        title: { tr: '', en: '' },
-        description: { tr: '', en: '' },
-        stats: [],
-        ...content
-    });
+    const getInitialState = (currentContent: AboutContent | undefined) => {
+        const fallback = FALLBACK_CONTENT.about;
+        return {
+            title: {
+                tr: currentContent?.title?.tr || fallback.title.tr,
+                en: currentContent?.title?.en || fallback.title.en
+            },
+            description: {
+                tr: currentContent?.description?.tr || fallback.description.tr,
+                en: currentContent?.description?.en || fallback.description.en
+            },
+            stats: (currentContent?.stats && currentContent.stats.length > 0)
+                ? currentContent.stats
+                : fallback.stats,
+            image: currentContent?.image || '',
+        };
+    };
+
+    const [formData, setFormData] = useState<AboutContent>(getInitialState(content));
 
     // Sync when content changes
     useEffect(() => {
         if (content) {
-            setFormData(prev => ({ ...prev, ...content }));
+            setFormData(getInitialState(content));
         }
     }, [content]);
 

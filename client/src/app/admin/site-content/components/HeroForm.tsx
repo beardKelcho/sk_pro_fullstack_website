@@ -12,27 +12,50 @@ interface HeroFormProps {
     saving: boolean;
 }
 
+import { FALLBACK_CONTENT } from '@/data/fallbackContent';
+
+// ... imports
+
 export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
-    const [formData, setFormData] = useState<HeroContent>({
-        title: { tr: '', en: '' },
-        subtitle: { tr: '', en: '' },
-        description: { tr: '', en: '' },
-        buttonText: { tr: 'İletişime Geçin', en: 'Contact Us' },
-        buttonLink: '#contact',
-        backgroundVideo: '',
-        selectedVideo: '',
-        availableVideos: [],
-        backgroundImage: '',
-        rotatingTexts: [],
-        ...content
-    });
+    // Helper to merge content with fallback
+    const getInitialState = (currentContent: HeroContent | undefined) => {
+        const fallback = FALLBACK_CONTENT.hero;
+        return {
+            title: {
+                tr: currentContent?.title?.tr || fallback.title.tr,
+                en: currentContent?.title?.en || fallback.title.en
+            },
+            subtitle: {
+                tr: currentContent?.subtitle?.tr || fallback.subtitle.tr,
+                en: currentContent?.subtitle?.en || fallback.subtitle.en
+            },
+            description: {
+                tr: currentContent?.description?.tr || fallback.description.tr,
+                en: currentContent?.description?.en || fallback.description.en
+            },
+            buttonText: {
+                tr: currentContent?.buttonText?.tr || fallback.buttonText.tr,
+                en: currentContent?.buttonText?.en || fallback.buttonText.en
+            },
+            buttonLink: currentContent?.buttonLink || fallback.buttonLink,
+            backgroundVideo: currentContent?.backgroundVideo || '',
+            selectedVideo: currentContent?.selectedVideo || '',
+            availableVideos: currentContent?.availableVideos || [],
+            backgroundImage: currentContent?.backgroundImage || '',
+            rotatingTexts: (currentContent?.rotatingTexts && currentContent.rotatingTexts.length > 0)
+                ? currentContent.rotatingTexts
+                : fallback.rotatingTexts,
+        };
+    };
+
+    const [formData, setFormData] = useState<HeroContent>(getInitialState(content));
 
     // Modals
     const [modalConfig, setModalConfig] = useState<{ open: boolean; type: 'image' | 'video' | null }>({ open: false, type: null });
 
     useEffect(() => {
         if (content) {
-            setFormData((prev: HeroContent) => ({ ...prev, ...content }));
+            setFormData(getInitialState(content));
         }
     }, [content]);
 

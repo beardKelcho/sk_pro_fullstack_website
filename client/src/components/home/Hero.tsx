@@ -7,10 +7,44 @@ import { useTranslations } from 'next-intl';
 import VideoBackgroundPlayer from './VideoBackgroundPlayer';
 import { getImageUrl } from '@/utils/imageUrl';
 
+import { FALLBACK_CONTENT } from '@/data/fallbackContent';
+// ... imports
+
 const Hero = () => {
     const { useContent, resolveLocalized } = useSiteContent();
     const { data: heroData } = useContent('hero');
-    const heroContent = heroData?.content as HeroContent | undefined;
+    // Force merge with fallback to ensure display
+    const rawContent = heroData?.content as HeroContent | undefined;
+    const fallback = FALLBACK_CONTENT.hero;
+
+    // Create a safe content object that prioritized API data but falls back faithfully
+    const heroContent: HeroContent = {
+        title: {
+            tr: rawContent?.title?.tr || fallback.title.tr,
+            en: rawContent?.title?.en || fallback.title.en
+        },
+        subtitle: {
+            tr: rawContent?.subtitle?.tr || fallback.subtitle.tr,
+            en: rawContent?.subtitle?.en || fallback.subtitle.en
+        },
+        description: {
+            tr: rawContent?.description?.tr || fallback.description.tr,
+            en: rawContent?.description?.en || fallback.description.en
+        },
+        buttonText: {
+            tr: rawContent?.buttonText?.tr || fallback.buttonText.tr,
+            en: rawContent?.buttonText?.en || fallback.buttonText.en
+        },
+        buttonLink: rawContent?.buttonLink || fallback.buttonLink,
+        backgroundVideo: rawContent?.backgroundVideo || '',
+        selectedVideo: rawContent?.selectedVideo || '',
+        availableVideos: rawContent?.availableVideos || [],
+        backgroundImage: rawContent?.backgroundImage || '',
+        rotatingTexts: (rawContent?.rotatingTexts && rawContent.rotatingTexts.length > 0)
+            ? rawContent.rotatingTexts
+            : fallback.rotatingTexts,
+    };
+
     const tHome = useTranslations('site.home');
 
     // Default content if loading or empty (or use skeleton)

@@ -11,7 +11,6 @@ if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_SITE_URL) 
 
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: false,
   images: {
     domains: ['localhost', '127.0.0.1', 'res.cloudinary.com', 'sk-pro-backend.onrender.com'],
     remotePatterns: [

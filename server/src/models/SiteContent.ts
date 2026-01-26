@@ -135,10 +135,8 @@ const SiteContentSchema: Schema = new Schema(
               en: "With over 10 years of industry experience, we are at your service with state-of-the-art media server systems and our professional team."
             },
             stats: [
-              { label: { tr: "Yıllık Deneyim", en: "Years Experience" }, value: "10+" },
               { label: { tr: "Sektör Tecrübesi", en: "Industry Experience" }, value: "9+ Yıl" },
-              { label: { tr: "Mutlu Müşteriler", en: "Happy Clients" }, value: "250+" },
-              { label: { tr: "Tamamlanan Proje", en: "Completed Projects" }, value: "500+" }
+              { label: { tr: "Tamamlanan Proje", en: "Completed Projects" }, value: "250+" }
             ]
           };
         }

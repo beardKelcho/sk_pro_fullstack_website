@@ -45,22 +45,6 @@ if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
 // Express app oluştur
 const app = express();
 
-// HTTP server oluştur (WebSocket ve GraphQL için)
-const httpServer = createServer(app);
-
-// CORS Middleware (en önce - Helmet'ten önce)
-const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:3000',
-  process.env.CORS_ORIGIN,
-].filter(Boolean); // undefined/null değerleri filtrele
-
-// Development modunda local network IP'lerine izin ver
-const isLocalNetworkOrigin = (origin: string | undefined): boolean => {
-  if (!origin) return false;
-  // localhost ve local network IP'leri (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-  return /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(origin);
-};
-
 app.use(cors({
   origin: (origin, callback) => {
     // Test ve development modunda tüm origin'lere izin ver (test ortamı için gerekli)
@@ -95,6 +79,24 @@ app.use(cors({
   ],
   exposedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
 }));
+
+// HTTP server oluştur (WebSocket ve GraphQL için)
+const httpServer = createServer(app);
+
+// CORS Middleware (en önce - Helmet'ten önce)
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:3000',
+  process.env.CORS_ORIGIN,
+].filter(Boolean); // undefined/null değerleri filtrele
+
+// Development modunda local network IP'lerine izin ver
+const isLocalNetworkOrigin = (origin: string | undefined): boolean => {
+  if (!origin) return false;
+  // localhost ve local network IP'leri (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+  return /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(origin);
+};
+
+
 
 // Security Middleware
 app.use(
@@ -144,65 +146,14 @@ app.use(csrfOriginCheck(allowedOrigins as string[]));
 app.use('/api', apiVersioning);
 
 // Uploads klasörünü static olarak serve et - Optimized
+// Uploads klasörünü static olarak serve et - STRICT MOD: Kapalı (Legacy destek için yorum satırı)
+/* 
 const uploadsDir = path.join(process.cwd(), 'uploads');
 if (fs.existsSync(uploadsDir)) {
-  // Backward-compat: Bazı eski upload'larda type alanı multipart'ta geç geldiği için dosyalar `general/` altına kaydedilmiş olabilir.
-  // Ancak DB'de/URL'de `/uploads/videos/...` veya `/uploads/site-images/...` görünebilir.
-  // Bu durumda 404 yerine `general/` altındaki aynı dosyayı servis etmeye çalış.
-  app.get('/uploads/:folder/:file(*)', legacyFileHandler);
-
-  app.use(
-    '/uploads',
-    (req, res, next) => {
-      // Strict Cloudinary Mode: Log usage of local uploads
-      logger.warn(`Legacy Local Upload Access: ${req.originalUrl}`);
-      next();
-    },
-    express.static(uploadsDir, {
-      maxAge: '1y', // 1 yıl cache
-      etag: true, // ETag desteği
-      lastModified: true, // Last-Modified header
-      setHeaders: (res, filePath) => {
-        // Resim ve video dosyaları için özel headers
-        const ext = path.extname(filePath).toLowerCase();
-        if (/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(ext)) {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-          const contentTypes: { [key: string]: string } = {
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.webp': 'image/webp',
-            '.svg': 'image/svg+xml',
-          };
-          res.setHeader('Content-Type', contentTypes[ext] || 'image/jpeg');
-        } else if (/\.(mp4|webm|mov|avi)$/i.test(ext)) {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-          res.setHeader('Accept-Ranges', 'bytes'); // Video streaming için
-          const contentTypes: { [key: string]: string } = {
-            '.mp4': 'video/mp4',
-            '.webm': 'video/webm',
-            '.mov': 'video/quicktime',
-            '.avi': 'video/x-msvideo',
-          };
-          res.setHeader('Content-Type', contentTypes[ext] || 'video/mp4');
-        }
-      },
-    })
-  );
-  logger.info('Uploads klasörü static olarak serve ediliyor: /uploads (optimized)');
-} else {
-  logger.warn('Uploads klasörü bulunamadı, oluşturuluyor...');
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  app.use(
-    '/uploads',
-    express.static(uploadsDir, {
-      maxAge: '1y',
-      etag: true,
-      lastModified: true,
-    })
-  );
+  app.use('/uploads', express.static(uploadsDir)); 
 }
+*/
+logger.info('Strict Cloudinary Mode Active: Local static file serving is DISABLED.');
 
 // Swagger API Dokümantasyonu
 setupSwagger(app);

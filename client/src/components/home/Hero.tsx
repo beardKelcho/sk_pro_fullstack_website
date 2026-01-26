@@ -54,11 +54,7 @@ const Hero = () => {
         description: resolveLocalized(heroContent?.description),
         buttonText: resolveLocalized(heroContent?.buttonText) || 'Projelerimiz',
         buttonLink: heroContent?.buttonLink || '#projects',
-        rotatingTexts: heroContent?.rotatingTexts?.map(t => resolveLocalized(t)) || [
-            'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
-            'Medya Server ve Görüntü Rejisi Çözümleri',
-            'Görsel Mükemmellikte Uzman Ekip'
-        ],
+        rotatingTexts: heroContent?.rotatingTexts?.map(t => resolveLocalized(t)) || [],
         backgroundVideo: heroContent?.backgroundVideo,
         selectedVideo: heroContent?.selectedVideo,
         backgroundImage: heroContent?.backgroundImage,

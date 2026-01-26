@@ -65,10 +65,7 @@ const About = () => {
                                 ) : (
                                     <>
                                         <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                                            {tHome('aboutSection.paragraphs.0')}
-                                        </p>
-                                        <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                                            {tHome('aboutSection.paragraphs.1')}
+                                            {resolveLocalized(aboutContent?.description)}
                                         </p>
                                     </>
                                 )}

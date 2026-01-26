@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
 import { AppError } from '../middleware/errorHandler';
 import logger from '../utils/logger';

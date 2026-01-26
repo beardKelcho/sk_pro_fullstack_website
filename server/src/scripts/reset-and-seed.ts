@@ -1,13 +1,14 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import SiteContent from '../models/SiteContent';
 import logger from '../utils/logger';
 import connectDB from '../config/database';
 
-dotenv.config();
+// dotenv.config() call removed as import handles it.
 
 const resetAndSeed = async () => {
     try {
+        console.log("Checking Env Var: MONGO_URI is " + (process.env.MONGO_URI ? "DEFINED" : "UNDEFINED"));
         await connectDB();
         logger.info('Veritabanı bağlantısı başarılı. Temizlik başlıyor...');
 

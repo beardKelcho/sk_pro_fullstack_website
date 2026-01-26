@@ -153,6 +153,11 @@ if (fs.existsSync(uploadsDir)) {
 
   app.use(
     '/uploads',
+    (req, res, next) => {
+      // Strict Cloudinary Mode: Log usage of local uploads
+      logger.warn(`Legacy Local Upload Access: ${req.originalUrl}`);
+      next();
+    },
     express.static(uploadsDir, {
       maxAge: '1y', // 1 yıl cache
       etag: true, // ETag desteği

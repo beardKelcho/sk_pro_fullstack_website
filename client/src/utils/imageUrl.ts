@@ -78,20 +78,8 @@ export const getImageUrl = (options: ImageUrlOptions | string | null | undefined
       return imageId;
     }
 
-    // Geçersiz ID kontrolü (sadece MongoDB ObjectId formatı veya geçerli string)
-    // Ayrıca Next.js internal hash'leri (12-32 karakterlik hex) olmadığından emin ol
-    if (typeof imageId === 'string' && imageId.trim() !== '' && imageId.length >= 12) {
-      // Next.js internal hash pattern'i kontrolü - sadece hex karakterler ve belirli uzunluk
-      // Eğer sadece hex karakterlerden oluşuyorsa ve 12-32 karakter arasındaysa, bu bir MongoDB ObjectId olabilir
-      // Ama eğer bu bir Next.js internal hash ise, bunu handle etme
-      const isOnlyHex = /^[0-9a-f]+$/i.test(imageId);
-      if (isOnlyHex && imageId.length >= 12 && imageId.length <= 32) {
-        // Bu bir MongoDB ObjectId veya benzer bir ID 
-        // DEPRECATED: Proxy kullanımı azaltılıyor. Ancak eski kayıtlar için destek devam ediyor.
-        return `/api/site-images/public/${imageId}/image`;
-      }
-    }
-    // Geçersiz ID ise fallback döndür
+    // Legacy ID support removed to enforce Cloudinary. 
+    // If it's not a URL (checked above), it's invalid for our new strict mode.
     return fallback || '';
   }
 

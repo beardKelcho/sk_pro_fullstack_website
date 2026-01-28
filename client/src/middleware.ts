@@ -15,6 +15,7 @@ export function middleware(request: NextRequest) {
 
   // --- 1. STATİK DOSYALARI MUTLAK SERBEST BIRAK (MIME HATASI İÇİN) ---
   // Tarayıcı CSS/JS isterken önüne Login HTML'i çıkmasını engeller.
+  // Force deploy: Definitive fix applied
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/api/') ||

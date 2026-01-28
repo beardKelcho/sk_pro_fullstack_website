@@ -7,21 +7,21 @@ import logger from '../utils/logger';
 export const getAllMaintenances = async (req: Request, res: Response) => {
   try {
     const { status, type, equipment, startDate, endDate, sort = '-scheduledDate', page = 1, limit = 10 } = req.query;
-    
+
     const filters: any = {};
-    
+
     if (status) {
       filters.status = status;
     }
-    
+
     if (type) {
       filters.type = type;
     }
-    
+
     if (equipment) {
       filters.equipment = equipment;
     }
-    
+
     // Tarih filtresi - scheduledDate aralığı
     if (startDate || endDate) {
       filters.scheduledDate = {};
@@ -32,19 +32,19 @@ export const getAllMaintenances = async (req: Request, res: Response) => {
         filters.scheduledDate.$lte = new Date(endDate as string);
       }
     }
-    
+
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;
-    
-    const sortField = (sort as string).startsWith('-') 
-      ? (sort as string).substring(1) 
+
+    const sortField = (sort as string).startsWith('-')
+      ? (sort as string).substring(1)
       : (sort as string);
     const sortOrder = (sort as string).startsWith('-') ? -1 : 1;
-    
+
     const sortOptions: any = {};
     sortOptions[sortField] = sortOrder;
-    
+
     const [maintenances, total] = await Promise.all([
       Maintenance.find(filters)
         .sort(sortOptions)
@@ -54,7 +54,7 @@ export const getAllMaintenances = async (req: Request, res: Response) => {
         .populate('assignedTo', 'name email'),
       Maintenance.countDocuments(filters)
     ]);
-    
+
     res.status(200).json({
       success: true,
       count: maintenances.length,
@@ -76,25 +76,25 @@ export const getAllMaintenances = async (req: Request, res: Response) => {
 export const getMaintenanceById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz bakım ID',
       });
     }
-    
+
     const maintenance = await Maintenance.findById(id)
       .populate('equipment', 'name type model serialNumber status')
       .populate('assignedTo', 'name email role');
-    
+
     if (!maintenance) {
       return res.status(404).json({
         success: false,
         message: 'Bakım bulunamadı',
       });
     }
-    
+
     res.status(200).json({
       success: true,
       maintenance,
@@ -112,43 +112,61 @@ export const getMaintenanceById = async (req: Request, res: Response) => {
 export const createMaintenance = async (req: Request, res: Response) => {
   try {
     const { equipment, type, description, scheduledDate, status, assignedTo, cost, notes } = req.body;
-    
+
     if (!equipment || !type || !description || !scheduledDate || !assignedTo) {
       return res.status(400).json({
         success: false,
         message: 'Ekipman, tip, açıklama, planlanan tarih ve atanan kişi gereklidir',
       });
     }
-    
+
     if (!mongoose.Types.ObjectId.isValid(equipment)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz ekipman ID',
       });
     }
-    
+
     if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz kullanıcı ID',
       });
     }
-    
+
+    // Validate and sanitize cost
+    const parsedCost = cost !== undefined && cost !== '' ? Number(cost) : undefined;
+    if (parsedCost !== undefined && isNaN(parsedCost)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maliyet geçerli bir sayı olmalıdır'
+      });
+    }
+
+    // Validate date
+    const parsedDate = new Date(scheduledDate);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz tarih formatı'
+      });
+    }
+
     const maintenance = await Maintenance.create({
       equipment,
       type,
       description,
-      scheduledDate,
+      scheduledDate: parsedDate,
       status: status || 'SCHEDULED',
       assignedTo,
-      cost,
+      cost: parsedCost,
       notes,
     });
-    
+
     const populatedMaintenance = await Maintenance.findById(maintenance._id)
       .populate('equipment', 'name type model')
       .populate('assignedTo', 'name email');
-    
+
     res.status(201).json({
       success: true,
       maintenance: populatedMaintenance,
@@ -167,14 +185,14 @@ export const updateMaintenance = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { equipment, type, description, scheduledDate, completedDate, status, assignedTo, cost, notes } = req.body;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz bakım ID',
       });
     }
-    
+
     const updateData: any = {};
     if (equipment) updateData.equipment = equipment;
     if (type) updateData.type = type;
@@ -185,12 +203,12 @@ export const updateMaintenance = async (req: Request, res: Response) => {
     if (assignedTo) updateData.assignedTo = assignedTo;
     if (cost !== undefined) updateData.cost = cost;
     if (notes !== undefined) updateData.notes = notes;
-    
+
     // Eğer status COMPLETED ise ve completedDate yoksa, şimdiki zamanı ayarla
     if (status === 'COMPLETED' && !completedDate) {
       updateData.completedDate = new Date();
     }
-    
+
     const updatedMaintenance = await Maintenance.findByIdAndUpdate(
       id,
       updateData,
@@ -198,14 +216,14 @@ export const updateMaintenance = async (req: Request, res: Response) => {
     )
       .populate('equipment', 'name type model')
       .populate('assignedTo', 'name email');
-    
+
     if (!updatedMaintenance) {
       return res.status(404).json({
         success: false,
         message: 'Bakım bulunamadı',
       });
     }
-    
+
     res.status(200).json({
       success: true,
       maintenance: updatedMaintenance,
@@ -223,32 +241,32 @@ export const updateMaintenance = async (req: Request, res: Response) => {
 export const deleteMaintenance = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz bakım ID',
       });
     }
-    
+
     const maintenance = await Maintenance.findById(id);
-    
+
     if (!maintenance) {
       return res.status(404).json({
         success: false,
         message: 'Bakım bulunamadı',
       });
     }
-    
+
     if (maintenance.status === 'IN_PROGRESS') {
       return res.status(400).json({
         success: false,
         message: 'Devam eden bakım silinemez',
       });
     }
-    
+
     await maintenance.deleteOne();
-    
+
     res.status(200).json({
       success: true,
       message: 'Bakım başarıyla silindi',

@@ -4,11 +4,14 @@ import { User } from '../models';
 import { Permission, hasPermission, hasRole, Role } from '../config/permissions';
 import logger from '../utils/logger';
 import { JWT_SECRET } from '../utils/authTokens'; // Merkezi JWT_SECRET kullan
+import { IUser } from '../models/User';
+import { updateSessionActivity } from '../controllers/session.controller';
+import { Session } from '../models'; // Session verify için
 
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: IUser;
     }
   }
 }
@@ -89,14 +92,34 @@ export const authenticate = async (
       });
     }
 
-    // Session activity güncelle (async, hata olsa bile devam et)
-    const { updateSessionActivity } = require('../controllers/session.controller');
+    // TC017 Fix & Security Hardening: Session Check
+    // Token hash'ini oluştur ve DB'de bu token'a sahip aktif bir session var mı kontrol et
+    const crypto = require('crypto');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Auth token'a karşılık gelen session kontrolü
+    // Sadece accessToken cookie veya header kullanıldığı için,
+    // bu token'ın veritabanında "active" bir session'a ait olup olmadığını doğrula.
+    const validSession = await Session.findOne({
+      userId: user._id,
+      token: tokenHash,
+      isActive: true
+    });
+
+    if (!validSession) {
+      return res.status(401).json({
+        success: false,
+        message: 'Oturum sonlandırılmış veya geçersiz. Lütfen tekrar giriş yapın.',
+      });
+    }
+
+    // Session activity güncelle (static import ile)
     updateSessionActivity(user._id.toString(), token).catch((err: any) =>
       logger.error('Session activity güncelleme hatası:', err)
     );
 
     // Request'e kullanıcı bilgisini ekle
-    req.user = user;
+    req.user = user as IUser;
     next();
   } catch (error: any) {
     // Invalid signature veya expired token hatası için daha açıklayıcı mesaj

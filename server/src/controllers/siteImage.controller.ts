@@ -107,7 +107,40 @@ export const createImage = async (req: Request, res: Response) => {
 export const updateImage = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const image = await siteService.updateImage(id, req.body);
+    let imageData = req.body;
+
+    // Eğer yeni dosya yüklendiyse
+    if (req.file) {
+      const uploadService = require('../services/upload.service').default;
+
+      // 1. Önce eski resmi bul ve sil
+      try {
+        const oldImage = await siteService.getImageById(id);
+        if (oldImage && oldImage.filename) {
+          // Cloudinary'den eski resmi sil
+          // Not: category'yi de geçmek önemli, çünkü public_id klasör içeriyor olabilir veya folder append ediliyor olabilir
+          await uploadService.deleteFile(oldImage.filename, oldImage.category || 'general');
+        }
+      } catch (err) {
+        logger.warn(`Eski resim silinirken hata (Update sırasında): ${err}`);
+      }
+
+      // 2. Yeni resmi yükle
+      const fileType = imageData.category || 'general';
+      const uploadedFile = await uploadService.uploadFile(req.file, fileType, req.user?.id);
+
+      imageData = {
+        ...imageData,
+        filename: uploadedFile.filename,
+        originalName: uploadedFile.originalname,
+        path: uploadedFile.path,
+        url: uploadedFile.url,
+        mimetype: uploadedFile.mimetype,
+        size: uploadedFile.size
+      };
+    }
+
+    const image = await siteService.updateImage(id, imageData);
     res.status(200).json({ success: true, image });
   } catch (error: unknown) {
     const appError = error instanceof AppError ? error : new AppError('Hata oluştu');

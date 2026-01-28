@@ -266,6 +266,7 @@ class SiteService {
             siteContent.content = contentData;
             if (order !== undefined) siteContent.order = order;
             if (isActive !== undefined) siteContent.isActive = isActive;
+            siteContent.markModified('content');
             await siteContent.save();
         } else {
             siteContent = await SiteContent.create({
@@ -291,6 +292,7 @@ class SiteService {
         if (data.order !== undefined) siteContent.order = data.order;
         if (data.isActive !== undefined) siteContent.isActive = data.isActive;
 
+        siteContent.markModified('content');
         await siteContent.save();
 
         const docObj = siteContent.toObject();

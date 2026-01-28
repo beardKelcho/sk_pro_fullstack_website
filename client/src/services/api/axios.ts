@@ -31,6 +31,21 @@ const apiClient = axios.create({
   timeout: 30000,
 });
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: any = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 // ... (Request interceptor remains same)
 
 // Response interceptor - Token yenileme ve hata yönetimi
@@ -55,21 +70,47 @@ apiClient.interceptors.response.use(
     }
 
     // 401 Handling...
-    // 401 Handling (User Requested Snippet)
+    // 401 Handling - Race Condition Fixed
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        await axios.post(`${API_URL}/auth/refresh-token`, {}, {
-          withCredentials: true
-        });
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
-          window.location.href = '/admin/login';
-        }
-        return Promise.reject(refreshError);
+      if (isRefreshing) {
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return apiClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
       }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      return new Promise(function (resolve, reject) {
+        axios
+          .post(
+            `${API_URL}/auth/refresh-token`,
+            {},
+            {
+              withCredentials: true,
+            }
+          )
+          .then(() => {
+            processQueue(null, true);
+            resolve(apiClient(originalRequest));
+          })
+          .catch((err) => {
+            processQueue(err, null);
+            if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+              window.location.href = '/admin/login';
+            }
+            reject(err);
+          })
+          .finally(() => {
+            isRefreshing = false;
+          });
+      });
     }
 
     // 403 Forbidden - Toast kaldırıldı (UI handle etmeli)

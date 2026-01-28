@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import logger from '../utils/logger';
+import * as Sentry from '@sentry/node';
 
 export class AppError extends Error {
   statusCode: number;
@@ -25,6 +26,7 @@ export const errorHandler = (
 ) => {
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
+      success: false,
       status: err.status,
       message: err.message,
     });
@@ -32,6 +34,7 @@ export const errorHandler = (
 
   if (err instanceof ZodError) {
     return res.status(400).json({
+      success: false,
       status: 'fail',
       message: 'Validation error',
       errors: err.errors,
@@ -41,6 +44,7 @@ export const errorHandler = (
   // MongoDB duplicate key error
   if (err.name === 'MongoError' && (err as any).code === 11000) {
     return res.status(409).json({
+      success: false,
       status: 'fail',
       message: 'Duplicate field value entered',
     });
@@ -49,6 +53,7 @@ export const errorHandler = (
   // MongoDB validation error
   if (err.name === 'ValidationError') {
     return res.status(400).json({
+      success: false,
       status: 'fail',
       message: 'Validation error',
       errors: Object.values((err as any).errors).map((el: any) => el.message),
@@ -58,6 +63,7 @@ export const errorHandler = (
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
+      success: false,
       status: 'fail',
       message: 'Invalid token. Please log in again!',
     });
@@ -65,9 +71,15 @@ export const errorHandler = (
 
   if (err.name === 'TokenExpiredError') {
     return res.status(401).json({
+      success: false,
       status: 'fail',
       message: 'Your token has expired! Please log in again.',
     });
+  }
+
+  // Sentry Capture for 500 errors
+  if (!('statusCode' in err) || (err as any).statusCode === 500) {
+    Sentry.captureException(err);
   }
 
   // Default error
@@ -79,17 +91,17 @@ export const errorHandler = (
     path: req.path,
     method: req.method,
   });
-  
+
   // Response henüz gönderilmediyse gönder
   if (!res.headersSent) {
     const isTestOrDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
     return res.status(500).json({
       success: false,
       status: 'error',
-      message: isTestOrDev 
+      message: isTestOrDev
         ? (err.message || 'Internal Server Error')
         : 'Internal Server Error',
-      ...(isTestOrDev ? { 
+      ...(isTestOrDev ? {
         details: err.stack,
         name: err.name,
         path: req.path,

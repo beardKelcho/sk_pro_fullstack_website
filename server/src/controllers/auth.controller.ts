@@ -48,23 +48,19 @@ export class AuthController {
       const mobile = isMobileClient(req);
 
       try {
-        // Refresh Token Cookie
-        res.cookie('refreshToken', refreshToken, {
+        // Cookie Options (User Requested: Always Secure/None)
+        const cookieOptions = {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+          secure: true, // Render'da zorunlu
+          sameSite: 'none' as const, // Cross-domain için ŞART
           path: '/'
-        });
+        };
 
-        // Access Token Cookie (New)
-        res.cookie('accessToken', accessToken, {
-          httpOnly: true, // XSS koruması için JS erişemez, request ile otomatik gider
-          secure: process.env.NODE_ENV === 'production', // Sadece HTTPS'de
-          maxAge: 15 * 60 * 1000, // 15 dakika (Auth service ile uyumlu olmalı)
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          path: '/'
-        });
+        // Refresh Token Cookie
+        res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+
+        // Access Token Cookie
+        res.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
       } catch (cookieError: unknown) {
         logger.warn('Cookie ayarlama hatası (non-blocking):', cookieError);
       }
@@ -144,23 +140,19 @@ export class AuthController {
 
       const result: RefreshResult = await authService.refreshToken(refreshTokenRaw);
 
-      // Set Cookie
-      res.cookie('refreshToken', result.refreshToken, {
+      // Cookie Options
+      const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: true,
+        sameSite: 'none' as const,
         path: '/'
-      });
+      };
+
+      // Set Cookie
+      res.cookie('refreshToken', result.refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
       // Set Access Token Cookie
-      res.cookie('accessToken', result.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 15 * 60 * 1000,
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/'
-      });
+      res.cookie('accessToken', result.accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
 
       return res.status(200).json({
         success: true,

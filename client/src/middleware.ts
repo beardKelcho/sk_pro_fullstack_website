@@ -47,22 +47,16 @@ export function middleware(request: NextRequest) {
   // Bu yüzden akışın aşağıya devam etmesini sağlıyoruz.
   const response = isAdminPath ? NextResponse.next() : intlMiddleware(request);
 
-  // --- 3. GENİŞLETİLMİŞ GÜVENLİK (CSP) AYARLARI ---
-  // Ekran görüntülerindeki Cloudinary ve Pusher engellerini burada kaldırıyoruz.
+  // --- 3. GÜVENLİK (CSP) ---
   const apiBaseUrl = 'https://sk-pro-backend.onrender.com';
-
   const cspHeader = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live https://va.vercel-scripts.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     `img-src 'self' data: https: blob: res.cloudinary.com ${apiBaseUrl}`,
-    "font-src 'self' https://fonts.gstatic.com data:",
-    `connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://vitals.vercel-insights.com ${apiBaseUrl} *.pusher.com wss://*.pusher.com`,
+    `connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com ${apiBaseUrl} *.pusher.com wss://*.pusher.com`,
     `media-src 'self' data: https: blob: res.cloudinary.com ${apiBaseUrl}`,
     "frame-src 'self' https://www.youtube.com https://www.google.com https://vercel.live",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "frame-ancestors 'none'",
   ].join('; ');
 
   response.headers.set('Content-Security-Policy', cspHeader);

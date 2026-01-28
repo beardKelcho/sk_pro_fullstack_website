@@ -41,6 +41,14 @@ export default function LoginPage() {
 
       toast.success('Giriş başarılı! Yönlendiriliyorsunuz...');
 
+      // CRITICAL FIX: Save token to localStorage for ProtectedRoute
+      if (response.data.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken);
+      }
+      if (response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+
       // Hızlı yönlendirme için
       router.push(from);
       router.refresh(); // Router cache temizle

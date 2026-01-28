@@ -29,14 +29,13 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
                 ? currentContent.stats
                 : fallback.stats,
             image: currentContent?.image || '',
-            video: currentContent?.video || '',
         };
     };
 
     const [formData, setFormData] = useState<AboutContent>(getInitialState(content));
 
     // Modal Configuration
-    const [modalConfig, setModalConfig] = useState<{ open: boolean; type: 'image' | 'video' | null }>({ open: false, type: null });
+    const [modalConfig, setModalConfig] = useState<{ open: boolean; type: 'image' | null }>({ open: false, type: null });
 
     // Sync when content changes
     useEffect(() => {
@@ -53,8 +52,6 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
     const handleMediaSelect = (id: string, url: string) => {
         if (modalConfig.type === 'image') {
             setFormData(prev => ({ ...prev, image: url }));
-        } else if (modalConfig.type === 'video') {
-            setFormData(prev => ({ ...prev, video: url }));
         }
         setModalConfig({ open: false, type: null });
     };
@@ -81,13 +78,13 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
             </div>
 
             {/* Media Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 gap-8">
                 {/* About Image */}
                 <div className="space-y-3">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Görsel (Varsayılan)</label>
                     <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group relative min-h-[160px] flex flex-col items-center justify-center text-center">
                         {formData.image ? (
-                            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
+                            <div className="relative w-full h-64 rounded-lg overflow-hidden bg-gray-100">
                                 <LazyImage src={getImageUrl(formData.image)} alt="About" fill className="object-cover" />
                                 <button type="button" onClick={() => setFormData({ ...formData, image: '' })} className="absolute top-2 right-2 p-1 bg-red-100/90 text-red-600 rounded-full hover:bg-red-200">
                                     <X size={14} />
@@ -108,35 +105,6 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
                         </button>
                     </div>
                 </div>
-
-                {/* About Video */}
-                <div className="space-y-3">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanıtım Videosu (Opsiyonel)</label>
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group relative min-h-[160px] flex flex-col items-center justify-center text-center">
-                        {formData.video ? (
-                            <div className="relative w-full h-48 rounded-lg overflow-hidden bg-black/5 flex items-center justify-center">
-                                <Video size={40} className="text-blue-500 mb-2" />
-                                <span className="text-xs text-gray-500 absolute bottom-2 px-2 w-full truncate">{formData.video}</span>
-                                <button type="button" onClick={() => setFormData({ ...formData, video: '' })} className="absolute top-2 right-2 p-1 bg-red-100/90 text-red-600 rounded-full hover:bg-red-200">
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="pointer-events-none mb-2">
-                                <Video size={32} className="mx-auto text-gray-400 mb-2" />
-                                <span className="text-sm text-gray-500">Video Seçilmedi</span>
-                            </div>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => setModalConfig({ open: true, type: 'video' })}
-                            className={`mt-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 z-10`}
-                        >
-                            {formData.video ? 'Videoyu Değiştir' : 'Video Kütüphanesini Aç'}
-                        </button>
-                    </div>
-                    <p className="text-xs text-gray-400">Video eklenirse görsel yerine video oynatılır.</p>
-                </div>
             </div>
 
             <div className="pt-4 flex justify-end">
@@ -152,9 +120,9 @@ export default function AboutForm({ content, onSave, saving }: AboutFormProps) {
             <MediaPickerModal
                 isOpen={modalConfig.open}
                 onClose={() => setModalConfig({ ...modalConfig, open: false })}
-                allowedTypes={modalConfig.type === 'video' ? 'video' : 'image'}
+                allowedTypes={'image'}
                 onSelect={handleMediaSelect}
-                title={modalConfig.type === 'video' ? 'Video Seç' : 'Görsel Seç'}
+                title={'Görsel Seç'}
             />
         </form>
     );

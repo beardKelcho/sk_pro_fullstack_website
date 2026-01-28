@@ -7,9 +7,10 @@ interface LocalizedInputProps {
     onChange: (value: LocalizedString) => void;
     placeholder?: string;
     type?: 'text' | 'textarea';
+    className?: string;
 }
 
-export default function LocalizedInput({ label, value, onChange, placeholder, type = 'text' }: LocalizedInputProps) {
+export default function LocalizedInput({ label, value, onChange, placeholder, type = 'text', className = '' }: LocalizedInputProps) {
     const [lang, setLang] = useState<'tr' | 'en'>('tr');
 
     const handleChange = (text: string) => {
@@ -17,7 +18,7 @@ export default function LocalizedInput({ label, value, onChange, placeholder, ty
     };
 
     return (
-        <div className="mb-4">
+        <div className={`mb-4 ${className}`}>
             <div className="flex justify-between items-center mb-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
                 <div className="flex space-x-2 text-xs">

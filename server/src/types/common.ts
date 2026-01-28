@@ -4,6 +4,10 @@
  */
 
 import { Request, Response } from 'express';
+import { IUser } from '../models/User';
+import { IProject } from '../models/Project';
+import { IEquipment } from '../models/Equipment';
+import { IClient } from '../models/Client';
 
 /**
  * API Error Response Tipi
@@ -33,13 +37,7 @@ export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
  * Express Request Extension (user bilgisi için)
  */
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    _id?: string;
-    email: string;
-    role: string;
-    name?: string;
-  };
+  user?: IUser;
 }
 
 /**
@@ -131,10 +129,7 @@ export type Populated<T, K extends keyof T, P> = Omit<T, K> & {
 };
 
 // Also import interfaces to create concrete populated types
-import { IProject } from '../models/Project';
-import { IEquipment } from '../models/Equipment';
-import { IUser } from '../models/User';
-import { IClient } from '../models/Client';
+// Imports moved to top
 
 export interface IProjectPopulated extends Omit<IProject, 'client' | 'team' | 'equipment'> {
   client: IClient;

@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/api/') ||
     pathname.startsWith('/static/') ||
     pathname.startsWith('/uploads/') ||
-    pathname.includes('.') ||
+    pathname.includes('.') || // İstenilen kesin çözüm: Uzantısı olan her dosyayı bypass et
     pathname === '/favicon.ico'
   ) {
     return NextResponse.next();

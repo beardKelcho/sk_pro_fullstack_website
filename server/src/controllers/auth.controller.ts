@@ -53,7 +53,7 @@ export class AuthController {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: 7 * 24 * 60 * 60 * 1000,
-          sameSite: 'lax', // CSRF koruması için
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
           path: '/'
         });
 
@@ -62,7 +62,7 @@ export class AuthController {
           httpOnly: true, // XSS koruması için JS erişemez, request ile otomatik gider
           secure: process.env.NODE_ENV === 'production', // Sadece HTTPS'de
           maxAge: 15 * 60 * 1000, // 15 dakika (Auth service ile uyumlu olmalı)
-          sameSite: 'lax',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
           path: '/'
         });
       } catch (cookieError: unknown) {
@@ -149,7 +149,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/'
       });
 
@@ -158,7 +158,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 15 * 60 * 1000,
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/'
       });
 

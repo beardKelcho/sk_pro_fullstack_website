@@ -45,6 +45,9 @@ if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
 // Express app oluştur
 const app = express();
 
+// Trust Proxy: Render/Vercel arkasında çalışırken IP ve protokolü doğru algılamak için gerekli
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: (origin, callback) => {
     // Test ve development modunda tüm origin'lere izin ver (test ortamı için gerekli)
@@ -87,6 +90,8 @@ const httpServer = createServer(app);
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:3000',
   process.env.CORS_ORIGIN,
+  'https://skpro.com.tr',
+  'https://www.skpro.com.tr'
 ].filter(Boolean); // undefined/null değerleri filtrele
 
 // Development modunda local network IP'lerine izin ver

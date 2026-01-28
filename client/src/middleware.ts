@@ -22,6 +22,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/static/') ||
     pathname.startsWith('/uploads/') ||
     pathname.includes('.') || // İstenilen kesin çözüm: Uzantısı olan her dosyayı bypass et
+    pathname.endsWith('.mp4') || // User requested explicit safety
     pathname === '/favicon.ico'
   ) {
     return NextResponse.next();

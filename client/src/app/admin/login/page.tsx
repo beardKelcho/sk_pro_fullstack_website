@@ -9,9 +9,13 @@ import { Button } from '@/components/ui/Button';
 import PasswordInput from '@/components/ui/PasswordInput';
 import Image from 'next/image';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { replace } = useRouter(); // Use replace for faster redirect without history stack
+  const queryClient = useQueryClient(); // Init QueryClient
   const from = searchParams.get('from') || '/admin';
 
   const [email, setEmail] = useState('');
@@ -49,6 +53,14 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
 
+      // STATE CLEANUP: Eski kullanıcı verilerini temizle
+      if (typeof window !== 'undefined') { // Safety check
+        queryClient.clear();
+      }
+
+      // STATE CLEANUP: Eski cache'i temizle (v14 Reborn)
+      queryClient.clear();
+
       // Hızlı yönlendirme için
       router.push(from);
       router.refresh(); // Router cache temizle
@@ -57,7 +69,7 @@ export default function LoginPage() {
       console.error('Login error:', err);
       const message = err.response?.data?.message || 'Giriş yapılırken bir hata oluştu.';
       setError(message);
-      toast.error(message);
+      // toast.error(message); // Removed as per v14 Reborn standards
     } finally {
       setIsLoading(false);
     }

@@ -55,32 +55,18 @@ apiClient.interceptors.response.use(
     }
 
     // 401 Handling...
-    // 401 Handling...
+    // 401 Handling (User Requested Snippet)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // Refresh Token Logic - Kesinlikle cookie kullanılmalı
-        const refreshUrl = typeof window !== 'undefined'
-          ? '/api/auth/refresh-token'
-          : `${getApiUrl().replace('/api', '')}/api/auth/refresh-token`;
-
-        // POST isteği ile cookie'leri gönder
-        const response = await axios.post(refreshUrl, {}, {
-          withCredentials: true,
-          baseURL: undefined
+        await axios.post(`${API_URL}/auth/refresh-token`, {}, {
+          withCredentials: true
         });
-
-        if (response.status === 200) {
-          return apiClient(originalRequest);
-        }
+        return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh başarısız olduysa login'e yönlendir
-        if (typeof window !== 'undefined') {
-          // Sadece admin sayfalarındaysa yönlendir
-          if (window.location.pathname.startsWith('/admin')) {
-            window.location.href = '/admin/login';
-          }
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+          window.location.href = '/admin/login';
         }
         return Promise.reject(refreshError);
       }

@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- 2. ADMIN AUTH KONTROLÜ ---
+  // 2. ADMIN AUTH KONTROLÜ
   const isAdminPath = pathname.match(/^\/(?:[a-z]{2}\/)?admin/);
   const isLoginPage = pathname.match(/^\/(?:[a-z]{2}\/)?admin\/login/);
 
@@ -35,7 +35,6 @@ export function middleware(request: NextRequest) {
     const accessToken = request.cookies.get('accessToken');
     const refreshToken = request.cookies.get('refreshToken');
 
-    // Token yoksa login'e atar. Çerezlerin orada olduğunu biliyoruz.
     if (!accessToken && !refreshToken) {
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('from', pathname);
@@ -43,6 +42,9 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // Not: User snippet'inde burada 'return NextResponse.next()' vardi, 
+  // bu durum CSP headerlarinin eklenmesini engelliyordu. 
+  // Bu yüzden akışın aşağıya devam etmesini sağlıyoruz.
   const response = isAdminPath ? NextResponse.next() : intlMiddleware(request);
 
   // --- 3. GENİŞLETİLMİŞ GÜVENLİK (CSP) AYARLARI ---

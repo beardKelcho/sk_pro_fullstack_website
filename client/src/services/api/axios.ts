@@ -55,25 +55,32 @@ apiClient.interceptors.response.use(
     }
 
     // 401 Handling...
+    // 401 Handling...
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // Refresh Token Logic
-        const refreshUrl = typeof window !== 'undefined' ? '/api/auth/refresh-token' : `${getApiUrl().replace('/api', '')}/api/auth/refresh-token`;
+        // Refresh Token Logic - Kesinlikle cookie kullanılmalı
+        const refreshUrl = typeof window !== 'undefined'
+          ? '/api/auth/refresh-token'
+          : `${getApiUrl().replace('/api', '')}/api/auth/refresh-token`;
 
+        // POST isteği ile cookie'leri gönder
         const response = await axios.post(refreshUrl, {}, {
           withCredentials: true,
-          baseURL: undefined // Override baseURL to use absolute/relative path correctly
+          baseURL: undefined
         });
 
         if (response.status === 200) {
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        // Logout logic if refresh fails with 401/403
-        if (typeof window !== 'undefined' && (refreshError as any)?.response?.status === 401) {
-          window.location.href = '/admin/login';
+        // Refresh başarısız olduysa login'e yönlendir
+        if (typeof window !== 'undefined') {
+          // Sadece admin sayfalarındaysa yönlendir
+          if (window.location.pathname.startsWith('/admin')) {
+            window.location.href = '/admin/login';
+          }
         }
         return Promise.reject(refreshError);
       }

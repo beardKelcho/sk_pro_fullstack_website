@@ -116,14 +116,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Negative lookahead pattern:
-     * - Exclude paths starting with api, _next, next, static, favicon.ico
-     * - Exclude Next.js internal hash routes (8-32 char hex strings with optional .json/.js)
-     * Note: Hex hash patterns are checked in middleware function itself
-     * because Next.js matcher doesn't support complex negative lookahead with end anchors
-     */
-    '/((?!api|_next|next|static|favicon\\.ico|[0-9a-f]{8,32}(?:\\.json|\\.js)?).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

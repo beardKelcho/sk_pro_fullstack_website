@@ -119,7 +119,7 @@ class SiteService {
             return `${this.cdnBaseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
         }
 
-        return '';
+        return existingUrl || '';
     }
 
     private resolveUrl(
@@ -172,9 +172,11 @@ class SiteService {
                         url = data.url;
                     }
                 }
+                const strictUrl = this.buildStrictUrl(filename, url, 'video');
+                // Eğer strictUrl boş döndüyse ve orijinal url 'cloudinary' içeriyorsa koru
                 return {
                     ...video,
-                    url: this.buildStrictUrl(filename, url, 'video')
+                    url: strictUrl || url
                 };
             });
         }

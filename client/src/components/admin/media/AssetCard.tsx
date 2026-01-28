@@ -32,7 +32,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
         >
             {/* Thumbnail */}
             {isVideo ? (
-                <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 pointer-events-none">
                     <video src={imageUrl} className="w-full h-full object-cover" muted />
                     <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
                         <span className="bg-black/50 text-white px-2 py-1 rounded text-xs backdrop-blur-sm">VIDEO</span>

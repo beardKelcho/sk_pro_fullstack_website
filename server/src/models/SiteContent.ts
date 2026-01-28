@@ -45,6 +45,7 @@ export interface AboutContent {
   title: LocalizedString;
   description: LocalizedString;
   image?: string;
+  video?: string;
   stats: {
     label: LocalizedString;
     value: string;

@@ -69,6 +69,7 @@ export default function HeroForm({ content, onSave, saving }: HeroFormProps) {
             // Fix: Store URL directly to avoid /api/site-images/... proxy 404s
             setFormData(prev => ({ ...prev, backgroundImage: url }));
         } else if (modalConfig.type === 'video') {
+            console.log('HeroForm: Selected Video', { id, url });
             // Fix: Store URL directly
             setFormData(prev => ({ ...prev, selectedVideo: url, backgroundVideo: url }));
         }

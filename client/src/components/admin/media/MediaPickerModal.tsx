@@ -118,7 +118,11 @@ const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
                         ) : (
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                 {filteredAssets.map(asset => (
-                                    <div key={asset.id || asset._id} onClick={() => onSelect(asset.id || asset._id || '', asset.url || getImageUrl(asset.id || asset._id))}>
+                                    <div key={asset.id || asset._id} onClick={() => {
+                                        const finalUrl = asset.url || getImageUrl(asset.id || asset._id);
+                                        console.log('MediaPicker: Selecting', { id: asset.id || asset._id, url: finalUrl, rawAsset: asset });
+                                        onSelect(asset.id || asset._id || '', finalUrl);
+                                    }}>
                                         <AssetCard
                                             asset={asset}
                                             onToggleSelect={() => { }} // No multi-select in picker mode usually, or simple select

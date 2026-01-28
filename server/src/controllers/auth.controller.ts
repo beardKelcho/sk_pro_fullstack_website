@@ -20,9 +20,8 @@ export class AuthController {
 
     try {
       const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({ success: false, message: 'Email ve şifre gereklidir' });
-      }
+
+      // Manual validation removed (handled by Zod middleware)
 
       const ip = getClientIp(req);
       const userAgent = (req.headers['user-agent'] as string) || 'unknown';
@@ -48,12 +47,23 @@ export class AuthController {
       const { accessToken, refreshToken } = result.tokens;
       const mobile = isMobileClient(req);
 
-      // Set Cookie
       try {
+        // Refresh Token Cookie
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           maxAge: 7 * 24 * 60 * 60 * 1000,
+          sameSite: 'lax', // CSRF koruması için
+          path: '/'
+        });
+
+        // Access Token Cookie (New)
+        res.cookie('accessToken', accessToken, {
+          httpOnly: true, // XSS koruması için JS erişemez, request ile otomatik gider
+          secure: process.env.NODE_ENV === 'production', // Sadece HTTPS'de
+          maxAge: 15 * 60 * 1000, // 15 dakika (Auth service ile uyumlu olmalı)
+          sameSite: 'lax',
+          path: '/'
         });
       } catch (cookieError: unknown) {
         logger.warn('Cookie ayarlama hatası (non-blocking):', cookieError);
@@ -110,12 +120,14 @@ export class AuthController {
       await authService.logout(refreshTokenRaw);
 
       res.clearCookie('refreshToken');
+      res.clearCookie('accessToken');
       return res.status(200).json({ success: true, message: 'Başarıyla çıkış yapıldı' });
 
     } catch (e: unknown) {
       logger.warn('Logout hatası:', e);
       // Still return success for logout to clear client state
       res.clearCookie('refreshToken');
+      res.clearCookie('accessToken');
       return res.status(200).json({ success: true, message: 'Çıkış yapıldı' });
     }
   }
@@ -137,6 +149,17 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: 'lax',
+        path: '/'
+      });
+
+      // Set Access Token Cookie
+      res.cookie('accessToken', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 15 * 60 * 1000,
+        sameSite: 'lax',
+        path: '/'
       });
 
       return res.status(200).json({

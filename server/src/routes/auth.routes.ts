@@ -2,6 +2,8 @@ import express from 'express';
 import { authController } from '../controllers';
 import { authenticate } from '../middleware/auth.middleware';
 import { validateLogin, sanitizeInput } from '../middleware/inputValidation';
+import { validate } from '../middleware/zod.middleware';
+import { loginSchema } from '../utils/zodSchemas';
 import { loginLimiter } from '../middleware/rateLimiters';
 
 const router = express.Router();
@@ -61,7 +63,8 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Error'
  */
 // Login endpoint'i için özel rate limiter (daha esnek)
-router.post('/login', loginLimiter, sanitizeInput, validateLogin, authController.login);
+// validateLogin (express-validator) yerine validate(loginSchema) (zod) kullanıyoruz
+router.post('/login', loginLimiter, sanitizeInput, validate(loginSchema), authController.login);
 
 /**
  * @swagger

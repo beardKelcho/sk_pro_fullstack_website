@@ -162,24 +162,6 @@ const nextConfig = {
           }
         ],
       },
-      {
-        source: '/:path*.css',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'text/css'
-          }
-        ]
-      },
-      {
-        source: '/:path*.js',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/javascript'
-          }
-        ]
-      }
     ]
   },
   webpack: (config, { dev, isServer }) => {

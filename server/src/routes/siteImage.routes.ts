@@ -1,6 +1,8 @@
 import express from 'express';
 import * as siteImageController from '../controllers/siteImage.controller';
 import { authenticate, requirePermission } from '../middleware/auth.middleware';
+import { validate } from '../middleware/zod.middleware';
+import { createSiteImageSchema, updateSiteImageSchema } from '../utils/zodSchemas';
 import { Permission } from '../config/permissions';
 
 const router = express.Router();
@@ -40,6 +42,7 @@ router.post(
   authenticate,
   requirePermission(Permission.FILE_UPLOAD),
   require('../middleware/upload.middleware').upload.single('image'),
+  validate(createSiteImageSchema),
   siteImageController.createImage
 );
 
@@ -48,6 +51,7 @@ router.put(
   '/:id',
   authenticate,
   requirePermission(Permission.FILE_UPLOAD),
+  validate(updateSiteImageSchema),
   siteImageController.updateImage
 );
 

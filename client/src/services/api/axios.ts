@@ -31,59 +31,15 @@ const apiClient = axios.create({
 // Request interceptor - Token'ı header'a ekle
 apiClient.interceptors.request.use(
   (config) => {
-    if (typeof window !== 'undefined') {
-      // Önce localStorage'dan, yoksa sessionStorage'dan token al
-      let token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+    // Client-side'da localStorage kontrolü kaldırıldı (Cookie kullanılıyor)
+    // Ancak backward compatibility için varsa ekleyebiliriz veya tamamen kaldırabiliriz.
+    // Cookie-based auth'da header'a gerek yok, browser otomatik gönderir.
 
-      if (token) {
-        // Token'ı temizle (boşluk, yeni satır, vs. kaldır)
-        token = token.trim();
-
-        // Token formatını kontrol et (JWT formatı: 3 bölüm, nokta ile ayrılmış)
-        const tokenParts = token.split('.');
-        if (tokenParts.length !== 3) {
-          // Development modunda detaylı log
-          if (process.env.NODE_ENV === 'development') {
-            logger.error('Invalid token format detected in interceptor:', {
-              parts: tokenParts.length,
-              tokenLength: token.length,
-              firstChars: token.substring(0, 20),
-              lastChars: token.substring(token.length - 20),
-              url: config.url
-            });
-          }
-          // Geçersiz token'ı temizle ama sadece gerçekten geçersizse
-          // Eğer token çok kısa veya formatı tamamen yanlışsa temizle
-          if (token.length < 20 || tokenParts.length === 0) {
-            localStorage.removeItem('accessToken');
-            sessionStorage.removeItem('accessToken');
-            token = null;
-          } else {
-            // Format biraz farklı olabilir ama token var, yine de kullanmayı dene
-            // (bazı edge case'ler için)
-            config.headers.Authorization = `Bearer ${token}`;
-          }
-        } else {
-          config.headers.Authorization = `Bearer ${token}`;
-
-          // Development modunda token'ın header'a eklendiğini doğrula
-          if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
-            logger.debug('Request interceptor: Token added to header', {
-              tokenPartsCount: tokenParts.length,
-              tokenLength: token.length,
-              tokenPreview: token.substring(0, 30) + '...',
-              tokenEnd: '...' + token.substring(token.length - 10),
-              authHeaderPreview: config.headers.Authorization?.substring(0, 50) + '...'
-            });
-          }
-        }
-      } else {
-        // Development modunda token yoksa uyar
-        if (process.env.NODE_ENV === 'development' && config.url?.includes('/profile')) {
-          logger.warn('Request interceptor: No token found in storage');
-        }
-      }
+    // Sadece development'ta logla
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      // logger.debug('Request sending...', { url: config.url });
     }
+
     return config;
   },
   (error) => {
@@ -180,22 +136,15 @@ apiClient.interceptors.response.use(
             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5001');
             return `${backendUrl}/api/auth/refresh-token`;
           })();
+        // Refresh request - Cookie automatically sent
         const response = await axios.post(refreshUrl, {}, {
           withCredentials: true,
-          timeout: 10000, // Timeout'u 10 saniyeye çıkar (5 saniye çok kısa olabilir)
+          timeout: 10000,
         });
 
-        const { accessToken } = response.data;
-
-        if (accessToken) {
-          // Token'ı aynı yerde sakla (localStorage veya sessionStorage)
-          const existingToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-          if (localStorage.getItem('accessToken')) {
-            localStorage.setItem('accessToken', accessToken);
-          } else {
-            sessionStorage.setItem('accessToken', accessToken);
-          }
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        // 200 OK döndüyse cookie set edilmiştir
+        if (response.status === 200) {
+          // Retry original request
           return apiClient(originalRequest);
         }
       } catch (refreshError: unknown) {

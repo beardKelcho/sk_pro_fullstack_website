@@ -21,8 +21,8 @@ export const authenticate = async (
 ) => {
   try {
     let token;
-    
-    // Header'dan token alınması
+
+    // 1. Header'dan token kontrolü
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith('Bearer')
@@ -33,14 +33,18 @@ export const authenticate = async (
         token = token.trim();
       }
     }
-    
+    // 2. Cookie'den token kontrolü (Eğer header yoksa)
+    else if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+    }
+
     if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Bu işlem için giriş yapmanız gerekiyor',
       });
     }
-    
+
     // Token formatını kontrol et (JWT formatı: 3 bölüm, nokta ile ayrılmış)
     const tokenParts = token.split('.');
     if (tokenParts.length !== 3) {
@@ -56,7 +60,7 @@ export const authenticate = async (
         name: 'JsonWebTokenError',
       });
     }
-    
+
     // Token doğrulama - JWT_SECRET'ı authTokens'tan import et (tutarlılık için)
     // Development modunda token ve secret bilgilerini logla
     if (process.env.NODE_ENV === 'development') {
@@ -69,22 +73,22 @@ export const authenticate = async (
         tokenStart: token.substring(0, 20) + '...'
       });
     }
-    
+
     const decoded = jwt.verify(
       token,
       JWT_SECRET
     ) as jwt.JwtPayload;
-    
+
     // Kullanıcıyı bul
     const user = await User.findById(decoded.id).select('-password');
-    
+
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
         message: 'Geçersiz token veya yetkisiz kullanıcı',
       });
     }
-    
+
     // Session activity güncelle (async, hata olsa bile devam et)
     const { updateSessionActivity } = require('../controllers/session.controller');
     updateSessionActivity(user._id.toString(), token).catch((err: any) =>
@@ -96,18 +100,18 @@ export const authenticate = async (
     next();
   } catch (error: any) {
     // Invalid signature veya expired token hatası için daha açıklayıcı mesaj
-    const errorMessage = error.name === 'JsonWebTokenError' 
+    const errorMessage = error.name === 'JsonWebTokenError'
       ? 'Geçersiz token. Lütfen tekrar giriş yapın.'
       : error.name === 'TokenExpiredError'
-      ? 'Token süresi dolmuş. Lütfen tekrar giriş yapın.'
-      : 'Yetkilendirme başarısız';
-    
-    logger.error('Kimlik doğrulama hatası:', { 
-      name: error.name, 
+        ? 'Token süresi dolmuş. Lütfen tekrar giriş yapın.'
+        : 'Yetkilendirme başarısız';
+
+    logger.error('Kimlik doğrulama hatası:', {
+      name: error.name,
       message: error.message,
-      path: req.path 
+      path: req.path
     });
-    
+
     res.status(401).json({
       success: false,
       message: errorMessage,
@@ -125,19 +129,19 @@ export const authorize = (...roles: string[]) => {
         message: 'Yetkilendirme başarısız',
       });
     }
-    
+
     // Admin ve Firma Sahibi her şeye erişebilir
     if (hasRole(req.user.role, Role.ADMIN, Role.FIRMA_SAHIBI)) {
       return next();
     }
-    
+
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message: 'Bu işlem için yetkiniz bulunmuyor',
       });
     }
-    
+
     next();
   };
 };
@@ -151,12 +155,12 @@ export const requirePermission = (permission: Permission) => {
         message: 'Yetkilendirme başarısız',
       });
     }
-    
+
     // Admin ve Firma Sahibi her şeye erişebilir
     if (hasRole(req.user.role, Role.ADMIN, Role.FIRMA_SAHIBI)) {
       return next();
     }
-    
+
     // Kullanıcının özel yetkilerini kontrol et
     const userPermissions = req.user.permissions || [];
     if (!hasPermission(req.user.role, permission, userPermissions)) {
@@ -165,7 +169,7 @@ export const requirePermission = (permission: Permission) => {
         message: 'Bu işlem için yetkiniz bulunmuyor',
       });
     }
-    
+
     next();
   };
 }; 

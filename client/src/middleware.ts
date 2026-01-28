@@ -16,9 +16,22 @@ export function middleware(request: NextRequest) {
   // Static dosyalar ve Next.js internal dosyaları için middleware'i bypass et
   const pathname = request.nextUrl.pathname;
 
-  // API rotaları için middleware'i bypass et (Authentication ve diğer işlemler backend'de yapılır)
   if (pathname.startsWith('/api')) {
     return NextResponse.next();
+  }
+
+  // Admin Paneli Auth Kontrolü (Flicker'ı önlemek için)
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login' && pathname !== '/admin') {
+    const accessToken = request.cookies.get('accessToken');
+    const refreshToken = request.cookies.get('refreshToken');
+
+    // Eğer her iki token da yoksa login'e yönlendir
+    if (!accessToken && !refreshToken) {
+      const loginUrl = new URL('/admin/login', request.url);
+      // Nereye gitmek istediğini query parametresi olarak ekle
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   // Static dosyaları, Next.js internal dosyalarını ve asset'leri bypass et

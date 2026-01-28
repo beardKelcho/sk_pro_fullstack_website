@@ -1,6 +1,8 @@
 import express from 'express';
 import { siteContentController } from '../controllers';
 import { authenticate, requirePermission } from '../middleware/auth.middleware';
+import { validate } from '../middleware/zod.middleware';
+import { createSiteContentSchema, updateSiteContentSchema } from '../utils/zodSchemas';
 import { Permission } from '../config/permissions';
 
 const router = express.Router();
@@ -42,6 +44,7 @@ router.post(
   '/',
   authenticate,
   requirePermission(Permission.EQUIPMENT_UPDATE), // Fallback permission for content
+  validate(createSiteContentSchema),
   siteContentController.createContent
 );
 
@@ -50,6 +53,7 @@ router.put(
   '/:id',
   authenticate,
   requirePermission(Permission.EQUIPMENT_UPDATE),
+  validate(updateSiteContentSchema),
   siteContentController.updateContent
 );
 

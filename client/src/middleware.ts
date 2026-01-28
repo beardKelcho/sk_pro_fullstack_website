@@ -13,7 +13,7 @@ const intlMiddleware = createIntlMiddleware({
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // --- 1. STATİK DOSYALARI MUTLAK SERBEST BIRAK ---
+  // --- 1. STATİK DOSYALARI MUTLAK SERBEST BIRAK (MIME HATASI İÇİN) ---
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/api/') ||
@@ -43,7 +43,8 @@ export function middleware(request: NextRequest) {
   const response = isAdminPath ? NextResponse.next() : intlMiddleware(request);
 
   // --- 3. GENİŞLETİLMİŞ GÜVENLİK (CSP) AYARLARI ---
-  const apiBaseUrl = 'https://sk-pro-backend.onrender.com'; // Senin gerçek backend adresin
+  // Ekran görüntülerindeki tüm engellemeleri (Cloudinary, Pusher, Render) burada açıyoruz.
+  const apiBaseUrl = 'https://sk-pro-backend.onrender.com';
 
   const cspHeader = [
     "default-src 'self'",

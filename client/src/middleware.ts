@@ -21,7 +21,8 @@ export function middleware(request: NextRequest) {
   }
 
   // Admin Paneli Auth Kontrolü (Flicker'ı önlemek için)
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login' && pathname !== '/admin') {
+  // /admin/login dışındaki tüm /admin rotalarını koru
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     const accessToken = request.cookies.get('accessToken');
     const refreshToken = request.cookies.get('refreshToken');
 

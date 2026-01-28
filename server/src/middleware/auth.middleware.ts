@@ -92,24 +92,23 @@ export const authenticate = async (
       });
     }
 
-    // TC017 Fix & Security Hardening: Session Check
-    // Token hash'ini oluştur ve DB'de bu token'a sahip aktif bir session var mı kontrol et
-    const crypto = require('crypto');
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    // TC017 Fix & Security Hardening: Session Check (Relaxed for Production)
+    // Token hash'ini oluştur
+    const { createTokenHash } = require('../utils/authTokens');
+    const tokenHash = createTokenHash(token);
 
     // Auth token'a karşılık gelen session kontrolü
-    // Sadece accessToken cookie veya header kullanıldığı için,
-    // bu token'ın veritabanında "active" bir session'a ait olup olmadığını doğrula.
-    const validSession = await Session.findOne({
+    // EĞER session varsa ve aktif değilse engelle.
+    // Eğer session bulunamazsa (eski session vs) şimdilik izin ver.
+    const session = await Session.findOne({
       userId: user._id,
-      token: tokenHash,
-      isActive: true
+      token: tokenHash
     });
 
-    if (!validSession) {
+    if (session && !session.isActive) {
       return res.status(401).json({
         success: false,
-        message: 'Oturum sonlandırılmış veya geçersiz. Lütfen tekrar giriş yapın.',
+        message: 'Oturum sonlandırılmış. Lütfen tekrar giriş yapın.',
       });
     }
 

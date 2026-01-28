@@ -13,8 +13,7 @@ const intlMiddleware = createIntlMiddleware({
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // --- 1. ADIM: KRİTİK DOSYALARI MUTLAK BYPASS ET ---
-  // MIME hatasını önlemek için CSS, JS ve resimleri hiçbir kontrole sokmadan serbest bırakıyoruz.
+  // --- 1. STATİK DOSYALARI MUTLAK SERBEST BIRAK ---
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/api/') ||
@@ -26,8 +25,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- 2. ADIM: ADMIN AUTH KONTROLÜ ---
-  // Hem /admin hem de /tr/admin gibi yolları yakalayan esnek kontrol.
+  // --- 2. ADMIN AUTH KONTROLÜ ---
   const isAdminPath = pathname.match(/^\/(?:[a-z]{2}\/)?admin/);
   const isLoginPage = pathname.match(/^\/(?:[a-z]{2}\/)?admin\/login/);
 
@@ -35,7 +33,6 @@ export function middleware(request: NextRequest) {
     const accessToken = request.cookies.get('accessToken');
     const refreshToken = request.cookies.get('refreshToken');
 
-    // Tokenlar yoksa login sayfasına yönlendir. Çerezler tarayıcıda varsa sistem seni içeri alacaktır.
     if (!accessToken && !refreshToken) {
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('from', pathname);
@@ -43,30 +40,28 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // --- 3. ADIM: DİL YÖNLENDİRMESİ ---
   const response = isAdminPath ? NextResponse.next() : intlMiddleware(request);
 
-  // --- 4. ADIM: SENİN ÖZEL GÜVENLİK (CSP) AYARLARIN ---
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const apiBaseUrl = (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5001');
+  // --- 3. GENİŞLETİLMİŞ GÜVENLİK (CSP) AYARLARI ---
+  const apiBaseUrl = 'https://sk-pro-backend.onrender.com'; // Senin gerçek backend adresin
 
   const cspHeader = [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live https://va.vercel-scripts.com ${isDevelopment ? 'http://localhost:*' : ''}`,
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://vercel.live https://va.vercel-scripts.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    `img-src 'self' data: https: blob: ${apiBaseUrl}`,
+    `img-src 'self' data: https: blob: res.cloudinary.com ${apiBaseUrl}`,
     "font-src 'self' https://fonts.gstatic.com data:",
-    `connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://vitals.vercel-insights.com ${apiBaseUrl} ${isDevelopment ? 'ws://localhost:*' : ''}`,
+    `connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://vitals.vercel-insights.com ${apiBaseUrl} *.pusher.com wss://*.pusher.com`,
+    `media-src 'self' data: https: blob: res.cloudinary.com ${apiBaseUrl}`,
     "frame-src 'self' https://www.youtube.com https://www.google.com https://vercel.live",
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
-  ].filter(Boolean).join('; ');
+  ].join('; ');
 
   response.headers.set('Content-Security-Policy', cspHeader);
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
   return response;
 }

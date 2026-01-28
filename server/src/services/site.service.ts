@@ -268,6 +268,7 @@ class SiteService {
             siteContent.content = contentData;
             if (order !== undefined) siteContent.order = order;
             if (isActive !== undefined) siteContent.isActive = isActive;
+            console.log('Modified content for section (createOrUpdate):', section);
             siteContent.markModified('content');
             await siteContent.save();
         } else {
@@ -294,6 +295,7 @@ class SiteService {
         if (data.order !== undefined) siteContent.order = data.order;
         if (data.isActive !== undefined) siteContent.isActive = data.isActive;
 
+        console.log('Modified content (updateContentById) for id:', id);
         siteContent.markModified('content');
         await siteContent.save();
 

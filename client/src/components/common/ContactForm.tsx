@@ -1,12 +1,10 @@
 import React from 'react';
-import { useTranslations } from 'next-intl';
 
 /**
  * Contact form component - TEMPORARILY DISABLED
  * Form functionality will be restored when Site Management is rebuilt
  */
 const ContactForm: React.FC = () => {
-  const t = useTranslations('site.contactForm');
 
   return (
     <div className="space-y-4">

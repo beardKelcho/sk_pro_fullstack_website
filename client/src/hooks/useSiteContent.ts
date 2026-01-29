@@ -22,7 +22,6 @@ import {
     deleteImage,
     deleteMultipleImages
 } from '@/services/siteImageService';
-import { useLocale } from 'next-intl';
 
 // Re-export types
 export type {
@@ -83,7 +82,7 @@ export const useDeleteMultipleSiteImages = () => {
 
 export const useSiteContent = () => {
     const queryClient = useQueryClient();
-    const locale = useLocale();
+    const locale = 'tr'; // Static Turkish locale
 
     // Helper to resolve localized string
     const resolveLocalized = (content: LocalizedString | string | undefined): string => {

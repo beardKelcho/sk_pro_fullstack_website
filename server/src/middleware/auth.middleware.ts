@@ -98,19 +98,25 @@ export const authenticate = async (
     const tokenHash = createTokenHash(token);
 
     // Auth token'a karşılık gelen session kontrolü
-    // EĞER session varsa ve aktif değilse engelle.
-    // Eğer session bulunamazsa (eski session vs) şimdilik izin ver.
     const session = await Session.findOne({
       userId: user._id,
       token: tokenHash
     });
 
-    if (session && !session.isActive) {
+    if (!session) {
+      // Session veritabanında bulunamadı (Eski session veya senkronizasyon sorunu)
+      // Kullanıcıyı engellemek yerine logla ve devam et (User request)
+      logger.warn('Session not found in DB for valid JWT - Allowing access', {
+        userId: user._id,
+        path: req.path
+      });
+    } else if (!session.isActive) {
       return res.status(401).json({
         success: false,
         message: 'Oturum sonlandırılmış. Lütfen tekrar giriş yapın.',
       });
     }
+
 
     // Session activity güncelle (static import ile)
     updateSessionActivity(user._id.toString(), token).catch((err: any) =>

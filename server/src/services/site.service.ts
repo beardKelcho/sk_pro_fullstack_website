@@ -95,6 +95,10 @@ class SiteService {
 
     private buildStrictUrl(filename: string | undefined, existingUrl: string | undefined, type: 'image' | 'video'): string {
         // Priority 1: Keep existing Cloudinary URL with HTTPS fix
+        if (existingUrl && existingUrl.includes('res.cloudinary.com')) {
+            return existingUrl;
+        }
+
         if (existingUrl && existingUrl.includes('cloudinary.com')) {
             let finalUrl = existingUrl;
             if (finalUrl.startsWith('http:')) {
@@ -300,6 +304,7 @@ class SiteService {
         await siteContent.save();
 
         const docObj = siteContent.toObject();
+        console.log('SITE_CONTENT_SAVED:', docObj.content.hero || docObj.content);
         docObj.content = await this.fixContentUrls(docObj.content);
         return docObj;
     }

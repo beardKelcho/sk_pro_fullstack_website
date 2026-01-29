@@ -15,7 +15,7 @@ export const getCDNProvider = (): CDNProvider => {
     return (process.env.CDN_PROVIDER.toLowerCase() as CDNProvider);
   }
   // Auto-detect Cloudinary
-  if (process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME) {
+  if (process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_API_KEY) {
     return 'cloudinary';
   }
   return 'none';

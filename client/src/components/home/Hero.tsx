@@ -8,19 +8,25 @@ interface HeroProps {
 }
 
 const Hero: React.FC<HeroProps> = ({ content }) => {
+    // Debug için log
+    console.log('Hero Data:', content);
+
     // If no content provided (empty state), return null or loading
     if (!content) {
-        return null; // Or a skeleton/placeholder if preferred
+        return null;
     }
+
+    // Video URL mapping (Backend videoUrl gönderiyor, frontend backgroundVideo bekliyor olabilir)
+    const activeVideoUrl = content.videoUrl || content.backgroundVideo;
 
     return (
         <>
             {/* Video Arkaplan */}
-            {content.backgroundVideo && (
+            {activeVideoUrl && (
                 <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
                     <div className="absolute inset-0 bg-black opacity-60 z-10"></div>
                     <VideoBackgroundPlayer
-                        videoUrl={content.backgroundVideo}
+                        videoUrl={activeVideoUrl}
                         poster={content.backgroundImage}
                         fallbackText="Video yüklenemedi. Tarayıcınız video formatını desteklemiyor."
                     />
@@ -28,7 +34,10 @@ const Hero: React.FC<HeroProps> = ({ content }) => {
             )}
 
             <ImmersiveHero
-                content={content as any}
+                content={{
+                    ...content,
+                    rotatingTexts: content.rotatingTexts || [], // Ensure array
+                } as any}
                 onScrollDown={() => {
                     document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
                 }}

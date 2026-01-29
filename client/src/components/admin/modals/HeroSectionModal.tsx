@@ -209,6 +209,41 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
                                     placeholder="Kısa açıklama..."
                                 />
                             </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Dönen Sloganlar (Sırayla Değişir)
+                                </label>
+                                <div className="space-y-3">
+                                    {formData.rotatingTexts.map((text, index) => (
+                                        <div key={index} className="flex gap-2 items-center">
+                                            <input
+                                                type="text"
+                                                value={text}
+                                                onChange={(e) => handleRotatingTextChange(index, e.target.value)}
+                                                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all hover:border-blue-400"
+                                                placeholder={`Slogan ${index + 1}`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeRotatingText(index)}
+                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                title="Sil"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={addRotatingText}
+                                        className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-all flex items-center justify-center gap-2 group"
+                                    >
+                                        <Plus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        Yeni Slogan Ekle
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         /* Video Tab */

@@ -6,6 +6,7 @@ export interface HeroContent {
     buttonLink?: string;
     rotatingTexts?: string[];
     backgroundVideo?: string;
+    videoUrl?: string; // Admin panelinden gelen video URL
     backgroundImage?: string;
 }
 

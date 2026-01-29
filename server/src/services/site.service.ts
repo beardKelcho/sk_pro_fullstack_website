@@ -4,15 +4,7 @@ import SiteImage from '../models/SiteImage';
 import { AppError } from '../types/common';
 import logger from '../utils/logger';
 
-
-// Interface definitions (would ideally be in types/site.ts or models)
-export interface ISiteContent extends mongoose.Document {
-    section: string;
-    content: Record<string, unknown>;
-    order: number;
-    isActive: boolean;
-}
-
+// Old ISiteImage interface kept for SiteImage methods which haven't changed
 export interface ISiteImage extends mongoose.Document {
     filename: string;
     originalName: string;
@@ -60,7 +52,7 @@ class SiteService {
 
             const fixedContent = JSON.parse(JSON.stringify(content));
 
-            // Scan specific known fields
+            // Scan specific known fields - mapped to new schema structure or potential old one
             collectId(fixedContent.backgroundVideo, 'video');
             collectId(fixedContent.backgroundImage, 'image');
             collectId(fixedContent.selectedVideo, 'video');
@@ -251,11 +243,13 @@ class SiteService {
         if (section) filters.section = section;
         if (isActive !== undefined) filters.isActive = isActive;
 
-        const contents = await SiteContent.find(filters).sort({ order: 1, createdAt: -1 });
+        // NOTE: 'order' field removed from schema, removed sort by order
+        const contents = await SiteContent.find(filters).sort({ createdAt: -1 });
 
         return Promise.all(contents.map(async (doc) => {
             const docObj = doc.toObject();
-            docObj.content = await this.fixContentUrls(docObj.content);
+            // Use 'data' instead of 'content'
+            docObj.data = await this.fixContentUrls(docObj.data) as any;
             return docObj;
         }));
     }
@@ -267,7 +261,7 @@ class SiteService {
         if (!content) return null;
 
         const docObj = content.toObject();
-        docObj.content = await this.fixContentUrls(docObj.content);
+        docObj.data = await this.fixContentUrls(docObj.data) as any;
         return docObj;
     }
 
@@ -283,50 +277,54 @@ class SiteService {
         let siteContent = await SiteContent.findOne({ section });
 
         if (siteContent) {
-            siteContent.content = contentData;
-            if (order !== undefined) siteContent.order = order;
+            // Use 'data' instead of 'content'
+            siteContent.data = contentData;
+            // 'order' removed from schema, ignoring parameter
             if (isActive !== undefined) siteContent.isActive = isActive;
             console.log('Modified content for section (createOrUpdate):', section);
-            siteContent.markModified('content');
+            siteContent.markModified('data');
             await siteContent.save();
         } else {
             siteContent = await SiteContent.create({
                 section,
-                content: contentData,
-                order: order || 0,
+                data: contentData,
+                // order: order || 0, // removed
                 isActive: isActive !== undefined ? isActive : true
             });
         }
 
         const docObj = siteContent.toObject();
-        docObj.content = await this.fixContentUrls(docObj.content);
+        docObj.data = await this.fixContentUrls(docObj.data) as any;
         return docObj;
     }
 
     async updateContentById(id: string, data: { content?: any, order?: number, isActive?: boolean }): Promise<any> {
         if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError('Geçersiz ID', 400);
 
+        // Compatibility mapping: if 'content' passed, treat as 'data'
+        const inputData = data.content || {};
+
         // EĞER HERO VİDEOSU VARSA URL'İ DÜZELT
-        if (data.content && data.content.videoUrl) {
-            if (!data.content.videoUrl.startsWith('http')) {
-                data.content.videoUrl = `https://res.cloudinary.com/dmeviky6f/video/upload/${data.content.videoUrl}`;
+        if (inputData && inputData.videoUrl) {
+            if (!inputData.videoUrl.startsWith('http')) {
+                inputData.videoUrl = `https://res.cloudinary.com/dmeviky6f/video/upload/${inputData.videoUrl}`;
             }
         }
 
         const siteContent = await SiteContent.findById(id);
         if (!siteContent) throw new AppError('İçerik bulunamadı', 404);
 
-        if (data.content) siteContent.content = data.content;
-        if (data.order !== undefined) siteContent.order = data.order;
+        if (data.content) siteContent.data = inputData;
+        // if (data.order !== undefined) siteContent.order = data.order; // removed
         if (data.isActive !== undefined) siteContent.isActive = data.isActive;
 
         console.log('Modified content (updateContentById) for id:', id);
-        siteContent.markModified('content');
+        siteContent.markModified('data');
         await siteContent.save();
 
         const docObj = siteContent.toObject();
-        console.log('SITE_CONTENT_SAVED:', docObj.content.hero || docObj.content);
-        docObj.content = await this.fixContentUrls(docObj.content);
+        console.log('SITE_CONTENT_SAVED:', docObj.data);
+        docObj.data = await this.fixContentUrls(docObj.data) as any;
         return docObj;
     }
 

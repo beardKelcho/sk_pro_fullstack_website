@@ -2,118 +2,79 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Clock, Mail, Phone } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Clock } from 'lucide-react';
 
 export default function MaintenancePage() {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center p-4">
-            <div className="max-w-2xl w-full">
-                {/* Animated background orbs */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        // KURAL 1: Siyah-Beyaz Tema ve Footer Gizleme - fixed inset-0 z-[9999] bg-black
+        <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center text-white p-4">
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="max-w-xl w-full text-center"
+            >
+                {/* KURAL 2: Logo Ekleme */}
+                <div className="mb-12 flex justify-center">
+                    <div className="relative h-20 w-48">
+                        <Image
+                            src="/images/sk-logo.png"
+                            alt="SK Production Logo"
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
                 </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="relative z-10 text-center"
-                >
-                    {/* Logo/Icon */}
-                    <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                        className="inline-block mb-8"
+                {/* Main Heading & Description */}
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+                    Bakımdayız
+                </h1>
+
+                <div className="h-1 w-24 bg-white/20 mx-auto rounded-full mb-8" />
+
+                <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                    Daha iyi hizmet verebilmek için sistemimizde kısa süreli bir güncelleme yapıyoruz.
+                    Anlayışınız için teşekkür ederiz.
+                </p>
+
+                {/* Estimated Time */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-sm mb-12">
+                    <Clock className="w-4 h-4" />
+                    <span>Tahmini Süre: Birkaç saat</span>
+                </div>
+
+                {/* KURAL 3 & 4: Sadece E-posta, Sabit Adres */}
+                <div className="flex flex-col items-center gap-3">
+                    <p className="text-gray-500 text-sm uppercase tracking-wider font-medium">Bize Ulaşın</p>
+                    <a
+                        href="mailto:info@skpro.com.tr"
+                        className="group flex items-center gap-3 px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all duration-300"
                     >
-                        <div className="w-24 h-24 mx-auto bg-blue-500/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-blue-500/30">
-                            <Settings className="w-12 h-12 text-blue-400" />
+                        <div className="p-2 bg-white/5 rounded-lg group-hover:bg-white/10 transition-colors">
+                            <Mail className="w-5 h-5 text-gray-200" />
                         </div>
-                    </motion.div>
+                        <span className="text-gray-200 text-lg font-medium group-hover:text-white transition-colors">
+                            info@skpro.com.tr
+                        </span>
+                    </a>
+                </div>
 
-                    {/* Main heading */}
-                    <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-                        Site Bakımda
-                    </h1>
-
-                    <p className="text-xl md:text-2xl text-blue-200 mb-8">
-                        Şu anda sistemimiz güncelleniyor
-                    </p>
-
-                    {/* Description */}
-                    <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 mb-8">
-                        <p className="text-gray-300 text-lg leading-relaxed mb-6">
-                            Daha iyi hizmet verebilmek için sistemimizde güncellemeler yapıyoruz.
-                            Kısa süre içinde yeniden hizmette olacağız.
-                        </p>
-
-                        {/* Estimated time */}
-                        <div className="flex items-center justify-center gap-2 text-blue-300">
-                            <Clock className="w-5 h-5" />
-                            <span className="text-sm">Tahmini Süre: Birkaç saat</span>
-                        </div>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div className="space-y-4">
-                        <p className="text-gray-400 text-sm mb-4">
-                            Acil durumlarda bize ulaşabilirsiniz:
-                        </p>
-
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <a
-                                href="mailto:info@skproduction.com.tr"
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-white border border-white/20"
-                            >
-                                <Mail className="w-4 h-4" />
-                                <span>info@skproduction.com.tr</span>
-                            </a>
-
-                            <a
-                                href="tel:+905555555555"
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-white border border-white/20"
-                            >
-                                <Phone className="w-4 h-4" />
-                                <span>+90 555 555 55 55</span>
-                            </a>
-                        </div>
-                    </div>
-
-                    {/* Social Media Links (optional) */}
-                    <div className="mt-8 pt-8 border-t border-white/10">
-                        <p className="text-gray-400 text-sm mb-4">
-                            Bizi Takip Edin
-                        </p>
-                        <div className="flex gap-4 justify-center">
-                            {/* Add social media links here if needed */}
-                        </div>
-                    </div>
-
-                    {/* Animated dots */}
-                    <motion.div
-                        className="mt-12 flex gap-2 justify-center"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                    >
-                        {[0, 1, 2].map((i) => (
-                            <motion.div
-                                key={i}
-                                className="w-2 h-2 bg-blue-400 rounded-full"
-                                animate={{
-                                    scale: [1, 1.5, 1],
-                                    opacity: [0.5, 1, 0.5],
-                                }}
-                                transition={{
-                                    duration: 1.5,
-                                    repeat: Infinity,
-                                    delay: i * 0.2,
-                                }}
-                            />
-                        ))}
-                    </motion.div>
-                </motion.div>
-            </div>
+                {/* Animated dots for subtle activity indication */}
+                <div className="mt-16 flex justify-center gap-2 opacity-30">
+                    {[0, 1, 2].map((i) => (
+                        <motion.div
+                            key={i}
+                            className="w-1.5 h-1.5 bg-white rounded-full"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                        />
+                    ))}
+                </div>
+            </motion.div>
         </div>
     );
 }

@@ -9,12 +9,9 @@
  */
 export const checkApiHealth = async (): Promise<boolean> => {
   try {
-    const apiUrl = typeof window !== 'undefined'
-      ? '/api/health'
-      : (() => {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') : 'http://localhost:5001');
-        return `${backendUrl}/api/health`;
-      })();
+    // Use absolute URL to bypass missing rewrites on client side
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sk-pro-backend.onrender.com/api';
+    const apiUrl = `${backendUrl}/health`;
 
     const response = await fetch(apiUrl, {
       method: 'GET',

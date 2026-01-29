@@ -60,8 +60,9 @@ export default function AdminLayout({
     const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     if (!token) return;
 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sk-pro-backend.onrender.com/api';
     const disconnect = connectSse({
-      url: '/api/realtime/stream',
+      url: `${apiUrl}/realtime/stream`,
       token,
       onEvent: (evt) => {
         if (evt.event === 'notification:new' && evt.data) {

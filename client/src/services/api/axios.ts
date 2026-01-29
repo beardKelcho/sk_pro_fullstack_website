@@ -48,7 +48,21 @@ const processQueue = (error: any, token: any = null) => {
   failedQueue = [];
 };
 
-// ... (Request interceptor remains same)
+// Request interceptor - Token ekleme
+apiClient.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Response interceptor - Token yenileme ve hata yönetimi
 apiClient.interceptors.response.use(
@@ -74,8 +88,9 @@ apiClient.interceptors.response.use(
     // 401 Handling - Simplified
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        localStorage.removeItem('accessToken');
+        sessionStorage.removeItem('accessToken');
+        window.location.href = '/admin/login';
       }
       // Return a promise that never resolves to prevent UI errors/crashes
       return new Promise(() => { });

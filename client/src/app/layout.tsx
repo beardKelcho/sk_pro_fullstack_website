@@ -12,7 +12,6 @@ import { WebVitals } from '@/components/common/WebVitals';
 import LocalizedErrorBoundary from '@/components/common/LocalizedErrorBoundary';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
 import CommandPalette from '@/components/common/CommandPalette';
-import AdminShortcut from '@/components/admin/AdminShortcut';
 import Script from 'next/script';
 import { errorTracker } from '@/utils/errorTracking';
 
@@ -140,7 +139,6 @@ export default function RootLayout({
           <Providers>
             <ErrorProvider>
               <CommandPalette />
-              <AdminShortcut />
               {children}
               <FooterWrapper />
               <ToastContainer

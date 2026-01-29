@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import Hero from '@/components/home/Hero';
@@ -7,26 +5,31 @@ import Services from '@/components/home/Services';
 import Projects from '@/components/home/Projects';
 import About from '@/components/home/About';
 import Contact from '@/components/home/Contact';
+import { SiteContent } from '@/types/cms';
 
-export default function HomePage() {
+interface HomePageProps {
+    content: SiteContent;
+}
+
+export default function HomePage({ content }: HomePageProps) {
     return (
         <MainLayout>
-            {/* Hero Section - Piksellerin Ötesinde Başlığı ile */}
-            <Hero />
+            {/* Hero Section */}
+            {content.hero && <Hero content={content.hero} />}
 
-            {/* Hizmetler - Yeni 3 Kart Yapısı */}
-            <Services />
+            {/* Hizmetler */}
+            {content.services && <Services content={content.services} />}
 
-            {/* Projeler - Slider ve Modal */}
+            {/* Projeler - Kendi API'sini kullanıyor */}
             <Projects />
 
-            {/* Hakkımızda - Dinamik 9+ Yıl Hesaplaması */}
-            <About />
+            {/* Hakkımızda */}
+            {content.about && <About content={content.about} />}
 
-            {/* İletişim - Form ve Harita */}
-            <Contact />
+            {/* İletişim */}
+            {content.contact && <Contact content={content.contact} />}
 
-            {/* Footer Wrapper Layout tarafından (veya MainLayout dışında) handle ediliyor */}
+            {/* Footer Wrapper Layout tarafından handle ediliyor */}
         </MainLayout>
     );
 }

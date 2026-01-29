@@ -1,23 +1,22 @@
-'use client';
-
 import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { motion } from 'framer-motion';
 import LazyImage from '@/components/common/LazyImage';
+import { AboutContent } from '@/types/cms';
 
-// STATIC TURKISH CONTENT
-const ABOUT_CONTENT = {
-    title: 'Hakkımızda',
-    description: 'SK Production olarak 2010 yılından beri profesyonel görüntü ve ses sistemleri kiralama hizmeti vermekteyiz. Düğünlerden kurumsal etkinliklere, konserlerden spor müsabakalarına kadar geniş bir yelpazede hizmet sunuyoruz.\n\nDeneyimli ekibimiz ve son teknoloji ekipmanlarımız ile etkinliklerinizi unutulmaz kılıyoruz.',
-    stats: [
-        { label: 'Yıllık Deneyim', value: '14+' },
-        { label: 'Tamamlanan Proje', value: '500+' },
-        { label: 'Mutlu Müşteri', value: '300+' }
-    ],
-    image: 'https://res.cloudinary.com/dmeviky6f/image/upload/v1/about/team.jpg'
-};
+interface AboutProps {
+    content?: AboutContent;
+}
 
-const About = () => {
+const About: React.FC<AboutProps> = ({ content }) => {
+    // If no content provided (empty state), return null
+    if (!content) {
+        return null; // Or skeleton
+    }
+
+    // Default image if none provided
+    const displayImage = content.image || 'https://res.cloudinary.com/dmeviky6f/image/upload/v1/about/team.jpg';
+
     return (
         <div style={{ marginTop: '16rem', marginBottom: '8rem' }}>
             <StageExperience>
@@ -32,12 +31,12 @@ const About = () => {
                                 transition={{ duration: 0.8 }}
                             >
                                 <StageSectionTitle
-                                    title={ABOUT_CONTENT.title}
+                                    title={content.title || 'Hakkımızda'}
                                     subtitle=""
                                 />
 
                                 <div className="mt-8 space-y-6">
-                                    {ABOUT_CONTENT.description.split('\n\n').map((paragraph, index) => (
+                                    {(content.description || '').split('\n\n').map((paragraph, index) => (
                                         <p key={index} className="text-lg text-gray-300 leading-relaxed">
                                             {paragraph}
                                         </p>
@@ -45,25 +44,27 @@ const About = () => {
                                 </div>
 
                                 {/* Stats */}
-                                <div className="mt-12 grid grid-cols-3 gap-8">
-                                    {ABOUT_CONTENT.stats.map((stat, index) => (
-                                        <motion.div
-                                            key={index}
-                                            className="text-center"
-                                            initial={{ opacity: 0, y: 20 }}
-                                            whileInView={{ opacity: 1, y: 0 }}
-                                            viewport={{ once: true }}
-                                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                                        >
-                                            <div className="text-4xl font-bold text-[#0066CC] mb-2">
-                                                {stat.value}
-                                            </div>
-                                            <div className="text-sm text-gray-400 uppercase tracking-wider">
-                                                {stat.label}
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
+                                {content.stats && content.stats.length > 0 && (
+                                    <div className="mt-12 grid grid-cols-3 gap-8">
+                                        {content.stats.map((stat, index) => (
+                                            <motion.div
+                                                key={index}
+                                                className="text-center"
+                                                initial={{ opacity: 0, y: 20 }}
+                                                whileInView={{ opacity: 1, y: 0 }}
+                                                viewport={{ once: true }}
+                                                transition={{ duration: 0.5, delay: index * 0.1 }}
+                                            >
+                                                <div className="text-4xl font-bold text-[#0066CC] mb-2">
+                                                    {stat.value}
+                                                </div>
+                                                <div className="text-sm text-gray-400 uppercase tracking-wider">
+                                                    {stat.label}
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                )}
                             </motion.div>
 
                             {/* Image */}
@@ -77,7 +78,7 @@ const About = () => {
                                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
                                     <div className="absolute inset-0 bg-gradient-to-br from-[#0066CC]/20 to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
                                     <LazyImage
-                                        src={ABOUT_CONTENT.image}
+                                        src={displayImage}
                                         alt="SK Production Team"
                                         className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
                                         fill

@@ -53,8 +53,8 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
         mutation.mutate(formData);
     };
 
-    // --- Media Picker Logic ---
-    const [isPickerOpen, setIsPickerOpen] = useState(false);
+    // --- UI State ---
+    const [activeMainTab, setActiveMainTab] = useState<'content' | 'video'>('content');
     const [pickerTab, setPickerTab] = useState<'library' | 'upload'>('library');
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -66,7 +66,7 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
             const res = await axios.get('/media?type=video');
             return res.data;
         },
-        enabled: isPickerOpen && pickerTab === 'library'
+        enabled: activeMainTab === 'video' && pickerTab === 'library'
     });
 
     const handleUpload = async (e: React.FormEvent) => {
@@ -83,7 +83,6 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
             });
             toast.success('Video yüklendi');
             setFormData(prev => ({ ...prev, videoUrl: res.data.data.url }));
-            setIsPickerOpen(false);
             setUploadFile(null);
             refetchMedia();
         } catch (error: any) {
@@ -95,7 +94,8 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
 
     const handleSelectMedia = (url: string) => {
         setFormData(prev => ({ ...prev, videoUrl: url }));
-        setIsPickerOpen(false);
+        // Optional: Switch back to content tab? or just stay and show selected state?
+        // User didn't specify, but showing selection in input is good enough.
     };
 
     if (!isOpen) return null;
@@ -106,114 +106,39 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 shrink-0">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                        {isPickerOpen ? 'Video Seç / Yükle' : 'Hero Bölümü Düzenle'}
+                        Hero Bölümü Düzenle
                     </h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                         <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                {isPickerOpen ? (
-                    /* Media Picker Interface */
-                    <div className="flex-1 overflow-hidden flex flex-col">
-                        <div className="flex border-b border-gray-200 dark:border-gray-700">
-                            <button
-                                onClick={() => setPickerTab('library')}
-                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${pickerTab === 'library' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
-                            >
-                                <Grid className="w-4 h-4" />
-                                Kütüphane (Videolar)
-                            </button>
-                            <button
-                                onClick={() => setPickerTab('upload')}
-                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${pickerTab === 'upload' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
-                            >
-                                <Upload className="w-4 h-4" />
-                                Yeni Yükle
-                            </button>
-                        </div>
+                {/* Tabs Header */}
+                <div className="flex border-b border-gray-200 dark:border-gray-700">
+                    <button
+                        onClick={() => setActiveMainTab('content')}
+                        className={`flex-1 py-4 text-sm font-medium transition-colors border-b-2 ${activeMainTab === 'content'
+                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                            }`}
+                    >
+                        Metin İçerikleri
+                    </button>
+                    <button
+                        onClick={() => setActiveMainTab('video')}
+                        className={`flex-1 py-4 text-sm font-medium transition-colors border-b-2 ${activeMainTab === 'video'
+                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                            }`}
+                    >
+                        Video & Medya
+                    </button>
+                </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900/30">
-                            {pickerTab === 'library' ? (
-                                isMediaLoading ? (
-                                    <div className="flex items-center justify-center h-48">
-                                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                                    </div>
-                                ) : mediaData?.data?.length > 0 ? (
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                        {mediaData.data.map((item: any) => (
-                                            <div key={item._id}
-                                                onClick={() => handleSelectMedia(item.url)}
-                                                className="group relative aspect-video bg-black rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-blue-500 transition-all">
-                                                <video src={item.url} className="w-full h-full object-cover" muted />
-                                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <p className="text-xs text-white truncate">{item.name}</p>
-                                                </div>
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-                                                    <div className="bg-white/20 backdrop-blur-sm p-2 rounded-full">
-                                                        <Save className="w-4 h-4 text-white" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                                        <p>Kütüphanede hiç video yok.</p>
-                                        <button onClick={() => setPickerTab('upload')} className="text-blue-500 hover:underline mt-2">Yeni yüklemek için tıklayın</button>
-                                    </div>
-                                )
-                            ) : (
-                                /* Upload Tab */
-                                <div className="flex flex-col items-center justify-center h-full max-w-lg mx-auto">
-                                    <div className="w-full p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-center hover:border-blue-500 transition-colors">
-                                        <input
-                                            type="file"
-                                            accept="video/*"
-                                            onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                                            className="hidden"
-                                            id="video-upload"
-                                        />
-                                        <label htmlFor="video-upload" className="cursor-pointer flex flex-col items-center gap-4">
-                                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full text-blue-500">
-                                                <Loader2 className={`w-8 h-8 ${isUploading ? 'animate-spin' : ''}`} />
-                                            </div>
-                                            <div>
-                                                <p className="text-lg font-medium text-gray-900 dark:text-white">
-                                                    {isUploading ? 'Yükleniyor...' : (uploadFile ? uploadFile.name : 'Video Seçmek İçin Tıklayın')}
-                                                </p>
-                                                <p className="text-sm text-gray-500 mt-1">MP4, WEBM, MOV (Max 100MB)</p>
-                                            </div>
-                                        </label>
-                                    </div>
-                                    {uploadFile && !isUploading && (
-                                        <button
-                                            onClick={handleUpload}
-                                            className="mt-6 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all"
-                                        >
-                                            Yüklemeyi Başlat
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-between">
-                            <button
-                                onClick={() => setIsPickerOpen(false)}
-                                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                            >
-                                Vazgeç
-                            </button>
-                            <div className="text-xs text-gray-400 self-center">
-                                {mediaData?.data?.length || 0} Video Mevcut
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    /* Main Form */
-                    <>
-                        <form onSubmit={handleSubmit} className="p-6 space-y-6 flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-hidden flex flex-col">
+                    {activeMainTab === 'content' ? (
+                        /* Content Tab */
+                        <div className="p-6 space-y-6 overflow-y-auto">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Başlık
@@ -239,55 +164,137 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
                                     placeholder="Kısa açıklama..."
                                 />
                             </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Video Konumu (Cloudinary ID veya URL)
-                                </label>
-                                <div className="flex gap-2">
-                                    <div className="relative flex-1">
-                                        <input
-                                            type="text"
-                                            value={formData.videoUrl}
-                                            onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                                            className="w-full pl-10 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                            placeholder="Örn: v1/hero/showreel.mp4"
-                                        />
-                                        <Video className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsPickerOpen(true)}
-                                        className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg border border-blue-200 dark:border-blue-800 transition-colors whitespace-nowrap flex items-center gap-2"
-                                    >
-                                        <Grid className="w-4 h-4" />
-                                        Kütüphane / Yükle
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">Video dosyasını kütüphaneden seçebilir veya yeni video yükleyebilirsiniz.</p>
-                            </div>
-                        </form>
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl shrink-0">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                            >
-                                İptal
-                            </button>
-                            <button
-                                onClick={handleSubmit}
-                                disabled={mutation.isPending}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                            >
-                                {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                Kaydet
-                            </button>
                         </div>
-                    </>
-                )}
+                    ) : (
+                        /* Video Tab */
+                        <div className="flex-1 flex flex-col overflow-hidden">
+                            {/* Manual Input */}
+                            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Seçili Video URL / ID
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={formData.videoUrl}
+                                        onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                                        className="w-full pl-10 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Örn: v1/hero/showreel.mp4"
+                                    />
+                                    <Video className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                </div>
+                            </div>
+
+                            {/* Sub-Tabs (Library/Upload) */}
+                            <div className="flex border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                <button
+                                    onClick={() => setPickerTab('library')}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${pickerTab === 'library' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                                >
+                                    <Grid className="w-4 h-4" />
+                                    Kütüphane
+                                </button>
+                                <button
+                                    onClick={() => setPickerTab('upload')}
+                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${pickerTab === 'upload' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    Yeni Yükle
+                                </button>
+                            </div>
+
+                            {/* Picker Content */}
+                            <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900/30">
+                                {pickerTab === 'library' ? (
+                                    isMediaLoading ? (
+                                        <div className="flex items-center justify-center h-48">
+                                            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                                        </div>
+                                    ) : mediaData?.data?.length > 0 ? (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {mediaData.data.map((item: any) => (
+                                                <div key={item._id}
+                                                    onClick={() => handleSelectMedia(item.url)}
+                                                    className={`group relative aspect-video bg-black rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${formData.videoUrl === item.url ? 'border-blue-500 ring-2 ring-blue-500/50' : 'border-transparent hover:border-blue-500'}`}>
+                                                    <video src={item.url} className="w-full h-full object-cover" muted />
+                                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                                        <p className="text-xs text-white truncate">{item.name}</p>
+                                                    </div>
+                                                    {formData.videoUrl === item.url && (
+                                                        <div className="absolute top-2 right-2 bg-blue-500 text-white p-1 rounded-full shadow-lg">
+                                                            <div className="w-2 h-2 bg-white rounded-full" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                                            <p>Kütüphanede hiç video yok.</p>
+                                            <button onClick={() => setPickerTab('upload')} className="text-blue-500 hover:underline mt-2">Yeni yüklemek için tıklayın</button>
+                                        </div>
+                                    )
+                                ) : (
+                                    /* Upload Tab */
+                                    <div className="flex flex-col items-center justify-center h-full max-w-lg mx-auto py-8">
+                                        <div className="w-full p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-center hover:border-blue-500 transition-colors">
+                                            <input
+                                                type="file"
+                                                accept="video/*"
+                                                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                                                className="hidden"
+                                                id="video-upload"
+                                            />
+                                            <label htmlFor="video-upload" className="cursor-pointer flex flex-col items-center gap-4">
+                                                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full text-blue-500">
+                                                    <Loader2 className={`w-8 h-8 ${isUploading ? 'animate-spin' : ''}`} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-lg font-medium text-gray-900 dark:text-white">
+                                                        {isUploading ? 'Yükleniyor...' : (uploadFile ? uploadFile.name : 'Video Seçmek İçin Tıklayın')}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500 mt-1">MP4, WEBM, MOV (Max 100MB)</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        {uploadFile && !isUploading && (
+                                            <button
+                                                onClick={handleUpload}
+                                                className="mt-6 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all"
+                                            >
+                                                Yüklemeyi Başlat
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer - Always Visible */}
+                <div className="flex items-center justify-between gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-xl shrink-0">
+                    <div className="text-xs text-gray-500">
+                        {activeMainTab === 'video' && pickerTab === 'library' && `${mediaData?.data?.length || 0} Video Mevcut`}
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        >
+                            İptal
+                        </button>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={mutation.isPending}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                        >
+                            {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                            Kaydet
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

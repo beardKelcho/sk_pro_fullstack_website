@@ -2,10 +2,18 @@ import createMiddleware from 'next-intl/middleware';
 
 export default createMiddleware({
   locales: ['tr', 'en'],
-  defaultLocale: 'tr'
+  defaultLocale: 'tr',
+  // Admin rotalarını locale prefixinden muaf tut
+  localePrefix: 'as-needed',
+  pathnames: {
+    '/': '/',
+    '/admin': '/admin'
+  }
 });
 
 export const config = {
-  // Sadece sayfa rotalarında çalış; api, _next, static dosyalar, resimler ve favicon'a KARIŞMA
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
+  // Admin rotalarını hariç tut - next-intl bunlara dokunmasın
+  matcher: [
+    '/((?!api|admin|_next|_vercel|.*\\..*).*)'
+  ]
 };

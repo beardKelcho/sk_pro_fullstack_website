@@ -22,24 +22,42 @@
       "goDashboard": "Panele dön"
     },
     "heroUi": {
-      "fallbackRotatingTexts": ["Görsel mükemmellikte uzman ekip", "Etkinliklerinizde profesyonel çözümler", "Medya server ve görüntü rejisi çözümleri"],
+      "fallbackRotatingTexts": [
+        "Görsel mükemmellikte uzman ekip",
+        "Etkinliklerinizde profesyonel çözümler",
+        "Medya server ve görüntü rejisi çözümleri"
+      ],
       "fallbackDescription": "SK Production olarak, kurumsal etkinlikleriniz için profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz. 10 yılı aşkın deneyimimizle etkinliklerinize değer katıyoruz.",
       "fallbackPrimaryCta": "İletişime geçin",
       "secondaryCta": "Projelerimizi inceleyin"
     },
     "contactForm": {
       "fields": {
-        "name": { "label": "İsim Soyisim", "placeholder": "İsim Soyisim" },
-        "email": { "label": "E-posta", "placeholder": "E-posta adresiniz" },
-        "message": { "label": "Mesajınız", "placeholder": "Mesajınızı buraya yazın..." }
+        "name": {
+          "label": "İsim Soyisim",
+          "placeholder": "İsim Soyisim"
+        },
+        "email": {
+          "label": "E-posta",
+          "placeholder": "E-posta adresiniz"
+        },
+        "message": {
+          "label": "Mesajınız",
+          "placeholder": "Mesajınızı buraya yazın..."
+        }
       },
-      "button": { "submit": "Gönder", "submitting": "Gönderiliyor..." },
+      "button": {
+        "submit": "Gönder",
+        "submitting": "Gönderiliyor..."
+      },
       "status": {
         "success": "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.",
         "queued": "Şu an çevrimdışısınız. Mesajınız kuyruğa alındı; bağlantı gelince otomatik gönderilecektir.",
         "error": "Mesajınız gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
       },
-      "errors": { "submitFailed": "Form gönderilemedi" }
+      "errors": {
+        "submitFailed": "Form gönderilemedi"
+      }
     },
     "header": {
       "projects": "Projeler",
@@ -78,7 +96,9 @@
         },
         {
           "title": "2. Toplanan Bilgiler",
-          "paragraphs": ["Web sitemizde aşağıdaki bilgileri toplayabiliriz:"],
+          "paragraphs": [
+            "Web sitemizde aşağıdaki bilgileri toplayabiliriz:"
+          ],
           "list": [
             "İletişim formu aracılığıyla sağladığınız ad, e-posta, telefon numarası gibi kişisel bilgiler",
             "Web sitesi kullanım verileri (IP adresi, tarayıcı türü, ziyaret edilen sayfalar)",
@@ -87,7 +107,9 @@
         },
         {
           "title": "3. Bilgilerin Kullanımı",
-          "paragraphs": ["Topladığımız bilgiler aşağıdaki amaçlarla kullanılabilir:"],
+          "paragraphs": [
+            "Topladığımız bilgiler aşağıdaki amaçlarla kullanılabilir:"
+          ],
           "list": [
             "Hizmetlerimizi sunmak ve iyileştirmek",
             "İletişim taleplerinize yanıt vermek",
@@ -109,7 +131,9 @@
         },
         {
           "title": "6. KVKK Haklarınız",
-          "paragraphs": ["6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında aşağıdaki haklara sahipsiniz:"],
+          "paragraphs": [
+            "6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında aşağıdaki haklara sahipsiniz:"
+          ],
           "list": [
             "Kişisel verilerinizin işlenip işlenmediğini öğrenme",
             "İşlenen kişisel verileriniz hakkında bilgi talep etme",
@@ -139,7 +163,9 @@
         },
         {
           "title": "2. Web Sitesi Kullanımı",
-          "paragraphs": ["Web sitemizi yalnızca yasal amaçlar için kullanabilirsiniz. Aşağıdaki faaliyetler yasaktır:"],
+          "paragraphs": [
+            "Web sitemizi yalnızca yasal amaçlar için kullanabilirsiniz. Aşağıdaki faaliyetler yasaktır:"
+          ],
           "list": [
             "Web sitesinin güvenliğini ihlal etmek",
             "Zararlı yazılım veya kod yüklemek",
@@ -212,18 +238,36 @@
           {
             "title": "Görüntü Rejisi Sistemleri",
             "items": [
-              { "name": "Analog Way Aquilon RS4", "description": "4K/8K çözünürlük desteği ile görüntü işleme" },
-              { "name": "Barco E2 Gen 2", "description": "Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış" },
-              { "name": "Blackmagic ATEM 4 M/E Constellation HD", "description": "40 giriş, 24 çıkış, gelişmiş geçiş efektleri" }
+              {
+                "name": "Analog Way Aquilon RS4",
+                "description": "4K/8K çözünürlük desteği ile görüntü işleme"
+              },
+              {
+                "name": "Barco E2 Gen 2",
+                "description": "Gerçek 4K çözünürlük, genişletilebilir giriş/çıkış"
+              },
+              {
+                "name": "Blackmagic ATEM 4 M/E Constellation HD",
+                "description": "40 giriş, 24 çıkış, gelişmiş geçiş efektleri"
+              }
             ],
             "order": 0
           },
           {
             "title": "Medya Server Sistemleri",
             "items": [
-              { "name": "Dataton WATCHPAX 60", "description": "6 çıkışlı, yüksek performanslı" },
-              { "name": "Disguise 4x4pro", "description": "Gerçek zamanlı render, AR/VR desteği" },
-              { "name": "Resolume Arena 7", "description": "Canlı performans için video loop ve efektler" }
+              {
+                "name": "Dataton WATCHPAX 60",
+                "description": "6 çıkışlı, yüksek performanslı"
+              },
+              {
+                "name": "Disguise 4x4pro",
+                "description": "Gerçek zamanlı render, AR/VR desteği"
+              },
+              {
+                "name": "Resolume Arena 7",
+                "description": "Canlı performans için video loop ve efektler"
+              }
             ],
             "order": 1
           }
@@ -236,9 +280,18 @@
           "10 yılı aşkın deneyime sahip ekibimiz; kurumsal etkinlikler, konserler, ürün lansmanları, sahne gösterileri ve daha birçok alanda yüzlerce projeye imza atmıştır."
         ],
         "fallbackStats": [
-          { "value": "250+", "label": "Tamamlanan Proje" },
-          { "value": "12+", "label": "Yıllık Deneyim" },
-          { "value": "50+", "label": "Profesyonel Ekipman" }
+          {
+            "value": "250+",
+            "label": "Tamamlanan Proje"
+          },
+          {
+            "value": "12+",
+            "label": "Yıllık Deneyim"
+          },
+          {
+            "value": "50+",
+            "label": "Profesyonel Ekipman"
+          }
         ]
       },
       "contactSection": {
@@ -276,7 +329,8 @@
       },
       "video": {
         "fallbackText": "Video yüklenemedi. Tarayıcınız video formatını desteklemiyor."
-      }
+      },
+      "locale": "tr"
     },
     "contentOverrides": {
       "hero": {},
@@ -287,4 +341,3 @@
     }
   }
 }
-

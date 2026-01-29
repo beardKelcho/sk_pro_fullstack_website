@@ -22,24 +22,42 @@
       "goDashboard": "Go to dashboard"
     },
     "heroUi": {
-      "fallbackRotatingTexts": ["Vision mixing experts", "Professional solutions for your events", "Media server & show control solutions"],
+      "fallbackRotatingTexts": [
+        "Vision mixing experts",
+        "Professional solutions for your events",
+        "Media server & show control solutions"
+      ],
       "fallbackDescription": "At SK Production, we provide professional vision mixing and media server solutions for corporate events and large-scale productions.",
       "fallbackPrimaryCta": "Get in touch",
       "secondaryCta": "View our projects"
     },
     "contactForm": {
       "fields": {
-        "name": { "label": "Full name", "placeholder": "Full name" },
-        "email": { "label": "Email", "placeholder": "Your email address" },
-        "message": { "label": "Message", "placeholder": "Write your message..." }
+        "name": {
+          "label": "Full name",
+          "placeholder": "Full name"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "Your email address"
+        },
+        "message": {
+          "label": "Message",
+          "placeholder": "Write your message..."
+        }
       },
-      "button": { "submit": "Send", "submitting": "Sending..." },
+      "button": {
+        "submit": "Send",
+        "submitting": "Sending..."
+      },
       "status": {
         "success": "Your message has been sent successfully. We'll get back to you soon.",
         "queued": "You're currently offline. Your message has been queued and will be sent automatically once you're back online.",
         "error": "An error occurred while sending your message. Please try again later."
       },
-      "errors": { "submitFailed": "Unable to send the form" }
+      "errors": {
+        "submitFailed": "Unable to send the form"
+      }
     },
     "header": {
       "projects": "Projects",
@@ -78,7 +96,9 @@
         },
         {
           "title": "2. Information We Collect",
-          "paragraphs": ["We may collect the following information on our website:"],
+          "paragraphs": [
+            "We may collect the following information on our website:"
+          ],
           "list": [
             "Personal information you provide via the contact form such as name, email, and phone number",
             "Website usage data (IP address, browser type, pages visited)",
@@ -87,7 +107,9 @@
         },
         {
           "title": "3. Use of Information",
-          "paragraphs": ["The information we collect may be used for the following purposes:"],
+          "paragraphs": [
+            "The information we collect may be used for the following purposes:"
+          ],
           "list": [
             "To provide and improve our services",
             "To respond to your contact requests",
@@ -109,7 +131,9 @@
         },
         {
           "title": "6. Your Rights",
-          "paragraphs": ["You have the following rights regarding the processing of your personal data:"],
+          "paragraphs": [
+            "You have the following rights regarding the processing of your personal data:"
+          ],
           "list": [
             "To learn whether your personal data is processed",
             "To request information about your processed personal data",
@@ -139,7 +163,9 @@
         },
         {
           "title": "2. Use of the Website",
-          "paragraphs": ["You may use our website only for lawful purposes. The following activities are prohibited:"],
+          "paragraphs": [
+            "You may use our website only for lawful purposes. The following activities are prohibited:"
+          ],
           "list": [
             "Compromising the security of the website",
             "Uploading malicious software or code",
@@ -212,18 +238,36 @@
           {
             "title": "Vision Mixing Systems",
             "items": [
-              { "name": "Analog Way Aquilon RS4", "description": "Video processing with 4K/8K resolution support" },
-              { "name": "Barco E2 Gen 2", "description": "True 4K, expandable inputs/outputs" },
-              { "name": "Blackmagic ATEM 4 M/E Constellation HD", "description": "40 inputs, 24 outputs, advanced transitions" }
+              {
+                "name": "Analog Way Aquilon RS4",
+                "description": "Video processing with 4K/8K resolution support"
+              },
+              {
+                "name": "Barco E2 Gen 2",
+                "description": "True 4K, expandable inputs/outputs"
+              },
+              {
+                "name": "Blackmagic ATEM 4 M/E Constellation HD",
+                "description": "40 inputs, 24 outputs, advanced transitions"
+              }
             ],
             "order": 0
           },
           {
             "title": "Media Server Systems",
             "items": [
-              { "name": "Dataton WATCHPAX 60", "description": "6 outputs, high performance" },
-              { "name": "Disguise 4x4pro", "description": "Real-time rendering, AR/VR support" },
-              { "name": "Resolume Arena 7", "description": "Video loops and effects for live performances" }
+              {
+                "name": "Dataton WATCHPAX 60",
+                "description": "6 outputs, high performance"
+              },
+              {
+                "name": "Disguise 4x4pro",
+                "description": "Real-time rendering, AR/VR support"
+              },
+              {
+                "name": "Resolume Arena 7",
+                "description": "Video loops and effects for live performances"
+              }
             ],
             "order": 1
           }
@@ -236,9 +280,18 @@
           "With over 10 years of experience, our team has delivered hundreds of projects across corporate events, concerts, product launches, stage shows and more."
         ],
         "fallbackStats": [
-          { "value": "250+", "label": "Completed Projects" },
-          { "value": "12+", "label": "Years of Experience" },
-          { "value": "50+", "label": "Professional Equipment" }
+          {
+            "value": "250+",
+            "label": "Completed Projects"
+          },
+          {
+            "value": "12+",
+            "label": "Years of Experience"
+          },
+          {
+            "value": "50+",
+            "label": "Professional Equipment"
+          }
         ]
       },
       "contactSection": {
@@ -276,7 +329,8 @@
       },
       "video": {
         "fallbackText": "Video could not be loaded. Your browser may not support the video format."
-      }
+      },
+      "locale": "en"
     },
     "contentOverrides": {
       "hero": {
@@ -284,7 +338,11 @@
         "subtitle": "Vision mixing & media server solutions",
         "description": "From corporate events to large-scale shows, we deliver reliable, high-quality visual control with industry-grade systems and an experienced team.",
         "buttonText": "Get in touch",
-        "rotatingTexts": ["Vision mixing", "Media server", "LED control"]
+        "rotatingTexts": [
+          "Vision mixing",
+          "Media server",
+          "LED control"
+        ]
       },
       "servicesEquipment": {},
       "about": {},
@@ -293,4 +351,3 @@
     }
   }
 }
-

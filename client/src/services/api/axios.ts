@@ -69,51 +69,17 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // 401 Handling...
-    // 401 Handling - Race Condition Fixed
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(() => {
-            return apiClient(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
+    // 401 Handling - Simplified
+    if (error.response?.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
       }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      return new Promise(function (resolve, reject) {
-        axios
-          .post(
-            `${API_URL}/auth/refresh-token`,
-            {},
-            {
-              withCredentials: true,
-            }
-          )
-          .then(() => {
-            processQueue(null, true);
-            resolve(apiClient(originalRequest));
-          })
-          .catch((err) => {
-            processQueue(err, null);
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
-            }
-            reject(err);
-          })
-          .finally(() => {
-            isRefreshing = false;
-          });
-      });
+      // Return a promise that never resolves to prevent UI errors/crashes
+      return new Promise(() => { });
     }
 
-    // 403 Forbidden - Toast kaldırıldı (UI handle etmeli)
+    // 403 Forbidden
     if (error.response?.status === 403) {
       if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
         console.warn('403 Forbidden:', error.response.data?.message);

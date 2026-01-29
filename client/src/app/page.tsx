@@ -14,8 +14,7 @@ async function getSiteData() {
   try {
     // 1. Check Maintenance Mode
     const maintenanceRes = await fetch(`${apiUrl}/public/maintenance`, {
-      cache: 'no-store',
-      next: { revalidate: 0 }
+      cache: 'no-store'
     });
 
     // Default to false if fetch fails
@@ -31,8 +30,7 @@ async function getSiteData() {
 
     // 2. Fetch Site Content
     const contentRes = await fetch(`${apiUrl}/public/site-content`, {
-      cache: 'no-store',
-      next: { revalidate: 0 }
+      cache: 'no-store'
     });
 
     if (!contentRes.ok) {

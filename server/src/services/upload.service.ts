@@ -153,20 +153,38 @@ export class UploadService {
         let filePath: string;
         let filename: string;
 
+        logger.info(`📥 Upload request received:`, {
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+            type,
+            userId,
+            hasBuffer: !!file.buffer
+        });
+
         // Cloud storage kullanılıyorsa
         if (isCloudStorage() && file.buffer) {
             const storageType = process.env.STORAGE_TYPE?.toLowerCase();
 
             if (storageType === 'cloudinary') {
+                logger.info(`☁️  Using Cloudinary for upload`, { filename: file.originalname, type });
+
                 // Cloudinary'ye upload
                 const result = await uploadToCloudinary(file.buffer, file.originalname, {
                     folder: type,
-                    resource_type: 'auto',
+                    resource_type: 'auto', // Let Cloudinary auto-detect
                 });
 
                 fileUrl = result.secure_url || '';
                 filePath = result.public_id || '';
                 filename = (result.public_id ? result.public_id.split('/').pop() : file.originalname) || file.originalname;
+
+                logger.info(`✅ Cloudinary upload complete:`, {
+                    filename,
+                    url: fileUrl,
+                    public_id: filePath,
+                    resource_type: result.resource_type
+                });
             } else if (storageType === 's3') {
                 // S3'e upload
                 const result = await uploadToS3(file.buffer, file.originalname, {
@@ -197,7 +215,13 @@ export class UploadService {
             }
         }
 
-        logger.info(`Dosya yüklendi: ${filename} (${(file.size / 1024 / 1024).toFixed(2)}MB) by user ${userId}`);
+        logger.info(`✅ File upload completed:`, {
+            filename,
+            url: fileUrl,
+            path: filePath,
+            size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+            userId
+        });
 
         return {
             filename,
@@ -213,6 +237,8 @@ export class UploadService {
      * Dosya sil
      */
     async deleteFile(filename: string, type: string = 'general', userId?: string) {
+        logger.info(`🗑️  Delete request received:`, { filename, type, userId });
+
         if (isCloudStorage()) {
             const storageType = process.env.STORAGE_TYPE?.toLowerCase();
 
@@ -220,7 +246,10 @@ export class UploadService {
                 const publicId = `${type}/${filename}`;
                 const ext = filename.split('.').pop()?.toLowerCase();
                 const resourceType = ext && ['mp4', 'webm', 'mov', 'avi'].includes(ext) ? 'video' : 'image';
+
+                logger.info(`☁️  Deleting from Cloudinary:`, { publicId, resourceType });
                 await deleteFromCloudinary(publicId, resourceType);
+                logger.info(`✅ Cloudinary delete complete:`, { publicId, resourceType, userId });
             } else if (storageType === 's3') {
                 const key = `${type}/${filename}`;
                 await deleteFromS3(key);
@@ -230,8 +259,9 @@ export class UploadService {
 
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
-                logger.info(`Dosya silindi: ${filename} by user ${userId}`);
+                logger.info(`✅ Local file deleted: ${filename} by user ${userId}`);
             } else {
+                logger.warn(`⚠️  File not found for deletion: ${filePath}`);
                 throw new Error('File not found');
             }
         }

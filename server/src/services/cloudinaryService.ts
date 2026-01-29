@@ -53,6 +53,13 @@ export const uploadToCloudinary = async (
     // Folder'ı type'dan oluştur
     const folder = options.folder || getFolderFromType(filename);
 
+    logger.info(`📤 Cloudinary upload starting:`, {
+      filename,
+      folder,
+      resourceType,
+      bufferSize: `${(buffer.length / 1024 / 1024).toFixed(2)}MB`
+    });
+
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -64,9 +71,23 @@ export const uploadToCloudinary = async (
         },
         (error, result: UploadApiResponse | undefined) => {
           if (error) {
-            logger.error('Cloudinary upload error:', error);
+            logger.error('❌ Cloudinary upload error:', {
+              filename,
+              folder,
+              resourceType,
+              error: error.message,
+              stack: error.stack
+            });
             reject(error);
           } else if (result) {
+            logger.info(`✅ Cloudinary upload success:`, {
+              filename,
+              public_id: result.public_id,
+              secure_url: result.secure_url,
+              resource_type: result.resource_type,
+              format: result.format,
+              size: `${(result.bytes / 1024 / 1024).toFixed(2)}MB`
+            });
             resolve({
               public_id: result.public_id,
               secure_url: result.secure_url || result.url || '',
@@ -79,7 +100,9 @@ export const uploadToCloudinary = async (
               created_at: result.created_at || new Date().toISOString(),
             });
           } else {
-            reject(new Error('Cloudinary upload returned no result'));
+            const errorMsg = 'Cloudinary upload returned no result';
+            logger.error(`❌ ${errorMsg}`, { filename, folder });
+            reject(new Error(errorMsg));
           }
         }
       );
@@ -91,7 +114,10 @@ export const uploadToCloudinary = async (
       readable.pipe(uploadStream);
     });
   } catch (error) {
-    logger.error('Cloudinary upload error:', error);
+    logger.error('❌ Cloudinary upload exception:', {
+      filename,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     throw error;
   }
 };
@@ -101,13 +127,24 @@ export const uploadToCloudinary = async (
  */
 export const deleteFromCloudinary = async (publicId: string, resourceType: 'image' | 'video' | 'raw' = 'image'): Promise<void> => {
   try {
-    await cloudinary.uploader.destroy(publicId, {
+    logger.info(`🗑️  Cloudinary delete starting:`, { publicId, resourceType });
+
+    const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: resourceType,
       invalidate: true,
     });
-    logger.info(`Cloudinary'den dosya silindi: ${publicId}`);
+
+    logger.info(`✅ Cloudinary delete complete:`, {
+      publicId,
+      resourceType,
+      result: result.result // 'ok' or 'not found'
+    });
   } catch (error) {
-    logger.error('Cloudinary delete error:', error);
+    logger.error('❌ Cloudinary delete error:', {
+      publicId,
+      resourceType,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     throw error;
   }
 };

@@ -73,6 +73,12 @@ export const serveImageById = async (req: Request, res: Response) => {
 
 export const createImage = async (req: Request, res: Response) => {
   try {
+    logger.info(`📸 Create image request:`, {
+      userId: req.user?.id,
+      hasFile: !!req.file,
+      bodyCategory: req.body.category
+    });
+
     let imageData = req.body;
 
     // Eğer dosya yüklendiyse, uploadService ile işle ve veriyi hazırla
@@ -82,7 +88,20 @@ export const createImage = async (req: Request, res: Response) => {
       // If category is 'video', it puts it in 'video' folder. If 'hero', in 'hero' folder.
       const fileType = imageData.category || 'general';
 
+      logger.info(`📤 Uploading file via uploadService:`, {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        fileType,
+        userId: req.user?.id
+      });
+
       const uploadedFile = await uploadService.uploadFile(req.file, fileType, req.user?.id);
+
+      logger.info(`✅ File uploaded successfully:`, {
+        filename: uploadedFile.filename,
+        url: uploadedFile.url,
+        size: `${(uploadedFile.size / 1024 / 1024).toFixed(2)}MB`
+      });
 
       imageData = {
         ...imageData,
@@ -96,9 +115,11 @@ export const createImage = async (req: Request, res: Response) => {
     }
 
     const image = await siteService.createImage(imageData);
+    logger.info(`✅ Image created in database:`, { imageId: image.id || image._id });
+
     res.status(201).json({ success: true, image });
   } catch (error: unknown) {
-    logger.error('Resim oluşturma hatası:', error); // Add Logging
+    logger.error('❌ Resim oluşturma hatası:', error);
     const appError = error instanceof AppError ? error : new AppError('Hata oluştu');
     res.status(appError.statusCode || 500).json({ success: false, message: appError.message });
   }

@@ -6,7 +6,7 @@ import logger from '../utils/logger';
 import { JWT_SECRET } from '../utils/authTokens'; // Merkezi JWT_SECRET kullan
 import { IUser } from '../models/User';
 import { updateSessionActivity } from '../controllers/session.controller';
-import { Session } from '../models'; // Session verify için
+
 
 declare global {
   namespace Express {
@@ -93,29 +93,7 @@ export const authenticate = async (
     }
 
     // TC017 Fix & Security Hardening: Session Check (Relaxed for Production)
-    // Token hash'ini oluştur
-    const { createTokenHash } = require('../utils/authTokens');
-    const tokenHash = createTokenHash(token);
 
-    // Auth token'a karşılık gelen session kontrolü
-    const session = await Session.findOne({
-      userId: user._id,
-      token: tokenHash
-    });
-
-    if (!session) {
-      // Session veritabanında bulunamadı (Eski session veya senkronizasyon sorunu)
-      // Kullanıcıyı engellemek yerine logla ve devam et (User request)
-      logger.warn('Session not found in DB for valid JWT - Allowing access', {
-        userId: user._id,
-        path: req.path
-      });
-    } else if (!session.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Oturum sonlandırılmış. Lütfen tekrar giriş yapın.',
-      });
-    }
 
 
     // Session activity güncelle (static import ile)

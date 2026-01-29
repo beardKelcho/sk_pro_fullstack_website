@@ -261,43 +261,6 @@ const menuItems: MenuItem[] = [
     ),
   },
   {
-    title: 'Site Yönetimi',
-    path: '/admin/site-content',
-    icon: <SettingsIcon />,
-    submenu: [
-      {
-        title: 'Site İçeriği',
-        path: '/admin/site-content',
-        icon: <></>,
-      },
-      {
-        title: 'Tüm Resimler',
-        path: '/admin/site-images',
-        icon: <></>,
-      },
-      {
-        title: 'Proje Görselleri',
-        path: '/admin/project-gallery',
-        icon: <></>,
-      },
-      {
-        title: 'Dosya Yönetimi',
-        path: '/admin/files',
-        icon: <></>,
-      },
-      {
-        title: 'Veri İçe Aktar',
-        path: '/admin/import',
-        icon: <></>,
-      },
-      {
-        title: 'Veri Dışa Aktar',
-        path: '/admin/export',
-        icon: <></>,
-      },
-    ],
-  },
-  {
     title: 'Ayarlar',
     path: '/admin/settings',
     icon: <SettingsIcon />,
@@ -360,14 +323,14 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
   }, []);
 
   return (
-    <div 
+    <div
       className={`h-screen glass dark:glass-dark shadow-2xl transition-all duration-500 ease-in-out
         border-r border-white/20 dark:border-white/10 flex flex-col relative overflow-hidden
         ${collapsed ? 'w-20' : 'w-64'}`}
     >
       {/* Animated background gradient */}
       <div className="absolute inset-0 gradient-animated opacity-10 dark:opacity-5 pointer-events-none" />
-      
+
       {/* Floating particles effect - Performans için azaltıldı */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -385,7 +348,7 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
           ))}
         </div>
       )}
-      
+
       {/* Logo ve başlık */}
       <div className="h-16 flex items-center px-4 border-b border-white/20 dark:border-white/10 relative z-10">
         {collapsed ? (
@@ -427,8 +390,8 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
                   <button
                     className={`
                       flex items-center w-full py-3 px-4 text-left relative overflow-hidden
-                      ${isActive(item.path) 
-                        ? 'bg-gradient-to-r from-[#0066CC]/20 to-[#00C49F]/20 text-[#0066CC] dark:text-primary-light shadow-lg' 
+                      ${isActive(item.path)
+                        ? 'bg-gradient-to-r from-[#0066CC]/20 to-[#00C49F]/20 text-[#0066CC] dark:text-primary-light shadow-lg'
                         : 'text-gray-700 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light'}
                       rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-300 modern-card
                       ${isActive(item.path) ? 'neon-border' : ''}
@@ -465,8 +428,8 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
                             scroll={true}
                             className={`
                               flex items-center py-2 px-3 relative
-                              ${isActive(subItem.path) 
-                                ? 'text-[#0066CC] dark:text-primary-light font-semibold' 
+                              ${isActive(subItem.path)
+                                ? 'text-[#0066CC] dark:text-primary-light font-semibold'
                                 : 'text-gray-600 dark:text-gray-400'}
                               rounded-lg hover:bg-white/10 dark:hover:bg-white/5 hover:text-[#0066CC] dark:hover:text-primary-light 
                               transition-all duration-300 hover:translate-x-1
@@ -494,8 +457,8 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
                   scroll={true}
                   className={`
                     flex items-center py-3 px-4 relative overflow-hidden
-                    ${isActive(item.path) 
-                      ? 'bg-gradient-to-r from-[#0066CC]/20 to-[#00C49F]/20 text-[#0066CC] dark:text-primary-light shadow-lg' 
+                    ${isActive(item.path)
+                      ? 'bg-gradient-to-r from-[#0066CC]/20 to-[#00C49F]/20 text-[#0066CC] dark:text-primary-light shadow-lg'
                       : 'text-gray-700 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light'}
                     rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-300 modern-card
                     ${isActive(item.path) ? 'neon-border' : ''}

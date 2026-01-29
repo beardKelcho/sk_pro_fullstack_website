@@ -3,41 +3,34 @@
 import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { motion } from 'framer-motion';
-import { useSiteContent, AboutContent } from '@/hooks/useSiteContent';
-import { getImageUrl } from '@/utils/imageUrl';
 import LazyImage from '@/components/common/LazyImage';
 import { useTranslations } from 'next-intl';
 
-import { FALLBACK_CONTENT } from '@/data/fallbackContent';
-// ... imports
+// STATIC CONTENT - No database dependency
+const STATIC_ABOUT_CONTENT = {
+    title: {
+        tr: 'Hakkımızda',
+        en: 'About Us'
+    },
+    description: {
+        tr: 'SK Production olarak 2010 yılından beri profesyonel görüntü ve ses sistemleri kiralama hizmeti vermekteyiz. Düğünlerden kurumsal etkinliklere, konserlerden spor müsabakalarına kadar geniş bir yelpazede hizmet sunuyoruz.\n\nDeneyimli ekibimiz ve son teknoloji ekipmanlarımız ile etkinliklerinizi unutulmaz kılıyoruz.',
+        en: 'As SK Production, we have been providing professional video and audio systems rental services since 2010. We serve a wide range from weddings to corporate events, concerts to sports competitions.\n\nWith our experienced team and state-of-the-art equipment, we make your events unforgettable.'
+    },
+    stats: [
+        { label: { tr: 'Yıllık Deneyim', en: 'Years Experience' }, value: '14+' },
+        { label: { tr: 'Tamamlanan Proje', en: 'Completed Projects' }, value: '500+' },
+        { label: { tr: 'Mutlu Müşteri', en: 'Happy Clients' }, value: '300+' }
+    ],
+    // Cloudinary image URL - replace with your actual working image URL
+    image: 'https://res.cloudinary.com/dmeviky6f/image/upload/v1/about/team.jpg'
+};
 
 const About = () => {
-    const { useContent, resolveLocalized } = useSiteContent();
-    const { data: aboutData } = useContent('about');
-
-    const rawContent = aboutData?.content as AboutContent | undefined;
-    const fallback = FALLBACK_CONTENT.about;
-
-    const aboutContent: AboutContent = {
-        title: {
-            tr: rawContent?.title?.tr || fallback.title.tr,
-            en: rawContent?.title?.en || fallback.title.en
-        },
-        description: {
-            tr: rawContent?.description?.tr || fallback.description.tr,
-            en: rawContent?.description?.en || fallback.description.en
-        },
-        stats: (rawContent?.stats && rawContent.stats.length > 0)
-            ? rawContent.stats
-            : fallback.stats,
-        image: rawContent?.image || '',
-    };
-
     const tHome = useTranslations('site.home');
+    const locale = tHome('locale') === 'tr' ? 'tr' : 'en'; // Get current locale
 
-    // Use stats directly from content (which is now guaranteed to have fallback)
-    const displayStats = aboutContent.stats.map(s => ({
-        label: resolveLocalized(s.label),
+    const displayStats = STATIC_ABOUT_CONTENT.stats.map(s => ({
+        label: s.label[locale],
         value: s.value
     }));
 
@@ -55,20 +48,12 @@ const About = () => {
                                 transition={{ duration: 0.8 }}
                             >
                                 <StageSectionTitle
-                                    title={resolveLocalized(aboutContent?.title) || tHome('aboutSection.title')}
+                                    title={STATIC_ABOUT_CONTENT.title[locale]}
                                     subtitle=""
                                 />
-                                {aboutContent?.description ? (
-                                    <div className="text-gray-300 mb-8 text-lg whitespace-pre-line leading-relaxed">
-                                        {resolveLocalized(aboutContent.description)}
-                                    </div>
-                                ) : (
-                                    <>
-                                        <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                                            {resolveLocalized(aboutContent?.description)}
-                                        </p>
-                                    </>
-                                )}
+                                <div className="text-gray-300 mb-8 text-lg whitespace-pre-line leading-relaxed">
+                                    {STATIC_ABOUT_CONTENT.description[locale]}
+                                </div>
                                 <div className="flex gap-8 flex-wrap justify-center lg:justify-start">
                                     {displayStats.map((stat, index) => (
                                         <motion.div
@@ -118,23 +103,17 @@ const About = () => {
                                             ease: 'easeInOut',
                                         }}
                                     />
-                                    {(() => {
-                                        const imgUrl = getImageUrl(aboutContent?.image);
-                                        if (imgUrl) {
-                                            return (
-                                                <LazyImage
-                                                    src={imgUrl}
-                                                    alt="SK Production Ekibi"
-                                                    className="relative rounded-2xl w-full aspect-[4/3] z-10"
-                                                    fill
-                                                    objectFit="cover"
-                                                    sizes="(max-width: 768px) 100vw, 50vw"
-                                                    quality={85}
-                                                />
-                                            );
-                                        }
-                                        return null;
-                                    })()}
+                                    {STATIC_ABOUT_CONTENT.image && (
+                                        <LazyImage
+                                            src={STATIC_ABOUT_CONTENT.image}
+                                            alt="SK Production Ekibi"
+                                            className="relative rounded-2xl w-full aspect-[4/3] z-10"
+                                            fill
+                                            objectFit="cover"
+                                            sizes="(max-width: 768px) 100vw, 50vw"
+                                            quality={85}
+                                        />
+                                    )}
                                 </div>
                             </motion.div>
                         </div>

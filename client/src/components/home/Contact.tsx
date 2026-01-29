@@ -6,30 +6,29 @@ import { motion } from 'framer-motion';
 import Icon from '@/components/common/Icon';
 import Map from '@/components/common/Map';
 import ContactForm from '@/components/common/ContactForm';
-import { useSiteContent, ContactInfo } from '@/hooks/useSiteContent';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
+
+// STATIC CONTENT - No database dependency
+const STATIC_CONTACT_INFO = {
+    address: {
+        tr: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
+        en: 'Zincirlidere Street No:52/C Şişli/Istanbul'
+    },
+    phone: '+90 (212) 123 45 67',
+    email: 'info@skproduction.com.tr',
+    latitude: 41.057984,
+    longitude: 28.987117
+};
 
 const Contact = () => {
-    const { useContent, resolveLocalized } = useSiteContent();
-    const { data: contactData } = useContent('contact');
-    const contactInfo = contactData?.content as ContactInfo | undefined;
     const tHome = useTranslations('site.home');
-    const locale = useLocale();
+    const locale = tHome('locale') === 'tr' ? 'tr' : 'en';
 
-    const defaultLocation = useMemo(() => ({
-        address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
-        lat: 41.057984,
-        lng: 28.987117,
-    }), []);
-
-    const location = useMemo(() => {
-        if (!contactInfo) return defaultLocation;
-        return {
-            address: resolveLocalized(contactInfo.address) || defaultLocation.address,
-            lat: contactInfo.latitude || defaultLocation.lat,
-            lng: contactInfo.longitude || defaultLocation.lng
-        };
-    }, [contactInfo, defaultLocation, resolveLocalized]);
+    const location = useMemo(() => ({
+        address: STATIC_CONTACT_INFO.address[locale],
+        lat: STATIC_CONTACT_INFO.latitude,
+        lng: STATIC_CONTACT_INFO.longitude
+    }), [locale]);
 
     const openMobileNavigation = () => {
         if (typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
@@ -59,9 +58,9 @@ const Contact = () => {
                             transition={{ duration: 0.8 }}
                         >
                             {[
-                                { icon: 'location', title: tHome('contactSection.labels.address'), content: resolveLocalized(contactInfo?.address) || tHome('contactSection.fallback.address') },
-                                { icon: 'phone', title: tHome('contactSection.labels.phone'), content: contactInfo?.phone || tHome('contactSection.fallback.phone') },
-                                { icon: 'email', title: tHome('contactSection.labels.email'), content: contactInfo?.email || tHome('contactSection.fallback.email') },
+                                { icon: 'location', title: tHome('contactSection.labels.address'), content: STATIC_CONTACT_INFO.address[locale] },
+                                { icon: 'phone', title: tHome('contactSection.labels.phone'), content: STATIC_CONTACT_INFO.phone },
+                                { icon: 'email', title: tHome('contactSection.labels.email'), content: STATIC_CONTACT_INFO.email },
                             ].map((item, index) => (
                                 <motion.div
                                     key={index}

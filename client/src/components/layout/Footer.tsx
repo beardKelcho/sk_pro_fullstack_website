@@ -1,52 +1,31 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Icon from '@/components/common/Icon';
-import { useSiteContent, SocialMedia, ContactInfo } from '@/hooks/useSiteContent'; // Update import
-import logger from '@/utils/logger';
 import { useLocale, useTranslations } from 'next-intl';
 
+// STATIC CONTENT - No database dependency
+const STATIC_FOOTER_SOCIAL = [
+  { platform: 'Facebook', url: 'https://facebook.com/skproduction' },
+  { platform: 'Instagram', url: 'https://instagram.com/skproduction' },
+  { platform: 'LinkedIn', url: 'https://linkedin.com/company/skproduction' }
+];
+
+const STATIC_FOOTER_CONTACT = {
+  address: {
+    tr: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
+    en: 'Zincirlidere Street No:52/C Şişli/Istanbul'
+  },
+  phone: '+90 (212) 123 45 67',
+  email: 'info@skproduction.com.tr'
+};
+
 const Footer: React.FC = () => {
-  // Use hook instead of manual fetch
-  const { resolveLocalized, useContent, useAllContents } = useSiteContent();
-
-  // Use independent queries or a combined one. 
-  // Let's use the hook's useContent pattern if applicable or just fix the helper.
-  // Actually, since this is a Server/Client component mix, let's keep it simple.
-  // We need resolveLocalized.
-
-  const [socialMedia, setSocialMedia] = useState<SocialMedia[]>([]);
-  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null);
   const tFooter = useTranslations('site.footer');
   const tHeader = useTranslations('site.header');
   const locale = useLocale();
   const prefix = `/${locale}`;
-
-  useEffect(() => {
-    // Keep existing fetch logic but consider using hook in future refactor
-    const fetchData = async () => {
-      try {
-        const [socialRes, contactRes] = await Promise.all([
-          fetch(`/api/site-content/public/social`, { headers: { 'Cache-Control': 'no-cache' } }),
-          fetch(`/api/site-content/public/contact`, { headers: { 'Cache-Control': 'no-cache' } })
-        ]);
-
-        if (socialRes.ok) {
-          const data = await socialRes.json();
-          if (data.content?.content) setSocialMedia(data.content.content);
-        }
-        if (contactRes.ok) {
-          const data = await contactRes.json();
-          if (data.content?.content) setContactInfo(data.content.content);
-        }
-      } catch (error) {
-        logger.error('Footer veri yükleme hatası:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const getIconName = (platform: string): React.ComponentProps<typeof Icon>['name'] => {
     const platformLower = platform.toLowerCase();
@@ -69,25 +48,17 @@ const Footer: React.FC = () => {
               {tFooter('companyDescription')}
             </p>
             <div className="flex space-x-4">
-              {socialMedia.length > 0 ? (
-                socialMedia.map((social, index) => (
-                  <a
-                    key={index}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    <Icon name={getIconName(social.platform)} className="h-6 w-6" />
-                  </a>
-                ))
-              ) : (
-                <>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors"><Icon name="facebook" className="h-6 w-6" /></a>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors"><Icon name="instagram" className="h-6 w-6" /></a>
-                  <a href="#" className="text-gray-400 hover:text-white transition-colors"><Icon name="linkedin" className="h-6 w-6" /></a>
-                </>
-              )}
+              {STATIC_FOOTER_SOCIAL.map((social, index) => (
+                <a
+                  key={index}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <Icon name={getIconName(social.platform)} className="h-6 w-6" />
+                </a>
+              ))}
             </div>
           </div>
 
@@ -107,15 +78,15 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li className="flex items-center text-gray-400">
                 <Icon name="location" className="h-5 w-5 mr-2" />
-                <span>{resolveLocalized(contactInfo?.address) || 'Zincirlidere Caddesi No:52/C Şişli/İstanbul'}</span>
+                <span>{STATIC_FOOTER_CONTACT.address[locale as 'tr' | 'en' || 'tr']}</span>
               </li>
               <li className="flex items-center text-gray-400">
                 <Icon name="phone" className="h-5 w-5 mr-2" />
-                <span>{contactInfo?.phone || '+90 532 123 4567'}</span>
+                <span>{STATIC_FOOTER_CONTACT.phone}</span>
               </li>
               <li className="flex items-center text-gray-400">
                 <Icon name="email" className="h-5 w-5 mr-2" />
-                <span>{contactInfo?.email || 'info@skpro.com.tr'}</span>
+                <span>{STATIC_FOOTER_CONTACT.email}</span>
               </li>
             </ul>
           </div>
@@ -148,4 +119,4 @@ const Footer: React.FC = () => {
   );
 };
 
-export default Footer; 
+export default Footer;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { getStoredUser } from '@/utils/authStorage';
 
 interface Command {
@@ -16,6 +16,7 @@ const CommandPalette: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
+  const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +88,11 @@ const CommandPalette: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl+K veya Cmd+K ile aç/kapa
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        const isAdminDashboard = pathname?.startsWith('/admin') && pathname !== '/admin/login' && pathname !== '/admin';
+
+        // Admin panelindeysek (login hariç), GlobalSearch devreye girecek
+        if (isAdminDashboard) return;
+
         e.preventDefault();
         setIsOpen(prev => !prev);
         return;
@@ -113,7 +119,7 @@ const CommandPalette: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, filteredCommands]);
+  }, [isOpen, selectedIndex, filteredCommands, pathname]);
 
   useEffect(() => {
     if (isOpen) {
@@ -174,8 +180,8 @@ const CommandPalette: React.FC = () => {
                 key={command.id}
                 onClick={command.action}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${index === selectedIndex
-                    ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
               >
                 <div className={`flex-shrink-0 ${index === selectedIndex ? 'text-[#0066CC] dark:text-primary-light' : 'text-gray-400'}`}>

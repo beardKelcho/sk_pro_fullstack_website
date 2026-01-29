@@ -1,158 +1,47 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslations } from 'next-intl';
 
 /**
- * Contact form data structure
- * @interface ContactFormData
- */
-interface ContactFormData {
-  /** User's name */
-  name: string;
-  /** User's email address */
-  email: string;
-  /** Message content */
-  message: string;
-}
-
-/**
- * Contact form component with offline support and background sync
- * Supports queued submissions when offline
- * 
- * @example
- * ```tsx
- * <ContactForm />
- * ```
+ * Contact form component - TEMPORARILY DISABLED
+ * Form functionality will be restored when Site Management is rebuilt
  */
 const ContactForm: React.FC = () => {
   const t = useTranslations('site.contactForm');
-  const [formData, setFormData] = useState<ContactFormData>({
-    name: '',
-    email: '',
-    message: '',
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'queued' | 'error'>('idle');
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
-
-    try {
-      // API endpoint'e form verilerini gönder
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      // Offline queue: SW 202 döndürebilir
-      if (response.status === 202 && data?.queued) {
-        setSubmitStatus('queued');
-      } else if (!response.ok) {
-        throw new Error(data?.message || t('errors.submitFailed'));
-      } else {
-        setSubmitStatus('success');
-      }
-      setFormData({ name: '', email: '', message: '' });
-    } catch (error) {
-      setSubmitStatus('error');
-      console.error('Form gönderimi sırasında hata:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="block text-gray-700 dark:text-gray-300 mb-1">
-          {t('fields.name.label')}
-        </label>
-        <input 
-          type="text" 
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-          autoComplete="name"
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-          placeholder={t('fields.name.placeholder')}
-        />
-      </div>
-      <div>
-        <label htmlFor="email" className="block text-gray-700 dark:text-gray-300 mb-1">
-          {t('fields.email.label')}
-        </label>
-        <input 
-          type="email" 
-          id="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          autoComplete="email"
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-          placeholder={t('fields.email.placeholder')}
-        />
-      </div>
-      <div>
-        <label htmlFor="message" className="block text-gray-700 dark:text-gray-300 mb-1">
-          {t('fields.message.label')}
-        </label>
-        <textarea 
-          id="message"
-          name="message"
-          value={formData.message}
-          onChange={handleChange}
-          required
-          rows={5}
-          className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-card text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-transparent"
-          placeholder={t('fields.message.placeholder')}
-        ></textarea>
-      </div>
-      <button 
-        type="submit"
-        disabled={isSubmitting}
-        className={`w-full bg-[#0066CC] dark:bg-primary-light text-white py-3 rounded-lg hover:bg-[#0055AA] dark:hover:bg-primary transition-colors duration-300 font-medium ${
-          isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
-        }`}
-      >
-        {isSubmitting ? t('button.submitting') : t('button.submit')}
-      </button>
-
-      {/* Form Durumu */}
-      {submitStatus === 'success' && (
-        <div className="p-4 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-100 rounded-lg">
-          {t('status.success')}
+    <div className="space-y-4">
+      {/* Geçici Bilgilendirme */}
+      <div className="p-8 bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-sm rounded-2xl border border-white/10 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 mb-4">
+          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
+          </svg>
         </div>
-      )}
-      {submitStatus === 'queued' && (
-        <div className="p-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 rounded-lg">
-          {t('status.queued')}
+        <h3 className="text-xl font-semibold mb-2 text-white">İletişim Formu Güncelleniyor</h3>
+        <p className="text-gray-400 mb-6 max-w-md mx-auto">
+          Şu anda iletişim formumuz güncelleme aşamasında. Bize aşağıdaki yollarla ulaşabilirsiniz:
+        </p>
+        <div className="space-y-3 text-sm text-gray-300">
+          <div className="flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
+            </svg>
+            <a href="mailto:info@skproduction.com.tr" className="hover:text-[#0066CC] transition-colors">
+              info@skproduction.com.tr
+            </a>
+          </div>
+          <div className="flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            <a href="tel:+902121234567" className="hover:text-[#0066CC] transition-colors">
+              +90 (212) 123 45 67
+            </a>
+          </div>
         </div>
-      )}
-      {submitStatus === 'error' && (
-        <div className="p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 rounded-lg">
-          {t('status.error')}
-        </div>
-      )}
-    </form>
+      </div>
+    </div>
   );
 };
 
-export default ContactForm; 
+export default ContactForm;

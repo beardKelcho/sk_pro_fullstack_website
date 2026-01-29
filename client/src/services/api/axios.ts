@@ -5,18 +5,20 @@ import logger from '@/utils/logger';
 // Browser'da çalışıyorsa (client-side) relative path kullan (Next.js rewrites devreye girer)
 // Server-side'da ise tam URL kullan
 const getApiUrl = () => {
-  // Client-side'da (browser) relative path kullan - Next.js rewrites devreye girer
-  if (typeof window !== 'undefined') {
-    return '/api';
-  }
-  // Server-side'da (SSR) tam URL kullan
-  // NEXT_PUBLIC_BACKEND_URL veya NEXT_PUBLIC_API_URL kullan
-  // Trailing slash'leri temizle (http://api.com/ -> http://api.com)
-  const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001')
-    .replace(/\/api$/, '') // Sonda /api varsa kaldır
-    .replace(/\/$/, '');   // Sonda / varsa kaldır
+  // Rewrites removed, so we MUST use absolute URL everywhere (Client & Server)
 
-  return `${backendUrl}/api`;
+  // 1. Production / Staging Environment
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  // 2. Production Fallback (Hardcoded to prevent 405 on Vercel)
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://sk-pro-backend.onrender.com/api';
+  }
+
+  // 3. Development Fallback
+  return 'http://localhost:5001/api';
 };
 
 const API_URL = getApiUrl();

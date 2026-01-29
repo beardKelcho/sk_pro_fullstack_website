@@ -46,11 +46,12 @@ export const getContentBySection = async (req: Request, res: Response) => {
 export const createContent = async (req: Request, res: Response) => {
   try {
     const { section, order, isActive } = req.body;
-    const content = req.body.content || req.body; // Falback if flat body
+    // User requested payload format: { section, isActive, data: { ... } }
+    // Fallback to 'content' or body itself for backward compatibility
+    const content = req.body.data || req.body.content || req.body;
 
     if (!section) return res.status(400).json({ success: false, message: 'Bölüm adı gereklidir' });
-    // Content can be empty object via schema default, so relax check or check if undefined
-    if (content === undefined) return res.status(400).json({ success: false, message: 'İçerik verisi gereklidir' });
+    if (!content) return res.status(400).json({ success: false, message: 'İçerik verisi (data) gereklidir' });
 
     // Reusing createOrUpdate logic which was split in old controller but logically similar
     const result = await siteService.createOrUpdateContent(section, content, order, isActive);

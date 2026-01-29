@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
-import { X, Save, Loader2, Upload, Grid, Video } from 'lucide-react';
+import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus } from 'lucide-react';
 
 interface HeroSectionModalProps {
     isOpen: boolean;
@@ -17,7 +17,8 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
     const [formData, setFormData] = useState({
         title: '',
         subtitle: '',
-        videoUrl: '', // Cloudinary ID or URL
+        rotatingTexts: [''] as string[],
+        videoUrl: '',
     });
 
     useEffect(() => {

@@ -15,6 +15,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+export { cloudinary };
+
 export interface CloudinaryUploadOptions {
   folder?: string;
   resource_type?: 'image' | 'video' | 'raw' | 'auto';

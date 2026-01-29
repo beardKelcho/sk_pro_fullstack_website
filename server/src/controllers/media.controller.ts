@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import Media from '../models/Media';
-import { uploadToCloudinary } from '../services/cloudinaryService';
+import { uploadToCloudinary, cloudinary } from '../services/cloudinaryService';
 import logger from '../utils/logger';
 
 export const getMedia = async (req: Request, res: Response) => {
@@ -67,5 +67,28 @@ export const uploadMedia = async (req: Request, res: Response) => {
     } catch (error) {
         logger.error('Upload Media Error:', error);
         res.status(500).json({ success: false, message: 'Dosya yüklenirken hata oluştu' });
+    }
+};
+export const deleteMedia = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const media = await Media.findById(id);
+        if (!media) {
+            return res.status(404).json({ success: false, message: 'Medya bulunamadı' });
+        }
+
+        // Delete from Cloudinary
+        if (media.publicId) {
+            await cloudinary.uploader.destroy(media.publicId, { resource_type: media.type });
+        }
+
+        // Delete from DB
+        await Media.findByIdAndDelete(id);
+
+        res.status(200).json({ success: true, message: 'Medya başarıyla silindi' });
+    } catch (error) {
+        logger.error('Delete Media Error:', error);
+        res.status(500).json({ success: false, message: 'Medya silinirken hata oluştu' });
     }
 };

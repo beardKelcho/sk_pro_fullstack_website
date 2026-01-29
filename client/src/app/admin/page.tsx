@@ -17,7 +17,7 @@ export default function AdminLogin() {
     password: '',
     rememberMe: false
   });
-  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [requires2FA, setRequires2FA] = useState(false);
@@ -29,7 +29,7 @@ export default function AdminLogin() {
   useEffect(() => {
     const checkExistingAuth = async () => {
       const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      
+
       if (token) {
         try {
           // Token geçerli mi kontrol et
@@ -56,7 +56,7 @@ export default function AdminLogin() {
         }
       }
     };
-    
+
     checkExistingAuth();
   }, []);
 
@@ -66,7 +66,7 @@ export default function AdminLogin() {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
-    
+
     // Hata mesajlarını temizle
     if (errors[name as keyof typeof errors]) {
       setErrors({
@@ -77,8 +77,8 @@ export default function AdminLogin() {
   };
 
   const validateForm = () => {
-    const newErrors: {email?: string; password?: string} = {};
-    
+    const newErrors: { email?: string; password?: string } = {};
+
     // Email / telefon validasyonu
     if (!formData.email) {
       newErrors.email = 'E-posta veya telefon gereklidir';
@@ -91,38 +91,38 @@ export default function AdminLogin() {
         newErrors.email = 'Geçerli bir e-posta veya telefon girin';
       }
     }
-    
+
     // Şifre validasyonu
     if (!formData.password) {
       newErrors.password = 'Şifre gereklidir';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Şifre en az 6 karakter olmalıdır';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
     setLoginError('');
-    
+
     try {
       if (process.env.NODE_ENV === 'development') {
         console.log('Attempting login with:', { email: formData.email, passwordLength: formData.password.length });
       }
-      
+
       const response = await authApi.login({
         email: formData.email,
         password: formData.password,
       });
-      
+
       logger.debug('Login response:', response.data);
-      
+
       // Debug: Response'u console'a yazdır
       if (process.env.NODE_ENV === 'development') {
         console.log('=== LOGIN RESPONSE ===');
@@ -136,7 +136,7 @@ export default function AdminLogin() {
         console.log('Requires2FA:', response.data?.requires2FA);
         console.log('=====================');
       }
-      
+
       if (response.data && response.data.success) {
         // 2FA kontrolü
         if (response.data.requires2FA) {
@@ -154,14 +154,14 @@ export default function AdminLogin() {
         if (response.data.accessToken) {
           // Token'ı temizle (boşluk, yeni satır, vs. kaldır)
           const cleanToken = String(response.data.accessToken).trim();
-          
+
           if (!cleanToken || cleanToken.length < 10) {
             logger.error('Invalid token format received');
             setLoginError('Giriş başarısız: Geçersiz token formatı');
             setLoading(false);
             return;
           }
-          
+
           if (formData.rememberMe) {
             localStorage.setItem('accessToken', cleanToken);
             if (process.env.NODE_ENV === 'development') {
@@ -197,7 +197,7 @@ export default function AdminLogin() {
           setLoading(false);
           return;
         }
-        
+
         // Kullanıcı bilgilerini kaydet
         // Backend'den gelen user formatı: { id, name, email, role }
         console.log('🔍 Login Response:', {
@@ -205,7 +205,7 @@ export default function AdminLogin() {
           user: response.data.user,
           fullResponse: response.data
         });
-        
+
         if (response.data.user) {
           const userData = {
             id: response.data.user.id || response.data.user._id,
@@ -216,7 +216,7 @@ export default function AdminLogin() {
             permissions: response.data.user.permissions || [],
             isActive: response.data.user.isActive !== undefined ? response.data.user.isActive : true,
           };
-          
+
           if (formData.rememberMe) {
             localStorage.setItem('user', JSON.stringify(userData));
             console.log('✅ User saved to localStorage:', userData);
@@ -226,7 +226,7 @@ export default function AdminLogin() {
             console.log('✅ User saved to sessionStorage:', userData);
             console.log('✅ sessionStorage.getItem("user"):', sessionStorage.getItem('user'));
           }
-          
+
           // Header'ı anında güncellemek için custom event dispatch et
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('auth:login'));
@@ -237,7 +237,7 @@ export default function AdminLogin() {
             responseKeys: Object.keys(response.data || {}),
             responseData: response.data
           });
-          
+
           // User yoksa, token varsa getProfile ile user bilgisini al
           if (response.data.accessToken) {
             console.log('⚠️ User not in response, trying to get profile...');
@@ -253,7 +253,7 @@ export default function AdminLogin() {
                   permissions: profileResponse.data.user.permissions || [],
                   isActive: profileResponse.data.user.isActive !== undefined ? profileResponse.data.user.isActive : true,
                 };
-                
+
                 if (formData.rememberMe) {
                   localStorage.setItem('user', JSON.stringify(userData));
                   console.log('✅ User saved to localStorage (from profile):', userData);
@@ -261,7 +261,7 @@ export default function AdminLogin() {
                   sessionStorage.setItem('user', JSON.stringify(userData));
                   console.log('✅ User saved to sessionStorage (from profile):', userData);
                 }
-                
+
                 setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('auth:login'));
                   console.log('✅ auth:login event dispatched (from profile)');
@@ -272,15 +272,15 @@ export default function AdminLogin() {
             }
           }
         }
-        
+
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
         await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         // Token'ın gerçekten kaydedildiğini doğrula - hem localStorage hem sessionStorage'dan kontrol et
         const savedTokenLocal = localStorage.getItem('accessToken');
         const savedTokenSession = sessionStorage.getItem('accessToken');
         const savedToken = formData.rememberMe ? savedTokenLocal : savedTokenSession;
-        
+
         if (process.env.NODE_ENV === 'development') {
           console.log('Token verification after save:');
           console.log('Remember me:', formData.rememberMe);
@@ -288,7 +288,7 @@ export default function AdminLogin() {
           console.log('Token in sessionStorage:', !!savedTokenSession, savedTokenSession ? savedTokenSession.length + ' chars' : 'none');
           console.log('Using token from:', formData.rememberMe ? 'localStorage' : 'sessionStorage');
         }
-        
+
         if (!savedToken) {
           logger.error('Token was not saved properly', {
             rememberMe: formData.rememberMe,
@@ -299,7 +299,7 @@ export default function AdminLogin() {
           setLoading(false);
           return;
         }
-        
+
         // Token formatını kontrol et
         const tokenParts = savedToken.split('.');
         if (tokenParts.length !== 3) {
@@ -312,7 +312,7 @@ export default function AdminLogin() {
           setLoading(false);
           return;
         }
-        
+
         if (process.env.NODE_ENV === 'development') {
           console.log('Token saved successfully and format verified');
           console.log('Token (first 30 chars):', savedToken.substring(0, 30) + '...');
@@ -320,17 +320,17 @@ export default function AdminLogin() {
           console.log('Token length:', savedToken.length);
           console.log('Token parts:', tokenParts.length);
         }
-        
+
         // Token kaydedildi, direkt dashboard'a yönlendir
         // getProfile çağrısı yapmıyoruz çünkü bu gereksiz ve hata kaynağı olabilir
         // Token zaten backend'den geldi ve geçerli, bu yeterli
         if (process.env.NODE_ENV === 'development') {
           console.log('✅ Login başarılı, token kaydedildi, dashboard\'a yönlendiriliyor...');
         }
-        
+
         // Kısa bir delay ile redirect yap (storage'a yazılmasını garantile)
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // Dashboard'a yönlendir - full page reload ile
         window.location.href = '/admin/dashboard';
       } else {
@@ -350,12 +350,12 @@ export default function AdminLogin() {
         console.error('Error code:', error.code);
         console.error('==================');
       }
-      
+
       logger.error('Giriş hatası:', error);
       logger.error('Error response:', error.response?.data);
       const backend = error.response?.data;
       const status = error.response?.status;
-      
+
       // Rate limit hatası (429) için özel mesaj
       if (status === 429 || backend?.code === 'RATE_LIMITED') {
         const rateLimitMessage = backend?.message || 'Çok fazla giriş denemesi yaptınız. Lütfen 15 dakika sonra tekrar deneyin.';
@@ -364,17 +364,8 @@ export default function AdminLogin() {
         toast.error(rateLimitMessage, { autoClose: 5000 });
         return;
       }
-      
-      const validationMsg =
-        Array.isArray(backend?.errors) && backend.errors.length
-          ? backend.errors.map((e: any) => e.msg).filter(Boolean).join(' • ')
-          : '';
-      const errorMessage =
-        validationMsg ||
-        backend?.message ||
-        backend?.error ||
-        error.message ||
-        'Giriş işlemi sırasında bir hata oluştu';
+
+      const errorMessage = error.response?.data?.message || error.message || 'Giriş yapılamadı';
       setLoginError(errorMessage);
     } finally {
       setLoading(false);
@@ -383,7 +374,7 @@ export default function AdminLogin() {
 
   const handle2FAVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!twoFactorToken && !twoFactorBackupCode) {
       setLoginError('Lütfen doğrulama kodu veya backup kod girin');
       return;
@@ -449,9 +440,9 @@ export default function AdminLogin() {
       }
     } catch (error: any) {
       logger.error('2FA doğrulama hatası:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          '2FA doğrulama sırasında bir hata oluştu';
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        '2FA doğrulama sırasında bir hata oluştu';
       setLoginError(errorMessage);
     } finally {
       setLoading(false);
@@ -573,11 +564,10 @@ export default function AdminLogin() {
                           onChange={handleChange}
                           autoComplete="username"
                           inputMode="email"
-                          className={`w-full rounded-xl border bg-black/30 px-4 py-3 pl-11 text-white placeholder-white/30 outline-none transition focus:ring-4 ${
-                            errors.email
+                          className={`w-full rounded-xl border bg-black/30 px-4 py-3 pl-11 text-white placeholder-white/30 outline-none transition focus:ring-4 ${errors.email
                               ? 'border-red-500/50 focus:ring-red-500/20'
                               : 'border-white/10 focus:border-white/20 focus:ring-white/10'
-                          }`}
+                            }`}
                           placeholder="ornek@skproduction.com veya +905xxxxxxxxx"
                           aria-invalid={Boolean(errors.email)}
                         />
@@ -604,11 +594,10 @@ export default function AdminLogin() {
                         onChange={handleChange}
                         error={errors.password}
                         placeholder="••••••••"
-                        className={`w-full rounded-xl border bg-black/30 px-4 py-3 text-white placeholder-white/30 outline-none transition focus:ring-4 ${
-                          errors.password
+                        className={`w-full rounded-xl border bg-black/30 px-4 py-3 text-white placeholder-white/30 outline-none transition focus:ring-4 ${errors.password
                             ? 'border-red-500/50 focus:ring-red-500/20'
                             : 'border-white/10 focus:border-white/20 focus:ring-white/10'
-                        }`}
+                          }`}
                       />
                       {errors.password ? <p className="mt-2 text-xs text-red-200">{errors.password}</p> : null}
                     </div>

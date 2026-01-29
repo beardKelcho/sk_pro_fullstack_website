@@ -15,18 +15,20 @@ const getClientIp = (req: Request): string => {
 export class AuthController {
   // Kullanıcı giriş işlemi
   async login(req: Request, res: Response): Promise<Response | void> {
+    console.log('LOGIN DENEMESİ:', { email: req.body.email });
+
     const requestId = (req.headers['x-request-id'] as string) || 'unknown';
     logger.info('Login attempt started', { requestId, email: req.body?.email ? 'provided' : 'missing' });
 
     try {
       const { email, password } = req.body;
 
-      // Manual validation removed (handled by Zod middleware)
-
       const ip = getClientIp(req);
       const userAgent = (req.headers['user-agent'] as string) || 'unknown';
 
       const result: LoginResult = await authService.login(email, password, ip, userAgent);
+
+      console.log('LOGIN BAŞARILI, Token üretildi');
 
       // 2FA Handling
       if (result.requires2FA) {

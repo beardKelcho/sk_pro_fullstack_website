@@ -57,19 +57,12 @@ app.use(cors({
     callback(null, true);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Cache-Control',
-    'Pragma',
-    'Expires',
-    'X-Test-Origin',
-    'X-Request-ID'
-  ],
-  exposedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Enable Pre-Flight for all routes
+app.options('*', cors());
 
 // HTTP server oluştur (WebSocket ve GraphQL için)
 const httpServer = createServer(app);

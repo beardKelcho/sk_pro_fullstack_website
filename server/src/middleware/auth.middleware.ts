@@ -1,15 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
-import { IUser } from '../types/common';
+import { User } from '../models';
+import { Permission, hasPermission, hasRole, Role } from '../config/permissions';
 import logger from '../utils/logger';
-import { updateSessionActivity } from '../utils/authTokens';
+import { JWT_SECRET } from '../utils/authTokens';
+import { IUser } from '../models/User';
+import { updateSessionActivity } from '../controllers/session.controller';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-
-// Quick Access Type Extension
-export interface AuthRequest extends Request {
-  user?: IUser;
+declare global {
+  namespace Express {
+    interface Request {
+      user?: IUser;
+    }
+  }
 }
 
 // JWT doğrulama middleware'i
@@ -41,7 +44,7 @@ export const authenticate = async (
     // JWT verify et
     const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
 
-    // Kullanıcıyı database'den çek (getProfile controller bunu bekliyor!)
+    // Kullanıcıyı database'den çek
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user || !user.isActive) {
@@ -52,7 +55,9 @@ export const authenticate = async (
     }
 
     // Session check BYPASSED (acil kurtarma için kaldırıldı)
-    logger.info('Auth Check Bypassed - Session DB Check Removed', { userId: user._id });
+    logger.info('Auth Check Bypassed - Session DB Check Removed', {
+      userId: user._id,
+    });
 
     // Session activity güncelle (background, hata patlatmaz)
     updateSessionActivity(user._id.toString(), token).catch((err: any) =>
@@ -84,43 +89,56 @@ export const authenticate = async (
   }
 };
 
-// Yetkilendirme middleware'i (rollere göre)
+// Rol bazlı yetkilendirme middleware'i
 export const authorize = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
-
-    if (!user || !roles.includes(user.role)) {
-      return res.status(403).json({
+    if (!req.user) {
+      return res.status(401).json({
         success: false,
-        message: 'Bu işlem için yetkiniz yok',
+        message: 'Yetkilendirme başarısız',
       });
     }
+
+    // Admin ve Firma Sahibi her şeye erişebilir
+    if (hasRole(req.user.role, Role.ADMIN, Role.FIRMA_SAHIBI)) {
+      return next();
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu işlem için yetkiniz bulunmuyor',
+      });
+    }
+
     next();
   };
 };
 
-// Specific permission kontrolü
-export const requirePermission = (permission: string) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
-
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Yetkisiz erişim' });
+// Yetki bazlı yetkilendirme middleware'i
+export const requirePermission = (permission: Permission) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Yetkilendirme başarısız',
+      });
     }
 
-    // Admin her zaman geçer
-    if (user.role === 'ADMIN') {
+    // Admin ve Firma Sahibi her şeye erişebilir
+    if (hasRole(req.user.role, Role.ADMIN, Role.FIRMA_SAHIBI)) {
       return next();
     }
 
-    // Permission kontrolü (eğer permissions field'ı varsa)
-    if (user.permissions && user.permissions.includes(permission)) {
-      return next();
+    // Kullanıcının özel yetkilerini kontrol et
+    const userPermissions = req.user.permissions || [];
+    if (!hasPermission(req.user.role, permission, userPermissions)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bu işlem için yetkiniz bulunmuyor',
+      });
     }
 
-    return res.status(403).json({
-      success: false,
-      message: `${permission} yetkisi gereklidir`,
-    });
+    next();
   };
 };

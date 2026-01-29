@@ -6,6 +6,6 @@ export default createMiddleware({
 });
 
 export const config = {
-  // api, _next ve uzantısı olan dosyalara (css, js, mp4) dokunma
+  // Sadece sayfa rotalarında çalış; api, _next, static dosyalar, resimler ve favicon'a KARIŞMA
   matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
 };

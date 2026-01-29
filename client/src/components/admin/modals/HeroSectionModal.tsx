@@ -26,17 +26,28 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
             setFormData({
                 title: initialData.title || '',
                 subtitle: initialData.subtitle || '',
+                rotatingTexts: Array.isArray(initialData.rotatingTexts) && initialData.rotatingTexts.length > 0
+                    ? initialData.rotatingTexts
+                    : [''],
                 videoUrl: initialData.videoUrl || '',
             });
         }
     }, [initialData]);
 
     const mutation = useMutation({
-        mutationFn: async (data: any) => {
-            const res = await axios.post('/admin/site-content', {
+        mutationFn: async (data: typeof formData) => {
+            const payload = {
                 section: 'hero',
-                content: data
-            });
+                isActive: true,
+                data: {
+                    title: data.title,
+                    subtitle: data.subtitle,
+                    rotatingTexts: data.rotatingTexts.filter(t => t.trim() !== ''),
+                    videoUrl: data.videoUrl
+                }
+            };
+
+            const res = await axios.post('/admin/site-content', payload);
             return res.data;
         },
         onSuccess: () => {
@@ -70,6 +81,19 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
         enabled: activeMainTab === 'video' && pickerTab === 'library'
     });
 
+    const deleteMediaMutation = useMutation({
+        mutationFn: async (id: string) => {
+            await axios.delete(`/media/${id}`);
+        },
+        onSuccess: () => {
+            toast.success('Video silindi');
+            refetchMedia();
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Silme hatası');
+        }
+    });
+
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!uploadFile) return;
@@ -95,8 +119,28 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
 
     const handleSelectMedia = (url: string) => {
         setFormData(prev => ({ ...prev, videoUrl: url }));
-        // Optional: Switch back to content tab? or just stay and show selected state?
-        // User didn't specify, but showing selection in input is good enough.
+    };
+
+    const handleDeleteMedia = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (window.confirm('Bu videoyu silmek istediğinize emin misiniz?')) {
+            deleteMediaMutation.mutate(id);
+        }
+    };
+
+    const handleRotatingTextChange = (index: number, value: string) => {
+        const newTexts = [...formData.rotatingTexts];
+        newTexts[index] = value;
+        setFormData({ ...formData, rotatingTexts: newTexts });
+    };
+
+    const addRotatingText = () => {
+        setFormData({ ...formData, rotatingTexts: [...formData.rotatingTexts, ''] });
+    };
+
+    const removeRotatingText = (index: number) => {
+        const newTexts = formData.rotatingTexts.filter((_, i) => i !== index);
+        setFormData({ ...formData, rotatingTexts: newTexts.length ? newTexts : [''] });
     };
 
     if (!isOpen) return null;
@@ -221,11 +265,22 @@ const HeroSectionModal: React.FC<HeroSectionModalProps> = ({ isOpen, onClose, in
                                                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
                                                         <p className="text-xs text-white truncate">{item.name}</p>
                                                     </div>
+
+                                                    {/* Selection Indicator */}
                                                     {formData.videoUrl === item.url && (
-                                                        <div className="absolute top-2 right-2 bg-blue-500 text-white p-1 rounded-full shadow-lg">
+                                                        <div className="absolute top-2 left-2 bg-blue-500 text-white p-1 rounded-full shadow-lg">
                                                             <div className="w-2 h-2 bg-white rounded-full" />
                                                         </div>
                                                     )}
+
+                                                    {/* Delete Button */}
+                                                    <button
+                                                        onClick={(e) => handleDeleteMedia(e, item._id)}
+                                                        className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-700 transition-all shadow-lg"
+                                                        title="Videoyu Sil"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>

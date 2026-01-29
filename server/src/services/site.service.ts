@@ -109,8 +109,8 @@ class SiteService {
             return finalUrl;
         }
 
-        // Priority 2: Reconstruct from filename
-        if (filename) {
+        // Priority 2: Reconstruct from filename or fix broken URL
+        if (filename && !filename.startsWith('http')) {
             let cleanFilename = filename.split('/').pop() || filename;
             const resourceType = type;
             const ext = cleanFilename.split('.').pop()?.toLowerCase();
@@ -121,6 +121,12 @@ class SiteService {
                 else cleanFilename += '.jpg';
             }
             return `${this.cdnBaseUrl}/${resourceType}/upload/v1/${cleanFilename}`;
+        }
+
+        // Priority 3: Fix existing URL if it's just a path/ID
+        if (existingUrl && !existingUrl.startsWith('http') && !existingUrl.startsWith('/')) {
+            // Treat as ID or partial path
+            return `${this.cdnBaseUrl}/${type}/upload/v1/${existingUrl}`;
         }
 
         return existingUrl || '';

@@ -43,14 +43,9 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Not: User snippet'inde burada 'return NextResponse.next()' vardi, 
-  // bu durum CSP headerlarinin eklenmesini engelliyordu. 
-  // Bu yüzden akışın aşağıya devam etmesini sağlıyoruz.
   const response = isAdminPath ? NextResponse.next() : intlMiddleware(request);
 
   const apiBaseUrl = 'https://sk-pro-backend.onrender.com';
-  // CSP Removed for compatibility
-  // response.headers.set('Content-Security-Policy', cspHeader);
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
 
@@ -58,5 +53,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

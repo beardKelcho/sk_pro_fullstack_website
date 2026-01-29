@@ -4,36 +4,20 @@ import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { motion } from 'framer-motion';
 import LazyImage from '@/components/common/LazyImage';
-import { useTranslations } from 'next-intl';
 
-// STATIC CONTENT - No database dependency
-const STATIC_ABOUT_CONTENT = {
-    title: {
-        tr: 'Hakkımızda',
-        en: 'About Us'
-    },
-    description: {
-        tr: 'SK Production olarak 2010 yılından beri profesyonel görüntü ve ses sistemleri kiralama hizmeti vermekteyiz. Düğünlerden kurumsal etkinliklere, konserlerden spor müsabakalarına kadar geniş bir yelpazede hizmet sunuyoruz.\n\nDeneyimli ekibimiz ve son teknoloji ekipmanlarımız ile etkinliklerinizi unutulmaz kılıyoruz.',
-        en: 'As SK Production, we have been providing professional video and audio systems rental services since 2010. We serve a wide range from weddings to corporate events, concerts to sports competitions.\n\nWith our experienced team and state-of-the-art equipment, we make your events unforgettable.'
-    },
+// STATIC TURKISH CONTENT
+const ABOUT_CONTENT = {
+    title: 'Hakkımızda',
+    description: 'SK Production olarak 2010 yılından beri profesyonel görüntü ve ses sistemleri kiralama hizmeti vermekteyiz. Düğünlerden kurumsal etkinliklere, konserlerden spor müsabakalarına kadar geniş bir yelpazede hizmet sunuyoruz.\n\nDeneyimli ekibimiz ve son teknoloji ekipmanlarımız ile etkinliklerinizi unutulmaz kılıyoruz.',
     stats: [
-        { label: { tr: 'Yıllık Deneyim', en: 'Years Experience' }, value: '14+' },
-        { label: { tr: 'Tamamlanan Proje', en: 'Completed Projects' }, value: '500+' },
-        { label: { tr: 'Mutlu Müşteri', en: 'Happy Clients' }, value: '300+' }
+        { label: 'Yıllık Deneyim', value: '14+' },
+        { label: 'Tamamlanan Proje', value: '500+' },
+        { label: 'Mutlu Müşteri', value: '300+' }
     ],
-    // Cloudinary image URL - replace with your actual working image URL
     image: 'https://res.cloudinary.com/dmeviky6f/image/upload/v1/about/team.jpg'
 };
 
 const About = () => {
-    const tHome = useTranslations('site.home');
-    const locale = tHome('locale') === 'tr' ? 'tr' : 'en'; // Get current locale
-
-    const displayStats = STATIC_ABOUT_CONTENT.stats.map(s => ({
-        label: s.label[locale],
-        value: s.value
-    }));
-
     return (
         <div style={{ marginTop: '16rem', marginBottom: '8rem' }}>
             <StageExperience>
@@ -48,41 +32,41 @@ const About = () => {
                                 transition={{ duration: 0.8 }}
                             >
                                 <StageSectionTitle
-                                    title={STATIC_ABOUT_CONTENT.title[locale]}
+                                    title={ABOUT_CONTENT.title}
                                     subtitle=""
                                 />
-                                <div className="text-gray-300 mb-8 text-lg whitespace-pre-line leading-relaxed">
-                                    {STATIC_ABOUT_CONTENT.description[locale]}
+
+                                <div className="mt-8 space-y-6">
+                                    {ABOUT_CONTENT.description.split('\n\n').map((paragraph, index) => (
+                                        <p key={index} className="text-lg text-gray-300 leading-relaxed">
+                                            {paragraph}
+                                        </p>
+                                    ))}
                                 </div>
-                                <div className="flex gap-8 flex-wrap justify-center lg:justify-start">
-                                    {displayStats.map((stat, index) => (
+
+                                {/* Stats */}
+                                <div className="mt-12 grid grid-cols-3 gap-8">
+                                    {ABOUT_CONTENT.stats.map((stat, index) => (
                                         <motion.div
                                             key={index}
                                             className="text-center"
-                                            initial={{ opacity: 0, scale: 0.5 }}
-                                            whileInView={{ opacity: 1, scale: 1 }}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
                                             viewport={{ once: true }}
-                                            transition={{ delay: index * 0.1, duration: 0.5 }}
-                                            whileHover={{ scale: 1.1 }}
+                                            transition={{ duration: 0.5, delay: index * 0.1 }}
                                         >
-                                            <motion.span
-                                                className="block text-5xl font-bold bg-gradient-to-r from-[#0066CC] to-[#00C49F] bg-clip-text text-transparent"
-                                                animate={{
-                                                    backgroundPosition: ['0%', '100%', '0%'],
-                                                }}
-                                                transition={{
-                                                    duration: 3,
-                                                    repeat: Infinity,
-                                                    ease: 'linear',
-                                                }}
-                                            >
+                                            <div className="text-4xl font-bold text-[#0066CC] mb-2">
                                                 {stat.value}
-                                            </motion.span>
-                                            <span className="text-gray-400 text-sm mt-2 block">{stat.label}</span>
+                                            </div>
+                                            <div className="text-sm text-gray-400 uppercase tracking-wider">
+                                                {stat.label}
+                                            </div>
                                         </motion.div>
                                     ))}
                                 </div>
                             </motion.div>
+
+                            {/* Image */}
                             <motion.div
                                 className="lg:w-1/2"
                                 initial={{ opacity: 0, x: 50 }}
@@ -90,30 +74,14 @@ const About = () => {
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.8 }}
                             >
-                                <div className="relative">
-                                    <motion.div
-                                        className="absolute -top-4 -right-4 w-full h-full bg-gradient-to-br from-[#0066CC] to-[#00C49F] rounded-2xl blur-xl opacity-50"
-                                        animate={{
-                                            scale: [1, 1.1, 1],
-                                            opacity: [0.5, 0.7, 0.5],
-                                        }}
-                                        transition={{
-                                            duration: 3,
-                                            repeat: Infinity,
-                                            ease: 'easeInOut',
-                                        }}
+                                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#0066CC]/20 to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
+                                    <LazyImage
+                                        src={ABOUT_CONTENT.image}
+                                        alt="SK Production Team"
+                                        className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
+                                        fill
                                     />
-                                    {STATIC_ABOUT_CONTENT.image && (
-                                        <LazyImage
-                                            src={STATIC_ABOUT_CONTENT.image}
-                                            alt="SK Production Ekibi"
-                                            className="relative rounded-2xl w-full aspect-[4/3] z-10"
-                                            fill
-                                            objectFit="cover"
-                                            sizes="(max-width: 768px) 100vw, 50vw"
-                                            quality={85}
-                                        />
-                                    )}
                                 </div>
                             </motion.div>
                         </div>

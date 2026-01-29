@@ -1,93 +1,91 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
-import { motion } from 'framer-motion';
 import Icon from '@/components/common/Icon';
-import Map from '@/components/common/Map';
-import ContactForm from '@/components/common/ContactForm';
-import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 
-// STATIC CONTENT - No database dependency
-const STATIC_CONTACT_INFO = {
-    address: {
-        tr: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
-        en: 'Zincirlidere Street No:52/C Şişli/Istanbul'
-    },
-    phone: '+90 (212) 123 45 67',
-    email: 'info@skproduction.com.tr',
+const ContactForm = dynamic(() => import('@/components/common/ContactForm'), { ssr: false });
+
+// STATIC TURKISH CONTENT
+const CONTACT_INFO = {
+    title: 'İletişime Geçin',
+    subtitle: 'Projeleriniz için birlikte çalışalım',
+    address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
+    phone: '+90 532 123 4567',
+    email: 'info@skpro.com.tr',
     latitude: 41.057984,
     longitude: 28.987117
 };
 
 const Contact = () => {
-    const tHome = useTranslations('site.home');
-    const locale = tHome('locale') === 'tr' ? 'tr' : 'en';
-
-    const location = useMemo(() => ({
-        address: STATIC_CONTACT_INFO.address[locale],
-        lat: STATIC_CONTACT_INFO.latitude,
-        lng: STATIC_CONTACT_INFO.longitude
-    }), [locale]);
-
-    const openMobileNavigation = () => {
-        if (typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-            const navigationApps = [
-                { name: 'Google Maps', url: `google.navigation:q=${location.lat},${location.lng}` },
-                { name: 'Apple Maps', url: `maps://maps.apple.com/?daddr=${location.lat},${location.lng}` },
-            ];
-            navigationApps.forEach(app => window.open(app.url, '_blank'));
-            window.open(`https://www.google.com/maps/place/${encodeURIComponent(location.address)}`, '_blank');
-        }
-    };
-
     return (
         <StageExperience>
-            <section id="contact" className="relative py-32 bg-gradient-to-b from-black/90 to-black overflow-hidden" style={{ position: 'relative', scrollMarginTop: '100px', marginTop: '6rem', marginBottom: '6rem' }}>
-                <div className="container mx-auto px-6">
+            <section id="contact" className="relative py-24 bg-gradient-to-b from-black to-[#0A1128]/50 overflow-hidden" style={{ scrollMarginTop: '100px' }}>
+                <div className="container mx-auto px-6 relative z-10">
                     <StageSectionTitle
-                        title={tHome('contactSection.title')}
-                        subtitle={tHome('contactSection.subtitle')}
+                        title={CONTACT_INFO.title}
+                        subtitle={CONTACT_INFO.subtitle}
                     />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <motion.div
-                            className="space-y-8"
-                            initial={{ opacity: 0, x: -30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.8 }}
-                        >
-                            {[
-                                { icon: 'location', title: tHome('contactSection.labels.address'), content: STATIC_CONTACT_INFO.address[locale] },
-                                { icon: 'phone', title: tHome('contactSection.labels.phone'), content: STATIC_CONTACT_INFO.phone },
-                                { icon: 'email', title: tHome('contactSection.labels.email'), content: STATIC_CONTACT_INFO.email },
-                            ].map((item, index) => (
-                                <motion.div
-                                    key={index}
-                                    className="flex items-start group"
-                                    whileHover={{ x: 10 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    <div className="bg-gradient-to-br from-[#0066CC] to-[#00C49F] p-4 rounded-xl mr-4 group-hover:scale-110 transition-transform">
-                                        <Icon name={item.icon as any} className="h-6 w-6 text-white" />
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mt-16">
+                        {/* Contact Form */}
+                        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+                            <ContactForm />
+                        </div>
+
+                        {/* Contact Info & Map */}
+                        <div className="space-y-8">
+                            {/* Contact Details */}
+                            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 space-y-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#0066CC]/20 flex items-center justify-center">
+                                        <Icon name="location" className="w-6 h-6 text-[#0066CC]" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-semibold text-white mb-1">{item.title}</h3>
-                                        <p className="text-gray-300">{item.content}</p>
+                                        <h3 className="text-lg font-semibold text-white mb-1">Adres</h3>
+                                        <p className="text-gray-400">{CONTACT_INFO.address}</p>
                                     </div>
-                                </motion.div>
-                            ))}
-                            <Map location={location} onOpenMobileNavigation={openMobileNavigation} />
-                        </motion.div>
+                                </div>
 
-                        <motion.div
-                            initial={{ opacity: 0, x: 30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.8 }}
-                        >
-                            <ContactForm />
-                        </motion.div>
+                                <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#0066CC]/20 flex items-center justify-center">
+                                        <Icon name="phone" className="w-6 h-6 text-[#0066CC]" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-white mb-1">Telefon</h3>
+                                        <a href={`tel:${CONTACT_INFO.phone}`} className="text-gray-400 hover:text-[#0066CC] transition-colors">
+                                            {CONTACT_INFO.phone}
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#0066CC]/20 flex items-center justify-center">
+                                        <Icon name="email" className="w-6 h-6 text-[#0066CC]" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-white mb-1">E-posta</h3>
+                                        <a href={`mailto:${CONTACT_INFO.email}`} className="text-gray-400 hover:text-[#0066CC] transition-colors">
+                                            {CONTACT_INFO.email}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Map */}
+                            <div className="bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-white/10 h-[300px]">
+                                <iframe
+                                    src={`https://www.google.com/maps?q=${CONTACT_INFO.latitude},${CONTACT_INFO.longitude}&hl=tr&z=15&output=embed`}
+                                    width="100%"
+                                    height="100%"
+                                    style={{ border: 0 }}
+                                    allowFullScreen
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                ></iframe>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>

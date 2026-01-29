@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const { withSentryConfig } = require('@sentry/nextjs');
-const createNextIntlPlugin = require('next-intl/plugin');
 
-const withNextIntl = createNextIntlPlugin();
 
 // Environment check
 if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_SITE_URL) {
@@ -196,50 +194,8 @@ const nextConfig = {
   },
 }
 
-const configWithIntl = withNextIntl(nextConfig);
-
-// Sentry config (sadece production'da ve DSN varsa)
-// SENTRY_ORG ve SENTRY_PROJECT source map upload için gerekli ama opsiyonel
-const hasSentryDSN =
-  process.env.NODE_ENV === 'production' &&
-  (process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN);
-
-// SENTRY_ORG ve SENTRY_PROJECT validation (undefined, null, boş string kontrolü)
-const hasSentryOrg = process.env.SENTRY_ORG && process.env.SENTRY_ORG.trim() !== '';
-const hasSentryProject = process.env.SENTRY_PROJECT && process.env.SENTRY_PROJECT.trim() !== '';
-
-const hasSentrySourceMapConfig =
-  hasSentryDSN &&
-  hasSentryOrg &&
-  hasSentryProject;
-
-// Sentry webpack plugin options
-// Org ve project sadece geçerli değerler varsa ekle (source map upload için gerekli)
-const sentryWebpackPluginOptions = {
-  // Sentry webpack plugin options
-  silent: true, // Suppresses source map uploading logs during build
-
-  // Source maps
-  widenClientFileUpload: true,
-  transpileClientSDK: true,
-  tunnelRoute: '/monitoring',
-  hideSourceMaps: true,
-  disableLogger: true,
-
-  // Automatic release tracking
-  automaticVercelReleases: false, // Manuel release tracking kullanıyoruz
-
-  // Org ve project sadece geçerli değerler varsa ekle (source map upload için gerekli)
-  // Undefined/null/boş string olursa source map upload devre dışı kalır ama Sentry çalışmaya devam eder
-  ...(hasSentryOrg && { org: process.env.SENTRY_ORG }),
-  ...(hasSentryProject && { project: process.env.SENTRY_PROJECT }),
-  ...(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_AUTH_TOKEN.trim() !== '' && {
-    authToken: process.env.SENTRY_AUTH_TOKEN
-  }),
-};
-
 // Sentry ile wrap et
 // - DSN varsa: Sentry aktif (error tracking çalışır)
 // - DSN + Org + Project varsa: Sentry aktif + source map upload çalışır
 // - Hiçbiri yoksa: Sentry devre dışı
-module.exports = configWithIntl; 
+module.exports = nextConfig; 

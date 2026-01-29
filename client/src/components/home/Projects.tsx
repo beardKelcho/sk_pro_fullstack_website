@@ -4,18 +4,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import Icon from '@/components/common/Icon';
-import { useTranslations } from 'next-intl';
 
-// STATIC CONTENT - No backend/API dependency
-// Bu bölüm şu anda boş - ileride Site Yönetimi ile doldurulacak
-const STATIC_PROJECTS = {
-    videos: [],
-    photos: []
+// STATIC TURKISH CONTENT
+const PROJECTS_CONTENT = {
+    title: 'Sahne Deneyimlerimiz',
+    subtitle: 'Gerçekleştirdiğimiz etkinliklerde yarattığımız görsel şölenler'
 };
 
 const Projects = () => {
-    const tHome = useTranslations('site.home');
-
     return (
         <StageExperience>
             <section id="projects" className="relative py-24 bg-black overflow-hidden" style={{ scrollMarginTop: '100px' }}>
@@ -25,8 +21,8 @@ const Projects = () => {
 
                 <div className="container mx-auto px-6 relative z-10">
                     <StageSectionTitle
-                        title={tHome('projectsSection.title')}
-                        subtitle={tHome('projectsSection.subtitle')}
+                        title={PROJECTS_CONTENT.title}
+                        subtitle={PROJECTS_CONTENT.subtitle}
                     />
 
                     {/* Geçici olarak boş durum gösteriliyor */}

@@ -1,89 +1,67 @@
 'use client';
 
 import React from 'react';
-import ServiceCard from '@/components/common/ServiceCard';
-import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
+import Icon from '@/components/common/Icon';
 
-// STATIC CONTENT - No database dependency
-const STATIC_SERVICES_CONTENT = {
-    title: {
-        tr: 'Profesyonel Görüntü ve Medya Çözümleri',
-        en: 'Professional Visual and Media Solutions'
-    },
-    subtitle: {
-        tr: 'Etkinlikleriniz için dünya standartlarında medya sunucuları, görüntü işleme teknolojileri ve uzman reji hizmetleri sunuyoruz.',
-        en: 'We offer world-class media servers, image processing technologies and expert direction services for your events.'
-    },
+// STATIC TURKISH CONTENT
+const SERVICES_CONTENT = {
+    title: 'Hizmetlerimiz & Ekipmanlarımız',
+    subtitle: 'Etkinlikleriniz için profesyonel çözümler ve son teknoloji ekipmanlar',
     services: [
         {
-            title: { tr: 'Uzman Ekip & Teknik Yönetim', en: 'Expert Team & Technical Management' },
-            description: { tr: "2017'den beri sektörün en karmaşık projelerinde 'teknik beyin' olarak yer alıyoruz.", en: "Since 2017, we have been the 'technical brain' in the most complex projects in the industry." },
-            icon: 'screen' as const,
+            title: 'Görüntü Rejisi',
+            description: 'Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz.',
+            icon: 'video' as const
         },
         {
-            title: { tr: 'Görüntü Rejisi & İşleme', en: 'Video Direction & Processing' },
-            description: { tr: 'Analog Way Aquilon RS serisi ile çok katmanlı görüntü yönetimi.', en: 'Multi-layered image management with Analog Way Aquilon RS series.' },
-            icon: 'video' as const,
+            title: 'Medya Server Sistemleri',
+            description: 'Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını.',
+            icon: 'screen' as const
         },
         {
-            title: { tr: 'Medya Server Çözümleri', en: 'Media Server Solutions' },
-            description: { tr: 'Dataton Watchout uzmanlığıyla milimetrik içerik senkronizasyonu.', en: 'Precision content synchronization with Dataton Watchout expertise.' },
-            icon: 'led' as const,
-        },
+            title: 'LED Ekran Yönetimi',
+            description: 'Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri.',
+            icon: 'led' as const
+        }
     ]
 };
 
 const Services = () => {
-    const tHome = useTranslations('site.home');
-    const locale = tHome('locale') === 'tr' ? 'tr' : 'en';
-
     return (
-        <section id="services" className="py-24 bg-gradient-to-b from-[#0A1128] to-black relative overflow-hidden">
-            {/* Background Gradient Orbs */}
-            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
+        <StageExperience>
+            <section id="services" className="relative py-24 bg-black overflow-hidden" style={{ scrollMarginTop: '100px' }}>
+                {/* Background Decoration */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-            <div className="container mx-auto px-6 relative z-10">
-                <div className="text-center mb-16">
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600 mb-6"
-                    >
-                        {STATIC_SERVICES_CONTENT.title[locale]}
-                    </motion.h2>
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.1 }}
-                        className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
-                    >
-                        {STATIC_SERVICES_CONTENT.subtitle[locale]}
-                    </motion.p>
-                </div>
+                <div className="container mx-auto px-6 relative z-10">
+                    <StageSectionTitle
+                        title={SERVICES_CONTENT.title}
+                        subtitle={SERVICES_CONTENT.subtitle}
+                    />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {STATIC_SERVICES_CONTENT.services.map((service, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.2 }}
-                        >
-                            <ServiceCard
-                                title={service.title[locale]}
-                                description={service.description[locale]}
-                                icon={service.icon}
-                            />
-                        </motion.div>
-                    ))}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+                        {SERVICES_CONTENT.services.map((service, index) => (
+                            <div
+                                key={index}
+                                className="group relative bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-md rounded-2xl p-8 border border-white/10 hover:border-[#0066CC]/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(0,102,204,0.15)]"
+                            >
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-[#0066CC]/20 to-purple-600/20 mb-6 group-hover:scale-110 transition-transform duration-300">
+                                    <Icon name={service.icon} className="w-8 h-8 text-[#0066CC]" />
+                                </div>
+                                <h3 className="text-2xl font-semibold mb-4 text-white group-hover:text-[#0066CC] transition-colors">
+                                    {service.title}
+                                </h3>
+                                <p className="text-gray-400 leading-relaxed">
+                                    {service.description}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </StageExperience>
     );
 };
 

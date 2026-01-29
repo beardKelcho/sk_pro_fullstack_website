@@ -9,7 +9,8 @@ export const revalidate = 0;
 
 // Fetch site data helper
 async function getSiteData() {
-  const apiUrl = process.env.CLIENT_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+  // Fix: Prioritize API URL env vars, CLIENT_URL is usually frontend
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sk-pro-backend.onrender.com/api';
 
   try {
     // 1. Check Maintenance Mode

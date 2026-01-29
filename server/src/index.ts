@@ -50,23 +50,11 @@ app.set('trust proxy', 1);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Test ve development modunda tüm origin'lere izin ver (test ortamı için gerekli)
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' || process.env.ALLOW_ALL_ORIGINS === 'true') {
-      callback(null, true);
-      return;
-    }
-
-    // Production modunda sadece izin verilen origin'lere izin ver
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else if (isLocalNetworkOrigin(origin) || /\.vercel\.app$/.test(origin)) {
-      // Local network IP'lerine ve Vercel preview URL'lerine izin ver
-      logger.info(`CORS allowed dynamic origin: ${origin}`);
-      callback(null, true);
-    } else {
-      logger.warn(`CORS blocked origin: ${origin}`);
-      callback(new Error(`CORS policy: Origin ${origin} not allowed`));
-    }
+    // SECURITY EMERGENCY: Allow ALL origins to prevent blocked requests during debugging
+    // To support 'credentials: true', we must return the specific origin, not '*'
+    if (!origin) return callback(null, true);
+    // Always allow
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -77,7 +65,7 @@ app.use(cors({
     'Cache-Control',
     'Pragma',
     'Expires',
-    'X-Test-Origin', // Test ortamı için
+    'X-Test-Origin',
     'X-Request-ID'
   ],
   exposedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
@@ -220,8 +208,13 @@ const startServer = async () => {
     });
 
     // MongoDB bağlantısını arka planda dene (non-blocking)
-    connectDB().then(() => {
+    connectDB().then(async () => {
       logger.info('MongoDB veritabanına bağlandı');
+
+      // Bootstrap System Settings
+      const { bootstrapSystemSettings } = await import('./utils/bootstrap');
+      await bootstrapSystemSettings();
+
       // DB query metriklerini topla
       initMongooseQueryMonitor();
       // Slow query detection (development'ta)

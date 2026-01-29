@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import SiteContent from '../models/SiteContent';
+import { SiteContent } from '../models/SiteContent';
 import SiteImage from '../models/SiteImage';
 import { AppError } from '../types/common';
 import logger from '../utils/logger';

@@ -6,7 +6,8 @@ import Client from './Client';
 import Maintenance from './Maintenance';
 import Task from './Task';
 import SiteImage from './SiteImage';
-import SiteContent from './SiteContent';
+import { SiteContent } from './SiteContent';
+import { SystemSetting } from './SystemSetting';
 import QRCode from './QRCode';
 import QRScanHistory from './QRScanHistory';
 import Notification from './Notification';
@@ -50,5 +51,6 @@ export {
   WebhookDelivery,
   Comment,
   EmailTemplate,
-  CalendarIntegration
+  CalendarIntegration,
+  SystemSetting
 };

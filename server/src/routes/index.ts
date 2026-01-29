@@ -34,6 +34,10 @@ import commentRoutes from './comment.routes';
 import emailTemplateRoutes from './emailTemplate.routes';
 import realtimeRoutes from './realtime.routes';
 import analyticsRoutes from './analytics.routes';
+import publicSiteContentRoutes from './publicSiteContent.routes';
+import publicSettingsRoutes from './publicSettings.routes';
+import adminSiteContentRoutes from './adminSiteContent.routes';
+import adminSettingsRoutes from './adminSettings.routes';
 import { getRedisClient } from '../config/redis';
 
 const router = express.Router();
@@ -153,5 +157,14 @@ router.use('/comments', commentRoutes);
 router.use('/email-templates', emailTemplateRoutes);
 router.use('/realtime', realtimeRoutes);
 router.use('/analytics', analyticsRoutes);
+
+// === CMS V2 Routes ===
+// Public routes (no auth)
+router.use('/public/site-content', publicSiteContentRoutes);
+router.use('/public', publicSettingsRoutes); // /public/maintenance endpoint
+
+// Admin routes (auth required)
+router.use('/admin/site-content', adminSiteContentRoutes);
+router.use('/admin/settings', adminSettingsRoutes);
 
 export default router;

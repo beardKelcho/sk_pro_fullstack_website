@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import SiteContent from '../models/SiteContent';
+import { SiteContent } from '../models/SiteContent';
 import path from 'path';
 
 // Load env vars

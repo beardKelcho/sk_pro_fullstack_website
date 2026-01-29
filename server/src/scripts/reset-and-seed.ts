@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
-import SiteContent from '../models/SiteContent';
+import { SiteContent } from '../models/SiteContent';
 import logger from '../utils/logger';
 import connectDB from '../config/database';
 

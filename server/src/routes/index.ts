@@ -38,6 +38,7 @@ import publicSiteContentRoutes from './publicSiteContent.routes';
 import publicSettingsRoutes from './publicSettings.routes';
 import adminSiteContentRoutes from './adminSiteContent.routes';
 import adminSettingsRoutes from './adminSettings.routes';
+import mediaRoutes from './media.routes';
 import { getRedisClient } from '../config/redis';
 
 const router = express.Router();
@@ -157,6 +158,7 @@ router.use('/comments', commentRoutes);
 router.use('/email-templates', emailTemplateRoutes);
 router.use('/realtime', realtimeRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/media', mediaRoutes);
 
 // === CMS V2 Routes ===
 // Public routes (no auth)

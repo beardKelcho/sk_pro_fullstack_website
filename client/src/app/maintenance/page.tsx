@@ -41,11 +41,7 @@ export default function MaintenancePage() {
                     Anlayışınız için teşekkür ederiz.
                 </p>
 
-                {/* Estimated Time */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-sm mb-12">
-                    <Clock className="w-4 h-4" />
-                    <span>Tahmini Süre: Birkaç saat</span>
-                </div>
+
 
                 {/* KURAL 3 & 4: Sadece E-posta, Sabit Adres */}
                 <div className="flex flex-col items-center gap-3">

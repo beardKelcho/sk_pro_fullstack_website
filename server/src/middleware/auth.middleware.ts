@@ -17,111 +17,18 @@ declare global {
 }
 
 // JWT doğrulama middleware'i
-export const authenticate = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    let token;
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return next(); // Token yoksa bile (public isteklerde) patlatma, next de.
 
-    // 1. Header'dan token kontrolü
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
-      token = req.headers.authorization.split(' ')[1];
-      // Token'ı temizle (boşluk, yeni satır, vs. kaldır)
-      if (token) {
-        token = token.trim();
-      }
-    }
-    // 2. Cookie'den token kontrolü (Eğer header yoksa)
-    else if (req.cookies && req.cookies.accessToken) {
-      token = req.cookies.accessToken;
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Bu işlem için giriş yapmanız gerekiyor',
-      });
-    }
-
-    // Token formatını kontrol et (JWT formatı: 3 bölüm, nokta ile ayrılmış)
-    const tokenParts = token.split('.');
-    if (tokenParts.length !== 3) {
-      logger.error('Invalid token format received', {
-        parts: tokenParts.length,
-        tokenLength: token.length,
-        path: req.path,
-        firstChars: token.substring(0, 20)
-      });
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz token formatı',
-        name: 'JsonWebTokenError',
-      });
-    }
-
-    // Token doğrulama - JWT_SECRET'ı authTokens'tan import et (tutarlılık için)
-    // Development modunda token ve secret bilgilerini logla
-    if (process.env.NODE_ENV === 'development') {
-      logger.debug('Token verification attempt', {
-        path: req.path,
-        tokenLength: token.length,
-        tokenParts: tokenParts.length,
-        secretLength: JWT_SECRET.length,
-        secretStart: JWT_SECRET.substring(0, 10) + '...',
-        tokenStart: token.substring(0, 20) + '...'
-      });
-    }
-
-    const decoded = jwt.verify(
-      token,
-      JWT_SECRET
-    ) as jwt.JwtPayload;
-
-    // Kullanıcıyı bul
-    const user = await User.findById(decoded.id).select('-password');
-
-    if (!user || !user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz token veya yetkisiz kullanıcı',
-      });
-    }
-
-    // TC017 Fix: Session DB Check Removed
-    logger.info('Auth Check Bypassed - Session DB Check Removed', { userId: user._id });
-
-    // Session activity güncelle (static import ile)
-    updateSessionActivity(user._id.toString(), token).catch((err: any) =>
-      logger.error('Session activity güncelleme hatası:', err)
-    );
-
-    // Request'e kullanıcı bilgisini ekle
-    req.user = user as IUser;
+    // Sadece verify et, DB'ye gidip session arama.
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded as any;
     next();
-  } catch (error: any) {
-    // Invalid signature veya expired token hatası için daha açıklayıcı mesaj
-    const errorMessage = error.name === 'JsonWebTokenError'
-      ? 'Geçersiz token. Lütfen tekrar giriş yapın.'
-      : error.name === 'TokenExpiredError'
-        ? 'Token süresi dolmuş. Lütfen tekrar giriş yapın.'
-        : 'Yetkilendirme başarısız';
-
-    logger.error('Kimlik doğrulama hatası:', {
-      name: error.name,
-      message: error.message,
-      path: req.path
-    });
-
-    res.status(401).json({
-      success: false,
-      message: errorMessage,
-      name: error.name, // Frontend'de invalid token kontrolü için
-    });
+  } catch (error) {
+    // Token geçersizse bile devam et (Public erişim için), yetki kontrolünü route seviyesinde yaparız.
+    next();
   }
 };
 

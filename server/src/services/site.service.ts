@@ -272,6 +272,14 @@ class SiteService {
     }
 
     async createOrUpdateContent(section: string, contentData: any, order?: number, isActive?: boolean): Promise<any> {
+        // EĞER HERO VİDEOSU VARSA URL'İ DÜZELT
+        if (contentData && (contentData as any).videoUrl) {
+            const data = contentData as any;
+            if (!data.videoUrl.startsWith('http')) {
+                data.videoUrl = `https://res.cloudinary.com/dmeviky6f/video/upload/${data.videoUrl}`;
+            }
+        }
+
         let siteContent = await SiteContent.findOne({ section });
 
         if (siteContent) {
@@ -297,6 +305,13 @@ class SiteService {
 
     async updateContentById(id: string, data: { content?: any, order?: number, isActive?: boolean }): Promise<any> {
         if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError('Geçersiz ID', 400);
+
+        // EĞER HERO VİDEOSU VARSA URL'İ DÜZELT
+        if (data.content && data.content.videoUrl) {
+            if (!data.content.videoUrl.startsWith('http')) {
+                data.content.videoUrl = `https://res.cloudinary.com/dmeviky6f/video/upload/${data.content.videoUrl}`;
+            }
+        }
 
         const siteContent = await SiteContent.findById(id);
         if (!siteContent) throw new AppError('İçerik bulunamadı', 404);

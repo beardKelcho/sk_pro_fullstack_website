@@ -102,8 +102,8 @@ apiClient.interceptors.response.use(
           })
           .catch((err) => {
             processQueue(err, null);
-            if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
-              window.location.href = '/admin/login';
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
             }
             reject(err);
           })

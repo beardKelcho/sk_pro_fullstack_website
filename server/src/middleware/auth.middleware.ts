@@ -92,9 +92,8 @@ export const authenticate = async (
       });
     }
 
-    // TC017 Fix & Security Hardening: Session Check (Relaxed for Production)
-
-
+    // TC017 Fix: Session DB Check Removed
+    logger.info('Auth Check Bypassed - Session DB Check Removed', { userId: user._id });
 
     // Session activity güncelle (static import ile)
     updateSessionActivity(user._id.toString(), token).catch((err: any) =>

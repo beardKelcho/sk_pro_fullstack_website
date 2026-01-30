@@ -29,6 +29,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
 
     // Main tabs
     const [activeTab, setActiveTab] = useState<'list' | 'form'>('list');
+    const [projectTypeFilter, setProjectTypeFilter] = useState<'all' | 'photo' | 'video'>('all');
     const [editingProject, setEditingProject] = useState<ProjectForm | null>(null);
 
     // Media picker state
@@ -249,63 +250,101 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                 <div className="flex-1 overflow-y-auto p-6">
                     {/* LIST TAB */}
                     {activeTab === 'list' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {isProjectsLoading ? (
-                                <div className="col-span-full flex items-center justify-center py-12">
-                                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                                </div>
-                            ) : projectsData?.data?.length === 0 ? (
-                                <div className="col-span-full text-center py-12 text-gray-500">
-                                    Henüz proje eklenmemiş. &quot;Yeni Ekle&quot; sekmesinden proje oluşturun.
-                                </div>
-                            ) : (
-                                projectsData?.data?.map((project: any) => (
-                                    <div
-                                        key={project._id}
-                                        className="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                                    >
-                                        {project.coverUrl && (
-                                            <img
-                                                src={project.coverUrl}
-                                                alt={project.title}
-                                                className="w-full h-48 object-cover"
-                                            />
-                                        )}
-                                        <div className="p-4">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                                                    {project.category}
-                                                </span>
-                                                <span className="text-xs text-gray-500">
-                                                    {project.type === 'photo' ? '📸 Fotoğraf' : '🎬 Video'}
-                                                </span>
-                                            </div>
-                                            <h3 className="font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                                                {project.title}
-                                            </h3>
-                                            <div className="flex items-center gap-2 mt-4">
-                                                <button
-                                                    onClick={() => handleEditProject(project)}
-                                                    className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                    Düzenle
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        if (confirm('Bu projeyi silmek istediğinizden emin misiniz?')) {
-                                                            deleteProjectMutation.mutate(project._id);
-                                                        }
-                                                    }}
-                                                    className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </div>
+                        <div className="space-y-6">
+                            {/* Type Filter */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setProjectTypeFilter('all')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${projectTypeFilter === 'all'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                        }`}
+                                >
+                                    Tümü
+                                </button>
+                                <button
+                                    onClick={() => setProjectTypeFilter('photo')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${projectTypeFilter === 'photo'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                        }`}
+                                >
+                                    <Image className="w-4 h-4" />
+                                    Fotoğraflar
+                                </button>
+                                <button
+                                    onClick={() => setProjectTypeFilter('video')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${projectTypeFilter === 'video'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                        }`}
+                                >
+                                    <Film className="w-4 h-4" />
+                                    Videolar
+                                </button>
+                            </div>
+
+                            {/* Projects Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {isProjectsLoading ? (
+                                    <div className="col-span-full flex items-center justify-center py-12">
+                                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                                     </div>
-                                ))
-                            )}
+                                ) : projectsData?.data?.length === 0 ? (
+                                    <div className="col-span-full text-center py-12 text-gray-500">
+                                        Henüz proje eklenmemiş. &quot;Yeni Ekle&quot; sekmesinden proje oluşturun.
+                                    </div>
+                                ) : (
+                                    projectsData?.data
+                                        ?.filter((p: any) => projectTypeFilter === 'all' || p.type === projectTypeFilter)
+                                        ?.map((project: any) => (
+                                            <div
+                                                key={project._id}
+                                                className="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                                            >
+                                                {project.coverUrl && (
+                                                    <img
+                                                        src={project.coverUrl}
+                                                        alt={project.title}
+                                                        className="w-full h-48 object-cover"
+                                                    />
+                                                )}
+                                                <div className="p-4">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                                                            {project.category}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500">
+                                                            {project.type === 'photo' ? '📸 Fotoğraf' : '🎬 Video'}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
+                                                        {project.title}
+                                                    </h3>
+                                                    <div className="flex items-center gap-2 mt-4">
+                                                        <button
+                                                            onClick={() => handleEditProject(project)}
+                                                            className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                            Düzenle
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (confirm('Bu projeyi silmek istediğinizden emin misiniz?')) {
+                                                                    deleteProjectMutation.mutate(project._id);
+                                                                }
+                                                            }}
+                                                            className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                )}
+                            </div>
                         </div>
                     )}
 

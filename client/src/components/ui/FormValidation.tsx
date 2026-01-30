@@ -1,16 +1,16 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { z, ZodTypeAny } from 'zod';
 
-interface FormProps<T extends z.ZodType> {
+interface FormProps<T extends ZodTypeAny> {
   schema: T;
   onSubmit: (data: z.infer<T>) => void;
   children: React.ReactNode;
   className?: string;
 }
 
-export function Form<T extends z.ZodType>({
+export function Form<T extends ZodTypeAny>({
   schema,
   onSubmit,
   children,
@@ -20,7 +20,7 @@ export function Form<T extends z.ZodType>({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
+  } = useForm<z.infer<T>>({
     resolver: zodResolver(schema),
   });
 

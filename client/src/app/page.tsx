@@ -39,37 +39,34 @@ async function getSiteData() {
       return { isMaintenanceMode: false, content: {} };
     }
 
-    const contentData = await contentRes.json();
+    const responseJson = await contentRes.json();
 
-    // Transform array to object map
+    // Backend bazen { data: [...] } bazen direkt [...] dönüyor, ikisini de kapsa
+    let items: any[] = [];
+    if (Array.isArray(responseJson)) {
+      items = responseJson;
+    } else if (responseJson.data && Array.isArray(responseJson.data)) {
+      items = responseJson.data;
+    }
+
     // Transform array to object map
     const contentMap: SiteContent = {};
 
-    // API genellikle { data: [...] } döner, array kontrolü yap
-    const items = Array.isArray(contentData.data) ? contentData.data : (Array.isArray(contentData) ? contentData : []);
+    items.forEach((item: any) => {
+      // Backend 'data' field'ını kullanıyor, fallback olarak 'content'e bak
+      const payload = item.data || item.content;
+      if (!payload) return;
 
-    if (Array.isArray(items)) {
-      items.forEach((item: any) => {
-        // Backend 'data' field'ını kullanıyor, fallback olarak 'content'e bak
-        const payload = item.data || item.content;
+      if (item.section === 'hero') {
+        // Hero bileşeni { data: ... } bekliyor
+        contentMap.hero = { data: payload } as any;
+      }
+      else if (item.section === 'about') contentMap.about = payload;
+      else if (item.section === 'services' || item.section === 'services-equipment') contentMap.services = payload;
+      else if (item.section === 'contact') contentMap.contact = payload;
+    });
 
-        if (!payload) return;
-
-        if (item.section === 'hero') {
-          // Hero bileşeni { data: ... } yapısı beklediği için sarıyoruz
-          contentMap.hero = { data: payload } as any;
-        }
-        else if (item.section === 'about') {
-          contentMap.about = payload as AboutContent;
-        }
-        else if (item.section === 'services' || item.section === 'services-equipment') {
-          contentMap.services = payload as ServicesContent;
-        }
-        else if (item.section === 'contact') {
-          contentMap.contact = payload as ContactContent;
-        }
-      });
-    }
+    console.log('Processed ContentMap Keys:', Object.keys(contentMap)); // Server loglarında görmek için
 
     return { isMaintenanceMode: false, content: contentMap };
 

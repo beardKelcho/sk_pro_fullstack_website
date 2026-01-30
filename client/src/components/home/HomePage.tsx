@@ -14,8 +14,8 @@ interface HomePageProps {
 export default function HomePage({ content }: HomePageProps) {
     return (
         <MainLayout>
-            {/* Hero Section */}
-            {content.hero && <Hero content={content.hero} />}
+            {/* Hero Section - Koşulsuz Render (Veri yoksa siyah ekran kalır ama bileşen çalışır) */}
+            <Hero content={content.hero || { data: null }} />
 
             {/* Hizmetler */}
             {content.services && <Services content={content.services} />}

@@ -3,11 +3,13 @@ import mongoose, { Schema, Document } from 'mongoose';
 // Public-facing project showcase for website
 // Separate from internal Project management system
 export interface IShowcaseProject extends Document {
+    type: 'photo' | 'video';
     title: string;
     category: string;
     description?: string;
     coverUrl?: string;
-    videoUrl?: string;
+    imageUrls?: string[];  // For photo galleries (multiple images)
+    videoUrl?: string;     // For video productions
     order: number;
     isActive: boolean;
     createdAt: Date;
@@ -16,6 +18,12 @@ export interface IShowcaseProject extends Document {
 
 const ShowcaseProjectSchema: Schema = new Schema(
     {
+        type: {
+            type: String,
+            enum: ['photo', 'video'],
+            default: 'photo',
+            required: [true, 'Proje tipi gereklidir'],
+        },
         title: {
             type: String,
             required: [true, 'Proje başlığı gereklidir'],
@@ -34,6 +42,10 @@ const ShowcaseProjectSchema: Schema = new Schema(
             type: String,
             trim: true,
         },
+        imageUrls: [{
+            type: String,
+            trim: true,
+        }],
         videoUrl: {
             type: String,
             trim: true,

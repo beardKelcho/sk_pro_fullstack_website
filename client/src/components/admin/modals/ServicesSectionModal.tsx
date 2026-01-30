@@ -3,6 +3,9 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
 import { X, Save, Loader2, Grid, Plus, Edit2, Trash2, Monitor, Server, Cpu, Layers, Activity } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import SortableServiceItem from '../SortableServiceItem';
 
 interface ServicesSectionModalProps {
     isOpen: boolean;
@@ -103,6 +106,24 @@ const ServicesSectionModal: React.FC<ServicesSectionModalProps> = ({ isOpen, onC
         },
     });
 
+    // Reorder services mutation
+    const reorderServicesMutation = useMutation({
+        mutationFn: async (items: { _id: string; order: number }[]) => {
+            const res = await axios.put('/services/reorder', { items });
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['services-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-services-count'] });
+            toast.success('Sıralama güncellendi');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Sıralama hatası');
+            // Refetch to restore original order
+            queryClient.invalidateQueries({ queryKey: ['services-admin'] });
+        },
+    });
+
     const handleEditService = (service: any) => {
         setFormData({
             _id: service._id,
@@ -157,6 +178,45 @@ const ServicesSectionModal: React.FC<ServicesSectionModalProps> = ({ isOpen, onC
         return icon ? icon.icon : Monitor;
     };
 
+    // Drag and drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // Handle drag end event
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (!over || active.id === over.id) {
+            return;
+        }
+
+        const services = servicesData?.data || [];
+        const oldIndex = services.findIndex((s: any) => s._id === active.id);
+        const newIndex = services.findIndex((s: any) => s._id === over.id);
+
+        // Optimistically update UI
+        const newOrder = arrayMove(services, oldIndex, newIndex);
+
+        // Update cache immediately for smooth UX
+        queryClient.setQueryData(['services-admin'], {
+            ...servicesData,
+            data: newOrder,
+        });
+
+        // Prepare reorder data with new order values
+        const reorderData = newOrder.map((service: any, index: number) => ({
+            _id: service._id,
+            order: index,
+        }));
+
+        // Send to backend
+        reorderServicesMutation.mutate(reorderData);
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -204,83 +264,39 @@ const ServicesSectionModal: React.FC<ServicesSectionModalProps> = ({ isOpen, onC
                     {/* LIST TAB */}
                     {activeTab === 'list' && (
                         <div className="space-y-6">
-                            {/* Services Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {isServicesLoading ? (
-                                    <div className="col-span-full flex items-center justify-center py-12">
-                                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                                    </div>
-                                ) : servicesData?.data?.length === 0 ? (
-                                    <div className="col-span-full text-center py-12 text-gray-500">
-                                        Henüz hizmet eklenmemiş. &quot;Yeni Ekle&quot; sekmesinden hizmet oluşturun.
-                                    </div>
-                                ) : (
-                                    servicesData?.data?.map((service: any) => {
-                                        const IconComponent = getIconComponent(service.icon);
-                                        return (
-                                            <div
-                                                key={service._id}
-                                                className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
-                                            >
-                                                {/* Icon & Title */}
-                                                <div className="flex items-start gap-4 mb-4">
-                                                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-600/20 flex items-center justify-center">
-                                                        <IconComponent className="w-6 h-6 text-cyan-400" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h3 className="font-bold text-gray-900 dark:text-white mb-1">
-                                                            {service.title}
-                                                        </h3>
-                                                        <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                                                            {service.category}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Details Preview */}
-                                                {service.details && service.details.length > 0 && (
-                                                    <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">
-                                                        <div className="space-y-1">
-                                                            {service.details.slice(0, 3).map((detail: string, idx: number) => (
-                                                                <div key={idx} className="flex items-start gap-2">
-                                                                    <span className="text-cyan-400 mt-1">▸</span>
-                                                                    <span className="line-clamp-1">{detail}</span>
-                                                                </div>
-                                                            ))}
-                                                            {service.details.length > 3 && (
-                                                                <div className="text-xs text-gray-500">
-                                                                    +{service.details.length - 3} daha...
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Actions */}
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={() => handleEditService(service)}
-                                                        className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                        Düzenle
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            if (confirm('Bu hizmeti silmek istediğinizden emin misiniz?')) {
-                                                                deleteServiceMutation.mutate(service._id);
-                                                            }
-                                                        }}
-                                                        className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                )}
-                            </div>
+                            {/* Services Grid with Drag & Drop */}
+                            {isServicesLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                                </div>
+                            ) : servicesData?.data?.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500">
+                                    Henüz hizmet eklenmemiş. &quot;Yeni Ekle&quot; sekmesinden hizmet oluşturun.
+                                </div>
+                            ) : (
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext
+                                        items={servicesData?.data?.map((s: any) => s._id) || []}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {servicesData?.data?.map((service: any) => (
+                                                <SortableServiceItem
+                                                    key={service._id}
+                                                    service={service}
+                                                    onEdit={handleEditService}
+                                                    onDelete={(id) => deleteServiceMutation.mutate(id)}
+                                                    getIconComponent={getIconComponent}
+                                                />
+                                            ))}
+                                        </div>
+                                    </SortableContext>
+                                </DndContext>
+                            )}
                         </div>
                     )}
 

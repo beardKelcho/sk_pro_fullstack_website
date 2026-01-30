@@ -153,3 +153,41 @@ export const deleteService = async (req: Request, res: Response) => {
         });
     }
 };
+
+// Reorder services (bulk update)
+export const reorderServices = async (req: Request, res: Response) => {
+    try {
+        const { items } = req.body;
+
+        // Validate input
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçersiz sıralama verisi',
+            });
+        }
+
+        // Prepare bulk write operations
+        const bulkOps = items.map((item: { _id: string; order: number }) => ({
+            updateOne: {
+                filter: { _id: item._id },
+                update: { $set: { order: item.order } },
+            },
+        }));
+
+        // Execute bulk write
+        await Service.bulkWrite(bulkOps);
+
+        logger.info('Services reordered successfully');
+        res.status(200).json({
+            success: true,
+            message: 'Hizmetler sıralandı',
+        });
+    } catch (error) {
+        logger.error('Reorder Services Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Sıralama güncellenirken hata oluştu',
+        });
+    }
+};

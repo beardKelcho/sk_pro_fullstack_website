@@ -20,7 +20,15 @@ interface ServiceForm {
     isActive: boolean;
 }
 
-const CATEGORIES = ['Video Processing', 'LED Management', 'Signal Processing', 'Control Systems'];
+const CATEGORIES = [
+    'Video Processing',
+    'LED Management',
+    'Signal Processing',
+    'Technical Design & Simulation',
+    'Media Server Operating',
+    'Presentation Systems',
+    'Pixel Mapping'
+];
 const ICON_OPTIONS = [
     { name: 'Monitor', icon: Monitor },
     { name: 'Server', icon: Server },

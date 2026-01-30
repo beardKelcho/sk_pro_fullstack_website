@@ -35,9 +35,9 @@ const About: React.FC = () => {
     return (
         <div style={{ marginTop: '16rem', marginBottom: '8rem' }}>
             <StageExperience>
-                <section id="about" className="relative py-32 bg-gradient-to-b from-black/90 via-[#0A1128]/80 to-black/90" style={{ position: 'relative', scrollMarginTop: '100px', paddingTop: '8rem', minHeight: 'auto' }}>
+                <section id="about" className="relative py-32 bg-transparent" style={{ position: 'relative', scrollMarginTop: '100px', paddingTop: '8rem', minHeight: 'auto' }}>
                     <div className="container mx-auto px-6">
-                        <div className="flex flex-col lg:flex-row items-center gap-16">
+                        <div className="bg-black/40 backdrop-blur-md rounded-3xl p-8 lg:p-12 border border-white/10 flex flex-col lg:flex-row items-center gap-16">
                             <motion.div
                                 className="lg:w-1/2"
                                 initial={{ opacity: 0, x: -50 }}

@@ -36,7 +36,7 @@ const Contact: React.FC = () => {
 
     return (
         <StageExperience>
-            <section id="contact" className="relative py-24 bg-gradient-to-b from-black to-[#0A1128]/50 overflow-hidden" style={{ scrollMarginTop: '100px' }}>
+            <section id="contact" className="relative py-24 bg-transparent overflow-hidden" style={{ scrollMarginTop: '100px' }}>
                 <div className="container mx-auto px-6 relative z-10">
                     <StageSectionTitle
                         title="İletişime Geçin"
@@ -45,14 +45,14 @@ const Contact: React.FC = () => {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mt-16">
                         {/* Contact Form */}
-                        <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+                        <div className="bg-black/40 backdrop-blur-md rounded-2xl p-8 border border-white/10">
                             <ContactForm />
                         </div>
 
                         {/* Contact Info & Map */}
                         <div className="space-y-8">
                             {/* Contact Details */}
-                            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 space-y-6">
+                            <div className="bg-black/40 backdrop-blur-md rounded-2xl p-8 border border-white/10 space-y-6">
                                 {content.address && (
                                     <div className="flex items-start gap-4">
                                         <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[#0066CC]/20 flex items-center justify-center">

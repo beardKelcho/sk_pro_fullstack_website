@@ -45,7 +45,7 @@ const Services: React.FC = () => {
 
     return (
         <StageExperience>
-            <section id="services" className="relative py-24 bg-black overflow-hidden" style={{ scrollMarginTop: '100px' }}>
+            <section id="services" className="relative py-24 bg-transparent overflow-hidden" style={{ scrollMarginTop: '100px' }}>
                 {/* Background Decoration */}
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-900/20 rounded-full blur-[120px] pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[120px] pointer-events-none"></div>
@@ -73,7 +73,7 @@ const Services: React.FC = () => {
                                 return (
                                     <div
                                         key={service._id}
-                                        className="group relative bg-gradient-to-br from-zinc-900/80 to-zinc-950/80 backdrop-blur-lg rounded-2xl p-8 border border-white/10 hover:border-cyan-500/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(6,182,212,0.2)]"
+                                        className="group relative bg-black/40 backdrop-blur-md rounded-2xl p-8 border border-white/10 hover:border-cyan-500/50 transition-all duration-500 hover:shadow-[0_0_40px_rgba(6,182,212,0.2)] hover:bg-black/60"
                                     >
                                         {/* Icon with Gradient Background */}
                                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-600/20 mb-6 group-hover:scale-110 transition-transform duration-300">

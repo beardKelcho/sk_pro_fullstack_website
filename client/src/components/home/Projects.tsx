@@ -106,7 +106,7 @@ const Projects = () => {
 
     return (
         <StageExperience>
-            <section id="projects" className="relative py-24 bg-black overflow-hidden" style={{ scrollMarginTop: '100px' }}>
+            <section id="projects" className="relative py-24 bg-transparent overflow-hidden" style={{ scrollMarginTop: '100px' }}>
                 {/* Background Decor */}
                 <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-900/20 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-900/20 rounded-full blur-[120px] pointer-events-none" />
@@ -169,7 +169,7 @@ const Projects = () => {
                                             initial={{ opacity: 0, y: 30 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.1 }}
-                                            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900 to-black border border-gray-800 hover:border-blue-500/50 transition-all duration-500 cursor-pointer"
+                                            className="group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all duration-500 cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10"
                                             onClick={() => setLightbox({
                                                 images: project.imageUrls || [project.coverUrl || ''],
                                                 currentIndex: 0,
@@ -250,7 +250,7 @@ const Projects = () => {
                                             initial={{ opacity: 0, y: 30 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.1 }}
-                                            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-900 to-black border border-gray-800 hover:border-blue-500/50 transition-all duration-500 cursor-pointer"
+                                            className="group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all duration-500 cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10"
                                             onMouseEnter={() => handleVideoHover(project._id, true)}
                                             onMouseLeave={() => handleVideoHover(project._id, false)}
                                             onClick={() => setSelectedVideo({ url: project.videoUrl || '', title: project.title })}

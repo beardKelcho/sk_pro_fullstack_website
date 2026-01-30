@@ -42,14 +42,32 @@ async function getSiteData() {
     const contentData = await contentRes.json();
 
     // Transform array to object map
+    // Transform array to object map
     const contentMap: SiteContent = {};
-    if (Array.isArray(contentData.data)) {
-      contentData.data.forEach((item: any) => {
-        if (item.section === 'hero') contentMap.hero = item.content as HeroContent;
-        if (item.section === 'about') contentMap.about = item.content as AboutContent;
-        if (item.section === 'services') contentMap.services = item.content as ServicesContent; // Note: combined services-equipment
-        if (item.section === 'services-equipment') contentMap.services = item.content as ServicesContent; // Fallback mapping
-        if (item.section === 'contact') contentMap.contact = item.content as ContactContent;
+
+    // API genellikle { data: [...] } döner, array kontrolü yap
+    const items = Array.isArray(contentData.data) ? contentData.data : (Array.isArray(contentData) ? contentData : []);
+
+    if (Array.isArray(items)) {
+      items.forEach((item: any) => {
+        // Backend 'data' field'ını kullanıyor, fallback olarak 'content'e bak
+        const payload = item.data || item.content;
+
+        if (!payload) return;
+
+        if (item.section === 'hero') {
+          // Hero bileşeni { data: ... } yapısı beklediği için sarıyoruz
+          contentMap.hero = { data: payload } as any;
+        }
+        else if (item.section === 'about') {
+          contentMap.about = payload as AboutContent;
+        }
+        else if (item.section === 'services' || item.section === 'services-equipment') {
+          contentMap.services = payload as ServicesContent;
+        }
+        else if (item.section === 'contact') {
+          contentMap.contact = payload as ContactContent;
+        }
       });
     }
 

@@ -45,6 +45,15 @@ export default function SiteManagementPage() {
         },
     });
 
+    // Fetch services (independent from CMS)
+    const { data: servicesData } = useQuery({
+        queryKey: ['admin-services-count'],
+        queryFn: async () => {
+            const res = await axios.get('/services');
+            return res.data;
+        },
+    });
+
     const getSectionData = (section: string) => {
         return siteContent?.find((s: any) => s.section === section);
     };
@@ -74,8 +83,8 @@ export default function SiteManagementPage() {
             icon: <Briefcase className="w-12 h-12" />,
             title: 'Hizmetler',
             description: 'Sunulan hizmetler ve ekipman listesi',
-            lastUpdated: getSectionData('services')?.updatedAt,
-            isActive: getSectionData('services')?.isActive,
+            lastUpdated: servicesData?.data?.[0]?.updatedAt, // Use first service's update time
+            isActive: true, // Services section is always active (independent API)
             onClick: () => setSelectedSection('services'),
         },
         {

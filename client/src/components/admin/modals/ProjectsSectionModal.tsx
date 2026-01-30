@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
-import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2,  Image, Film } from 'lucide-react';
+import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2, Image, Film } from 'lucide-react';
 
 interface ProjectsSectionModalProps {
     isOpen: boolean;
@@ -24,17 +24,17 @@ const CATEGORIES = ['Konser', 'Festival', 'Lansman', 'Kongre', 'Sahne Kurulumu']
 
 const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onClose }) => {
     const queryClient = useQueryClient();
-    
+
     // Main tabs
     const [activeTab, setActiveTab] = useState<'list' | 'form'>('list');
     const [editingProject, setEditingProject] = useState<ProjectForm | null>(null);
-    
+
     // Media picker state
     const [mediaPickerFor, setMediaPickerFor] = useState<'cover' | 'video' | null>(null);
     const [mediaTab, setMediaTab] = useState<'library' | 'upload'>('library');
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-    
+
     // Form state
     const [formData, setFormData] = useState<ProjectForm>({
         title: '',
@@ -118,13 +118,13 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
             });
             toast.success('Medya yüklendi');
             const url = res.data.data.url;
-            
+
             if (mediaPickerFor === 'cover') {
                 setFormData(prev => ({ ...prev, coverUrl: url }));
             } else {
                 setFormData(prev => ({ ...prev, videoUrl: url }));
             }
-            
+
             setUploadFile(null);
             setMediaPickerFor(null);
             refetchMedia();
@@ -197,22 +197,20 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                 <div className="flex border-b border-gray-200 dark:border-gray-700 px-6">
                     <button
                         onClick={() => setActiveTab('list')}
-                        className={`px-6 py-3 font-medium transition-colors ${
-                            activeTab === 'list'
-                                ? 'text-blue-600 border-b-2 border-blue-600'
-                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
-                        }`}
+                        className={`px-6 py-3 font-medium transition-colors ${activeTab === 'list'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                            }`}
                     >
                         <Grid className="w-4 h-4 inline-block mr-2" />
                         Proje Listesi
                     </button>
                     <button
                         onClick={() => { setActiveTab('form'); resetForm(); }}
-                        className={`px-6 py-3 font-medium transition-colors ${
-                            activeTab === 'form'
-                                ? 'text-blue-600 border-b-2 border-blue-600'
-                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
-                        }`}
+                        className={`px-6 py-3 font-medium transition-colors ${activeTab === 'form'
+                            ? 'text-blue-600 border-b-2 border-blue-600'
+                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                            }`}
                     >
                         <Plus className="w-4 h-4 inline-block mr-2" />
                         {formData._id ? 'Düzenle' : 'Yeni Ekle'}
@@ -230,7 +228,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                 </div>
                             ) : projectsData?.data?.length === 0 ? (
                                 <div className="col-span-full text-center py-12 text-gray-500">
-                                    Henüz proje eklenmemiş. "Yeni Ekle" sekmesinden proje oluşturun.
+                                    Henüz proje eklenmemiş. &quot;Yeni Ekle&quot; sekmesinden proje oluşturun.
                                 </div>
                             ) : (
                                 projectsData?.data?.map((project: any) => (
@@ -499,7 +497,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                         </div>
                                     ) : mediaData?.data?.length === 0 ? (
                                         <div className="text-center py-12 text-gray-500">
-                                            Henüz medya yüklenmemiş. "Yükle" sekmesinden ekleyin.
+                                            Henüz medya yüklenmemiş. &quot;Yükle&quot; sekmesinden ekleyin.
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -510,9 +508,9 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                                     className="relative group aspect-video rounded-lg overflow-hidden hover:ring-2 hover:ring-blue-500 transition-all"
                                                 >
                                                     {item.type === 'image' ? (
-                                                        <img src={item.url} alt={item.name} className="w-full h-full object-cover" />
+                                                        <img src={item.url} alt={item.name || 'Media'} className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <video src={item.url} className="w-full h-full object-cover" />
+                                                        <video src={item.url} className="w-full h-full object-cover" title={item.name || 'Video'} />
                                                     )}
                                                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                         <span className="text-white text-sm font-medium">Seç</span>

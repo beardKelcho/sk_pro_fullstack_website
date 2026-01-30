@@ -17,8 +17,8 @@ export default function HomePage({ content }: HomePageProps) {
             {/* Hero Section - Koşulsuz Render (Veri yoksa siyah ekran kalır ama bileşen çalışır) */}
             <Hero content={content.hero || { data: null }} />
 
-            {/* Hizmetler */}
-            {content.services && <Services content={content.services} />}
+            {/* Hizmetler - Kendi API'sini kullanıyor */}
+            <Services />
 
             {/* Projeler - Kendi API'sini kullanıyor */}
             <Projects />

@@ -200,7 +200,7 @@ export default function SiteManagementPage() {
             />
 
             {/* Placeholder for other modals */}
-            {selectedSection && selectedSection !== 'hero' && (
+            {selectedSection && selectedSection !== 'hero' && selectedSection !== 'projects' && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4">
                         <h2 className="text-2xl font-bold mb-4">

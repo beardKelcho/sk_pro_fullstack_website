@@ -14,7 +14,7 @@ interface HomePageProps {
 export default function HomePage({ content }: HomePageProps) {
     return (
         <MainLayout>
-            {/* Hero Section - Koşulsuz Render (Veri yoksa siyah ekran kalır ama bileşen çalışır) */}
+            {/* Hero Section */}
             <Hero content={content.hero || { data: null }} />
 
             {/* Hizmetler - Kendi API'sini kullanıyor */}
@@ -23,13 +23,13 @@ export default function HomePage({ content }: HomePageProps) {
             {/* Projeler - Kendi API'sini kullanıyor */}
             <Projects />
 
-            {/* Hakkımızda */}
-            {content.about && <About content={content.about} />}
+            {/* Hakkımızda - CMS API'sinden kendi verisini çekiyor */}
+            <About />
 
-            {/* İletişim */}
-            {content.contact && <Contact content={content.contact} />}
+            {/* İletişim - CMS API'sinden kendi verisini çekiyor */}
+            <Contact />
 
-            {/* Footer Wrapper Layout tarafından handle ediliyor */}
+            {/* Footer Wrapper Layout tarafından handle ediliyor - CMS API kullanıyor */}
         </MainLayout>
     );
 }

@@ -22,6 +22,8 @@ import MaintenanceToggle from '@/components/admin/MaintenanceToggle';
 import HeroSectionModal from '@/components/admin/modals/HeroSectionModal';
 import ServicesSectionModal from '@/components/admin/modals/ServicesSectionModal';
 import ProjectsSectionModal from '@/components/admin/modals/ProjectsSectionModal';
+import AboutSectionModal from '@/components/admin/modals/AboutSectionModal';
+import ContactSectionModal from '@/components/admin/modals/ContactSectionModal';
 
 interface SectionCard {
     id: string;
@@ -216,8 +218,18 @@ export default function SiteManagementPage() {
                 onClose={() => setSelectedSection(null)}
             />
 
+            <AboutSectionModal
+                isOpen={selectedSection === 'about'}
+                onClose={() => setSelectedSection(null)}
+            />
+
+            <ContactSectionModal
+                isOpen={selectedSection === 'contact'}
+                onClose={() => setSelectedSection(null)}
+            />
+
             {/* Placeholder for other modals */}
-            {selectedSection && selectedSection !== 'hero' && selectedSection !== 'projects' && selectedSection !== 'services' && (
+            {selectedSection && selectedSection !== 'hero' && selectedSection !== 'projects' && selectedSection !== 'services' && selectedSection !== 'about' && selectedSection !== 'contact' && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4">
                         <h2 className="text-2xl font-bold mb-4">

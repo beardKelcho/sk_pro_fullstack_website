@@ -1,24 +1,38 @@
+'use client';
+
 import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import Icon from '@/components/common/Icon';
 import dynamic from 'next/dynamic';
-import { ContactContent } from '@/types/cms';
+import { useQuery } from '@tanstack/react-query';
+import axios from '@/services/api/axios';
+import { Loader2, Instagram, Linkedin, Youtube } from 'lucide-react';
 
 const ContactForm = dynamic(() => import('@/components/common/ContactForm'), { ssr: false });
 
-interface ContactProps {
-    content?: ContactContent;
-}
+const Contact: React.FC = () => {
+    // Fetch contact data from CMS API
+    const { data, isLoading } = useQuery({
+        queryKey: ['contact'],
+        queryFn: async () => {
+            const res = await axios.get('/cms/contact');
+            return res.data;
+        },
+    });
 
-const Contact: React.FC<ContactProps> = ({ content }) => {
-    // If no content provided (empty state), return null
+    const content = data?.data;
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-32">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+        );
+    }
+
     if (!content) {
         return null;
     }
-
-    // Default map coordinates if not provided (Istanbul)
-    const lat = content.latitude || 41.0082;
-    const lng = content.longitude || 28.9784;
 
     return (
         <StageExperience>
@@ -78,20 +92,61 @@ const Contact: React.FC<ContactProps> = ({ content }) => {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Social Media Links */}
+                                {content.socialLinks && (content.socialLinks.instagram || content.socialLinks.linkedin || content.socialLinks.youtube) && (
+                                    <div className="pt-4 border-t border-white/10">
+                                        <h3 className="text-lg font-semibold text-white mb-4">Sosyal Medya</h3>
+                                        <div className="flex gap-4">
+                                            {content.socialLinks.instagram && (
+                                                <a
+                                                    href={content.socialLinks.instagram}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="w-10 h-10 rounded-lg bg-[#0066CC]/20 flex items-center justify-center hover:bg-[#0066CC]/40 transition-colors"
+                                                >
+                                                    <Instagram className="w-5 h-5 text-[#0066CC]" />
+                                                </a>
+                                            )}
+                                            {content.socialLinks.linkedin && (
+                                                <a
+                                                    href={content.socialLinks.linkedin}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="w-10 h-10 rounded-lg bg-[#0066CC]/20 flex items-center justify-center hover:bg-[#0066CC]/40 transition-colors"
+                                                >
+                                                    <Linkedin className="w-5 h-5 text-[#0066CC]" />
+                                                </a>
+                                            )}
+                                            {content.socialLinks.youtube && (
+                                                <a
+                                                    href={content.socialLinks.youtube}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="w-10 h-10 rounded-lg bg-[#0066CC]/20 flex items-center justify-center hover:bg-[#0066CC]/40 transition-colors"
+                                                >
+                                                    <Youtube className="w-5 h-5 text-[#0066CC]" />
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Map */}
-                            <div className="bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-white/10 h-[300px]">
-                                <iframe
-                                    src={`https://www.google.com/maps?q=${lat},${lng}&hl=tr&z=15&output=embed`}
-                                    width="100%"
-                                    height="100%"
-                                    style={{ border: 0 }}
-                                    allowFullScreen
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                ></iframe>
-                            </div>
+                            {content.mapUrl && (
+                                <div className="bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-white/10 h-[300px]">
+                                    <iframe
+                                        src={content.mapUrl}
+                                        width="100%"
+                                        height="100%"
+                                        style={{ border: 0 }}
+                                        allowFullScreen
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer-when-downgrade"
+                                    ></iframe>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -1,21 +1,36 @@
+'use client';
+
 import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { motion } from 'framer-motion';
 import LazyImage from '@/components/common/LazyImage';
-import { AboutContent } from '@/types/cms';
+import { useQuery } from '@tanstack/react-query';
+import axios from '@/services/api/axios';
+import { Loader2 } from 'lucide-react';
 
-interface AboutProps {
-    content?: AboutContent;
-}
+const About: React.FC = () => {
+    // Fetch about data from CMS API
+    const { data, isLoading } = useQuery({
+        queryKey: ['about'],
+        queryFn: async () => {
+            const res = await axios.get('/cms/about');
+            return res.data;
+        },
+    });
 
-const About: React.FC<AboutProps> = ({ content }) => {
-    // If no content provided (empty state), return null
-    if (!content) {
-        return null; // Or skeleton
+    const content = data?.data;
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-32">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+        );
     }
 
-    // Default image if none provided
-    const displayImage = content.image || 'https://res.cloudinary.com/dmeviky6f/image/upload/v1/about/team.jpg';
+    if (!content) {
+        return null;
+    }
 
     return (
         <div style={{ marginTop: '16rem', marginBottom: '8rem' }}>
@@ -36,7 +51,7 @@ const About: React.FC<AboutProps> = ({ content }) => {
                                 />
 
                                 <div className="mt-8 space-y-6">
-                                    {(content.description || '').split('\n\n').map((paragraph, index) => (
+                                    {(content.description || '').split('\n\n').map((paragraph: string, index: number) => (
                                         <p key={index} className="text-lg text-gray-300 leading-relaxed">
                                             {paragraph}
                                         </p>
@@ -45,8 +60,8 @@ const About: React.FC<AboutProps> = ({ content }) => {
 
                                 {/* Stats */}
                                 {content.stats && content.stats.length > 0 && (
-                                    <div className="mt-12 grid grid-cols-3 gap-8">
-                                        {content.stats.map((stat, index) => (
+                                    <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+                                        {content.stats.map((stat: any, index: number) => (
                                             <motion.div
                                                 key={index}
                                                 className="text-center"
@@ -77,12 +92,14 @@ const About: React.FC<AboutProps> = ({ content }) => {
                             >
                                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
                                     <div className="absolute inset-0 bg-gradient-to-br from-[#0066CC]/20 to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
-                                    <LazyImage
-                                        src={displayImage}
-                                        alt="SK Production Team"
-                                        className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
-                                        fill
-                                    />
+                                    {content.imageUrl && (
+                                        <LazyImage
+                                            src={content.imageUrl}
+                                            alt="SK Production Team"
+                                            className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
+                                            fill
+                                        />
+                                    )}
                                 </div>
                             </motion.div>
                         </div>

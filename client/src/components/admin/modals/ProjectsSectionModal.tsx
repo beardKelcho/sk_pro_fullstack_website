@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
-import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2, Image, Film, Images } from 'lucide-react';
+import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2, Image, Film, Images, Play } from 'lucide-react';
 
 interface ProjectsSectionModalProps {
     isOpen: boolean;
@@ -302,13 +302,34 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                                 key={project._id}
                                                 className="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                                             >
-                                                {project.coverUrl && (
-                                                    <img
-                                                        src={project.coverUrl}
-                                                        alt={project.title}
-                                                        className="w-full h-48 object-cover"
-                                                    />
-                                                )}
+                                                {/* Media Preview */}
+                                                <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-800">
+                                                    {project.type === 'video' && project.videoUrl ? (
+                                                        <>
+                                                            <video
+                                                                src={project.videoUrl}
+                                                                className="w-full h-full object-cover"
+                                                                preload="metadata"
+                                                                muted
+                                                            />
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                                <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                                                                    <Play className="w-5 h-5 text-white ml-1" />
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    ) : (project.imageUrls?.[0] || project.coverUrl) ? (
+                                                        <img
+                                                            src={project.imageUrls?.[0] || project.coverUrl}
+                                                            alt={project.title}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                            <Images className="w-8 h-8" />
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <div className="p-4">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">

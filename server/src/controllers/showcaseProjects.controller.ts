@@ -51,7 +51,7 @@ export const getShowcaseProjectById = async (req: Request, res: Response) => {
 // POST /api/showcase-projects - Admin only
 export const createShowcaseProject = async (req: Request, res: Response) => {
     try {
-        const { title, category, description, coverUrl, videoUrl, order, isActive } = req.body;
+        const { type, title, category, description, coverUrl, imageUrls, videoUrl, order, isActive } = req.body;
 
         if (!title) {
             return res.status(400).json({
@@ -61,10 +61,12 @@ export const createShowcaseProject = async (req: Request, res: Response) => {
         }
 
         const project = new ShowcaseProject({
+            type: type || 'photo',
             title,
             category: category || 'Genel',
             description,
             coverUrl,
+            imageUrls: imageUrls || [],
             videoUrl,
             order: order !== undefined ? order : 0,
             isActive: isActive !== undefined ? isActive : true,
@@ -90,15 +92,17 @@ export const createShowcaseProject = async (req: Request, res: Response) => {
 export const updateShowcaseProject = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { title, category, description, coverUrl, videoUrl, order, isActive } = req.body;
+        const { type, title, category, description, coverUrl, imageUrls, videoUrl, order, isActive } = req.body;
 
         const project = await ShowcaseProject.findByIdAndUpdate(
             id,
             {
+                type,
                 title,
                 category,
                 description,
                 coverUrl,
+                imageUrls,
                 videoUrl,
                 order,
                 isActive,

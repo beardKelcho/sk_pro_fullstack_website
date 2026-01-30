@@ -8,17 +8,10 @@ interface HeroProps {
 }
 
 export default function Hero({ content }: HeroProps) {
-    // DEBUG: Veriyi konsola yazdır (Tarayıcıda F12 -> Console sekmesinde görünecek)
-    console.log('HERO COMPONENT RECEIVED:', content);
-
-    // 1. DEFANSİF VERİ OKUMA:
-    // Veri "content.data" içinde mi yoksa direkt "content"in kendisi mi? İkisini de dene.
     const rawData = content?.data || content;
 
-    // Veri boşsa veya gerekli alanlar yoksa varsayılanları hazırla ama return etme (Debug için görelim)
     const title = rawData?.title || "SK Production";
     const subtitle = rawData?.subtitle || "";
-    const videoUrl = rawData?.videoUrl || ""; // Video yoksa boş string
     const slogans = rawData?.rotatingTexts || [];
 
     const [textIndex, setTextIndex] = useState(0);
@@ -33,57 +26,55 @@ export default function Hero({ content }: HeroProps) {
     }, [slogans.length]);
 
     return (
-        <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
-            {/* 1. ARKA PLAN VİDEOSU */}
-            {videoUrl ? (
-                <video
-                    src={videoUrl}
-                    autoPlay muted loop playsInline
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
-                />
-            ) : (
-                // Video yoksa arkada hafif bir grid veya gradient olsun ki boş olduğunu anlayalım
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-800 via-black to-black opacity-80" />
-            )}
+        <section className="relative h-screen flex items-center justify-center overflow-hidden">
+            {/* İçerik - Video artık layout.tsx'te */}
+            <div className="relative z-20 text-center px-4 max-w-6xl mx-auto flex flex-col items-center gap-8">
 
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-black/50 z-10" />
-
-            {/* 2. İÇERİK */}
-            <div className="relative z-20 text-center px-4 max-w-5xl mx-auto flex flex-col items-center gap-6 mt-10">
-
-                {/* ANA BAŞLIK */}
-                <h1 className="text-5xl md:text-8xl font-bold text-white tracking-tighter drop-shadow-2xl">
-                    {title}
-                </h1>
-
-                {/* DÖNEN SLOGANLAR */}
-                <div className="h-20 flex items-center justify-center overflow-hidden w-full">
+                {/* DÖNEN SLOGANLAR - ÜSTTEönce dinamik giriş */}
+                <div className="h-16 flex items-center justify-center overflow-hidden w-full">
                     <AnimatePresence mode='wait'>
                         {slogans.length > 0 ? (
                             <motion.p
                                 key={textIndex}
-                                initial={{ opacity: 0, y: 30 }}
+                                initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -30 }}
-                                transition={{ duration: 0.5 }}
-                                className="text-2xl md:text-4xl font-light text-blue-500"
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{ duration: 0.6 }}
+                                className="text-xl md:text-2xl lg:text-3xl font-light text-gray-300 tracking-wide"
                             >
                                 {slogans[textIndex]}
                             </motion.p>
-                        ) : (
-                            // Slogan yoksa boşluk
-                            <p className="text-gray-600 text-sm">...</p>
-                        )}
+                        ) : null}
                     </AnimatePresence>
                 </div>
 
+                {/* ANA BAŞLIK - ALT - Vurucu ve büyük */}
+                <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white leading-tight tracking-tight drop-shadow-2xl">
+                    Profesyonel <span className="text-cyan-500">Prodüksiyon</span> Deneyimi
+                </h1>
+
                 {/* ALT BAŞLIK */}
                 {subtitle && (
-                    <p className="text-gray-300 text-lg md:text-2xl max-w-3xl leading-relaxed opacity-90 font-light">
+                    <p className="text-gray-300 text-lg md:text-xl lg:text-2xl max-w-3xl leading-relaxed font-light">
                         {subtitle}
                     </p>
                 )}
+
+                {/* CTA Butonlar (Opsiyonel) */}
+                <div className="flex gap-4 mt-6">
+                    <a
+                        href="#projects"
+                        className="px-8 py-4 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-cyan-500/50"
+                    >
+                        Projelerimiz
+                    </a>
+                    <a
+                        href="#contact"
+                        className="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-semibold rounded-lg transition-all duration-300 border border-white/20"
+                    >
+                        İletişime Geç
+                    </a>
+                </div>
             </div>
         </section>
     );

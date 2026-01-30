@@ -3,15 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useTheme } from '../../context/ThemeContext';
 import { usePathname } from 'next/navigation';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
   const pathname = usePathname();
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,7 +26,7 @@ const Navbar = () => {
   // Smooth scroll handler
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault();
-    
+
     // Eğer farklı bir sayfadaysak, önce ana sayfaya git
     if (pathname !== '/') {
       window.location.href = `/#${targetId}`;
@@ -47,7 +44,7 @@ const Navbar = () => {
         behavior: 'smooth'
       });
     }
-    
+
     // Mobil menüyü kapat
     if (mobileMenuOpen) {
       setMobileMenuOpen(false);
@@ -56,15 +53,14 @@ const Navbar = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-white dark:bg-dark-surface shadow-lg py-3'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+          ? 'bg-black/80 backdrop-blur-md shadow-lg py-3'
           : 'bg-transparent py-5'
-      }`}
+        }`}
     >
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center">
-          <Link 
+          <Link
             href="/"
             className="flex items-center"
           >
@@ -83,90 +79,34 @@ const Navbar = () => {
             <a
               href="#projects"
               onClick={(e) => handleSmoothScroll(e, 'projects')}
-              className={`${
-                isScrolled ? 'text-gray-800 dark:text-gray-200' : 'text-white'
-              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium cursor-pointer`}
+              className="text-gray-200 hover:text-cyan-400 transition-colors duration-300 font-medium cursor-pointer"
             >
               Projeler
             </a>
             <a
               href="#services"
               onClick={(e) => handleSmoothScroll(e, 'services')}
-              className={`${
-                isScrolled ? 'text-gray-800 dark:text-gray-200' : 'text-white'
-              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium cursor-pointer`}
+              className="text-gray-200 hover:text-cyan-400 transition-colors duration-300 font-medium cursor-pointer"
             >
               Hizmetler & Ekipmanlar
             </a>
             <a
               href="#about"
               onClick={(e) => handleSmoothScroll(e, 'about')}
-              className={`${
-                isScrolled ? 'text-gray-800 dark:text-gray-200' : 'text-white'
-              } hover:text-primary hover:dark:text-primary-light transition-colors duration-300 font-medium cursor-pointer`}
+              className="text-gray-200 hover:text-cyan-400 transition-colors duration-300 font-medium cursor-pointer"
             >
               Hakkımızda
             </a>
             <a
               href="#contact"
               onClick={(e) => handleSmoothScroll(e, 'contact')}
-              className="bg-primary hover:bg-primary-dark dark:bg-primary-light dark:hover:bg-primary text-white px-6 py-3 rounded-lg transition-all duration-300 font-medium shadow-md cursor-pointer"
+              className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg transition-all duration-300 font-medium shadow-md cursor-pointer"
             >
               İletişim
             </a>
-            
-            {/* Tema değiştirme butonu */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full bg-gray-200 dark:bg-dark-card text-gray-800 dark:text-gray-200 focus:outline-none hover:bg-gray-300 dark:hover:bg-gray-700"
-              aria-label={theme === 'dark' ? 'Açık moda geç' : 'Karanlık moda geç'}
-            >
-              {theme === 'dark' ? (
-                // Güneş ikonu (Açık mod)
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              ) : (
-                // Ay ikonu (Karanlık mod)
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                </svg>
-              )}
-            </button>
           </nav>
 
           <div className="flex items-center md:hidden">
-            {/* Mobil için tema değiştirme butonu */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full bg-gray-200 dark:bg-dark-card text-gray-800 dark:text-gray-200 focus:outline-none hover:bg-gray-300 dark:hover:bg-gray-700 mr-3"
-              aria-label={theme === 'dark' ? 'Açık moda geç' : 'Karanlık moda geç'}
-            >
-              {theme === 'dark' ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                </svg>
-              )}
-            </button>
-            
             {/* Mobil menü butonu */}
             <button
               className="focus:outline-none"
@@ -178,7 +118,7 @@ const Navbar = () => {
                 className="h-7 w-7"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke={isScrolled ? '#0A1128' : 'white'}
+                stroke="white"
               >
                 {mobileMenuOpen ? (
                   <path
@@ -202,32 +142,32 @@ const Navbar = () => {
 
         {/* Mobil menü */}
         {mobileMenuOpen && (
-          <nav className="md:hidden mt-4 py-3 bg-white dark:bg-dark-surface rounded-lg shadow-xl">
+          <nav className="md:hidden mt-4 py-3 bg-black/90 backdrop-blur-md rounded-lg shadow-xl border border-white/10">
             <a
               href="#projects"
               onClick={(e) => handleSmoothScroll(e, 'projects')}
-              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light cursor-pointer"
+              className="block px-5 py-3 text-gray-200 hover:bg-white/10 hover:text-cyan-400 cursor-pointer"
             >
               Projeler
             </a>
             <a
               href="#services"
               onClick={(e) => handleSmoothScroll(e, 'services')}
-              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light cursor-pointer"
+              className="block px-5 py-3 text-gray-200 hover:bg-white/10 hover:text-cyan-400 cursor-pointer"
             >
               Hizmetler & Ekipmanlar
             </a>
             <a
               href="#about"
               onClick={(e) => handleSmoothScroll(e, 'about')}
-              className="block px-5 py-3 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-card hover:text-primary dark:hover:text-primary-light cursor-pointer"
+              className="block px-5 py-3 text-gray-200 hover:bg-white/10 hover:text-cyan-400 cursor-pointer"
             >
               Hakkımızda
             </a>
             <a
               href="#contact"
               onClick={(e) => handleSmoothScroll(e, 'contact')}
-              className="block mx-5 my-3 py-3 text-center bg-primary dark:bg-primary-light text-white rounded-lg hover:bg-primary-dark dark:hover:bg-primary shadow-md cursor-pointer"
+              className="block mx-5 my-3 py-3 text-center bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 shadow-md cursor-pointer"
             >
               İletişim
             </a>
@@ -238,4 +178,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;

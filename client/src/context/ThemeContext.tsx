@@ -12,9 +12,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   return (
     <NextThemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
-      enableColorScheme
+      defaultTheme="dark"
+      forcedTheme="dark"
+      enableSystem={false}
       storageKey="skpro-theme"
     >
       {children}
@@ -23,4 +23,4 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 }
 
 // next-themes içinde sağlanan useTheme hook'unu kullan
-export { useTheme } from 'next-themes'; 
+export { useTheme } from 'next-themes';

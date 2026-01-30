@@ -106,7 +106,7 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="tr" suppressHydrationWarning dir="ltr">
+    <html lang="tr" suppressHydrationWarning dir="ltr" className="dark">
       <head>
         <meta name="theme-color" content="#000000" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -115,50 +115,69 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="SK Production" />
         <link rel="apple-touch-icon" href="/images/sk-logo.png" />
       </head>
-      <body className={`${montserrat.className} antialiased min-h-screen transition-colors duration-300`} suppressHydrationWarning>
-        <LocalizedErrorBoundary>
-          <OfflineIndicator />
-          {process.env.NEXT_PUBLIC_GA_ID && (
-            <>
-              <Script
-                src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-                strategy="afterInteractive"
-              />
-              <Script id="gtag-init" strategy="afterInteractive">
-                {`
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
-                    page_path: window.location.pathname,
-                  });
-                `}
-              </Script>
-            </>
-          )}
-          <Providers>
-            <ErrorProvider>
-              <CommandPalette />
-              {children}
-              <FooterWrapper />
-              <ToastContainer
-                position="top-right"
-                autoClose={5000}
-                hideProgressBar={false}
-                newestOnTop
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-              />
-            </ErrorProvider>
-          </Providers>
-          <Analytics />
-          {process.env.NEXT_PUBLIC_GA_ID && (
-            <WebVitals analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
-          )}
-        </LocalizedErrorBoundary>
+      <body className={`${montserrat.className} antialiased min-h-screen bg-black`} suppressHydrationWarning>
+        {/* Global Video Background */}
+        <div className="fixed inset-0 z-[-1] w-full h-full overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover opacity-40"
+          >
+            <source src="/hero-video.mp4" type="video/mp4" />
+          </video>
+          {/* Global Overlay (Video üstü karartma) */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+        </div>
+
+        {/* İçerik Akışı */}
+        <div className="relative z-10">
+          <LocalizedErrorBoundary>
+            <OfflineIndicator />
+            {process.env.NEXT_PUBLIC_GA_ID && (
+              <>
+                <Script
+                  src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+                  strategy="afterInteractive"
+                />
+                <Script id="gtag-init" strategy="afterInteractive">
+                  {`
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments);}
+                    gtag('js', new Date());
+                    gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
+                      page_path: window.location.pathname,
+                    });
+                  `}
+                </Script>
+              </>
+            )}
+            <Providers>
+              <ErrorProvider>
+                <CommandPalette />
+                {children}
+                <FooterWrapper />
+                <ToastContainer
+                  position="top-right"
+                  autoClose={5000}
+                  hideProgressBar={false}
+                  newestOnTop
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  theme="dark"
+                />
+              </ErrorProvider>
+            </Providers>
+            <Analytics />
+            {process.env.NEXT_PUBLIC_GA_ID && (
+              <WebVitals analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
+            )}
+          </LocalizedErrorBoundary>
+        </div>
       </body>
     </html>
   );

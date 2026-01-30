@@ -41,30 +41,46 @@ async function getSiteData() {
 
     const responseJson = await contentRes.json();
 
-    // Backend bazen { data: [...] } bazen direkt [...] dönüyor, ikisini de kapsa
-    let items: any[] = [];
-    if (Array.isArray(responseJson)) {
-      items = responseJson;
-    } else if (responseJson.data && Array.isArray(responseJson.data)) {
-      items = responseJson.data;
-    }
-
-    // Transform array to object map
+    // Transform to SiteContent format
     const contentMap: SiteContent = {};
 
-    items.forEach((item: any) => {
-      // Backend 'data' field'ını kullanıyor, fallback olarak 'content'e bak
-      const payload = item.data || item.content;
-      if (!payload) return;
+    // Backend'in döndürdüğü format: { success: true, data: { hero: {...}, about: {...} } }
+    // VEYA eski format: { data: [{ section: 'hero', data: {...} }] }
 
-      if (item.section === 'hero') {
-        // Hero bileşeni { data: ... } bekliyor
-        contentMap.hero = { data: payload } as any;
+    if (responseJson.data) {
+      // Yeni format: data obje mi?
+      if (!Array.isArray(responseJson.data)) {
+        // Direkt obje formatı { hero: {...}, about: {...} }
+        const dataObj = responseJson.data;
+
+        if (dataObj.hero) {
+          contentMap.hero = { data: dataObj.hero } as any;
+        }
+        if (dataObj.about) {
+          contentMap.about = dataObj.about;
+        }
+        if (dataObj.services) {
+          contentMap.services = dataObj.services;
+        }
+        if (dataObj.contact) {
+          contentMap.contact = dataObj.contact;
+        }
+      } else {
+        // Eski array formatı [{ section: 'hero', data: {...} }]
+        const items: any[] = responseJson.data;
+        items.forEach((item: any) => {
+          const payload = item.data || item.content;
+          if (!payload) return;
+
+          if (item.section === 'hero') {
+            contentMap.hero = { data: payload } as any;
+          }
+          else if (item.section === 'about') contentMap.about = payload;
+          else if (item.section === 'services' || item.section === 'services-equipment') contentMap.services = payload;
+          else if (item.section === 'contact') contentMap.contact = payload;
+        });
       }
-      else if (item.section === 'about') contentMap.about = payload;
-      else if (item.section === 'services' || item.section === 'services-equipment') contentMap.services = payload;
-      else if (item.section === 'contact') contentMap.contact = payload;
-    });
+    }
 
     console.log('Processed ContentMap Keys:', Object.keys(contentMap)); // Server loglarında görmek için
 

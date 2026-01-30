@@ -118,34 +118,12 @@ const Header: React.FC = () => {
               </Link>
             )}
 
-            {/* Karanlık Mod Butonu */}
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-dark-surface hover:bg-gray-200 dark:hover:bg-dark-card transition-colors"
-              suppressHydrationWarning
-            >
-              {theme === 'dark' ? (
-                <Icon name="sun" className="h-5 w-5 text-yellow-500" />
-              ) : (
-                <Icon name="moon" className="h-5 w-5 text-gray-700" />
-              )}
-            </button>
+            {/* Mobile Theme Toggle Removed */}
           </nav>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-4">
-            {/* Karanlık Mod Butonu */}
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-dark-surface hover:bg-gray-200 dark:hover:bg-dark-card transition-colors"
-              suppressHydrationWarning
-            >
-              {theme === 'dark' ? (
-                <Icon name="sun" className="h-5 w-5 text-yellow-500" />
-              ) : (
-                <Icon name="moon" className="h-5 w-5 text-gray-700" />
-              )}
-            </button>
+            {/* Desktop Menu - Theme Toggle Removed */}
             <button
               className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

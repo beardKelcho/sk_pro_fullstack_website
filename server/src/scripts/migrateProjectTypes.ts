@@ -8,7 +8,11 @@
  */
 
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import ShowcaseProject from '../models/ShowcaseProject';
+
+// Load environment variables
+dotenv.config();
 
 const migrateProjectTypes = async () => {
     try {

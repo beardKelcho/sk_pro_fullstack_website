@@ -11,7 +11,8 @@ import {
     EyeOff,
     Edit,
     Clock,
-    AlertTriangle
+    AlertTriangle,
+    Tv
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
@@ -19,6 +20,7 @@ import axios from '@/services/api/axios';
 // Import New Components
 import MaintenanceToggle from '@/components/admin/MaintenanceToggle';
 import HeroSectionModal from '@/components/admin/modals/HeroSectionModal';
+import ProjectsSectionModal from '@/components/admin/modals/ProjectsSectionModal';
 
 interface SectionCard {
     id: string;
@@ -83,6 +85,13 @@ export default function SiteManagementPage() {
             lastUpdated: getSectionData('contact')?.updatedAt,
             isActive: getSectionData('contact')?.isActive,
             onClick: () => setSelectedSection('contact'),
+        },
+        {
+            id: 'projects',
+            icon: <Tv className="w-12 h-12" />,
+            title: 'Projeler',
+            description: 'Konser, lansman ve etkinlik projeleri',
+            onClick: () => setSelectedSection('projects'),
         },
     ];
 
@@ -183,6 +192,11 @@ export default function SiteManagementPage() {
                 isOpen={selectedSection === 'hero'}
                 onClose={() => setSelectedSection(null)}
                 initialData={getSectionData('hero')?.data || {}} // Note: backend returns 'data' field now
+            />
+
+            <ProjectsSectionModal
+                isOpen={selectedSection === 'projects'}
+                onClose={() => setSelectedSection(null)}
             />
 
             {/* Placeholder for other modals */}

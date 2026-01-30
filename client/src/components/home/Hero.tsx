@@ -13,10 +13,7 @@ export default function Hero({ content }: HeroProps) {
     const data = content?.data || content;
     const [textIndex, setTextIndex] = useState(0);
 
-    // Veri yoksa güvenli çıkış
-    if (!data) return <div className="h-screen w-full bg-black flex items-center justify-center text-white">Yükleniyor...</div>;
-
-    const { videoUrl, title, subtitle, rotatingTexts } = data;
+    const { videoUrl, title, subtitle, rotatingTexts } = data || {};
     const slogans = rotatingTexts || [];
 
     // Slogan Döngüsü
@@ -27,6 +24,9 @@ export default function Hero({ content }: HeroProps) {
         }, 3000);
         return () => clearInterval(interval);
     }, [slogans.length]);
+
+    // Veri yoksa güvenli çıkış
+    if (!data) return <div className="h-screen w-full bg-black flex items-center justify-center text-white">Yükleniyor...</div>;
 
     return (
         <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black">

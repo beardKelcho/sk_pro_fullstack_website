@@ -30,8 +30,8 @@ export default function Hero({ content }: HeroProps) {
             {/* İçerik - Video artık layout.tsx'te */}
             <div className="relative z-20 text-center px-4 max-w-6xl mx-auto flex flex-col items-center gap-8">
 
-                {/* DÖNEN SLOGANLAR - ÜSTTEönce dinamik giriş */}
-                <div className="h-16 flex items-center justify-center overflow-hidden w-full">
+                {/* DÖNEN SLOGANLAR - ÜSTTE */}
+                <div className="h-12 flex items-center justify-center overflow-hidden w-full mb-2">
                     <AnimatePresence mode='wait'>
                         {slogans.length > 0 ? (
                             <motion.p
@@ -40,7 +40,7 @@ export default function Hero({ content }: HeroProps) {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.6 }}
-                                className="text-xl md:text-2xl lg:text-3xl font-light text-gray-300 tracking-wide"
+                                className="text-xl md:text-2xl font-medium text-cyan-400 tracking-widest uppercase"
                             >
                                 {slogans[textIndex]}
                             </motion.p>
@@ -48,14 +48,15 @@ export default function Hero({ content }: HeroProps) {
                     </AnimatePresence>
                 </div>
 
-                {/* ANA BAŞLIK - ALT - Vurucu ve büyük */}
-                <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white leading-tight tracking-tight drop-shadow-2xl">
-                    Profesyonel <span className="text-cyan-500">Prodüksiyon</span> Deneyimi
+                {/* ANA BAŞLIK */}
+                <h1 className="text-5xl md:text-7xl lg:text-9xl font-extrabold text-white leading-none tracking-tighter drop-shadow-2xl">
+                    Profesyonel <br className="hidden md:block" />
+                    <span className="text-cyan-500">Prodüksiyon</span> Deneyimi
                 </h1>
 
                 {/* ALT BAŞLIK */}
                 {subtitle && (
-                    <p className="text-gray-300 text-lg md:text-xl lg:text-2xl max-w-3xl leading-relaxed font-light">
+                    <p className="text-gray-400 text-lg md:text-xl max-w-2xl leading-relaxed mt-6 font-light">
                         {subtitle}
                     </p>
                 )}

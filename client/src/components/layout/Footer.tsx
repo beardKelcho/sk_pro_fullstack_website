@@ -141,7 +141,7 @@ const Footer: React.FC = () => {
 
         {/* Footer Bottom */}
         <div className="mt-16 pt-8 border-t border-white/10 text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} SK Production. Tüm hakları saklıdır.</p>
+          <p>&copy; 2017-{new Date().getFullYear()} SK Production. Tüm hakları saklıdır.</p>
         </div>
       </div>
     </footer>

@@ -121,9 +121,9 @@ const Projects = () => {
                     <div className="flex justify-center gap-4 mb-12 mt-8">
                         <button
                             onClick={() => setActiveTab('photos')}
-                            className={`px-8 py-3 rounded-lg font-semibold transition-all ${activeTab === 'photos'
-                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            className={`px-8 py-3 rounded-full font-semibold transition-all transform hover:scale-105 ${activeTab === 'photos'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                                 }`}
                         >
                             <ImageIcon className="w-5 h-5 inline-block mr-2" />
@@ -131,9 +131,9 @@ const Projects = () => {
                         </button>
                         <button
                             onClick={() => setActiveTab('videos')}
-                            className={`px-8 py-3 rounded-lg font-semibold transition-all ${activeTab === 'videos'
-                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            className={`px-8 py-3 rounded-full font-semibold transition-all transform hover:scale-105 ${activeTab === 'videos'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-purple-500/20'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                                 }`}
                         >
                             <Play className="w-5 h-5 inline-block mr-2" />

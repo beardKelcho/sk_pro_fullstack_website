@@ -28,54 +28,50 @@ export default function Hero({ content }: HeroProps) {
     return (
         <section className="relative h-screen flex items-center justify-center overflow-hidden">
             {/* İçerik - Video artık layout.tsx'te */}
-            <div className="relative z-20 text-center px-4 max-w-6xl mx-auto flex flex-col items-center gap-8">
+            {/* ÜST BAŞLIK - KÜÇÜK VE SABİT */}
+            <div className="mb-4">
+                <p className="text-sm md:text-base font-bold tracking-[0.3em] text-cyan-500 uppercase animate-pulse">
+                    YARATICILIĞIN SINIRLARINI ZORLAYIN
+                </p>
+            </div>
 
-                {/* DÖNEN SLOGANLAR - ÜSTTE */}
-                <div className="h-12 flex items-center justify-center overflow-hidden w-full mb-2">
-                    <AnimatePresence mode='wait'>
-                        {slogans.length > 0 ? (
-                            <motion.p
-                                key={textIndex}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.6 }}
-                                className="text-xl md:text-2xl font-medium text-cyan-400 tracking-widest uppercase"
-                            >
-                                {slogans[textIndex]}
-                            </motion.p>
-                        ) : null}
-                    </AnimatePresence>
-                </div>
-
-                {/* ANA BAŞLIK */}
-                <h1 className="text-5xl md:text-7xl lg:text-9xl font-extrabold text-white leading-none tracking-tighter drop-shadow-2xl">
-                    Profesyonel <br className="hidden md:block" />
-                    <span className="text-cyan-500">Prodüksiyon</span> Deneyimi
-                </h1>
-
-                {/* ALT BAŞLIK */}
-                {subtitle && (
-                    <p className="text-gray-400 text-lg md:text-xl max-w-2xl leading-relaxed mt-6 font-light">
-                        {subtitle}
-                    </p>
-                )}
-
-                {/* CTA Butonlar (Opsiyonel) */}
-                <div className="flex gap-4 mt-6">
-                    <a
-                        href="#projects"
-                        className="px-8 py-4 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-cyan-500/50"
+            {/* ANA BAŞLIK - DÖNEN YAZILAR - ÇOK BÜYÜK */}
+            <div className="h-32 md:h-48 flex items-center justify-center overflow-hidden w-full mb-6 relative">
+                <AnimatePresence mode='wait'>
+                    <motion.h1
+                        key={textIndex}
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -40 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="text-6xl md:text-8xl lg:text-9xl font-black text-white leading-none tracking-tighter drop-shadow-2xl absolute w-full"
                     >
-                        Projelerimiz
-                    </a>
-                    <a
-                        href="#contact"
-                        className="px-8 py-4 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-semibold rounded-lg transition-all duration-300 border border-white/20"
-                    >
-                        İletişime Geç
-                    </a>
-                </div>
+                        {slogans.length > 0 ? slogans[textIndex] : "Profesyonel Prodüksiyon Deneyimi"}
+                    </motion.h1>
+                </AnimatePresence>
+            </div>
+
+            {/* ALT BAŞLIK */}
+            {subtitle && (
+                <p className="text-gray-400 text-lg md:text-xl max-w-2xl leading-relaxed font-light mb-8">
+                    {subtitle}
+                </p>
+            )}
+
+            {/* CTA Butonlar */}
+            <div className="flex gap-6 mt-4">
+                <a
+                    href="#projects"
+                    className="px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 hover:shadow-purple-500/40"
+                >
+                    Projelerimiz
+                </a>
+                <a
+                    href="#contact"
+                    className="px-10 py-4 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white font-bold rounded-full transition-all duration-300 border border-white/10 hover:border-white/30"
+                >
+                    İletişime Geç
+                </a>
             </div>
         </section>
     );

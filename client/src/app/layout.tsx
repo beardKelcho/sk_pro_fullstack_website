@@ -1,3 +1,4 @@
+import BackgroundVideo from '@/components/layout/BackgroundVideo';
 import { Montserrat } from 'next/font/google';
 import './globals.css';
 import type { Metadata } from 'next';
@@ -116,45 +117,30 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/images/sk-logo.png" />
       </head>
       <body className={`${montserrat.className} antialiased min-h-screen bg-black`} suppressHydrationWarning>
-        {/* Global Video Background */}
-        <div className="fixed inset-0 z-[-1] w-full h-full overflow-hidden">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute top-0 left-0 w-full h-full object-cover opacity-40"
-          >
-            <source src="/hero-video.mp4" type="video/mp4" />
-          </video>
-          {/* Global Overlay (Video üstü karartma) */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-        </div>
-
-        {/* İçerik Akışı */}
-        <div className="relative z-10">
-          <LocalizedErrorBoundary>
-            <OfflineIndicator />
-            {process.env.NEXT_PUBLIC_GA_ID && (
-              <>
-                <Script
-                  src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-                  strategy="afterInteractive"
-                />
-                <Script id="gtag-init" strategy="afterInteractive">
-                  {`
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
-                    gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
-                      page_path: window.location.pathname,
-                    });
-                  `}
-                </Script>
-              </>
-            )}
-            <Providers>
-              <ErrorProvider>
+        <LocalizedErrorBoundary>
+          <OfflineIndicator />
+          {process.env.NEXT_PUBLIC_GA_ID && (
+            <>
+              <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+                strategy="afterInteractive"
+              />
+              <Script id="gtag-init" strategy="afterInteractive">
+                {`
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
+                    page_path: window.location.pathname,
+                  });
+                `}
+              </Script>
+            </>
+          )}
+          <Providers>
+            <BackgroundVideo />
+            <ErrorProvider>
+              <div className="relative z-10">
                 <CommandPalette />
                 {children}
                 <FooterWrapper />
@@ -170,14 +156,14 @@ export default function RootLayout({
                   pauseOnHover
                   theme="dark"
                 />
-              </ErrorProvider>
-            </Providers>
-            <Analytics />
-            {process.env.NEXT_PUBLIC_GA_ID && (
-              <WebVitals analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
-            )}
-          </LocalizedErrorBoundary>
-        </div>
+              </div>
+            </ErrorProvider>
+          </Providers>
+          <Analytics />
+          {process.env.NEXT_PUBLIC_GA_ID && (
+            <WebVitals analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
+          )}
+        </LocalizedErrorBoundary>
       </body>
     </html>
   );

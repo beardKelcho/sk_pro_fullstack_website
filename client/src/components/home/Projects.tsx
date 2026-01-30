@@ -323,12 +323,13 @@ const Projects = () => {
                             onClick={() => setLightbox(null)}
                         >
                             <div className="relative w-full max-w-7xl" onClick={(e) => e.stopPropagation()}>
-                                {/* Close Button */}
+                                {/* Close Button - Fixed to screen */}
                                 <button
                                     onClick={() => setLightbox(null)}
-                                    className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+                                    className="fixed top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 transition-all z-[110] backdrop-blur-md border border-white/20 group"
                                 >
-                                    <X className="w-6 h-6 text-white" />
+                                    <X className="w-8 h-8 text-white group-hover:rotate-90 transition-transform duration-300" />
+                                    <span className="sr-only">Kapat</span>
                                 </button>
 
                                 {/* Image */}

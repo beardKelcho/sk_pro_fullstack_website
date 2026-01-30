@@ -78,6 +78,18 @@ const Projects = () => {
         return () => window.removeEventListener('keydown', handleKeyPress);
     }, [lightbox, selectedVideo]);
 
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        if (lightbox || selectedVideo) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [lightbox, selectedVideo]);
+
     // Video hover handlers
     const handleVideoHover = (projectId: string, shouldPlay: boolean) => {
         const video = videoRefs.current.get(projectId);
@@ -110,22 +122,22 @@ const Projects = () => {
                         <button
                             onClick={() => setActiveTab('photos')}
                             className={`px-8 py-3 rounded-lg font-semibold transition-all ${activeTab === 'photos'
-                                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                                 }`}
                         >
                             <ImageIcon className="w-5 h-5 inline-block mr-2" />
-                            Fotoğraflar ({photoProjects.length})
+                            Fotoğraflar
                         </button>
                         <button
                             onClick={() => setActiveTab('videos')}
                             className={`px-8 py-3 rounded-lg font-semibold transition-all ${activeTab === 'videos'
-                                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                                 }`}
                         >
                             <Play className="w-5 h-5 inline-block mr-2" />
-                            Videolar ({videoProjects.length})
+                            Videolar
                         </button>
                     </div>
 

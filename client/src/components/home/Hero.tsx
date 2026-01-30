@@ -29,27 +29,28 @@ export default function Hero({ content }: HeroProps) {
         <section className="relative h-screen flex items-center justify-center overflow-hidden">
             {/* İçerik Container */}
             <div className="relative z-30 container mx-auto px-4 flex flex-col items-center justify-center h-full text-center">
-                {/* ÜST BAŞLIK - KÜÇÜK VE SABİT */}
-                <div className="mb-4">
-                    <p className="text-sm md:text-base font-bold tracking-[0.3em] !text-cyan-500 uppercase animate-pulse drop-shadow-md">
-                        YARATICILIĞIN SINIRLARINI ZORLAYIN
-                    </p>
+
+                {/* DÖNEN YAZILAR - EN ÜSTTE - ORTA BOYUT */}
+                <div className="h-12 md:h-16 flex items-center justify-center overflow-hidden w-full mb-4 relative">
+                    <AnimatePresence mode='wait'>
+                        <motion.div
+                            key={textIndex}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.5, ease: "easeOut" }}
+                            className="text-2xl md:text-3xl lg:text-4xl font-bold text-cyan-500 uppercase tracking-widest absolute w-full text-center"
+                        >
+                            {slogans.length > 0 ? slogans[textIndex] : "Profesyonel Prodüksiyon"}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
 
-                {/* ANA BAŞLIK - DÖNEN YAZILAR - ÇOK BÜYÜK */}
-                <div className="h-32 md:h-48 flex items-center justify-center overflow-hidden w-full mb-6 relative">
-                    <AnimatePresence mode='wait'>
-                        <motion.h1
-                            key={textIndex}
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -40 }}
-                            transition={{ duration: 0.5, ease: "easeOut" }}
-                            className="text-5xl md:text-7xl lg:text-9xl font-black !text-white leading-none tracking-tighter drop-shadow-2xl absolute w-full text-center"
-                        >
-                            {slogans.length > 0 ? slogans[textIndex] : "Profesyonel Prodüksiyon Deneyimi"}
-                        </motion.h1>
-                    </AnimatePresence>
+                {/* ANA BAŞLIK - SABİT - BEYAZ */}
+                <div className="mb-6">
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-black !text-white leading-none tracking-tight drop-shadow-2xl uppercase">
+                        YARATICILIĞIN<br className="hidden md:block" /> SINIRLARINI ZORLAYIN
+                    </h1>
                 </div>
 
                 {/* ALT BAŞLIK */}

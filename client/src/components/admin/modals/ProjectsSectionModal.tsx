@@ -480,81 +480,41 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                     )}
                                 </div>
                             ) : (
-                                /* VIDEO PROJECT MEDIA */
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Video */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Video Dosyası *
-                                        </label>
-                                        {formData.videoUrl ? (
-                                            <div className="relative group">
-                                                <video src={formData.videoUrl} className="w-full h-48 object-cover rounded-lg" />
-                                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setMediaPickerFor('video'); setMediaTab('library'); }}
-                                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                                                    >
-                                                        Değiştir
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData(prev => ({ ...prev, videoUrl: '' }))}
-                                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                                                    >
-                                                        Kaldır
-                                                    </button>
-                                                </div>
+                                /* VIDEO PROJECT MEDIA - NO COVER REQUIRED */
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Video Dosyası *
+                                    </label>
+                                    {formData.videoUrl ? (
+                                        <div className="relative group">
+                                            <video src={formData.videoUrl} className="w-full h-64 object-cover rounded-lg" />
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setMediaPickerFor('video'); setMediaTab('library'); }}
+                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                                >
+                                                    Değiştir
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({ ...prev, videoUrl: '' }))}
+                                                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                                                >
+                                                    Kaldır
+                                                </button>
                                             </div>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => { setMediaPickerFor('video'); setMediaTab('library'); }}
-                                                className="w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-blue-500 transition-colors"
-                                            >
-                                                <Film className="w-8 h-8 text-gray-400" />
-                                                <span className="text-sm text-gray-500">Video Seç</span>
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Cover Image */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Kapak Görseli (Poster) *
-                                        </label>
-                                        {formData.coverUrl ? (
-                                            <div className="relative group">
-                                                <img src={formData.coverUrl} alt="Kapak" className="w-full h-48 object-cover rounded-lg" />
-                                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setMediaPickerFor('cover'); setMediaTab('library'); }}
-                                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                                                    >
-                                                        Değiştir
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData(prev => ({ ...prev, coverUrl: '' }))}
-                                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                                                    >
-                                                        Kaldır
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => { setMediaPickerFor('cover'); setMediaTab('library'); }}
-                                                className="w-full h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-blue-500 transition-colors"
-                                            >
-                                                <Image className="w-8 h-8 text-gray-400" />
-                                                <span className="text-sm text-gray-500">Kapak Seç</span>
-                                            </button>
-                                        )}
-                                    </div>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => { setMediaPickerFor('video'); setMediaTab('library'); }}
+                                            className="w-full h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-blue-500 transition-colors"
+                                        >
+                                            <Film className="w-8 h-8 text-gray-400" />
+                                            <span className="text-sm text-gray-500">Video Seç</span>
+                                        </button>
+                                    )}
                                 </div>
                             )}
 

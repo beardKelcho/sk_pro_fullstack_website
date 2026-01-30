@@ -91,6 +91,8 @@ export default function SiteManagementPage() {
             icon: <Tv className="w-12 h-12" />,
             title: 'Projeler',
             description: 'Konser, lansman ve etkinlik projeleri',
+            lastUpdated: siteContent?.[0]?.updatedAt, // Use first project's update time as proxy
+            isActive: true, // Projects section is always active
             onClick: () => setSelectedSection('projects'),
         },
     ];

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
-import { X, Save, Loader2, MapPin, Phone, Mail, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { X, Save, Loader2, MapPin, Phone, Mail, Instagram, Linkedin } from 'lucide-react';
 
 interface ContactSectionModalProps {
     isOpen: boolean;
@@ -17,7 +17,6 @@ interface ContactForm {
     socialLinks: {
         instagram: string;
         linkedin: string;
-        youtube: string;
     };
 }
 
@@ -32,8 +31,7 @@ const ContactSectionModal: React.FC<ContactSectionModalProps> = ({ isOpen, onClo
         mapUrl: '',
         socialLinks: {
             instagram: '',
-            linkedin: '',
-            youtube: ''
+            linkedin: ''
         }
     });
 
@@ -57,8 +55,7 @@ const ContactSectionModal: React.FC<ContactSectionModalProps> = ({ isOpen, onClo
                 mapUrl: contactData.data.mapUrl || '',
                 socialLinks: {
                     instagram: contactData.data.socialLinks?.instagram || '',
-                    linkedin: contactData.data.socialLinks?.linkedin || '',
-                    youtube: contactData.data.socialLinks?.youtube || ''
+                    linkedin: contactData.data.socialLinks?.linkedin || ''
                 }
             });
         }
@@ -251,24 +248,6 @@ const ContactSectionModal: React.FC<ContactSectionModalProps> = ({ isOpen, onClo
                                             }))}
                                             className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                                             placeholder="https://linkedin.com/company/companyname"
-                                        />
-                                    </div>
-
-                                    {/* YouTube */}
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                            <Youtube className="w-4 h-4" />
-                                            YouTube
-                                        </label>
-                                        <input
-                                            type="url"
-                                            value={formData.socialLinks.youtube}
-                                            onChange={(e) => setFormData(prev => ({
-                                                ...prev,
-                                                socialLinks: { ...prev.socialLinks, youtube: e.target.value }
-                                            }))}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                            placeholder="https://youtube.com/@channelname"
                                         />
                                     </div>
                                 </div>

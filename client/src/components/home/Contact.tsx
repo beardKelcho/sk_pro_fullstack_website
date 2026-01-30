@@ -6,7 +6,7 @@ import Icon from '@/components/common/Icon';
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
-import { Loader2, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Loader2, Instagram, Linkedin } from 'lucide-react';
 
 const ContactForm = dynamic(() => import('@/components/common/ContactForm'), { ssr: false });
 
@@ -94,7 +94,7 @@ const Contact: React.FC = () => {
                                 )}
 
                                 {/* Social Media Links */}
-                                {content.socialLinks && (content.socialLinks.instagram || content.socialLinks.linkedin || content.socialLinks.youtube) && (
+                                {content.socialLinks && (content.socialLinks.instagram || content.socialLinks.linkedin) && (
                                     <div className="pt-4 border-t border-white/10">
                                         <h3 className="text-lg font-semibold text-white mb-4">Sosyal Medya</h3>
                                         <div className="flex gap-4">
@@ -116,16 +116,6 @@ const Contact: React.FC = () => {
                                                     className="w-10 h-10 rounded-lg bg-[#0066CC]/20 flex items-center justify-center hover:bg-[#0066CC]/40 transition-colors"
                                                 >
                                                     <Linkedin className="w-5 h-5 text-[#0066CC]" />
-                                                </a>
-                                            )}
-                                            {content.socialLinks.youtube && (
-                                                <a
-                                                    href={content.socialLinks.youtube}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="w-10 h-10 rounded-lg bg-[#0066CC]/20 flex items-center justify-center hover:bg-[#0066CC]/40 transition-colors"
-                                                >
-                                                    <Youtube className="w-5 h-5 text-[#0066CC]" />
                                                 </a>
                                             )}
                                         </div>

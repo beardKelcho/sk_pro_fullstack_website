@@ -3,7 +3,6 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface ISocialLinks {
     instagram?: string;
     linkedin?: string;
-    youtube?: string;
 }
 
 export interface IContact extends Document {
@@ -23,11 +22,6 @@ const SocialLinksSchema = new Schema<ISocialLinks>({
         default: ''
     },
     linkedin: {
-        type: String,
-        trim: true,
-        default: ''
-    },
-    youtube: {
         type: String,
         trim: true,
         default: ''

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Icon from '@/components/common/Icon';
 import { useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
-import { Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Instagram, Linkedin } from 'lucide-react';
 
 const STATIC_CONTENT = {
   companyDescription: 'Profesyonel görüntü rejisi ve medya server çözümleri ile etkinliklerinize değer katıyoruz.',
@@ -69,17 +69,6 @@ const Footer: React.FC = () => {
                     aria-label="LinkedIn"
                   >
                     <Linkedin className="h-6 w-6" />
-                  </a>
-                )}
-                {contactData.socialLinks.youtube && (
-                  <a
-                    href={contactData.socialLinks.youtube}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-white transition-colors"
-                    aria-label="YouTube"
-                  >
-                    <Youtube className="h-6 w-6" />
                   </a>
                 )}
               </div>

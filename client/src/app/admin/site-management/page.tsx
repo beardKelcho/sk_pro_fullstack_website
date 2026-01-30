@@ -56,6 +56,24 @@ export default function SiteManagementPage() {
         },
     });
 
+    // Fetch About from new CMS API
+    const { data: aboutData } = useQuery({
+        queryKey: ['admin-about'],
+        queryFn: async () => {
+            const res = await axios.get('/cms/about');
+            return res.data;
+        },
+    });
+
+    // Fetch Contact from new CMS API
+    const { data: contactData } = useQuery({
+        queryKey: ['admin-contact'],
+        queryFn: async () => {
+            const res = await axios.get('/cms/contact');
+            return res.data;
+        },
+    });
+
     const getSectionData = (section: string) => {
         return siteContent?.find((s: any) => s.section === section);
     };
@@ -76,8 +94,8 @@ export default function SiteManagementPage() {
             icon: <Building2 className="w-12 h-12" />,
             title: 'Hakkımızda',
             description: 'Şirket bilgileri, istatistikler ve görseller',
-            lastUpdated: getSectionData('about')?.updatedAt,
-            isActive: getSectionData('about')?.isActive,
+            lastUpdated: aboutData?.data?.updatedAt,
+            isActive: true, // Always active (new CMS API)
             onClick: () => setSelectedSection('about'),
         },
         {
@@ -94,8 +112,8 @@ export default function SiteManagementPage() {
             icon: <Phone className="w-12 h-12" />,
             title: 'İletişim',
             description: 'İletişim bilgileri ve harita koordinatları',
-            lastUpdated: getSectionData('contact')?.updatedAt,
-            isActive: getSectionData('contact')?.isActive,
+            lastUpdated: contactData?.data?.updatedAt,
+            isActive: true, // Always active (new CMS API)
             onClick: () => setSelectedSection('contact'),
         },
         {

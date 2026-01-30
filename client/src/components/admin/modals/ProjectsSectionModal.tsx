@@ -3,6 +3,9 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
 import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2, Image, Film, Images, Play } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import SortableProjectItem from '../SortableProjectItem';
 
 interface ProjectsSectionModalProps {
     isOpen: boolean;
@@ -108,6 +111,62 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
             toast.error(error.response?.data?.message || 'Silme hatası');
         },
     });
+
+    // Reorder projects mutation
+    const reorderProjectsMutation = useMutation({
+        mutationFn: async (items: { _id: string; order: number }[]) => {
+            const res = await axios.put('/showcase-projects/reorder', { items });
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['showcase-projects-admin'] });
+            toast.success('Sıralama güncellendi');
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || 'Sıralama hatası');
+            // Refetch to restore original order
+            queryClient.invalidateQueries({ queryKey: ['showcase-projects-admin'] });
+        },
+    });
+
+    // Drag and drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // Handle drag end event
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (!over || active.id === over.id) {
+            return;
+        }
+
+        const projects = projectsData?.data || [];
+        const oldIndex = projects.findIndex((p: any) => p._id === active.id);
+        const newIndex = projects.findIndex((p: any) => p._id === over.id);
+
+        // Optimistically update UI
+        const newOrder = arrayMove(projects, oldIndex, newIndex);
+
+        // Update cache immediately for smooth UX
+        queryClient.setQueryData(['showcase-projects-admin'], {
+            ...projectsData,
+            data: newOrder,
+        });
+
+        // Prepare reorder data with new order values
+        const reorderData = newOrder.map((project: any, index: number) => ({
+            _id: project._id,
+            order: index,
+        }));
+
+        // Send to backend
+        reorderProjectsMutation.mutate(reorderData);
+    };
 
     // Media upload
     const handleMediaUpload = async (e: React.FormEvent) => {
@@ -284,88 +343,44 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                 </button>
                             </div>
 
-                            {/* Projects Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {isProjectsLoading ? (
-                                    <div className="col-span-full flex items-center justify-center py-12">
-                                        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                                    </div>
-                                ) : projectsData?.data?.length === 0 ? (
-                                    <div className="col-span-full text-center py-12 text-gray-500">
-                                        Henüz proje eklenmemiş. &quot;Yeni Ekle&quot; sekmesinden proje oluşturun.
-                                    </div>
-                                ) : (
-                                    projectsData?.data
-                                        ?.filter((p: any) => projectTypeFilter === 'all' || p.type === projectTypeFilter)
-                                        ?.map((project: any) => (
-                                            <div
-                                                key={project._id}
-                                                className="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                                            >
-                                                {/* Media Preview */}
-                                                <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-800">
-                                                    {project.type === 'video' && project.videoUrl ? (
-                                                        <>
-                                                            <video
-                                                                src={project.videoUrl}
-                                                                className="w-full h-full object-cover"
-                                                                preload="metadata"
-                                                                muted
-                                                            />
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                                                <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                                                                    <Play className="w-5 h-5 text-white ml-1" />
-                                                                </div>
-                                                            </div>
-                                                        </>
-                                                    ) : (project.imageUrls?.[0] || project.coverUrl) ? (
-                                                        <img
-                                                            src={project.imageUrls?.[0] || project.coverUrl}
-                                                            alt={project.title}
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                            <Images className="w-8 h-8" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="p-4">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                                                            {project.category}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500">
-                                                            {project.type === 'photo' ? '📸 Fotoğraf' : '🎬 Video'}
-                                                        </span>
-                                                    </div>
-                                                    <h3 className="font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                                                        {project.title}
-                                                    </h3>
-                                                    <div className="flex items-center gap-2 mt-4">
-                                                        <button
-                                                            onClick={() => handleEditProject(project)}
-                                                            className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                            Düzenle
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                if (confirm('Bu projeyi silmek istediğinizden emin misiniz?')) {
-                                                                    deleteProjectMutation.mutate(project._id);
-                                                                }
-                                                            }}
-                                                            className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                )}
-                            </div>
+                            {/* Projects Grid with Drag & Drop */}
+                            {isProjectsLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                                </div>
+                            ) : projectsData?.data?.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500">
+                                    Henüz proje eklenmemiş. &quot;Yeni Ekle&quot; sekmesinden proje oluşturun.
+                                </div>
+                            ) : (
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext
+                                        items={
+                                            projectsData?.data
+                                                ?.filter((p: any) => projectTypeFilter === 'all' || p.type === projectTypeFilter)
+                                                ?.map((p: any) => p._id) || []
+                                        }
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {projectsData?.data
+                                                ?.filter((p: any) => projectTypeFilter === 'all' || p.type === projectTypeFilter)
+                                                ?.map((project: any) => (
+                                                    <SortableProjectItem
+                                                        key={project._id}
+                                                        project={project}
+                                                        onEdit={handleEditProject}
+                                                        onDelete={(id) => deleteProjectMutation.mutate(id)}
+                                                    />
+                                                ))}
+                                        </div>
+                                    </SortableContext>
+                                </DndContext>
+                            )}
                         </div>
                     )}
 

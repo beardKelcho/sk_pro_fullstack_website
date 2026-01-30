@@ -157,3 +157,41 @@ export const deleteShowcaseProject = async (req: Request, res: Response) => {
         });
     }
 };
+
+// Reorder projects (bulk update)
+export const reorderProjects = async (req: Request, res: Response) => {
+    try {
+        const { items } = req.body;
+
+        // Validate input
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Geçersiz sıralama verisi',
+            });
+        }
+
+        // Prepare bulk write operations
+        const bulkOps = items.map((item: { _id: string; order: number }) => ({
+            updateOne: {
+                filter: { _id: item._id },
+                update: { $set: { order: item.order } },
+            },
+        }));
+
+        // Execute bulk write
+        await ShowcaseProject.bulkWrite(bulkOps);
+
+        logger.info('Showcase projects reordered successfully');
+        res.status(200).json({
+            success: true,
+            message: 'Projeler sıralandı',
+        });
+    } catch (error) {
+        logger.error('Reorder Projects Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Sıralama güncellenirken hata oluştu',
+        });
+    }
+};

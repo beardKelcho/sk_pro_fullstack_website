@@ -42,6 +42,7 @@ import mediaRoutes from './media.routes';
 import showcaseProjectsRoutes from './showcaseProjects.routes';
 import servicesRoutes from './services.routes';
 import cmsRoutes from './cms.routes';
+import contactRoutes from './contact.routes';
 import { getRedisClient } from '../config/redis';
 
 const router = express.Router();
@@ -165,6 +166,7 @@ router.use('/media', mediaRoutes);
 router.use('/showcase-projects', showcaseProjectsRoutes);
 router.use('/services', servicesRoutes);
 router.use('/cms', cmsRoutes);
+router.use('/contact', contactRoutes);
 
 // === CMS V2 Routes ===
 // Public routes (no auth)

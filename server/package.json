@@ -12,6 +12,7 @@
     "reset-admin": "ts-node src/scripts/resetAdminPassword.ts",
     "migrate:cloudinary": "ts-node src/scripts/migrateToCloudinary.ts",
     "migrate:s3": "ts-node src/scripts/migrateToS3.ts",
+    "migrate:project-types": "ts-node src/scripts/migrateProjectTypes.ts",
     "db:sync-indexes": "ts-node src/scripts/syncIndexes.ts",
     "db:seed-email-templates": "ts-node src/scripts/seedEmailTemplates.ts",
     "check:env": "ts-node src/scripts/check-env.ts",

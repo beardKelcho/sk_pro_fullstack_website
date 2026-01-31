@@ -236,7 +236,7 @@ class ProjectService {
             await InventoryLogModel.insertMany(logs, { session });
         }
 
-        return await this.getProjectById(project._id.toString());
+        return project as unknown as IProjectPopulated;
     }
 
     /**

@@ -28,7 +28,7 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
         queryFn: () => inventoryService.getItems({
             category: activeCategory === 'all' ? undefined : activeCategory,
             search: searchTerm,
-            status: 'AVAILABLE', // Only show available items
+            // status: 'AVAILABLE', // Removed to show all equipment
             limit: 50 // Loaded per scroll or max? Keeping simple for now
         }),
         staleTime: 60000

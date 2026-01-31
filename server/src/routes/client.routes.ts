@@ -1,44 +1,18 @@
 import express from 'express';
-import { clientController } from '../controllers';
-import { authenticate, requirePermission } from '../middleware/auth.middleware';
-import { validateClient, sanitizeInput } from '../middleware/inputValidation';
-import { Permission } from '../config/permissions';
+import { getClients, createClient, getClientById, updateClient, deleteClient } from '../controllers/client.controller';
+import { authenticate as protect, authorize } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
-// Tüm müşterileri listele
-router.get('/', authenticate, requirePermission(Permission.CLIENT_VIEW), clientController.getAllClients);
+router.use(protect);
 
-// Tek bir müşterinin detaylarını getir
-router.get('/:id', authenticate, requirePermission(Permission.CLIENT_VIEW), clientController.getClientById);
+router.route('/')
+  .get(getClients)
+  .post(authorize('admin', 'manager'), createClient);
 
-// Yeni müşteri oluştur
-router.post(
-  '/',
-  authenticate,
-  requirePermission(Permission.CLIENT_CREATE),
-  sanitizeInput,
-  validateClient,
-  clientController.createClient
-);
-
-// Müşteri güncelle
-router.put(
-  '/:id',
-  authenticate,
-  requirePermission(Permission.CLIENT_UPDATE),
-  sanitizeInput,
-  validateClient,
-  clientController.updateClient
-);
-
-// Müşteri sil
-router.delete(
-  '/:id',
-  authenticate,
-  requirePermission(Permission.CLIENT_DELETE),
-  clientController.deleteClient
-);
+router.route('/:id')
+  .get(getClientById)
+  .put(authorize('admin', 'manager'), updateClient)
+  .delete(authorize('admin'), deleteClient);
 
 export default router;
-

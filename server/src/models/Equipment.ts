@@ -1,19 +1,18 @@
-import mongoose, { Document, Schema } from 'mongoose';
-import logger from '../utils/logger';
+import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IEquipment extends Omit<Document, 'model'> {
+export interface IEquipment extends Document {
   name: string;
-  type: string;
-  model: string;
-  serialNumber: string;
-  purchaseDate: Date;
-  status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'DAMAGED';
-  location: string;
-  notes: string;
-  responsibleUser: mongoose.Types.ObjectId;
-  currentProject?: mongoose.Types.ObjectId;
-  qrCodeId?: mongoose.Types.ObjectId;
-  qrCodeValue?: string;
+  category: mongoose.Types.ObjectId;
+  location: mongoose.Types.ObjectId;
+  trackingType: 'SERIALIZED' | 'BULK';
+  serialNumber?: string;
+  quantity: number;
+  status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED' | 'MISSING';
+  brand?: string;
+  model?: string;
+  purchaseDate?: Date;
+  criticalStockLevel: number;
+  qrCode?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,52 +24,61 @@ const EquipmentSchema: Schema = new Schema(
       required: [true, 'Ekipman adı gereklidir'],
       trim: true,
     },
-    type: {
-      type: String,
-      required: [true, 'Ekipman tipi gereklidir'],
-      enum: ['VIDEO_SWITCHER', 'MEDIA_SERVER', 'MONITOR', 'CABLE', 'AUDIO_EQUIPMENT', 'OTHER'],
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      required: [true, 'Kategori gereklidir'],
+      index: true,
     },
-    model: {
+    location: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Location',
+      required: [true, 'Lokasyon gereklidir'],
+      index: true,
+    },
+    trackingType: {
+      type: String,
+      enum: ['SERIALIZED', 'BULK'],
+      required: true,
+      default: 'BULK',
+    },
+    serialNumber: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true, // Sadece dolu olanlar unique olsun
+    },
+    quantity: {
+      type: Number,
+      default: 1,
+      min: 0,
+    },
+    status: {
+      type: String,
+      enum: ['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'RETIRED', 'MISSING'],
+      default: 'AVAILABLE',
+      index: true,
+    },
+    brand: {
       type: String,
       trim: true,
     },
-    serialNumber: {
+    model: {
       type: String,
       trim: true,
     },
     purchaseDate: {
       type: Date,
     },
-    status: {
-      type: String,
-      enum: ['AVAILABLE', 'IN_USE', 'MAINTENANCE', 'DAMAGED'],
-      default: 'AVAILABLE',
+    criticalStockLevel: {
+      type: Number,
+      default: 0,
     },
-    location: {
+    qrCode: {
       type: String,
+      unique: true,
+      sparse: true,
       trim: true,
-    },
-    notes: {
-      type: String,
-    },
-    responsibleUser: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    },
-    currentProject: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Project',
-      index: true,
-    },
-    qrCodeId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'QRCode',
-      index: true,
-    },
-    qrCodeValue: {
-      type: String,
-      trim: true,
-      index: true,
     },
   },
   {
@@ -80,33 +88,15 @@ const EquipmentSchema: Schema = new Schema(
   }
 );
 
-// Virtual populate: Equipment -> Maintenance (Maintenance.equipment)
-EquipmentSchema.virtual('maintenances', {
-  ref: 'Maintenance',
+// Virtuals
+EquipmentSchema.virtual('history', {
+  ref: 'InventoryLog',
   localField: '_id',
   foreignField: 'equipment',
-  justOne: false,
 });
 
-// Ekipman statüsü değiştiğinde log oluşturma
-EquipmentSchema.pre('save', function (next) {
-  if (this.isModified('status')) {
-    logger.debug(`Ekipman statüsü değişti: ${this._id}, Yeni Statü: ${this.get('status')}`);
-    // Burada bir log kaydı oluşturulabilir
-  }
-  next();
-});
+// Arama İndeksleri
+EquipmentSchema.index({ name: 'text', brand: 'text', model: 'text', serialNumber: 'text', qrCode: 'text' });
+EquipmentSchema.index({ trackingType: 1 });
 
-// Performance indexes
-// Status ve type ile filtreleme için
-EquipmentSchema.index({ status: 1, type: 1 });
-// Arama için text index (name, model, serialNumber)
-EquipmentSchema.index({ name: 'text', model: 'text', serialNumber: 'text' });
-// Status ile sıralama için
-EquipmentSchema.index({ status: 1, createdAt: -1 });
-// Responsible user ile filtreleme için
-EquipmentSchema.index({ responsibleUser: 1 });
-// Location ile filtreleme için
-EquipmentSchema.index({ location: 1 });
-
-export default mongoose.model<IEquipment>('Equipment', EquipmentSchema); 
+export default mongoose.model<IEquipment>('Equipment', EquipmentSchema);

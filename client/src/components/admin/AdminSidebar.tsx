@@ -113,26 +113,9 @@ const menuItems: MenuItem[] = [
     icon: <MonitoringIcon />,
   },
   {
-    title: 'Ekipman Yönetimi',
-    path: '/admin/equipment',
+    title: 'Envanter',
+    path: '/admin/inventory',
     icon: <EquipmentIcon />,
-    submenu: [
-      {
-        title: 'Tüm Ekipmanlar',
-        path: '/admin/equipment',
-        icon: <></>,
-      },
-      {
-        title: 'Ekipman Ekle',
-        path: '/admin/equipment/add',
-        icon: <></>,
-      },
-      {
-        title: 'Bakım Takibi',
-        path: '/admin/equipment/maintenance',
-        icon: <></>,
-      }
-    ],
   },
   {
     title: 'Proje Yönetimi',

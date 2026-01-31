@@ -1,6 +1,6 @@
 import express from 'express';
 import authRoutes from './auth.routes';
-import equipmentRoutes from './equipment.routes';
+import inventoryRoutes from './inventory.routes';
 import projectRoutes from './project.routes';
 import clientRoutes from './client.routes';
 import userRoutes from './user.routes';
@@ -129,7 +129,7 @@ router.get('/readyz', async (_req, res) => {
 
 // Route'ları kaydı
 router.use('/auth', authRoutes);
-router.use('/equipment', equipmentRoutes);
+router.use('/inventory', inventoryRoutes);
 router.use('/projects', projectRoutes);
 router.use('/clients', clientRoutes);
 router.use('/users', userRoutes);

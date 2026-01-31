@@ -10,6 +10,8 @@ export interface IProject extends Document {
   client: mongoose.Types.ObjectId;
   team: mongoose.Types.ObjectId[];
   equipment: mongoose.Types.ObjectId[];
+  budget?: number; // Added
+  manager?: mongoose.Types.ObjectId; // Added
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +48,13 @@ const ProjectSchema: Schema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Client',
       required: [true, 'Müşteri gereklidir'],
+    },
+    budget: {
+      type: Number,
+    },
+    manager: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
     team: [{
       type: mongoose.Schema.Types.ObjectId,

@@ -56,53 +56,31 @@ export class ProjectController {
 
   // Yeni proje oluştur
   async createProject(req: Request, res: Response): Promise<void> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-      try {
-        const { equipment, ...projectData } = req.body;
-        const project = await projectService.createProject({ ...projectData, equipment }, session);
+      const projectData = req.body;
+      const userId = (req as any).user?._id;
 
-        if (equipment && equipment.length > 0) {
-          const EquipmentModel = mongoose.model('Equipment');
-          const InventoryLogModel = mongoose.model('InventoryLog');
+      // Pass request body + createdBy for logging
+      const project = await projectService.createProject({
+        ...projectData,
+        createdBy: userId
+      }, session);
 
-          // Update equipment status
-          await EquipmentModel.updateMany(
-            { _id: { $in: equipment } },
-            { $set: { status: 'IN_USE', currentProject: project._id } },
-            { session }
-          );
-
-          // Create logs
-          const logs = equipment.map((eqId: string) => ({
-            equipment: eqId,
-            user: (req as any).user._id, // Assuming authenticated request
-            action: 'CHECK_OUT',
-            project: project._id,
-            quantityChanged: 0, // Serialized assumption for now
-            notes: `Project Created: ${project.name}`,
-            date: new Date()
-          }));
-
-          await InventoryLogModel.insertMany(logs, { session });
-        }
-
-        await session.commitTransaction();
-        res.status(201).json({ success: true, project });
-      } catch (error: any) {
-        await session.abortTransaction();
-        throw error;
-      } finally {
-        session.endSession();
-      }
+      await session.commitTransaction();
+      res.status(201).json({ success: true, project });
     } catch (error: unknown) {
+      await session.abortTransaction();
       logger.error('Proje oluşturma hatası:', error);
+      // Check if error is validation error or app error
       const appError = error instanceof AppError ? error : new AppError('Sunucu hatası');
       res.status(appError.statusCode || 500).json({
         success: false,
         message: appError.message
       });
+    } finally {
+      session.endSession();
     }
   }
 
@@ -112,88 +90,12 @@ export class ProjectController {
     session.startTransaction();
     try {
       const { id } = req.params;
+      const userId = (req as any).user?._id;
 
-      // Get old project to compare equipment and status
-      const oldProject = await projectService.getProjectById(id);
-
-      const project = await projectService.updateProject(id, req.body, session);
-
-      const EquipmentModel = mongoose.model('Equipment');
-      const InventoryLogModel = mongoose.model('InventoryLog');
-
-      // 1. Check if Status Changed to COMPLETED or CANCELLED
-      if ((project.status === 'COMPLETED' || project.status === 'CANCELLED') && oldProject.status !== project.status) {
-        if (project.equipment && project.equipment.length > 0) {
-          const eqIds = project.equipment.map((e: any) => e._id);
-
-          // Free all equipment
-          await EquipmentModel.updateMany(
-            { _id: { $in: eqIds } },
-            { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } },
-            { session }
-          );
-
-          // Log returns
-          const logs = eqIds.map((eqId: any) => ({
-            equipment: eqId,
-            user: (req as any).user._id,
-            action: 'CHECK_IN',
-            project: project._id,
-            quantityChanged: 0,
-            notes: `Project ${project.status}: ${project.name}`,
-            date: new Date()
-          }));
-          await InventoryLogModel.insertMany(logs, { session });
-        }
-      }
-      // 2. If Project is Active/Pending, handle equipment changes
-      else if (req.body.equipment) {
-        const oldEqIds = (oldProject.equipment as any[]).map(e => e._id.toString());
-        const newEqIds = (project.equipment as any[]).map(e => e._id.toString());
-
-        const added = newEqIds.filter(id => !oldEqIds.includes(id));
-        const removed = oldEqIds.filter(id => !newEqIds.includes(id));
-
-        // Handle Added
-        if (added.length > 0) {
-          await EquipmentModel.updateMany(
-            { _id: { $in: added } },
-            { $set: { status: 'IN_USE', currentProject: project._id } },
-            { session }
-          );
-
-          const addLogs = added.map((id: string) => ({
-            equipment: id,
-            user: (req as any).user._id,
-            action: 'CHECK_OUT',
-            project: project._id,
-            quantityChanged: 0,
-            notes: `Added to Project: ${project.name}`,
-            date: new Date()
-          }));
-          await InventoryLogModel.insertMany(addLogs, { session });
-        }
-
-        // Handle Removed
-        if (removed.length > 0) {
-          await EquipmentModel.updateMany(
-            { _id: { $in: removed } },
-            { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } },
-            { session }
-          );
-
-          const removeLogs = removed.map((id: string) => ({
-            equipment: id,
-            user: (req as any).user._id,
-            action: 'CHECK_IN',
-            project: project._id,
-            quantityChanged: 0,
-            notes: `Removed from Project: ${project.name}`,
-            date: new Date()
-          }));
-          await InventoryLogModel.insertMany(removeLogs, { session });
-        }
-      }
+      const project = await projectService.updateProject(id, {
+        ...req.body,
+        userId
+      }, session);
 
       await session.commitTransaction();
       res.status(200).json({ success: true, project });

@@ -51,6 +51,11 @@ const inventoryService = {
         return response.data;
     },
 
+    updateItem: async (id: string, data: Partial<InventoryItem>) => {
+        const response = await axios.put(`/inventory/items/${id}`, data);
+        return response.data;
+    },
+
     // Categories & Locations
     getCategories: async () => {
         const response = await axios.get('/inventory/categories');

@@ -3,8 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import inventoryService, { InventoryItem, Category, Location } from '@/services/inventoryService';
 import AddItemModal from '@/components/admin/inventory/AddItemModal';
+import EditItemModal from '@/components/admin/inventory/EditItemModal';
 import TransferModal from '@/components/admin/inventory/TransferModal';
+import QRCodeModal from '@/components/admin/inventory/QRCodeModal';
 import { toast } from 'react-toastify';
+import { Pencil, QrCode } from 'lucide-react';
 
 export default function InventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -23,6 +26,8 @@ export default function InventoryPage() {
     // Modals
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [transferItem, setTransferItem] = useState<InventoryItem | null>(null);
+    const [editItem, setEditItem] = useState<InventoryItem | null>(null);
+    const [qrItem, setQrItem] = useState<InventoryItem | null>(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -200,6 +205,20 @@ export default function InventoryPage() {
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             <button
+                                                onClick={() => setEditItem(item)}
+                                                className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg tooltip"
+                                                title="Düzenle"
+                                            >
+                                                <Pencil className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                                onClick={() => setQrItem(item)}
+                                                className="p-2 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900/20 rounded-lg tooltip"
+                                                title="QR Kod"
+                                            >
+                                                <QrCode className="w-5 h-5" />
+                                            </button>
+                                            <button
                                                 onClick={() => setTransferItem(item)}
                                                 className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg tooltip"
                                                 title="Transfer Et"
@@ -208,7 +227,6 @@ export default function InventoryPage() {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                                 </svg>
                                             </button>
-                                            {/* Diğer aksiyonlar (Edit/Delete) buraya eklenebilir */}
                                         </div>
                                     </td>
                                 </tr>
@@ -248,6 +266,20 @@ export default function InventoryPage() {
                 onSuccess={fetchData}
                 categories={categories}
                 locations={locations}
+            />
+
+            <EditItemModal
+                isOpen={!!editItem}
+                onClose={() => setEditItem(null)}
+                onSuccess={fetchData}
+                item={editItem}
+                categories={categories}
+            />
+
+            <QRCodeModal
+                isOpen={!!qrItem}
+                onClose={() => setQrItem(null)}
+                item={qrItem}
             />
 
             <TransferModal

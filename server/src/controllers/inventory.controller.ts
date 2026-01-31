@@ -266,6 +266,35 @@ export class InventoryController {
         }
     }
 
+    // 5. Update Item
+    async updateItem(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const { name, brand, model, serialNumber, category, status, criticalStockLevel } = req.body;
+
+            const item = await Equipment.findById(id);
+            if (!item) {
+                return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+            }
+
+            // Update allowed fields
+            if (name) item.name = name;
+            if (brand) item.brand = brand;
+            if (model) item.model = model;
+            if (serialNumber) item.serialNumber = serialNumber;
+            if (category) item.category = category;
+            if (status) item.status = status;
+            if (criticalStockLevel !== undefined) item.criticalStockLevel = criticalStockLevel;
+
+            await item.save();
+
+            res.status(200).json({ success: true, data: item });
+        } catch (error) {
+            logger.error('Ürün güncelleme hatası:', error);
+            res.status(500).json({ success: false, message: 'Sunucu hatası' });
+        }
+    }
+
 }
 
 export default new InventoryController();

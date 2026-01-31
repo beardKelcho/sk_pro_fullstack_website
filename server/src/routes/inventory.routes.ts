@@ -25,4 +25,7 @@ router.post('/transfer', authorize('admin', 'editor'), inventoryController.trans
 // History Route
 router.get('/history/:id', inventoryController.getHistory);
 
+// Update Item Route
+router.put('/items/:id', authorize('admin', 'editor'), inventoryController.updateItem.bind(inventoryController));
+
 export default router;

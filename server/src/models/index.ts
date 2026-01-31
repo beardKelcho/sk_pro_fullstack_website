@@ -25,6 +25,7 @@ import WebhookDelivery from './WebhookDelivery';
 import Comment from './Comment';
 import EmailTemplate from './EmailTemplate';
 import { CalendarIntegration } from './CalendarIntegration';
+import InventoryLog from './InventoryLog';
 
 export {
   User,
@@ -52,5 +53,6 @@ export {
   Comment,
   EmailTemplate,
   CalendarIntegration,
+  InventoryLog,
   SystemSetting
 };

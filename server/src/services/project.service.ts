@@ -13,26 +13,32 @@ export interface PaginatedProjects {
 
 export interface CreateProjectData {
     name: string;
-    client: string;
+    description?: string;
+    client: string; // ObjectId string
+    location?: string;
     startDate: Date;
     endDate?: Date;
-    description?: string;
-    location?: string;
     status?: string;
-    equipment?: string[];
-    team?: string[];
+    budget?: number; // Added
+    manager?: string; // Added, ObjectId string
+    team?: string[]; // Array of ObjectId strings
+    equipment?: string[]; // Array of ObjectId strings
+    createdBy?: string; // Added for logging
 }
 
 export interface UpdateProjectData {
     name?: string;
-    client?: string;
-    startDate?: Date;
-    endDate?: Date;
     description?: string;
+    client?: string;
     location?: string;
+    startDate?: Date; // Changed from Date | string to just Date or whatever passed
+    endDate?: Date;
     status?: string;
-    equipment?: string[];
+    budget?: number; // Added
+    manager?: string; // Added
     team?: string[];
+    equipment?: string[];
+    userId?: string; // Added for logging
 }
 
 class ProjectService {
@@ -155,7 +161,7 @@ class ProjectService {
     /**
      * Create Project
      */
-    async createProject(data: CreateProjectData): Promise<IProjectPopulated> {
+    async createProject(data: CreateProjectData, session?: mongoose.ClientSession): Promise<IProjectPopulated> {
         if (!data.name || !data.client || !data.startDate) {
             throw new AppError('Proje adı, müşteri ve başlangıç tarihi gereklidir', 400);
         }
@@ -193,7 +199,7 @@ class ProjectService {
             }
         }
 
-        const project = await Project.create({
+        const [project] = await Project.create([{
             name: data.name,
             client: data.client,
             description: data.description,
@@ -203,10 +209,32 @@ class ProjectService {
             status: data.status || 'PENDING_APPROVAL',
             team: data.team || [],
             equipment: data.equipment || []
-        });
+        }], { session });
 
-        // Trigger logic to mark equipment as in_use if project is active is handled by Mongoose hooks in the model!
-        // We rely on the model hooks for updating equipment status.
+        // Handle Equipment Checkout logic
+        if (data.equipment && data.equipment.length > 0) {
+            const EquipmentModel = mongoose.model('Equipment');
+            const InventoryLogModel = mongoose.model('InventoryLog');
+
+            // Update Equipment Status
+            await EquipmentModel.updateMany(
+                { _id: { $in: data.equipment } },
+                { $set: { status: 'IN_USE', currentProject: project._id } },
+                { session }
+            );
+
+            // Create Logs
+            const logs = data.equipment.map((eqId: string) => ({
+                equipment: eqId,
+                user: data.createdBy, // Assuming createdBy is passed in data or we need it
+                action: 'CHECK_OUT',
+                project: project._id,
+                quantityChanged: 0,
+                notes: `Assigned to Project: ${project.name}`,
+                date: new Date()
+            }));
+            await InventoryLogModel.insertMany(logs, { session });
+        }
 
         return await this.getProjectById(project._id.toString());
     }
@@ -214,7 +242,7 @@ class ProjectService {
     /**
      * Update Project
      */
-    async updateProject(id: string, data: UpdateProjectData): Promise<IProjectPopulated> {
+    async updateProject(id: string, data: UpdateProjectData, session?: mongoose.ClientSession): Promise<IProjectPopulated> {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             throw new AppError('Geçersiz proje ID', 400);
         }
@@ -252,17 +280,104 @@ class ProjectService {
         }
 
         // Apply updates
+        // Get old project for comparison
+        const oldProject = await Project.findById(id).session(session || null);
+        if (!oldProject) throw new AppError('Project not found', 404);
+
         if (data.name) project.name = data.name;
         if (data.description) project.description = data.description;
-        if (data.startDate) project.startDate = data.startDate;
-        if (data.endDate) project.endDate = data.endDate; // Allow setting undefined? Typescript says Optional
+        if (data.startDate) project.startDate = new Date(data.startDate);
+        if (data.endDate) project.endDate = new Date(data.endDate); // Allow setting undefined? Typescript says Optional
         if (data.location) project.location = data.location;
         if (data.status) project.status = data.status as IProject['status'];
         if (data.client) project.client = new mongoose.Types.ObjectId(data.client);
         if (data.team) project.team = data.team.map(id => new mongoose.Types.ObjectId(id));
         if (data.equipment) project.equipment = data.equipment.map(id => new mongoose.Types.ObjectId(id));
+        if (data.budget) project.budget = data.budget;
+        if (data.manager) project.manager = new mongoose.Types.ObjectId(data.manager);
 
-        await project.save();
+        await project.save({ session });
+
+        // Equipment Logic
+        const EquipmentModel = mongoose.model('Equipment');
+        const InventoryLogModel = mongoose.model('InventoryLog');
+        const userId = (data as any).userId; // Need to ensure passed from controller
+
+        // 1. Check if Status Changed to COMPLETED or CANCELLED
+        if ((project.status === 'COMPLETED' || project.status === 'CANCELLED') && oldProject.status !== project.status) {
+            if (project.equipment && project.equipment.length > 0) {
+                const eqIds = project.equipment.map((e: any) => e._id || e); // e might be object or id
+
+                await EquipmentModel.updateMany(
+                    { _id: { $in: eqIds } },
+                    { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } },
+                    { session }
+                );
+
+                if (userId) {
+                    const logs = eqIds.map((eqId: any) => ({
+                        equipment: eqId,
+                        user: userId,
+                        action: 'CHECK_IN',
+                        project: project._id,
+                        quantityChanged: 0,
+                        notes: `Project ${project.status}: ${project.name}`,
+                        date: new Date()
+                    }));
+                    await InventoryLogModel.insertMany(logs, { session });
+                }
+            }
+        }
+        // 2. If Project is Active/Pending, handle equipment changes
+        else if (data.equipment) { // If equipment was updated
+            const oldEqIds = oldProject.equipment.map((e: any) => e.toString());
+            const newEqIds = project.equipment.map((e: any) => e.toString());
+
+            const added = newEqIds.filter(id => !oldEqIds.includes(id));
+            const removed = oldEqIds.filter(id => !newEqIds.includes(id));
+
+            if (added.length > 0) {
+                await EquipmentModel.updateMany(
+                    { _id: { $in: added } },
+                    { $set: { status: 'IN_USE', currentProject: project._id } },
+                    { session }
+                );
+
+                if (userId) {
+                    const addLogs = added.map((id: string) => ({
+                        equipment: id,
+                        user: userId,
+                        action: 'CHECK_OUT',
+                        project: project._id,
+                        quantityChanged: 0,
+                        notes: `Added to Project: ${project.name}`,
+                        date: new Date()
+                    }));
+                    await InventoryLogModel.insertMany(addLogs, { session });
+                }
+            }
+
+            if (removed.length > 0) {
+                await EquipmentModel.updateMany(
+                    { _id: { $in: removed } },
+                    { $set: { status: 'AVAILABLE' }, $unset: { currentProject: 1 } },
+                    { session }
+                );
+
+                if (userId) {
+                    const removeLogs = removed.map((id: string) => ({
+                        equipment: id,
+                        user: userId,
+                        action: 'CHECK_IN',
+                        project: project._id,
+                        quantityChanged: 0,
+                        notes: `Removed from Project: ${project.name}`,
+                        date: new Date()
+                    }));
+                    await InventoryLogModel.insertMany(removeLogs, { session });
+                }
+            }
+        }
 
         return await this.getProjectById(id);
     }

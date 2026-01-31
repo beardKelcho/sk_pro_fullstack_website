@@ -6,11 +6,27 @@ import { optimizeAggregation } from '../utils/aggregationOptimizer';
 // Dashboard istatistiklerini getir
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
+    // Aggregate Equipment Stats (Sum of quantities)
+    const equipmentStatsResult = await Equipment.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$quantity" },
+          available: {
+            $sum: { $cond: [{ $eq: ["$status", "AVAILABLE"] }, "$quantity", 0] }
+          },
+          inUse: {
+            $sum: { $cond: [{ $eq: ["$status", "IN_USE"] }, "$quantity", 0] }
+          },
+          maintenance: {
+            $sum: { $cond: [{ $eq: ["$status", "MAINTENANCE"] }, "$quantity", 0] }
+          }
+        }
+      }
+    ]);
+    const eqStats = equipmentStatsResult[0] || { total: 0, available: 0, inUse: 0, maintenance: 0 };
+
     const [
-      totalEquipment,
-      availableEquipment,
-      inUseEquipment,
-      maintenanceEquipment,
       totalProjects,
       activeProjects,
       completedProjects,
@@ -22,26 +38,21 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       upcomingMaintenances,
       upcomingProjects
     ] = await Promise.all([
-      // Ekipman istatistikleri
-      Equipment.countDocuments(),
-      Equipment.countDocuments({ status: 'AVAILABLE' }),
-      Equipment.countDocuments({ status: 'IN_USE' }),
-      Equipment.countDocuments({ status: 'MAINTENANCE' }),
-      
+
       // Proje istatistikleri
       Project.countDocuments(),
       Project.countDocuments({ status: 'ACTIVE' }),
       Project.countDocuments({ status: 'COMPLETED' }),
-      
+
       // Görev istatistikleri
       Task.countDocuments(),
       Task.countDocuments({ status: { $in: ['TODO', 'IN_PROGRESS'] } }),
       Task.countDocuments({ status: 'COMPLETED' }),
-      
+
       // Müşteri istatistikleri
       Client.countDocuments(),
       Client.countDocuments(),
-      
+
       // Yaklaşan bakımlar (30 gün içinde)
       Maintenance.find({
         status: { $in: ['SCHEDULED', 'IN_PROGRESS'] },
@@ -54,7 +65,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         .populate('assignedTo', 'name email')
         .sort({ scheduledDate: 1 })
         .limit(5),
-      
+
       // Yaklaşan projeler (30 gün içinde)
       Project.find({
         status: { $in: ['PLANNING', 'PENDING_APPROVAL', 'APPROVED', 'ACTIVE'] },
@@ -72,10 +83,10 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       success: true,
       stats: {
         equipment: {
-          total: totalEquipment,
-          available: availableEquipment,
-          inUse: inUseEquipment,
-          maintenance: maintenanceEquipment
+          total: eqStats.total,
+          available: eqStats.available,
+          inUse: eqStats.inUse,
+          maintenance: eqStats.maintenance
         },
         projects: {
           total: totalProjects,
@@ -186,14 +197,28 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
       });
     }
 
-    // Ekipman kullanım oranları
-    const totalEquipment = await Equipment.countDocuments();
-    const equipmentUsage = totalEquipment > 0 ? {
-      available: ((await Equipment.countDocuments({ status: 'AVAILABLE' })) / totalEquipment * 100).toFixed(1),
-      inUse: ((await Equipment.countDocuments({ status: 'IN_USE' })) / totalEquipment * 100).toFixed(1),
-      maintenance: ((await Equipment.countDocuments({ status: 'MAINTENANCE' })) / totalEquipment * 100).toFixed(1),
-      damaged: ((await Equipment.countDocuments({ status: 'DAMAGED' })) / totalEquipment * 100).toFixed(1)
-    } : { available: '0', inUse: '0', maintenance: '0', damaged: '0' };
+    // Ekipman kullanım oranları (Miktar bazlı aggregate)
+    const usageStatsResult = await Equipment.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$quantity" },
+          available: { $sum: { $cond: [{ $eq: ["$status", "AVAILABLE"] }, "$quantity", 0] } },
+          inUse: { $sum: { $cond: [{ $eq: ["$status", "IN_USE"] }, "$quantity", 0] } },
+          maintenance: { $sum: { $cond: [{ $eq: ["$status", "MAINTENANCE"] }, "$quantity", 0] } },
+          damaged: { $sum: { $cond: [{ $eq: ["$status", "DAMAGED"] }, "$quantity", 0] } }
+        }
+      }
+    ]);
+    const us = usageStatsResult[0] || { total: 0, available: 0, inUse: 0, maintenance: 0, damaged: 0 };
+    const totalEq = us.total || 1; // avoid division by zero
+
+    const equipmentUsage = {
+      available: ((us.available / totalEq) * 100).toFixed(1),
+      inUse: ((us.inUse / totalEq) * 100).toFixed(1),
+      maintenance: ((us.maintenance / totalEq) * 100).toFixed(1),
+      damaged: ((us.damaged / totalEq) * 100).toFixed(1)
+    };
 
     // Görev tamamlanma verisini hem taskCompletionTrend hem de taskCompletion olarak döndür
     // Frontend uyumluluğu için

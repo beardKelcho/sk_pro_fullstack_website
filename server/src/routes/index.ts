@@ -45,7 +45,12 @@ import cmsRoutes from './cms.routes';
 import contactRoutes from './contact.routes';
 import { getRedisClient } from '../config/redis';
 
+import scanRoutes from './scan.routes';
+
 const router = express.Router();
+
+// ... existing routes
+router.use('/scan', scanRoutes);
 
 // Ana route
 router.get('/', (req, res) => {

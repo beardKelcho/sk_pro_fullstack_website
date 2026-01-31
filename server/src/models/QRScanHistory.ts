@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IQRScanHistory extends Document {
-  qrCode: mongoose.Types.ObjectId; // QR kod referansı
+  equipment: mongoose.Types.ObjectId; // Ekipman referansı
   scannedBy: mongoose.Types.ObjectId; // Tarayan kullanıcı
   action: 'VIEW' | 'CHECK_IN' | 'CHECK_OUT' | 'MAINTENANCE' | 'OTHER'; // Yapılan işlem
   relatedItem?: mongoose.Types.ObjectId; // İşlemle ilgili kayıt (Project, Maintenance vb.)
@@ -13,10 +13,10 @@ export interface IQRScanHistory extends Document {
 
 const QRScanHistorySchema: Schema = new Schema(
   {
-    qrCode: {
+    equipment: {
       type: Schema.Types.ObjectId,
-      ref: 'QRCode',
-      required: [true, 'QR kod referansı gereklidir'],
+      ref: 'Equipment',
+      required: [true, 'Ekipman referansı gereklidir'],
       index: true,
     },
     scannedBy: {
@@ -56,7 +56,7 @@ const QRScanHistorySchema: Schema = new Schema(
 );
 
 // Index'ler
-QRScanHistorySchema.index({ qrCode: 1, scannedAt: -1 });
+QRScanHistorySchema.index({ equipment: 1, scannedAt: -1 });
 QRScanHistorySchema.index({ scannedBy: 1, scannedAt: -1 });
 
 const QRScanHistory = mongoose.model<IQRScanHistory>('QRScanHistory', QRScanHistorySchema);

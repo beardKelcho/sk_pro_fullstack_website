@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import projectService, { PaginatedProjects } from '../services/project.service';
 import logger from '../utils/logger';
 import { AppError } from '../types/common';
+import mongoose from 'mongoose';
 
 export class ProjectController {
 
@@ -55,32 +56,59 @@ export class ProjectController {
 
   // Yeni proje oluştur
   async createProject(req: Request, res: Response): Promise<void> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-      const project = await projectService.createProject(req.body);
+      const projectData = req.body;
+      const userId = (req as any).user?._id;
+
+      // Pass request body + createdBy for logging
+      const project = await projectService.createProject({
+        ...projectData,
+        createdBy: userId
+      }, session);
+
+      await session.commitTransaction();
       res.status(201).json({ success: true, project });
     } catch (error: unknown) {
+      await session.abortTransaction();
       logger.error('Proje oluşturma hatası:', error);
+      // Check if error is validation error or app error
       const appError = error instanceof AppError ? error : new AppError('Sunucu hatası');
       res.status(appError.statusCode || 500).json({
         success: false,
         message: appError.message
       });
+    } finally {
+      session.endSession();
     }
   }
 
   // Proje güncelle
   async updateProject(req: Request, res: Response): Promise<void> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { id } = req.params;
-      const project = await projectService.updateProject(id, req.body);
+      const userId = (req as any).user?._id;
+
+      const project = await projectService.updateProject(id, {
+        ...req.body,
+        userId
+      }, session);
+
+      await session.commitTransaction();
       res.status(200).json({ success: true, project });
     } catch (error: unknown) {
+      await session.abortTransaction();
       logger.error('Proje güncelleme hatası:', error);
       const appError = error instanceof AppError ? error : new AppError('Sunucu hatası');
       res.status(appError.statusCode || 500).json({
         success: false,
         message: appError.message
       });
+    } finally {
+      session.endSession();
     }
   }
 

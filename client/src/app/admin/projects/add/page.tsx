@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCreateProject } from '@/services/projectService';
 import { getAllCustomers } from '@/services/customerService';
-import { getAllEquipment } from '@/services/equipmentService';
 import { getAllUsers } from '@/services/userService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { useQueryClient } from '@tanstack/react-query';
 import { getStoredUserRole } from '@/utils/authStorage';
 import { hasRole, Role } from '@/config/permissions';
+import EquipmentSelector from '@/components/admin/projects/EquipmentSelector';
 
 // Proje durumları için tip tanımlaması
 type ProjectStatus = 'Onay Bekleyen' | 'Onaylanan' | 'Devam Ediyor' | 'Tamamlandı' | 'Ertelendi' | 'İptal Edildi';
@@ -52,12 +52,11 @@ export default function AddProject() {
   const [userRole, setUserRole] = useState<string>('');
 
   const canViewBudget = hasRole(userRole, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI);
-  
+
   // Dinamik veri state'leri
   const [customers, setCustomers] = useState<any[]>([]);
-  const [equipmentList, setEquipmentList] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]); // getAllTeamMembers ile doldurulacak
-  
+
   // Form verileri
   const [formData, setFormData] = useState<ProjectFormData>({
     name: '',
@@ -76,18 +75,16 @@ export default function AddProject() {
     equipment: [],
     notes: ''
   });
-  
+
   // Form hatalarını izlemek için state
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   // Arama ve seçim state'leri
   const [teamSearchTerm, setTeamSearchTerm] = useState('');
   const [showTeamSelect, setShowTeamSelect] = useState(false);
-  const [equipmentSearchTerm, setEquipmentSearchTerm] = useState('');
-  const [showEquipmentSelect, setShowEquipmentSelect] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerList, setShowCustomerList] = useState(false);
-  
+
   // Dinamik verileri çek
   useEffect(() => {
     setUserRole(getStoredUserRole());
@@ -105,20 +102,7 @@ export default function AddProject() {
       logger.error('Müşteriler yüklenirken hata:', error);
       toast.error('Müşteriler yüklenirken bir hata oluştu');
     });
-    getAllEquipment().then(data => {
-      const equipment = data.equipment || [];
-      setEquipmentList(equipment.map((eq: any) => ({
-        id: eq._id || eq.id || '',
-        name: eq.name || '',
-        model: eq.model || '',
-        serialNumber: eq.serialNumber || '',
-        category: eq.category || '',
-        status: eq.status || 'AVAILABLE',
-      })));
-    }).catch(error => {
-      logger.error('Ekipmanlar yüklenirken hata:', error);
-      toast.error('Ekipmanlar yüklenirken bir hata oluştu');
-    });
+
     // Ekip üyelerini çek (tüm kullanıcılar)
     getAllUsers().then(data => {
       const users = data.users || [];
@@ -134,53 +118,46 @@ export default function AddProject() {
       toast.error('Ekip üyeleri yüklenirken bir hata oluştu');
     });
   }, []);
-  
+
   // Filtrelenmiş listeler
   const filteredTeamMembers = teamSearchTerm
-    ? teamMembers.filter(member => 
-        member.name.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
-        member.role.toLowerCase().includes(teamSearchTerm.toLowerCase())
-      )
+    ? teamMembers.filter(member =>
+      member.name.toLowerCase().includes(teamSearchTerm.toLowerCase()) ||
+      member.role.toLowerCase().includes(teamSearchTerm.toLowerCase())
+    )
     : teamMembers;
-    
-  const filteredEquipments = equipmentSearchTerm
-    ? equipmentList.filter(equipment => 
-        equipment.name.toLowerCase().includes(equipmentSearchTerm.toLowerCase()) ||
-        equipment.category.toLowerCase().includes(equipmentSearchTerm.toLowerCase())
-      )
-    : equipmentList;
-    
+
   const filteredCustomers = customerSearchTerm
-    ? customers.filter(customer => 
-        customer.companyName.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-        customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase())
-      )
+    ? customers.filter(customer =>
+      customer.companyName.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+      customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase())
+    )
     : customers;
-  
+
   // Form alanı değişikliklerini işle
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     setFormData(prev => {
       // Eğer başlangıç tarihi, bitiş tarihinden sonraysa, bitiş tarihini güncelle
       if (name === 'startDate' && new Date(value) > new Date(prev.endDate)) {
         return { ...prev, [name]: value, endDate: value };
       }
-      
+
       return { ...prev, [name]: value };
     });
-    
+
     // Hata mesajlarını temizle
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
-  
+
   // Para birimini formatlama fonksiyonu
   const formatCurrency = (value: string) => {
     // Sadece sayıları al
     const numericValue = value.replace(/[^\d]/g, '');
-    
+
     if (numericValue) {
       // Sayıyı formatla
       const formatted = new Intl.NumberFormat('tr-TR', {
@@ -189,36 +166,36 @@ export default function AddProject() {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(parseInt(numericValue));
-      
+
       return formatted;
     }
-    
+
     return '';
   };
-  
+
   // Bütçe değişikliklerini işle
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    
+
     // Sadece sayıları al
     const numericValue = value.replace(/[^\d]/g, '');
-    
+
     setFormData(prev => ({
       ...prev,
       budget: numericValue
     }));
-    
+
     // Hata mesajlarını temizle
     if (errors.budget) {
       setErrors(prev => ({ ...prev, budget: '' }));
     }
   };
-  
+
   // Ekip üyesi ekleme/çıkarma
   const toggleTeamMember = (memberId: string) => {
     setFormData(prev => {
       const isSelected = prev.team.includes(memberId);
-      
+
       if (isSelected) {
         return {
           ...prev,
@@ -232,26 +209,7 @@ export default function AddProject() {
       }
     });
   };
-  
-  // Ekipman ekleme/çıkarma
-  const toggleEquipment = (equipmentId: string) => {
-    setFormData(prev => {
-      const isSelected = prev.equipment.includes(equipmentId);
-      
-      if (isSelected) {
-        return {
-          ...prev,
-          equipment: prev.equipment.filter(id => id !== equipmentId)
-        };
-      } else {
-        return {
-          ...prev,
-          equipment: [...prev.equipment, equipmentId]
-        };
-      }
-    });
-  };
-  
+
   // Müşteri seçme
   const selectCustomer = (customer: any) => {
     setFormData(prev => ({
@@ -262,15 +220,15 @@ export default function AddProject() {
       contactEmail: customer.email,
       contactPhone: customer.phone
     }));
-    
+
     setCustomerSearchTerm('');
     setShowCustomerList(false);
   };
-  
+
   // Form doğrulama
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     // Zorunlu alanları kontrol et
     if (!formData.name.trim()) newErrors.name = 'Proje adı zorunludur';
     // Müşteri selection mutlaka ID üzerinden yapılmalı (backend ObjectId bekliyor)
@@ -279,24 +237,24 @@ export default function AddProject() {
     }
     if (!formData.contactPerson.trim()) newErrors.contactPerson = 'İletişim kişisi zorunludur';
     if (!formData.location.trim()) newErrors.location = 'Lokasyon zorunludur';
-    
+
     // Tarihleri kontrol et
     const startDate = new Date(formData.startDate);
     const endDate = new Date(formData.endDate);
-    
+
     if (endDate < startDate) {
       newErrors.endDate = 'Bitiş tarihi başlangıç tarihinden önce olamaz';
     }
-    
+
     // Bütçeyi kontrol et
     if (formData.budget.trim() && isNaN(parseInt(formData.budget.trim()))) {
       newErrors.budget = 'Bütçe geçerli bir sayı olmalıdır';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   // Form gönderimi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,7 +266,7 @@ export default function AddProject() {
       // Tarihleri ISO8601 formatına çevir (YYYY-MM-DD -> YYYY-MM-DDTHH:mm:ss.sssZ)
       const startDateISO = formData.startDate ? new Date(formData.startDate + 'T00:00:00.000Z').toISOString() : undefined;
       const endDateISO = formData.endDate ? new Date(formData.endDate + 'T23:59:59.999Z').toISOString() : undefined;
-      
+
       const projectData = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined, // Boşsa undefined gönder (validation optional)
@@ -318,11 +276,11 @@ export default function AddProject() {
         location: formData.location.trim() || undefined,
         status: (
           formData.status === 'Onay Bekleyen' ? 'PENDING_APPROVAL' :
-          formData.status === 'Onaylanan' ? 'APPROVED' :
-          formData.status === 'Devam Ediyor' ? 'ACTIVE' :
-          formData.status === 'Ertelendi' ? 'ON_HOLD' :
-          formData.status === 'Tamamlandı' ? 'COMPLETED' :
-          'CANCELLED'
+            formData.status === 'Onaylanan' ? 'APPROVED' :
+              formData.status === 'Devam Ediyor' ? 'ACTIVE' :
+                formData.status === 'Ertelendi' ? 'ON_HOLD' :
+                  formData.status === 'Tamamlandı' ? 'COMPLETED' :
+                    'CANCELLED'
         ) as 'PENDING_APPROVAL' | 'APPROVED' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED',
         team: formData.team && formData.team.length > 0 ? formData.team : [],
         equipment: formData.equipment && formData.equipment.length > 0 ? formData.equipment : [],
@@ -330,11 +288,11 @@ export default function AddProject() {
         // Not: Budget field'ı backend model'inde henüz yok, ileride eklenebilir
       };
       await createProjectMutation.mutateAsync(projectData as any);
-      
+
       // Dashboard ve proje cache'lerini invalidate et
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      
+
       toast.success('Proje başarıyla eklendi!');
       setSuccess(true);
       setTimeout(() => {
@@ -342,10 +300,10 @@ export default function AddProject() {
       }, 2000);
     } catch (error: any) {
       logger.error('Proje ekleme hatası:', error);
-      
+
       // Validation hatalarını daha detaylı göster
       let errorMessage = 'Proje eklenirken bir hata oluştu. Lütfen tekrar deneyin.';
-      
+
       if (error?.response?.status === 400) {
         const errorData = error?.response?.data;
         if (errorData?.errors && Array.isArray(errorData.errors)) {
@@ -360,21 +318,21 @@ export default function AddProject() {
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       setErrors({ submit: errorMessage });
       toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Yeni Proje Ekle</h1>
       <p className="text-gray-600 dark:text-gray-400 mb-6">
         Firma projelerini ve etkinliklerini buradan ekleyebilirsiniz.
       </p>
-      
+
       {/* Başarı mesajı */}
       {success && (
         <div className="mb-6 p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg">
@@ -386,7 +344,7 @@ export default function AddProject() {
           </div>
         </div>
       )}
-      
+
       {/* Genel hata mesajı */}
       {errors.submit && (
         <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg">
@@ -398,7 +356,7 @@ export default function AddProject() {
           </div>
         </div>
       )}
-      
+
       {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
         <div className="p-6">
@@ -422,7 +380,7 @@ export default function AddProject() {
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
               )}
             </div>
-            
+
             {/* Müşteri/Firma */}
             <div className="relative">
               <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -459,7 +417,7 @@ export default function AddProject() {
                 {errors.customerName && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.customerName}</p>
                 )}
-                
+
                 {/* Müşteri Arama Sonuçları */}
                 {showCustomerList && (
                   <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 shadow-lg rounded-md border border-gray-200 dark:border-gray-600 max-h-60 overflow-y-auto">
@@ -489,7 +447,7 @@ export default function AddProject() {
                 )}
               </div>
             </div>
-            
+
             {/* İletişim Kişisi */}
             <div>
               <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -509,7 +467,7 @@ export default function AddProject() {
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.contactPerson}</p>
               )}
             </div>
-            
+
             {/* İletişim Bilgileri */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -541,7 +499,7 @@ export default function AddProject() {
                 />
               </div>
             </div>
-            
+
             {/* Lokasyon */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -561,7 +519,7 @@ export default function AddProject() {
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.location}</p>
               )}
             </div>
-            
+
             {/* Tarih Bilgileri */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -596,7 +554,7 @@ export default function AddProject() {
                 )}
               </div>
             </div>
-            
+
             {/* Durum */}
             <div>
               <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -618,7 +576,7 @@ export default function AddProject() {
                 <option value="İptal Edildi">İptal Edildi</option>
               </select>
             </div>
-            
+
             {canViewBudget && (
               <div>
                 <label htmlFor="budget" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -638,7 +596,7 @@ export default function AddProject() {
                 )}
               </div>
             )}
-            
+
             {/* Proje Ekibi */}
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -648,8 +606,8 @@ export default function AddProject() {
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {formData.team.length > 0 
-                        ? `Seçilen ${formData.team.length} ekip üyesi` 
+                      {formData.team.length > 0
+                        ? `Seçilen ${formData.team.length} ekip üyesi`
                         : 'Henüz ekip üyesi seçilmedi'}
                     </p>
                   </div>
@@ -661,14 +619,14 @@ export default function AddProject() {
                     {showTeamSelect ? 'Gizle' : 'Ekip Seç'}
                   </button>
                 </div>
-                
+
                 {/* Seçilen ekip üyeleri */}
                 {formData.team.length > 0 && (
                   <div className="mb-4 flex flex-wrap gap-2">
                     {formData.team.map(memberId => {
                       const member = teamMembers.find(m => m.id === memberId);
                       return member ? (
-                        <span 
+                        <span
                           key={member.id}
                           className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                         >
@@ -687,7 +645,7 @@ export default function AddProject() {
                     })}
                   </div>
                 )}
-                
+
                 {/* Ekip üyesi seçim paneli */}
                 {showTeamSelect && (
                   <div className="mt-2">
@@ -728,115 +686,21 @@ export default function AddProject() {
                 )}
               </div>
             </div>
-            
-            {/* Ekipman */}
+
+            {/* Ekipman - Smart Selector */}
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Ekipman
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Ekipman & Stok
               </label>
-              <div className="border border-gray-300 dark:border-gray-600 rounded-md p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {formData.equipment.length > 0 
-                        ? `Seçilen ${formData.equipment.length} ekipman` 
-                        : 'Henüz ekipman seçilmedi'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowEquipmentSelect(!showEquipmentSelect)}
-                    className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none"
-                  >
-                    {showEquipmentSelect ? 'Gizle' : 'Ekipman Seç'}
-                  </button>
-                </div>
-                
-                {/* Seçilen ekipmanlar */}
-                {formData.equipment.length > 0 && (
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {formData.equipment.map(equipmentId => {
-                      const equipment = equipmentList.find(e => e.id === equipmentId);
-                      return equipment ? (
-                        <span 
-                          key={equipment.id}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                        >
-                          {equipment.name}
-                          <button
-                            type="button"
-                            onClick={() => toggleEquipment(equipment.id)}
-                            className="ml-1.5 inline-flex items-center justify-center text-green-400 hover:text-green-600 dark:hover:text-green-300"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                          </button>
-                        </span>
-                      ) : null;
-                    })}
-                  </div>
-                )}
-                
-                {/* Ekipman seçim paneli */}
-                {showEquipmentSelect && (
-                  <div className="mt-2">
-                    <div className="mb-2">
-                      <input
-                        type="text"
-                        value={equipmentSearchTerm}
-                        onChange={(e) => setEquipmentSearchTerm(e.target.value)}
-                        placeholder="Ekipman ara..."
-                        className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm"
-                      />
-                    </div>
-                    <div className="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md">
-                      {filteredEquipments.length > 0 ? (
-                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                          {filteredEquipments.map(equipment => (
-                            (() => {
-                              const isSelected = formData.equipment.includes(equipment.id);
-                              const isDisabled = !isSelected && equipment.status && equipment.status !== 'AVAILABLE';
-                              return (
-                              <li
-                                key={equipment.id}
-                                className={`p-2 ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
-                              >
-                              <label className={`flex items-center ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                                <input
-                                  type="checkbox"
-                                  checked={formData.equipment.includes(equipment.id)}
-                                  onChange={() => {
-                                    if (isDisabled) return;
-                                    toggleEquipment(equipment.id);
-                                  }}
-                                  className="h-4 w-4 text-green-600 dark:text-green-500 focus:ring-green-500 dark:focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded"
-                                  disabled={isDisabled}
-                                />
-                                <span className="ml-3 block">
-                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{equipment.name}</span>
-                                  <span className="text-sm text-gray-500 dark:text-gray-400 block">{equipment.model} • {equipment.category}</span>
-                                  {isDisabled && (
-                                    <span className="text-xs text-red-600 dark:text-red-400 block mt-0.5">
-                                      Kullanımda/Bakımda olduğu için atanamaz
-                                    </span>
-                                  )}
-                                </span>
-                              </label>
-                            </li>
-                              );
-                            })()
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="p-4 text-center text-gray-500 dark:text-gray-400">Eşleşen ekipman bulunamadı</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <EquipmentSelector
+                selectedEquipment={formData.equipment}
+                onSelectionChange={(ids) => setFormData(prev => ({ ...prev, equipment: ids }))}
+              />
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Projeye atamak istediğiniz ekipmanları seçin veya QR kod ile ekleyin.
+              </p>
             </div>
-            
+
             {/* Proje Açıklaması */}
             <div className="col-span-2">
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -852,7 +716,7 @@ export default function AddProject() {
                 placeholder="Projenin detaylarını ve kapsamını buraya girin..."
               ></textarea>
             </div>
-            
+
             {/* Notlar */}
             <div className="col-span-2">
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -870,7 +734,7 @@ export default function AddProject() {
             </div>
           </div>
         </div>
-        
+
         {/* Form Butonları */}
         <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
           <Link href="/admin/projects">

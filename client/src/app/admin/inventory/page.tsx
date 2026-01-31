@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import inventoryService, { InventoryItem, Category, Location } from '@/services/inventoryService';
 import AddItemModal from '@/components/admin/inventory/AddItemModal';
 import EditItemModal from '@/components/admin/inventory/EditItemModal';
-import TransferModal from '@/components/admin/inventory/TransferModal';
+import { Pencil, QrCode, Trash2, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import AssignProjectModal from '@/components/admin/inventory/AssignProjectModal';
+import ReturnModal from '@/components/admin/inventory/ReturnModal';
 import QRCodeModal from '@/components/admin/inventory/QRCodeModal';
 import { toast } from 'react-toastify';
-import { Pencil, QrCode, Trash2 } from 'lucide-react';
 
 export default function InventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -25,7 +26,8 @@ export default function InventoryPage() {
 
     // Modals
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [transferItem, setTransferItem] = useState<InventoryItem | null>(null);
+    const [assignItem, setAssignItem] = useState<InventoryItem | null>(null);
+    const [returnItem, setReturnItem] = useState<InventoryItem | null>(null);
     const [editItem, setEditItem] = useState<InventoryItem | null>(null);
     const [qrItem, setQrItem] = useState<InventoryItem | null>(null);
 
@@ -216,6 +218,26 @@ export default function InventoryPage() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
+                                            {/* Assign / Return Buttons */}
+                                            {item.status === 'AVAILABLE' && (
+                                                <button
+                                                    onClick={() => setAssignItem(item)}
+                                                    className="p-2 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg tooltip"
+                                                    title="Projeye Çık"
+                                                >
+                                                    <ArrowUpRight className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                            {item.status === 'IN_USE' && (
+                                                <button
+                                                    onClick={() => setReturnItem(item)}
+                                                    className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg tooltip"
+                                                    title="İade Al"
+                                                >
+                                                    <ArrowDownLeft className="w-5 h-5" />
+                                                </button>
+                                            )}
+
                                             <button
                                                 onClick={() => setEditItem(item)}
                                                 className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg tooltip"
@@ -229,15 +251,6 @@ export default function InventoryPage() {
                                                 title="QR Kod"
                                             >
                                                 <QrCode className="w-5 h-5" />
-                                            </button>
-                                            <button
-                                                onClick={() => setTransferItem(item)}
-                                                className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg tooltip"
-                                                title="Transfer Et"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                                </svg>
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(item._id)}
@@ -301,12 +314,18 @@ export default function InventoryPage() {
                 item={qrItem}
             />
 
-            <TransferModal
-                isOpen={!!transferItem}
-                onClose={() => setTransferItem(null)}
-                item={transferItem}
+            <AssignProjectModal
+                isOpen={!!assignItem}
+                onClose={() => setAssignItem(null)}
                 onSuccess={fetchData}
-                locations={locations}
+                item={assignItem}
+            />
+
+            <ReturnModal
+                isOpen={!!returnItem}
+                onClose={() => setReturnItem(null)}
+                onSuccess={fetchData}
+                item={returnItem}
             />
         </div>
     );

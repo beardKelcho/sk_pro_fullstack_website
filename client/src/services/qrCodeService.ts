@@ -28,9 +28,11 @@ export interface QRCode {
 }
 
 export interface QRScanResult {
-  qrCode: QRCode;
-  relatedItem: any;
-  scanHistory: any;
+  success: boolean;
+  equipment: any;
+  status: string;
+  relatedInfo?: any;
+  relatedItemType?: string;
 }
 
 export interface CreateQRCodeData {
@@ -73,7 +75,15 @@ export const createQRCode = async (data: CreateQRCodeData): Promise<{ qrCode: QR
 };
 
 export const scanQRCode = async (data: ScanQRCodeData): Promise<QRScanResult> => {
-  const res = await apiClient.post('/qr-codes/scan', data);
+  // New endpoint is GET /scan/:code
+  // It records 'VIEW' action automatically on backend
+  const res = await apiClient.get(`/scan/${data.qrContent}`);
+  // Map response to match expected QRScanResult if needed, or update interface
+  // Backend returns: { success: true, equipment: ..., status: ..., relatedInfo: ... }
+  // Frontend expects: { qrCode: ..., relatedItem: ..., scanHistory: ... }
+  // Only Equipment Selector uses this?
+  // If we change return type, we break typescript.
+  // Let's assume for now we return what backend sends and update interface or component.
   return res.data;
 };
 
@@ -117,7 +127,7 @@ export const useQRCode = (id: string | null) => {
 
 export const useCreateQRCode = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createQRCode,
     onSuccess: () => {
@@ -128,20 +138,23 @@ export const useCreateQRCode = () => {
 
 export const useScanQRCode = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: scanQRCode,
     onSuccess: (data) => {
-      // QR kod detayını güncelle
-      queryClient.invalidateQueries({ queryKey: ['qrCode', data.qrCode._id || data.qrCode.id] });
+      // Refresh generic lists
       queryClient.invalidateQueries({ queryKey: ['qrCodes'] });
+      // If we had equipment ID, we could invalidate equipment queries too
+      if (data.equipment) {
+        queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      }
     },
   });
 };
 
 export const useUpdateQRCode = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<QRCode> }) => updateQRCode(id, data),
     onSuccess: (_, variables) => {
@@ -153,7 +166,7 @@ export const useUpdateQRCode = () => {
 
 export const useDeleteQRCode = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: deleteQRCode,
     onSuccess: () => {

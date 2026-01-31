@@ -15,6 +15,7 @@ export interface IEquipment extends Omit<Document, 'model'> {
   qrCode?: string;
   createdAt: Date;
   updatedAt: Date;
+  currentProject?: mongoose.Types.ObjectId;
 }
 
 const EquipmentSchema: Schema = new Schema(
@@ -34,6 +35,12 @@ const EquipmentSchema: Schema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Location',
       required: [true, 'Lokasyon gereklidir'],
+      index: true,
+    },
+    currentProject: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project',
+      default: null,
       index: true,
     },
     trackingType: {

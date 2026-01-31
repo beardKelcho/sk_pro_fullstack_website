@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { Maintenance } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
+import maintenanceService from '../services/maintenance.service';
+import { AppError } from '../types/common';
 
 // Tüm bakımları listele
 export const getAllMaintenances = async (req: Request, res: Response) => {
@@ -110,8 +112,11 @@ export const getMaintenanceById = async (req: Request, res: Response) => {
 
 // Yeni bakım oluştur
 export const createMaintenance = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { equipment, type, description, scheduledDate, status, assignedTo, cost, notes } = req.body;
+    const userId = (req as any).user?._id;
 
     if (!equipment || !type || !description || !scheduledDate || !assignedTo) {
       return res.status(400).json({
@@ -152,39 +157,49 @@ export const createMaintenance = async (req: Request, res: Response) => {
       });
     }
 
-    const maintenance = await Maintenance.create({
+    const maintenance = await maintenanceService.createMaintenance({
       equipment,
       type,
       description,
       scheduledDate: parsedDate,
-      status: status || 'SCHEDULED',
+      status,
       assignedTo,
       cost: parsedCost,
       notes,
-    });
+      userId
+    }, session);
 
     const populatedMaintenance = await Maintenance.findById(maintenance._id)
       .populate('equipment', 'name type model')
-      .populate('assignedTo', 'name email');
+      .populate('assignedTo', 'name email')
+      .session(session);
+
+    await session.commitTransaction();
 
     res.status(201).json({
       success: true,
       maintenance: populatedMaintenance,
     });
   } catch (error) {
+    await session.abortTransaction();
     logger.error('Bakım oluşturma hatası:', error);
     res.status(500).json({
       success: false,
       message: 'Bakım oluşturulurken bir hata oluştu',
     });
+  } finally {
+    session.endSession();
   }
 };
 
 // Bakım güncelle
 export const updateMaintenance = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { id } = req.params;
     const { equipment, type, description, scheduledDate, completedDate, status, assignedTo, cost, notes } = req.body;
+    const userId = (req as any).user?._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -193,47 +208,38 @@ export const updateMaintenance = async (req: Request, res: Response) => {
       });
     }
 
-    const updateData: any = {};
-    if (equipment) updateData.equipment = equipment;
-    if (type) updateData.type = type;
-    if (description) updateData.description = description;
-    if (scheduledDate) updateData.scheduledDate = scheduledDate;
-    if (completedDate) updateData.completedDate = completedDate;
-    if (status) updateData.status = status;
-    if (assignedTo) updateData.assignedTo = assignedTo;
-    if (cost !== undefined) updateData.cost = cost;
-    if (notes !== undefined) updateData.notes = notes;
-
-    // Eğer status COMPLETED ise ve completedDate yoksa, şimdiki zamanı ayarla
-    if (status === 'COMPLETED' && !completedDate) {
-      updateData.completedDate = new Date();
-    }
-
-    const updatedMaintenance = await Maintenance.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    )
-      .populate('equipment', 'name type model')
-      .populate('assignedTo', 'name email');
+    // Call Service
+    const updatedMaintenance = await maintenanceService.updateMaintenance(id, {
+      equipment, type, description, scheduledDate, completedDate, status, assignedTo, cost, notes, userId
+    }, session);
 
     if (!updatedMaintenance) {
-      return res.status(404).json({
-        success: false,
-        message: 'Bakım bulunamadı',
-      });
+      await session.abortTransaction();
+      return res.status(404).json({ success: false, message: 'Bakım bulunamadı' });
     }
+
+    const populatedMaintenance = await Maintenance.findById(updatedMaintenance._id)
+      .populate('equipment', 'name type model')
+      .populate('assignedTo', 'name email')
+      .session(session);
+
+    await session.commitTransaction();
 
     res.status(200).json({
       success: true,
-      maintenance: updatedMaintenance,
+      maintenance: populatedMaintenance,
     });
-  } catch (error) {
+  } catch (error: any) {
+    await session.abortTransaction();
+    // Assuming AppError is defined elsewhere or handling as a generic error
+    // const appError = error instanceof AppError ? error : new AppError('Sunucu hatası');
     logger.error('Bakım güncelleme hatası:', error);
-    res.status(500).json({
+    res.status(500).json({ // Using 500 directly as AppError is not defined in this context
       success: false,
-      message: 'Bakım güncellenirken bir hata oluştu',
+      message: 'Bakım güncellenirken bir hata oluştu', // Using generic message
     });
+  } finally {
+    session.endSession();
   }
 };
 

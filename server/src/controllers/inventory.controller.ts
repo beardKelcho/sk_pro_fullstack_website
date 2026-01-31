@@ -193,7 +193,7 @@ export class InventoryController {
                     resultItem = targetItem;
                 } else {
                     // SPLIT: Create new item clone at target
-                    const itemData = sourceItem.toObject();
+                    const itemData: any = sourceItem.toObject();
                     delete itemData._id;
                     delete itemData.createdAt;
                     delete itemData.updatedAt;

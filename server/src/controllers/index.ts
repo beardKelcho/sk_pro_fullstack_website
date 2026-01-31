@@ -1,6 +1,6 @@
 // Controller re-exports
 import authController from './auth.controller';
-import equipmentController from './equipment.controller';
+// import equipmentController from './equipment.controller';
 import projectController from './project.controller';
 import * as clientController from './client.controller';
 import userController from './user.controller';
@@ -19,7 +19,7 @@ import * as twoFactorController from './twoFactor.controller';
 
 export {
   authController,
-  equipmentController,
+  // equipmentController, // Removed - replaced by inventoryController
   projectController,
   clientController,
   userController,

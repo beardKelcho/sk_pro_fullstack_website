@@ -43,7 +43,7 @@ const CategorySchema: Schema = new Schema(
 // Slug oluşturma (basit versiyon, gerekirse plugin eklenebilir)
 CategorySchema.pre('validate', function (next) {
     if (this.name && !this.slug) {
-        this.slug = this.name
+        this.slug = (this.name as string)
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)+/g, '');

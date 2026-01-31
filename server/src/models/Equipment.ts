@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IEquipment extends Document {
+export interface IEquipment extends Omit<Document, 'model'> {
   name: string;
   category: mongoose.Types.ObjectId;
   location: mongoose.Types.ObjectId;

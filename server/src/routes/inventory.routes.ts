@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import inventoryController from '../controllers/inventory.controller';
-import { protect, authorize } from '../middleware/auth.middleware';
+import { authenticate as protect, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 

@@ -110,6 +110,8 @@ export const getMaintenanceById = async (req: Request, res: Response) => {
 
 // Yeni bakım oluştur
 export const createMaintenance = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { equipment, type, description, scheduledDate, status, assignedTo, cost, notes } = req.body;
 
@@ -152,7 +154,7 @@ export const createMaintenance = async (req: Request, res: Response) => {
       });
     }
 
-    const maintenance = await Maintenance.create({
+    const maintenance = await Maintenance.create([{
       equipment,
       type,
       description,
@@ -161,27 +163,54 @@ export const createMaintenance = async (req: Request, res: Response) => {
       assignedTo,
       cost: parsedCost,
       notes,
-    });
+    }], { session });
 
-    const populatedMaintenance = await Maintenance.findById(maintenance._id)
+    const createdMaintenance = maintenance[0];
+
+    // If status is IN_PROGRESS, update equipment and log
+    if (status === 'IN_PROGRESS') {
+      const EquipmentModel = mongoose.model('Equipment');
+      const InventoryLogModel = mongoose.model('InventoryLog');
+
+      await EquipmentModel.findByIdAndUpdate(equipment, { status: 'MAINTENANCE' }, { session });
+
+      await InventoryLogModel.create([{
+        equipment,
+        user: (req as any).user._id,
+        action: 'MAINTENANCE_START',
+        quantityChanged: 0,
+        notes: `Maintenance Started: ${type}`,
+        date: new Date()
+      }], { session });
+    }
+
+    const populatedMaintenance = await Maintenance.findById(createdMaintenance._id)
       .populate('equipment', 'name type model')
-      .populate('assignedTo', 'name email');
+      .populate('assignedTo', 'name email')
+      .session(session);
+
+    await session.commitTransaction();
 
     res.status(201).json({
       success: true,
       maintenance: populatedMaintenance,
     });
   } catch (error) {
+    await session.abortTransaction();
     logger.error('Bakım oluşturma hatası:', error);
     res.status(500).json({
       success: false,
       message: 'Bakım oluşturulurken bir hata oluştu',
     });
+  } finally {
+    session.endSession();
   }
 };
 
 // Bakım güncelle
 export const updateMaintenance = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { id } = req.params;
     const { equipment, type, description, scheduledDate, completedDate, status, assignedTo, cost, notes } = req.body;
@@ -191,6 +220,12 @@ export const updateMaintenance = async (req: Request, res: Response) => {
         success: false,
         message: 'Geçersiz bakım ID',
       });
+    }
+
+    const oldMaintenance = await Maintenance.findById(id).session(session);
+    if (!oldMaintenance) {
+      await session.abortTransaction();
+      return res.status(404).json({ success: false, message: 'Bakım bulunamadı' });
     }
 
     const updateData: any = {};
@@ -212,28 +247,67 @@ export const updateMaintenance = async (req: Request, res: Response) => {
     const updatedMaintenance = await Maintenance.findByIdAndUpdate(
       id,
       updateData,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true, session }
     )
       .populate('equipment', 'name type model')
       .populate('assignedTo', 'name email');
 
-    if (!updatedMaintenance) {
-      return res.status(404).json({
-        success: false,
-        message: 'Bakım bulunamadı',
-      });
+    const EquipmentModel = mongoose.model('Equipment');
+    const InventoryLogModel = mongoose.model('InventoryLog');
+
+    // Handle Status Changes
+    if (status && status !== oldMaintenance.status) {
+      // Completed
+      if (status === 'COMPLETED') {
+        await EquipmentModel.findByIdAndUpdate(
+          oldMaintenance.equipment,
+          { status: 'AVAILABLE' },
+          { session }
+        );
+
+        await InventoryLogModel.create([{
+          equipment: oldMaintenance.equipment,
+          user: (req as any).user._id,
+          action: 'MAINTENANCE_END',
+          quantityChanged: 0,
+          notes: `Maintenance Completed`,
+          date: new Date()
+        }], { session });
+      }
+      // Started (if not already started)
+      else if (status === 'IN_PROGRESS') {
+        await EquipmentModel.findByIdAndUpdate(
+          oldMaintenance.equipment,
+          { status: 'MAINTENANCE' },
+          { session }
+        );
+
+        await InventoryLogModel.create([{
+          equipment: oldMaintenance.equipment,
+          user: (req as any).user._id,
+          action: 'MAINTENANCE_START',
+          quantityChanged: 0,
+          notes: `Maintenance Started`,
+          date: new Date()
+        }], { session });
+      }
     }
+
+    await session.commitTransaction();
 
     res.status(200).json({
       success: true,
       maintenance: updatedMaintenance,
     });
   } catch (error) {
+    await session.abortTransaction();
     logger.error('Bakım güncelleme hatası:', error);
     res.status(500).json({
       success: false,
       message: 'Bakım güncellenirken bir hata oluştu',
     });
+  } finally {
+    session.endSession();
   }
 };
 

@@ -155,7 +155,7 @@ class ProjectService {
     /**
      * Create Project
      */
-    async createProject(data: CreateProjectData): Promise<IProjectPopulated> {
+    async createProject(data: CreateProjectData, session?: mongoose.ClientSession): Promise<IProjectPopulated> {
         if (!data.name || !data.client || !data.startDate) {
             throw new AppError('Proje adı, müşteri ve başlangıç tarihi gereklidir', 400);
         }
@@ -193,7 +193,7 @@ class ProjectService {
             }
         }
 
-        const project = await Project.create({
+        const [project] = await Project.create([{
             name: data.name,
             client: data.client,
             description: data.description,
@@ -203,10 +203,9 @@ class ProjectService {
             status: data.status || 'PENDING_APPROVAL',
             team: data.team || [],
             equipment: data.equipment || []
-        });
+        }], { session });
 
-        // Trigger logic to mark equipment as in_use if project is active is handled by Mongoose hooks in the model!
-        // We rely on the model hooks for updating equipment status.
+        // Equipment status update logic logic moved to controller for transaction support
 
         return await this.getProjectById(project._id.toString());
     }
@@ -214,7 +213,7 @@ class ProjectService {
     /**
      * Update Project
      */
-    async updateProject(id: string, data: UpdateProjectData): Promise<IProjectPopulated> {
+    async updateProject(id: string, data: UpdateProjectData, session?: mongoose.ClientSession): Promise<IProjectPopulated> {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             throw new AppError('Geçersiz proje ID', 400);
         }
@@ -262,7 +261,7 @@ class ProjectService {
         if (data.team) project.team = data.team.map(id => new mongoose.Types.ObjectId(id));
         if (data.equipment) project.equipment = data.equipment.map(id => new mongoose.Types.ObjectId(id));
 
-        await project.save();
+        await project.save({ session });
 
         return await this.getProjectById(id);
     }

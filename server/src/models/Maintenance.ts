@@ -61,32 +61,7 @@ const MaintenanceSchema: Schema = new Schema(
   }
 );
 
-// Bakım başladığında ekipman statüsünü 'MAINTENANCE' yap
-MaintenanceSchema.pre('save', async function (next) {
-  if (this.isModified('status') && this.status === 'IN_PROGRESS') {
-    const Equipment = mongoose.model('Equipment');
-    await Equipment.findByIdAndUpdate(this.equipment, { status: 'MAINTENANCE' });
-  }
-  next();
-});
-
-// Bakım tamamlandığında ekipman statüsünü 'AVAILABLE' yap
-MaintenanceSchema.pre('findOneAndUpdate', async function (next) {
-  const update: any = this.getUpdate();
-  
-  if (update && update.status === 'COMPLETED') {
-    const maintenanceId = this.getQuery()._id;
-    const Maintenance = mongoose.model<IMaintenance>('Maintenance');
-    const maintenance = await Maintenance.findById(maintenanceId);
-    
-    if (maintenance) {
-      const Equipment = mongoose.model('Equipment');
-      await Equipment.findByIdAndUpdate(maintenance.equipment, { status: 'AVAILABLE' });
-    }
-  }
-  
-  next();
-});
+// Hooks removed and logic moved to controller
 
 // Performance indexes
 // Equipment ve status ile filtreleme için

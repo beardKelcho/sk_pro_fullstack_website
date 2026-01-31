@@ -26,6 +26,7 @@ import Comment from './Comment';
 import EmailTemplate from './EmailTemplate';
 import { CalendarIntegration } from './CalendarIntegration';
 import InventoryLog from './InventoryLog';
+import Location from './Location';
 
 export {
   User,
@@ -54,5 +55,6 @@ export {
   EmailTemplate,
   CalendarIntegration,
   InventoryLog,
-  SystemSetting
+  SystemSetting,
+  Location
 };

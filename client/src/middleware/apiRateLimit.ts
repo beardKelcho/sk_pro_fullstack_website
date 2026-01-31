@@ -26,12 +26,12 @@ const rateLimits: Record<string, RateLimitConfig> = {
 };
 
 export async function apiRateLimit(request: NextRequest) {
-  const ip = request.ip ?? '127.0.0.1';
+  const ip = request.headers.get('x-forwarded-for') ?? (request as any).ip ?? '127.0.0.1';
   const path = request.nextUrl.pathname;
 
   // Rate limit konfigürasyonunu bul
   const config = Object.entries(rateLimits).find(([key]) => path.startsWith(key))?.[1] ?? rateLimits.default;
-  
+
   // Redis key oluştur
   const key = `rate_limit:${ip}:${path}`;
 
@@ -46,7 +46,7 @@ export async function apiRateLimit(request: NextRequest) {
 
     // Rate limit kontrolü
     if (current >= config.maxRequests) {
-      return new NextResponse('Too Many Requests', { 
+      return new NextResponse('Too Many Requests', {
         status: 429,
         headers: {
           'Retry-After': Math.ceil(config.windowMs / 1000).toString(),
@@ -59,7 +59,7 @@ export async function apiRateLimit(request: NextRequest) {
 
     // İstek sayısını artır
     await redis.incr(key);
-    
+
     // İlk istekse TTL ayarla
     if (current === 0) {
       await redis.expire(key, Math.ceil(config.windowMs / 1000));

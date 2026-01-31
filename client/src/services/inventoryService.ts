@@ -72,6 +72,16 @@ const inventoryService = {
         return response.data;
     },
 
+    updateCategory: async (id: string, data: { name: string; parent?: string }) => {
+        const response = await axios.put(`/inventory/categories/${id}`, data);
+        return response.data;
+    },
+
+    deleteCategory: async (id: string) => {
+        const response = await axios.delete(`/inventory/categories/${id}`);
+        return response.data;
+    },
+
     getLocations: async () => {
         const response = await axios.get('/inventory/locations');
         return response.data;
@@ -83,8 +93,13 @@ const inventoryService = {
     },
 
     // Operations
-    transferStock: async (data: { equipmentId: string; targetLocationId: string; quantity: number }) => {
-        const response = await axios.post('/inventory/transfer', data);
+    assignToProject: async (data: { equipmentId: string; projectId: string; quantity: number }) => {
+        const response = await axios.post('/inventory/assign-to-project', data);
+        return response.data;
+    },
+
+    returnToWarehouse: async (data: { equipmentId: string; quantity: number }) => {
+        const response = await axios.post('/inventory/return-to-warehouse', data);
         return response.data;
     },
 

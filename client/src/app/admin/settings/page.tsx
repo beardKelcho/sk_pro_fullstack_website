@@ -9,7 +9,12 @@ type SettingsCard = {
   icon: React.ReactNode;
 };
 
+import { useState } from 'react';
+import CategoryManager from '@/components/admin/settings/CategoryManager';
+
 const SettingsPage = () => {
+  const [activeTab, setActiveTab] = useState<'general' | 'categories'>('general');
+
   const cards: SettingsCard[] = [
     {
       title: 'Profil',
@@ -26,6 +31,9 @@ const SettingsPage = () => {
         </svg>
       ),
     },
+    // ... other cards kept implicitly if I don't replace them? 
+    // Wait, I am replacing the whole file content mostly?
+    // No, I should keep the cards array.
     {
       title: 'Bildirim Ayarları',
       description: 'Bildirim tercihlerinizi yönetin.',
@@ -65,25 +73,57 @@ const SettingsPage = () => {
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Panel ayarlarınızı buradan yönetin.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {cards.map((card) => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
-          >
-            <div className="flex items-start gap-3">
-              <div className="rounded-lg bg-gray-100 p-2 text-gray-700 transition group-hover:bg-blue-50 group-hover:text-blue-700 dark:bg-gray-700 dark:text-gray-200 dark:group-hover:bg-blue-900/30 dark:group-hover:text-blue-300">
-                {card.icon}
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{card.title}</h2>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{card.description}</p>
-              </div>
-            </div>
-          </Link>
-        ))}
+      {/* Tabs */}
+      <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-6">
+        <button
+          onClick={() => setActiveTab('general')}
+          className={`pb-3 px-1 text-sm font-medium transition-colors relative ${activeTab === 'general'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+        >
+          Genel
+          {activeTab === 'general' && (
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('categories')}
+          className={`pb-3 px-1 text-sm font-medium transition-colors relative ${activeTab === 'categories'
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+        >
+          Kategoriler
+          {activeTab === 'categories' && (
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+          )}
+        </button>
       </div>
+
+      {activeTab === 'general' ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {cards.map((card) => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="group rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+            >
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-gray-100 p-2 text-gray-700 transition group-hover:bg-blue-50 group-hover:text-blue-700 dark:bg-gray-700 dark:text-gray-200 dark:group-hover:bg-blue-900/30 dark:group-hover:text-blue-300">
+                  {card.icon}
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{card.title}</h2>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{card.description}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <CategoryManager />
+      )}
     </div>
   );
 };

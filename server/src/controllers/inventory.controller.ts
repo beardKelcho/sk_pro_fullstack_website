@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Equipment from '../models/Equipment';
 import Category from '../models/Category';
 import Location from '../models/Location';
+import Project from '../models/Project';
 import InventoryLog from '../models/InventoryLog';
 import { AppError, AuthenticatedRequest } from '../types/common';
 import logger from '../utils/logger';
@@ -24,6 +25,32 @@ export class InventoryController {
         try {
             const categories = await Category.find().populate('parent');
             res.status(200).json({ success: true, data: categories });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Sunucu hatası' });
+        }
+    }
+
+    async updateCategory(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const category = await Category.findByIdAndUpdate(id, req.body, { new: true });
+            if (!category) return res.status(404).json({ success: false, message: 'Kategori bulunamadı' });
+            res.status(200).json({ success: true, data: category });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Sunucu hatası' });
+        }
+    }
+
+    async deleteCategory(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            // Check if used
+            const used = await Equipment.exists({ category: id });
+            if (used) return res.status(400).json({ success: false, message: 'Bu kategori kullanılıyor, silinemez' });
+
+            const category = await Category.findByIdAndDelete(id);
+            if (!category) return res.status(404).json({ success: false, message: 'Kategori bulunamadı' });
+            res.status(200).json({ success: true, message: 'Kategori silindi' });
         } catch (error) {
             res.status(500).json({ success: false, message: 'Sunucu hatası' });
         }
@@ -126,124 +153,210 @@ export class InventoryController {
         }
     }
 
-    // 3. Transfer Stock (The Big Logic)
-    async transferStock(req: Request, res: Response) {
+    // 3. Assign To Project
+    async assignToProject(req: Request, res: Response) {
         const session = await mongoose.startSession();
         session.startTransaction();
         try {
             const userId = (req as AuthenticatedRequest).user?.id;
-            const { equipmentId, targetLocationId, quantity } = req.body;
+            const { equipmentId, projectId, quantity } = req.body;
 
-            if (!equipmentId || !targetLocationId || !quantity) {
+            if (!equipmentId || !projectId || !quantity) {
                 throw new AppError('Eksik parametreler', 400);
             }
 
-            const sourceItem = await Equipment.findById(equipmentId).session(session);
-            if (!sourceItem) throw new AppError('Kaynak ürün bulunamadı', 404);
+            const item = await Equipment.findById(equipmentId).session(session);
+            if (!item) throw new AppError('Ekipman bulunamadı', 404);
 
-            const targetLocation = await Location.findById(targetLocationId).session(session);
-            if (!targetLocation) throw new AppError('Hedef lokasyon bulunamadı', 404);
+            const project = await Project.findById(projectId).session(session);
+            if (!project) throw new AppError('Proje bulunamadı', 404);
 
-            // Control Source Stock
-            if (sourceItem.quantity < quantity) {
-                throw new AppError(`Yetersiz stok. Mevcut: ${sourceItem.quantity}, İstenen: ${quantity}`, 400);
+            if (item.status !== 'AVAILABLE') {
+                // Allow if already IN_USE? Maybe not for simplification. Only AVAILABLE items can be assigned.
+                // User request says "Ürün ya depodadır ya projede".
+                // If item is already in a project, it should be returned first? Or can we transfer Project->Project directly?
+                // For simplification: Warehouse -> Project only.
+                if (item.status === 'IN_USE' && item.currentProject?.toString() !== projectId) {
+                    throw new AppError('Bu ekipman şu an başka bir projede kullanımda', 400);
+                }
+                // If status is maintenance etc.
+                if (item.status !== 'IN_USE') {
+                    throw new AppError(`Ekipman şu an müsait değil (${item.status})`, 400);
+                }
             }
 
-            // Scenario A: SERIALIZED (Move the item directly)
-            if (sourceItem.trackingType === 'SERIALIZED') {
-                const oldLocation = sourceItem.location;
+            // SERIALIZED
+            if (item.trackingType === 'SERIALIZED') {
+                if (item.currentProject) {
+                    throw new AppError('Seri numaralı ürün zaten bir projede', 400);
+                }
+                item.status = 'IN_USE';
+                item.currentProject = new mongoose.Types.ObjectId(projectId);
+                // item.location remains Warehouse or we can change it to a "Project" location type if exists.
+                // User said "location alanını null yap veya 'Projede' olarak işaretle".
+                // Since location is required in Schema, we must keep it valid. 
+                // Let's assume we keep the 'Warehouse' location ID but logic knows it's out.
+                // OR we have a special 'Project' location. 
+                // Let's just keep the physical location ID as is (Warehouse) but status=IN_USE and currentProject set.
+                // Re-reading user request: "location alanını null yap veya "Projede" olarak işaretle."
+                // Since schema requires location, and changing schema validation is risky right now without migration,
+                // I will keep the location ID as the originating warehouse.
 
-                // Update location
-                sourceItem.location = new mongoose.Types.ObjectId(targetLocationId);
-                await sourceItem.save({ session });
-
-                // Log
-                await InventoryLog.create([{
-                    equipment: sourceItem._id,
-                    user: userId,
-                    action: 'MOVE',
-                    quantityChanged: 1,
-                    fromLocation: oldLocation,
-                    toLocation: targetLocationId,
-                    notes: 'Transfer (Serialized)',
-                    date: new Date()
-                }], { session });
-
-                await session.commitTransaction();
-                return res.status(200).json({ success: true, message: 'Seri numaralı cihaz transfer edildi', data: sourceItem });
+                await item.save({ session });
             }
-
-            // Scenario B: BULK (Split / Merge)
+            // BULK
             else {
-                // Check if exact same item exists in target location
-                let targetItem = await Equipment.findOne({
-                    name: sourceItem.name,
-                    model: sourceItem.model,
-                    category: sourceItem.category,
-                    location: targetLocationId,
+                // Check if enough quantity
+                if (item.quantity < quantity) {
+                    throw new AppError(`Yetersiz stok. Mevcut: ${item.quantity}`, 400);
+                }
+
+                // Split Logic:
+                // 1. Decrease source (Warehouse)
+                item.quantity -= quantity;
+                if (item.quantity === 0) {
+                    // If 0, we can delete the warehouse record IF we are confident.
+                    // But safer to keep it as 0 holder? 
+                    // Or maybe we treat BULK items in project as separate records.
+                    // Let's create a new record for the Project assignment
+                }
+                await item.save({ session });
+
+                // 2. Create/Update Project Item
+                // Check if this equipment (same name/model) is already in project
+                let projectItem = await Equipment.findOne({
+                    name: item.name,
+                    model: item.model,
+                    currentProject: projectId,
                     trackingType: 'BULK'
                 }).session(session);
 
-                let resultItem;
-
-                if (targetItem) {
-                    // MERGE: Increase target stock
-                    targetItem.quantity += quantity;
-                    await targetItem.save({ session });
-                    resultItem = targetItem;
+                if (projectItem) {
+                    projectItem.quantity += quantity;
+                    await projectItem.save({ session });
                 } else {
-                    // SPLIT: Create new item clone at target
-                    const itemData: any = sourceItem.toObject();
-                    delete itemData._id;
-                    delete itemData.createdAt;
-                    delete itemData.updatedAt;
-                    delete itemData.__v;
+                    // Create new
+                    const newItemData: any = item.toObject();
+                    delete newItemData._id;
+                    delete newItemData.createdAt;
+                    delete newItemData.updatedAt;
+                    delete newItemData.__v;
+                    newItemData.quantity = quantity;
+                    newItemData.status = 'IN_USE';
+                    newItemData.currentProject = projectId;
+                    // Location ID must be valid. Let's keep source location ID or specific dummy.
+                    // Keeping source location ID (Warehouse)
 
-                    itemData.location = targetLocationId;
-                    itemData.quantity = quantity;
-
-                    const newItem = await Equipment.create([itemData], { session });
-                    resultItem = newItem[0];
-                    targetItem = resultItem; // For logging reference if needed, though resultItem is used
+                    await Equipment.create([newItemData], { session });
                 }
-
-                // Decrease Source Stock
-                sourceItem.quantity -= quantity;
-                if (sourceItem.quantity === 0) {
-                    // Option: Delete if 0, or keep as 0? 
-                    // Usually for bulk, if 0, we might want to delete it to keep DB clean, 
-                    // OR keep it to preserve history reference. 
-                    // Let's keep it as 0 for now to be safe, or maybe delete.
-                    // The prompt said: "(Eğer 0 kalırsa kaynak kaydı silme, 0 olarak kalsın veya opsiyonel sil)"
-                    // I will keep it as 0.
-                    await sourceItem.save({ session });
-                } else {
-                    await sourceItem.save({ session });
-                }
-
-                // Log
-                await InventoryLog.create([{
-                    equipment: sourceItem._id, // Log against source ID? Or Target? 
-                    // Ideally we should log that SOURCE decreased and TARGET increased. 
-                    // But the schema links to ONE equipment.
-                    // Let's create a log for the MOVEMENT. 
-                    // Tracking it on sourceItem makes sense as "Moved Out".
-                    user: userId,
-                    action: 'MOVE',
-                    quantityChanged: quantity,
-                    fromLocation: sourceItem.location, // Note: sourceItem.location is still the old location ID object check
-                    toLocation: targetLocationId,
-                    notes: 'Transfer (Bulk Split/Merge)',
-                    date: new Date()
-                }], { session });
-
-                await session.commitTransaction();
-                return res.status(200).json({ success: true, message: 'Toplu ürün transfer edildi', data: resultItem });
             }
+
+            // Log
+            await InventoryLog.create([{
+                equipment: equipmentId, // Log on source ID
+                user: userId,
+                action: 'CHECK_OUT', // "Projeye Çık"
+                quantityChanged: quantity,
+                toLocation: projectId, // logging project ID as destination
+                notes: `Projeye çıkış: ${project.name}`,
+                date: new Date()
+            }], { session });
+
+            await session.commitTransaction();
+            res.status(200).json({ success: true, message: 'Ürün projeye atandı' });
+        } catch (error: any) {
+            await session.abortTransaction();
+            logger.error('Proje atama hatası:', error);
+            res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Sunucu hatası' });
+        } finally {
+            session.endSession();
+        }
+    }
+
+    // 4. Return To Warehouse
+    async returnToWarehouse(req: Request, res: Response) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+            const userId = (req as AuthenticatedRequest).user?.id;
+            const { equipmentId, quantity } = req.body;
+
+            const item = await Equipment.findById(equipmentId).session(session);
+            if (!item) throw new AppError('Ekipman bulunamadı', 404);
+
+            if (!item.currentProject) {
+                throw new AppError('Bu ekipman bir projede değil', 400);
+            }
+
+            // Find Warehouse Item to merge back into
+            // We assume 'location' field on the item holds the Warehouse ID.
+            const warehouseId = item.location;
+
+            if (item.trackingType === 'SERIALIZED') {
+                item.status = 'AVAILABLE';
+                item.currentProject = undefined; // Clear project
+                await item.save({ session });
+            } else {
+                // BULK
+                if (quantity > item.quantity) {
+                    throw new AppError('İade edilecek miktar mevcut miktardan fazla', 400);
+                }
+
+                // 1. Decrease Project Stock
+                item.quantity -= quantity;
+                if (item.quantity === 0) {
+                    await Equipment.findByIdAndDelete(item._id).session(session);
+                } else {
+                    await item.save({ session });
+                }
+
+                // 2. Increase Warehouse Stock
+                const warehouseItem = await Equipment.findOne({
+                    name: item.name,
+                    model: item.model,
+                    location: warehouseId,
+                    status: 'AVAILABLE', // Warehouse stock is available
+                    trackingType: 'BULK',
+                    currentProject: null // Important: Warehouse item has no project
+                }).session(session);
+
+                if (warehouseItem) {
+                    warehouseItem.quantity += quantity;
+                    await warehouseItem.save({ session });
+                } else {
+                    // This creates a new "Available" item in warehouse if original was exhausted/deleted
+                    const newItemData: any = item.toObject();
+                    delete newItemData._id;
+                    delete newItemData.createdAt;
+                    delete newItemData.updatedAt;
+                    delete newItemData.__v;
+                    newItemData.quantity = quantity;
+                    newItemData.status = 'AVAILABLE';
+                    newItemData.currentProject = null;
+                    newItemData.location = warehouseId;
+
+                    await Equipment.create([newItemData], { session });
+                }
+            }
+
+            // Log
+            await InventoryLog.create([{
+                equipment: equipmentId,
+                user: userId,
+                action: 'CHECK_IN', // "İade Al"
+                quantityChanged: quantity,
+                fromLocation: item.currentProject,
+                toLocation: warehouseId,
+                notes: 'Projeden iade',
+                date: new Date()
+            }], { session });
+
+            await session.commitTransaction();
+            res.status(200).json({ success: true, message: 'Ürün depoya iade edildi' });
 
         } catch (error: any) {
             await session.abortTransaction();
-            logger.error('Transfer hatası:', error);
+            logger.error('İade hatası:', error);
             res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Sunucu hatası' });
         } finally {
             session.endSession();

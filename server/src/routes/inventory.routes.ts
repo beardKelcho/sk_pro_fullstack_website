@@ -10,6 +10,8 @@ router.use(protect);
 // Category Routes
 router.post('/categories', authorize('admin', 'editor'), inventoryController.createCategory);
 router.get('/categories', inventoryController.getCategories);
+router.put('/categories/:id', authorize('admin', 'editor'), inventoryController.updateCategory);
+router.delete('/categories/:id', authorize('admin', 'editor'), inventoryController.deleteCategory);
 
 // Location Routes
 router.post('/locations', authorize('admin', 'editor'), inventoryController.createLocation);
@@ -19,8 +21,9 @@ router.get('/locations', inventoryController.getLocations);
 router.post('/items', authorize('admin', 'editor'), inventoryController.createItem.bind(inventoryController));
 router.get('/items', inventoryController.getItems);
 
-// Transfer Route
-router.post('/transfer', authorize('admin', 'editor'), inventoryController.transferStock.bind(inventoryController));
+// Operations Routes
+router.post('/assign-to-project', authorize('admin', 'editor'), inventoryController.assignToProject.bind(inventoryController));
+router.post('/return-to-warehouse', authorize('admin', 'editor'), inventoryController.returnToWarehouse.bind(inventoryController));
 
 // History Route
 router.get('/history/:id', inventoryController.getHistory);

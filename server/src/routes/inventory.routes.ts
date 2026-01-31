@@ -28,4 +28,7 @@ router.get('/history/:id', inventoryController.getHistory);
 // Update Item Route
 router.put('/items/:id', authorize('admin', 'editor'), inventoryController.updateItem.bind(inventoryController));
 
+// Delete Item Route
+router.delete('/items/:id', authorize('admin', 'editor'), inventoryController.deleteItem.bind(inventoryController));
+
 export default router;

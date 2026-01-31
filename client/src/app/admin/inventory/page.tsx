@@ -7,7 +7,7 @@ import EditItemModal from '@/components/admin/inventory/EditItemModal';
 import TransferModal from '@/components/admin/inventory/TransferModal';
 import QRCodeModal from '@/components/admin/inventory/QRCodeModal';
 import { toast } from 'react-toastify';
-import { Pencil, QrCode } from 'lucide-react';
+import { Pencil, QrCode, Trash2 } from 'lucide-react';
 
 export default function InventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -60,6 +60,18 @@ export default function InventoryPage() {
     }, [pagination.page, search, selectedCategory, selectedLocation]);
 
     // Handle Search Debounce in real implementation if needed, for now using direct effect dependecy or button
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm('Bu ekipmanı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+            try {
+                await inventoryService.deleteItem(id);
+                toast.success('Ekipman başarıyla silindi');
+                fetchData();
+            } catch (error) {
+                toast.error('Silme işlemi sırasında bir hata oluştu');
+            }
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         const colors: any = {
@@ -226,6 +238,13 @@ export default function InventoryPage() {
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                                 </svg>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(item._id)}
+                                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg tooltip"
+                                                title="Sil"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
                                             </button>
                                         </div>
                                     </td>

@@ -56,6 +56,11 @@ const inventoryService = {
         return response.data;
     },
 
+    deleteItem: async (id: string) => {
+        const response = await axios.delete(`/inventory/items/${id}`);
+        return response.data;
+    },
+
     // Categories & Locations
     getCategories: async () => {
         const response = await axios.get('/inventory/categories');

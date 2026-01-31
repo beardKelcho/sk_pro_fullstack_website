@@ -295,6 +295,27 @@ export class InventoryController {
         }
     }
 
+    // 6. Delete Item
+    async deleteItem(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const item = await Equipment.findByIdAndDelete(id);
+
+            if (!item) {
+                return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+            }
+
+            // Optional: Clean up execution logs or keep them?
+            // Usually we keep logs even if item is deleted, but formatted carefully.
+            // For now, simple deletion.
+
+            res.status(200).json({ success: true, message: 'Ürün başarıyla silindi' });
+        } catch (error) {
+            logger.error('Ürün silme hatası:', error);
+            res.status(500).json({ success: false, message: 'Sunucu hatası' });
+        }
+    }
+
 }
 
 export default new InventoryController();

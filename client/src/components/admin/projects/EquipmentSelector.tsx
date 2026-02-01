@@ -33,7 +33,7 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
         }),
         staleTime: 60000
     });
-    const items = inventoryData?.items || inventoryData?.equipment || [];
+    const items = inventoryData?.data || [];
 
     // Handle QR Scan
     const handleScanSuccess = (result: any) => {

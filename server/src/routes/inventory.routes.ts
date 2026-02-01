@@ -19,11 +19,13 @@ router.get('/locations', inventoryController.getLocations);
 
 // Item (Equipment) Routes
 router.post('/items', authorize('admin', 'editor'), inventoryController.createItem.bind(inventoryController));
+router.get('/items/:id', inventoryController.getItem.bind(inventoryController));
 router.get('/items', inventoryController.getItems);
 
 // Operations Routes
 router.post('/assign-to-project', authorize('admin', 'editor'), inventoryController.assignToProject.bind(inventoryController));
 router.post('/return-to-warehouse', authorize('admin', 'editor'), inventoryController.returnToWarehouse.bind(inventoryController));
+router.post('/items/:id/maintenance', authorize('admin', 'editor'), inventoryController.sendToMaintenance.bind(inventoryController));
 
 // History Route
 router.get('/history/:id', inventoryController.getHistory);

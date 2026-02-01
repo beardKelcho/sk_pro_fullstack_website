@@ -252,6 +252,21 @@ class ProjectService {
             throw new AppError('Proje bulunamadı', 404);
         }
 
+        // Validate Client ID if provided
+        if (data.client && !mongoose.Types.ObjectId.isValid(data.client)) {
+            throw new AppError('Geçersiz müşteri ID', 400);
+        }
+
+        // Validate Team IDs
+        if (data.team && data.team.some(t => !mongoose.Types.ObjectId.isValid(t))) {
+            throw new AppError('Geçersiz ekip üyesi ID', 400);
+        }
+
+        // Validate Equipment IDs
+        if (data.equipment && data.equipment.some(e => !mongoose.Types.ObjectId.isValid(e))) {
+            throw new AppError('Geçersiz ekipman ID', 400);
+        }
+
         // Determine effective dates for availability check
         const startDate = data.startDate ? new Date(data.startDate) : project.startDate;
         const endDate = data.endDate ? new Date(data.endDate) : project.endDate;

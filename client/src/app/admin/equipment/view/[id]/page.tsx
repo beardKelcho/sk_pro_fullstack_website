@@ -71,28 +71,28 @@ export default function ViewEquipment() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
-  
+
   // ID parametresini al
   const equipmentId = params.id as string;
-  
+
   // QR kod sorgula - bu ekipman için QR kod var mı?
   const { data: qrCodesData } = useQRCodes({
     relatedType: 'Equipment',
     isActive: true,
     limit: 100, // Tüm QR kodları getir, filtreleme client-side
   });
-  
+
   const equipmentQRCode = qrCodesData?.qrCodes.find(
     (qr) => (qr.relatedId === equipmentId) || (qr.relatedId === (equipment as any)?._id) || (qr.relatedId === equipment?.id)
   );
-  
+
   const { data: qrCodeDetail } = useQRCode(equipmentQRCode?._id || equipmentQRCode?.id || null);
   const createQRMutation = useCreateQRCode();
-  
+
   // QR kod oluştur
   const handleCreateQRCode = async () => {
     if (!equipment) return;
-    
+
     try {
       const result = await createQRMutation.mutateAsync({
         type: 'EQUIPMENT',
@@ -101,7 +101,7 @@ export default function ViewEquipment() {
         title: `${equipment.name} - QR Kod`,
         description: `${equipment.name} ekipmanı için QR kod`,
       });
-      
+
       setQrImage(result.qrImage);
       setShowQRModal(true);
       toast.success('QR kod başarıyla oluşturuldu!');
@@ -109,7 +109,7 @@ export default function ViewEquipment() {
       toast.error(err.response?.data?.message || 'QR kod oluşturulurken bir hata oluştu');
     }
   };
-  
+
   // Ekipman verisini yükle
   useEffect(() => {
     const fetchEquipment = async () => {
@@ -117,7 +117,7 @@ export default function ViewEquipment() {
       try {
         const { getEquipmentById } = await import('@/services/equipmentService');
         const equipmentData = await getEquipmentById(equipmentId);
-        
+
         // Backend formatını frontend formatına dönüştür
         const formattedEquipment: Equipment = {
           id: equipmentData._id || equipmentData.id || equipmentId,
@@ -126,8 +126,8 @@ export default function ViewEquipment() {
           serialNumber: equipmentData.serialNumber || '',
           category: (equipmentData.type || equipmentData.category) as Equipment['category'],
           status: (equipmentData.status === 'AVAILABLE' ? 'Available' :
-                  equipmentData.status === 'IN_USE' ? 'InUse' :
-                  equipmentData.status === 'MAINTENANCE' ? 'Maintenance' : 'Broken') as Equipment['status'],
+            equipmentData.status === 'IN_USE' ? 'InUse' :
+              equipmentData.status === 'MAINTENANCE' ? 'Maintenance' : 'Broken') as Equipment['status'],
           purchaseDate: equipmentData.purchaseDate,
           lastMaintenanceDate: (equipmentData as any).lastMaintenanceDate,
           nextMaintenanceDate: (equipmentData as any).nextMaintenanceDate,
@@ -135,7 +135,7 @@ export default function ViewEquipment() {
           specs: (equipmentData as any).specs || {},
           notes: equipmentData.notes || ''
         };
-        
+
         setEquipment(formattedEquipment);
         setLoading(false);
       } catch (error) {
@@ -144,30 +144,30 @@ export default function ViewEquipment() {
         setLoading(false);
       }
     };
-    
+
     if (equipmentId) {
       fetchEquipment();
     }
   }, [equipmentId]);
-  
+
   // Tarih formatlaması
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Belirtilmemiş';
-    
-    const options: Intl.DateTimeFormatOptions = { 
-      day: 'numeric', 
-      month: 'long', 
+
+    const options: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'long',
       year: 'numeric'
     };
     return new Date(dateString).toLocaleDateString('tr-TR', options);
   };
-  
+
   // Kategori ismini bul
   const getCategoryLabel = (categoryValue: string) => {
     const category = categories.find(cat => cat.value === categoryValue);
     return category ? category.label : categoryValue;
   };
-  
+
   // Ekipman silme fonksiyonu
   const handleDeleteEquipment = async () => {
     try {
@@ -175,52 +175,57 @@ export default function ViewEquipment() {
       // const response = await fetch(`/api/admin/equipment/${equipmentId}`, {
       //   method: 'DELETE',
       // });
-      
+
       // if (!response.ok) {
       //   throw new Error('Ekipman silinemedi');
       // }
-      
+
       // Başarılı silme sonrası liste sayfasına yönlendir
       router.push('/admin/equipment');
-      
+
     } catch (error) {
       logger.error('Silme hatası:', error);
       // Hata mesajı gösterilebilir
     }
   };
-  
+
   // Durum değiştirme fonksiyonu
   const handleChangeStatus = async () => {
     if (!equipment || !newStatus) return;
-    
+
     try {
-      // Gerçek uygulamada API çağrısı yapılacak
-      // const response = await fetch(`/api/admin/equipment/${equipmentId}/status`, {
-      //   method: 'PATCH',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({ status: newStatus }),
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error('Durum güncellenemedi');
-      // }
-      
+      const statusMap: Record<string, string> = {
+        'Available': 'AVAILABLE',
+        'InUse': 'IN_USE',
+        'Maintenance': 'MAINTENANCE',
+        'Broken': 'RETIRED' // Mapping Broken to Retired as per schema
+      };
+
+      const backendStatus = statusMap[newStatus] || newStatus;
+
+      if (backendStatus === 'MAINTENANCE') {
+        const { default: inventoryService } = await import('@/services/inventoryService');
+        await inventoryService.sendToMaintenance(equipment.id, 'Durum panelinden bakıma alındı');
+      } else {
+        const { updateEquipment } = await import('@/services/equipmentService');
+        await updateEquipment(equipment.id, { status: backendStatus as any });
+      }
+
       // Başarılı güncelleme sonrası durumu güncelle
       setEquipment({
         ...equipment,
         status: newStatus as Equipment['status']
       });
-      
+
       setChangeStatusModal(false);
-      
-    } catch (error) {
+      toast.success('Durum başarıyla güncellendi');
+
+    } catch (error: any) {
       logger.error('Durum güncelleme hatası:', error);
-      // Hata mesajı gösterilebilir
+      toast.error(error.message || 'Durum güncellenemedi');
     }
   };
-  
+
   // Yükleniyor durumu
   if (loading) {
     return (
@@ -232,7 +237,7 @@ export default function ViewEquipment() {
       </div>
     );
   }
-  
+
   // Ekipman bulunamadı durumu
   if (error || !equipment) {
     return (
@@ -252,7 +257,7 @@ export default function ViewEquipment() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Üst bölüm - Başlık ve Aksiyon Butonları */}
@@ -314,44 +319,41 @@ export default function ViewEquipment() {
             </div>
           </div>
         </div>
-        
+
         {/* Sekmeler */}
         <div className="border-t border-gray-200 dark:border-gray-700">
           <nav className="px-4 -mb-px flex space-x-8">
             <button
               onClick={() => setActiveTab('details')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'details'
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'details'
                   ? 'border-[#0066CC] dark:border-primary-light text-[#0066CC] dark:text-primary-light'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
+                }`}
             >
               Detaylar
             </button>
             <button
               onClick={() => setActiveTab('specs')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'specs'
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'specs'
                   ? 'border-[#0066CC] dark:border-primary-light text-[#0066CC] dark:text-primary-light'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
+                }`}
             >
               Teknik Özellikler
             </button>
             <button
               onClick={() => setActiveTab('maintenance')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'maintenance'
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'maintenance'
                   ? 'border-[#0066CC] dark:border-primary-light text-[#0066CC] dark:text-primary-light'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }`}
+                }`}
             >
               Bakım Bilgileri
             </button>
           </nav>
         </div>
       </div>
-      
+
       {/* İçerik Bölümü */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
         <div className="p-6">
@@ -362,7 +364,7 @@ export default function ViewEquipment() {
                 {/* Temel Bilgiler */}
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Temel Bilgiler</h3>
-                  
+
                   <div className="space-y-6">
                     <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
                       <dl>
@@ -370,17 +372,17 @@ export default function ViewEquipment() {
                           <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Model</dt>
                           <dd className="text-sm text-gray-900 dark:text-white col-span-2">{equipment.model}</dd>
                         </div>
-                        
+
                         <div className="bg-white dark:bg-gray-800 px-4 py-4 grid grid-cols-3 gap-4">
                           <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Seri Numarası</dt>
                           <dd className="text-sm text-gray-900 dark:text-white col-span-2">{equipment.serialNumber}</dd>
                         </div>
-                        
+
                         <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-4 grid grid-cols-3 gap-4">
                           <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Kategori</dt>
                           <dd className="text-sm text-gray-900 dark:text-white col-span-2">{getCategoryLabel(equipment.category)}</dd>
                         </div>
-                        
+
                         <div className="bg-white dark:bg-gray-800 px-4 py-4 grid grid-cols-3 gap-4">
                           <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Durum</dt>
                           <dd className="text-sm col-span-2">
@@ -389,19 +391,19 @@ export default function ViewEquipment() {
                             </span>
                           </dd>
                         </div>
-                        
+
                         <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-4 grid grid-cols-3 gap-4">
                           <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Konum</dt>
                           <dd className="text-sm text-gray-900 dark:text-white col-span-2">{equipment.location}</dd>
                         </div>
-                        
+
                         {equipment.currentProject && (
                           <div className="bg-white dark:bg-gray-800 px-4 py-4 grid grid-cols-3 gap-4">
                             <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Mevcut Proje</dt>
                             <dd className="text-sm text-gray-900 dark:text-white col-span-2">{equipment.currentProject}</dd>
                           </div>
                         )}
-                        
+
                         {equipment.assignedTo && (
                           <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-4 grid grid-cols-3 gap-4">
                             <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Atanan Kişi</dt>
@@ -410,7 +412,7 @@ export default function ViewEquipment() {
                         )}
                       </dl>
                     </div>
-                    
+
                     {equipment.notes && (
                       <div>
                         <h4 className="text-md font-medium text-gray-900 dark:text-white mb-2">Notlar</h4>
@@ -419,7 +421,7 @@ export default function ViewEquipment() {
                         </div>
                       </div>
                     )}
-                    
+
                     {/* QR Kod Bölümü */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
@@ -461,23 +463,23 @@ export default function ViewEquipment() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Tarih Bilgileri */}
                 <div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Tarih Bilgileri</h3>
-                  
+
                   <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <dl>
                       <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-4 grid grid-cols-3 gap-4">
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Alım Tarihi</dt>
                         <dd className="text-sm text-gray-900 dark:text-white col-span-2">{formatDate(equipment.purchaseDate)}</dd>
                       </div>
-                      
+
                       <div className="bg-white dark:bg-gray-800 px-4 py-4 grid grid-cols-3 gap-4">
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Son Bakım</dt>
                         <dd className="text-sm text-gray-900 dark:text-white col-span-2">{formatDate(equipment.lastMaintenanceDate)}</dd>
                       </div>
-                      
+
                       <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-4 grid grid-cols-3 gap-4">
                         <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Sonraki Bakım</dt>
                         <dd className="text-sm text-gray-900 dark:text-white col-span-2">
@@ -490,12 +492,12 @@ export default function ViewEquipment() {
               </div>
             </div>
           )}
-          
+
           {/* Teknik Özellikler Sekmesi */}
           {activeTab === 'specs' && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Teknik Özellikler</h3>
-              
+
               {equipment.specs && Object.keys(equipment.specs).length > 0 ? (
                 <div className="overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -533,20 +535,20 @@ export default function ViewEquipment() {
               )}
             </div>
           )}
-          
+
           {/* Bakım Bilgileri Sekmesi */}
           {activeTab === 'maintenance' && (
             <div>
               <div className="mb-6">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Bakım Bilgileri</h3>
-                
+
                 <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <dl>
                     <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-4 grid grid-cols-3 gap-4">
                       <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Son Bakım Tarihi</dt>
                       <dd className="text-sm text-gray-900 dark:text-white col-span-2">{formatDate(equipment.lastMaintenanceDate)}</dd>
                     </div>
-                    
+
                     <div className="bg-white dark:bg-gray-800 px-4 py-4 grid grid-cols-3 gap-4">
                       <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Sonraki Bakım Tarihi</dt>
                       <dd className="text-sm text-gray-900 dark:text-white col-span-2">{formatDate(equipment.nextMaintenanceDate)}</dd>
@@ -554,10 +556,10 @@ export default function ViewEquipment() {
                   </dl>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">Bakım Geçmişi</h3>
-                
+
                 <button
                   onClick={() => router.push(`/admin/equipment/${equipment.id}/maintenance/add`)}
                   className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary"
@@ -568,7 +570,7 @@ export default function ViewEquipment() {
                   Bakım Kaydı Ekle
                 </button>
               </div>
-              
+
               {/* Bakım geçmişi burada yer alacak - API entegrasyonu ile getirilecek */}
               <div className="text-center py-12">
                 <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -580,7 +582,7 @@ export default function ViewEquipment() {
           )}
         </div>
       </div>
-      
+
       {/* Silme Onay Modalı */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -611,7 +613,7 @@ export default function ViewEquipment() {
           </div>
         </div>
       )}
-      
+
       {/* Durum Değiştirme Modalı */}
       {changeStatusModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -650,11 +652,10 @@ export default function ViewEquipment() {
               <button
                 onClick={handleChangeStatus}
                 disabled={!newStatus}
-                className={`px-4 py-2 rounded-md text-white ${
-                  newStatus
+                className={`px-4 py-2 rounded-md text-white ${newStatus
                     ? 'bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary'
                     : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 Kaydet
               </button>
@@ -662,7 +663,7 @@ export default function ViewEquipment() {
           </div>
         </div>
       )}
-      
+
       {/* QR Kod Görüntüleme Modalı */}
       {showQRModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -679,7 +680,7 @@ export default function ViewEquipment() {
                 ✕
               </button>
             </div>
-            
+
             {qrImage && (
               <div className="text-center mb-4">
                 <LazyImage
@@ -697,7 +698,7 @@ export default function ViewEquipment() {
                 </p>
               </div>
             )}
-            
+
             {equipmentQRCode && !qrImage && (
               <div className="mb-4">
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">QR Kod:</p>
@@ -709,7 +710,7 @@ export default function ViewEquipment() {
                 </p>
               </div>
             )}
-            
+
             <div className="flex gap-2">
               <button
                 onClick={() => {

@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getStoredUserRole } from '@/utils/authStorage';
+import { Role } from '@/config/permissions';
 
 // Sidebar menüsü için tip tanımlaması
 interface MenuItem {
@@ -113,7 +114,7 @@ const initialMenuItems: MenuItem[] = [
     title: 'Monitoring',
     path: '/admin/monitoring',
     icon: <MonitoringIcon />,
-    roles: ['admin', 'business_owner'], // Only admin and business_owner
+    roles: [Role.ADMIN, Role.FIRMA_SAHIBI], // Only admin and business_owner
   },
   {
     title: 'Envanter',
@@ -302,8 +303,8 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
     return initialMenuItems.filter(item => {
       // Eğer role kısıtlaması varsa kontrol et
       if (item.roles && item.roles.length > 0) {
-        if (!userRole) return false; // Rol henüz yüklenmediyse gizle (veya isteğe göre göster)
-        return item.roles.includes(userRole) || userRole === 'admin' || userRole === 'business_owner';
+        if (!userRole) return false; // Rol henüz yüklenmediyse gizle
+        return item.roles.includes(userRole);
       }
       return true;
     });

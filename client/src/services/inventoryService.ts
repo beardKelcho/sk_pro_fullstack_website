@@ -98,6 +98,11 @@ const inventoryService = {
         return response.data;
     },
 
+    sendToMaintenance: async (id: string, notes: string) => {
+        const response = await axios.post(`/inventory/items/${id}/maintenance`, { notes });
+        return response.data;
+    },
+
     returnToWarehouse: async (data: { equipmentId: string; quantity: number }) => {
         const response = await axios.post('/inventory/return-to-warehouse', data);
         return response.data;

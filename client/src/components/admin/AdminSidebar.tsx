@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { getStoredUserRole } from '@/utils/authStorage';
 
 // Sidebar menüsü için tip tanımlaması
 interface MenuItem {
@@ -10,6 +11,7 @@ interface MenuItem {
   path: string;
   icon: React.ReactNode;
   submenu?: MenuItem[];
+  roles?: string[]; // Allowed roles (if defined, restricted to these)
 }
 
 const DashboardIcon = () => (
@@ -25,7 +27,7 @@ const EquipmentIcon = () => (
 );
 
 const ProjectIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
   </svg>
 );
@@ -92,7 +94,7 @@ const LogoutIcon = () => (
 );
 
 // Ana menü öğeleri
-const menuItems: MenuItem[] = [
+const initialMenuItems: MenuItem[] = [
   {
     title: 'Dashboard',
     path: '/admin/dashboard',
@@ -111,6 +113,7 @@ const menuItems: MenuItem[] = [
     title: 'Monitoring',
     path: '/admin/monitoring',
     icon: <MonitoringIcon />,
+    roles: ['admin', 'business_owner'], // Only admin and business_owner
   },
   {
     title: 'Envanter',
@@ -164,6 +167,11 @@ const menuItems: MenuItem[] = [
       {
         title: 'Tüm Görevler',
         path: '/admin/tasks',
+        icon: <></>,
+      },
+      {
+        title: 'Bana Atananlar', // Yeni link
+        path: '/admin/tasks?assignedToMe=true',
         icon: <></>,
       },
       {
@@ -243,7 +251,6 @@ const menuItems: MenuItem[] = [
       },
     ],
   },
-
   {
     title: 'Ayarlar',
     path: '/admin/settings',
@@ -283,8 +290,30 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSidebarProps) {
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
+  const [userRole, setUserRole] = useState<string>('');
+
+  // Kullanıcı rolünü al
+  useEffect(() => {
+    setUserRole(getStoredUserRole());
+  }, []);
+
+  // Menu items filtering
+  const menuItems = useMemo(() => {
+    return initialMenuItems.filter(item => {
+      // Eğer role kısıtlaması varsa kontrol et
+      if (item.roles && item.roles.length > 0) {
+        if (!userRole) return false; // Rol henüz yüklenmediyse gizle (veya isteğe göre göster)
+        return item.roles.includes(userRole) || userRole === 'admin' || userRole === 'business_owner';
+      }
+      return true;
+    });
+  }, [userRole]);
 
   const isActive = useCallback((path: string) => {
+    if (path.includes('?')) {
+      // Parametreli path kontrolü
+      return pathname + window.location.search === path;
+    }
     return pathname === path || pathname.startsWith(`${path}/`);
   }, [pathname]);
 
@@ -295,7 +324,7 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
         setOpenMenus((prev) => ({ ...prev, [item.title]: true }));
       }
     });
-  }, [pathname, isActive]);
+  }, [pathname, isActive, menuItems]);
 
   const toggleSubMenu = useCallback((title: string, e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -315,7 +344,7 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
       {/* Animated background gradient */}
       <div className="absolute inset-0 gradient-animated opacity-10 dark:opacity-5 pointer-events-none" />
 
-      {/* Floating particles effect - Performans için azaltıldı */}
+      {/* Floating particles effect */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(2)].map((_, i) => (
@@ -418,13 +447,6 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
                               rounded-lg hover:bg-white/10 dark:hover:bg-white/5 hover:text-[#0066CC] dark:hover:text-primary-light 
                               transition-all duration-300 hover:translate-x-1
                             `}
-                            onClick={(e) => {
-                              // Navigation'ı garanti altına al
-                              if (pathname === subItem.path) {
-                                e.preventDefault();
-                                return;
-                              }
-                            }}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-[#0066CC] mr-2 opacity-0 group-hover:opacity-100 transition-opacity"></span>
                             <span>{subItem.title}</span>
@@ -447,13 +469,6 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
                     rounded-xl hover:bg-white/10 dark:hover:bg-white/5 transition-all duration-300 modern-card
                     ${isActive(item.path) ? 'neon-border' : ''}
                   `}
-                  onClick={(e) => {
-                    // Navigation'ı garanti altına al
-                    if (pathname === item.path) {
-                      e.preventDefault();
-                      return;
-                    }
-                  }}
                 >
                   <span className={`${collapsed ? 'mx-auto' : 'mr-3'} transition-transform hover:scale-110 relative z-10`}>
                     {item.icon}
@@ -485,4 +500,4 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
       </div>
     </div>
   );
-} 
+}

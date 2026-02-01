@@ -10,6 +10,7 @@ import logger from '@/utils/logger';
 import { getStoredUserRole } from '@/utils/authStorage';
 import { hasRole, Role } from '@/config/permissions';
 import CommentsPanel from '@/components/admin/CommentsPanel';
+import ProjectTasks from '@/components/admin/ProjectTasks';
 
 // Müşteri tipi
 interface Customer {
@@ -403,13 +404,13 @@ const calculateProgress = (startDate: string, endDate: string): number => {
   const start = new Date(startDate).getTime();
   const end = new Date(endDate).getTime();
   const now = new Date().getTime();
-  
+
   // Proje henüz başlamadıysa
   if (now < start) return 0;
-  
+
   // Proje tamamlandıysa
   if (now > end) return 100;
-  
+
   // Proje devam ediyorsa
   const total = end - start;
   const elapsed = now - start;
@@ -564,38 +565,38 @@ export default function ViewProject() {
   const projectId = params.id as string;
   const [userRole, setUserRole] = useState<string>('');
   const canViewBudget = hasRole(userRole, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI);
-  
+
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [showVersionHistory, setShowVersionHistory] = useState(false);
-  
+
   // Ekip üyesi bilgilerini getir
   const getTeamMember = (id: string) => {
     return project?.team.find(member => member.id === id);
   };
-  
+
   // Ekipman bilgilerini getir
   const getEquipment = (id: string) => {
     return project?.equipment.find(equipment => equipment.id === id);
   };
-  
+
   // Projenin zaman çizelgesini getir
   const getTimeline = () => {
     return project?.timeline || [];
   };
-  
+
   // Projeyi yükle
   useEffect(() => {
     const fetchProject = async () => {
       try {
         setLoading(true);
         setUserRole(getStoredUserRole());
-        
+
         const { getProjectById } = await import('@/services/projectService');
         const projectData = await getProjectById(projectId);
-        
+
         // Backend formatını frontend formatına dönüştür
         const formattedProject = {
           id: projectData._id || projectData.id || '',
@@ -634,7 +635,7 @@ export default function ViewProject() {
           createdAt: projectData.createdAt || new Date().toISOString(),
           updatedAt: projectData.updatedAt || new Date().toISOString()
         };
-        
+
         setProject(formattedProject);
         setLoading(false);
       } catch (err) {
@@ -643,10 +644,10 @@ export default function ViewProject() {
         setLoading(false);
       }
     };
-    
+
     fetchProject();
   }, [projectId]);
-  
+
   // Yükleniyor durumu
   if (loading) {
     return (
@@ -658,7 +659,7 @@ export default function ViewProject() {
       </div>
     );
   }
-  
+
   // Hata durumu
   if (error) {
     return (
@@ -680,7 +681,7 @@ export default function ViewProject() {
       </div>
     );
   }
-  
+
   // Proje bulunamadı durumu
   if (!project) {
     return (
@@ -702,7 +703,7 @@ export default function ViewProject() {
       </div>
     );
   }
-  
+
   return (
     <div className="p-6 space-y-6">
       {/* Üst bölüm - başlık ve eylem butonları */}
@@ -752,63 +753,67 @@ export default function ViewProject() {
           </Link>
         </div>
       </div>
-      
+
       {/* Sekme (Tab) menüsü */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex space-x-8">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-1 py-4 text-sm font-medium border-b-2 ${
-              activeTab === 'overview'
-                ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
+            className={`px-1 py-4 text-sm font-medium border-b-2 ${activeTab === 'overview'
+              ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
           >
             Genel Bilgiler
           </button>
           <button
             onClick={() => setActiveTab('team')}
-            className={`px-1 py-4 text-sm font-medium border-b-2 ${
-              activeTab === 'team'
-                ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
+            className={`px-1 py-4 text-sm font-medium border-b-2 ${activeTab === 'team'
+              ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
           >
             Ekip ve Ekipman
           </button>
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`px-1 py-4 text-sm font-medium border-b-2 ${
-              activeTab === 'timeline'
-                ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
+            className={`px-1 py-4 text-sm font-medium border-b-2 ${activeTab === 'timeline'
+              ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
           >
             Zaman Çizelgesi
           </button>
           <button
             onClick={() => setActiveTab('notes')}
-            className={`px-1 py-4 text-sm font-medium border-b-2 ${
-              activeTab === 'notes'
-                ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
+            className={`px-1 py-4 text-sm font-medium border-b-2 ${activeTab === 'notes'
+              ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
           >
             Notlar
           </button>
           <button
+            onClick={() => setActiveTab('tasks')}
+            className={`px-1 py-4 text-sm font-medium border-b-2 ${activeTab === 'tasks'
+              ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+          >
+            Görevler
+          </button>
+          <button
             onClick={() => setActiveTab('comments')}
-            className={`px-1 py-4 text-sm font-medium border-b-2 ${
-              activeTab === 'comments'
-                ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-            }`}
+            className={`px-1 py-4 text-sm font-medium border-b-2 ${activeTab === 'comments'
+              ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-500'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
           >
             Yorumlar
           </button>
         </nav>
       </div>
-      
+
       {/* İçerik alanı - Burada sekmelerin içeriği gösterilecek */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
         {/* Genel Bilgiler sekmesi */}
@@ -898,7 +903,7 @@ export default function ViewProject() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Son Güncelleme Bilgisi */}
                 <div className="mt-6 text-sm text-gray-500 dark:text-gray-400 text-right">
                   <p>
@@ -911,7 +916,7 @@ export default function ViewProject() {
             </div>
           </div>
         )}
-        
+
         {activeTab === 'team' && (
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -923,7 +928,7 @@ export default function ViewProject() {
                     Toplam: {project.team.length} kişi
                   </span>
                 </div>
-                
+
                 {project.team.length > 0 ? (
                   <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                     {project.team.map((teamMember, index) => (
@@ -965,7 +970,7 @@ export default function ViewProject() {
                   </div>
                 )}
               </div>
-              
+
               {/* Ekipman Kartı */}
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 overflow-hidden">
                 <div className="flex justify-between items-center mb-4">
@@ -974,7 +979,7 @@ export default function ViewProject() {
                     Toplam: {project.equipment.length} ekipman
                   </span>
                 </div>
-                
+
                 {project.equipment.length > 0 ? (
                   <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                     {project.equipment.map((equipment, index) => (
@@ -1014,7 +1019,7 @@ export default function ViewProject() {
             </div>
           </div>
         )}
-        
+
         {activeTab === 'timeline' && (
           <div className="p-6">
             <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 overflow-hidden">
@@ -1024,7 +1029,7 @@ export default function ViewProject() {
                   {formatDate(project.startDate)} - {formatDate(project.endDate)}
                 </span>
               </div>
-              
+
               {/* Zaman çizelgesi görselleştirmesi */}
               <div className="relative pt-2">
                 <div className="flex mb-2 items-center justify-between">
@@ -1045,18 +1050,18 @@ export default function ViewProject() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Aşamalar */}
               <div className="py-4">
                 <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">Proje Aşamaları</h4>
-                
+
                 {project.timeline && project.timeline.length > 0 ? (
-                  <ol className="relative border-l border-gray-200 dark:border-gray-700">                  
+                  <ol className="relative border-l border-gray-200 dark:border-gray-700">
                     {project.timeline.map((phase, index) => {
                       const today = new Date();
                       const isCompleted = new Date(phase.date) < today;
                       const isToday = new Date(phase.date).toDateString() === today.toDateString();
-                      
+
                       return (
                         <li key={index} className="mb-10 ml-6">
                           <span className={`flex absolute -left-3 justify-center items-center w-6 h-6 rounded-full ring-8 ring-white dark:ring-gray-900 
@@ -1094,7 +1099,7 @@ export default function ViewProject() {
             </div>
           </div>
         )}
-        
+
         {activeTab === 'notes' && (
           <div className="p-6">
             <div className="grid grid-cols-1 gap-6">
@@ -1113,7 +1118,7 @@ export default function ViewProject() {
                   </div>
                 )}
               </div>
-              
+
               {/* Not Ekleme Formu */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4 overflow-hidden border border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Not Ekle</h3>
@@ -1140,6 +1145,12 @@ export default function ViewProject() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'tasks' && (
+          <div className="p-6">
+            <ProjectTasks projectId={project.id} />
           </div>
         )}
 

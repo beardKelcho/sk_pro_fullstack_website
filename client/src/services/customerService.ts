@@ -9,11 +9,20 @@ export interface Customer {
   id?: string;
   name: string;
   companyName?: string;
+  contactPerson?: string;
   email?: string;
   phone?: string;
   address?: string;
+  industry?: string;
+  status?: 'Active' | 'Inactive' | string;
   notes?: string;
   taxNumber?: string;
+  contacts?: {
+    name: string;
+    phone: string;
+    email: string;
+    role: string;
+  }[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -144,7 +153,7 @@ export const useCustomerById = (id: string | null) => {
 
 export const useCreateCustomer = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createCustomer,
     onSuccess: () => {
@@ -155,7 +164,7 @@ export const useCreateCustomer = () => {
 
 export const useUpdateCustomer = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Customer> }) => updateCustomer(id, data),
     onSuccess: (_, variables) => {
@@ -167,7 +176,7 @@ export const useUpdateCustomer = () => {
 
 export const useDeleteCustomer = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: deleteCustomer,
     onSuccess: () => {

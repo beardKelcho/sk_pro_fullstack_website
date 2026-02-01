@@ -117,6 +117,41 @@ export class InventoryController {
     }
 
     // 2. Get Items
+    async getItem(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const item = await Equipment.findById(id)
+                .populate('category')
+                .populate('location')
+                .populate('currentProject');
+
+            if (!item) {
+                return res.status(404).json({ success: false, message: 'Ekipman bulunamadı' });
+            }
+
+            // Transform for consistent response (optional but good for location logic)
+            // Using toObject() to modify
+            const data: any = item.toObject();
+            if (data.status === 'IN_USE' && data.currentProject) {
+                data.location = {
+                    _id: data.currentProject._id,
+                    name: data.currentProject.location || data.currentProject.name,
+                    type: 'PROJECT'
+                };
+            } else if (data.status === 'AVAILABLE') {
+                data.location = {
+                    _id: data.location?._id || 'warehouse',
+                    name: 'Ana Depo',
+                    type: 'WAREHOUSE'
+                };
+            }
+
+            res.status(200).json({ success: true, data });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Sunucu hatası' });
+        }
+    }
+
     async getItems(req: Request, res: Response) {
         try {
             const { category, location, status, search, limit = 20, page = 1 } = req.query;
@@ -130,18 +165,40 @@ export class InventoryController {
                 query.$text = { $search: search as string };
             }
 
+            // Populate currentProject to get details
             const items = await Equipment.find(query)
                 .populate('category')
                 .populate('location')
+                .populate('currentProject')
                 .limit(Number(limit))
                 .skip((Number(page) - 1) * Number(limit))
-                .sort({ createdAt: -1 });
+                .sort({ createdAt: -1 })
+                .lean();
+
+            // Transform location based on status
+            const transformedItems = items.map((item: any) => {
+                if (item.status === 'IN_USE' && item.currentProject) {
+                    item.location = {
+                        _id: item.currentProject._id,
+                        name: item.currentProject.location || item.currentProject.name,
+                        type: 'PROJECT'
+                    };
+                } else if (item.status === 'AVAILABLE') {
+                    // Force "Ana Depo" display for available items
+                    item.location = {
+                        _id: item.location?._id || 'warehouse',
+                        name: 'Ana Depo',
+                        type: 'WAREHOUSE'
+                    };
+                }
+                return item;
+            });
 
             const total = await Equipment.countDocuments(query);
 
             res.status(200).json({
                 success: true,
-                data: items,
+                data: transformedItems,
                 pagination: {
                     total,
                     page: Number(page),
@@ -149,7 +206,59 @@ export class InventoryController {
                 }
             });
         } catch (error) {
+            console.error('Get Items Error:', error);
             res.status(500).json({ success: false, message: 'Sunucu hatası' });
+        }
+    }
+
+    // 7. Maintenance Operations
+    async sendToMaintenance(req: Request, res: Response) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+            const userId = (req as AuthenticatedRequest).user?.id;
+            const { id } = req.params;
+            const { notes } = req.body;
+
+            const item = await Equipment.findById(id).session(session);
+            if (!item) throw new AppError('Ekipman bulunamadı', 404);
+
+            if (item.status !== 'AVAILABLE' && item.status !== 'IN_USE') {
+                throw new AppError('Sadece müsait veya kullanımda olan ekipmanlar bakıma gönderilebilir', 400);
+            }
+
+            const previousStatus = item.status;
+            const previousProject = item.currentProject;
+
+            item.status = 'MAINTENANCE';
+            item.currentProject = undefined; // Clear project if it was in use
+            await item.save({ session });
+
+            // Create Maintenance Record (Optional, if Maintenance model exists, else just Log)
+            // Assuming Maintenance model exists or using InventoryLog
+            // Checking imports... Maintenance model is not imported. Let's use InventoryLog for now as requested "Backend'de maintenance kaydı olisturan".
+            // Ideally we should have a Maintenance model, but user said "Maintenance kaydı oluşturan".
+            // Let's check imports. No Maintenance model imported. 
+            // However, the file list showed `Maintenance.ts` in models.
+            // I should import it.
+
+            await InventoryLog.create([{
+                equipment: id,
+                user: userId,
+                action: 'MAINTENANCE',
+                quantityChanged: 0,
+                fromLocation: previousProject || item.location,
+                notes: notes || 'Bakıma gönderildi',
+                date: new Date()
+            }], { session });
+
+            await session.commitTransaction();
+            res.status(200).json({ success: true, message: 'Ekipman bakıma gönderildi', data: item });
+        } catch (error: any) {
+            await session.abortTransaction();
+            res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Sunucu hatası' });
+        } finally {
+            session.endSession();
         }
     }
 

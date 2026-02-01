@@ -4,7 +4,12 @@ import Client from '../models/Client';
 export const getClients = async (req: Request, res: Response) => {
   try {
     const clients = await Client.find().sort({ createdAt: -1 });
-    res.json(clients);
+    res.json({
+      clients,
+      total: clients.length,
+      page: 1,
+      totalPages: 1
+    });
   } catch (error) {
     res.status(500).json({ message: 'Müşteriler getirilemedi', error });
   }

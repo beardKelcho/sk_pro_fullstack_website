@@ -5,9 +5,11 @@ import { getMonitoringDashboard } from '../controllers/monitoring.controller';
 
 const router = express.Router();
 
+// Protect all monitoring routes
+router.use(authorize('admin')); // Only admins can access monitoring
+
 // Monitoring dashboard (admin)
 // Monitoring dashboard (admin only)
 router.get('/dashboard', authenticate, authorize('admin', 'business_owner'), getMonitoringDashboard);
 
-export default router;
 

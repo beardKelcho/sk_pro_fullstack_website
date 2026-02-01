@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Client from '../models/Client';
 
 export const getClients = async (req: Request, res: Response) => {
@@ -36,7 +37,14 @@ export const createClient = async (req: Request, res: Response) => {
 
 export const updateClient = async (req: Request, res: Response) => {
   try {
-    const client = await Client.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Geçersiz müşteri ID' });
+    }
+
+    // Prevent updating immutable fields
+    const { _id, createdAt, updatedAt, ...updateData } = req.body;
+
+    const client = await Client.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!client) return res.status(404).json({ message: 'Müşteri bulunamadı' });
     res.json(client);
   } catch (error) {

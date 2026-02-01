@@ -97,6 +97,7 @@ export default function AddProject() {
         name: client.name || '',
         email: client.email || '',
         phone: client.phone || '',
+        contacts: client.contacts || [] // Added
       })));
     }).catch(error => {
       logger.error('Müşteriler yüklenirken hata:', error);
@@ -284,6 +285,9 @@ export default function AddProject() {
         ) as 'PENDING_APPROVAL' | 'APPROVED' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED',
         team: formData.team && formData.team.length > 0 ? formData.team : [],
         equipment: formData.equipment && formData.equipment.length > 0 ? formData.equipment : [],
+        contactPerson: formData.contactPerson,
+        contactEmail: formData.contactEmail,
+        contactPhone: formData.contactPhone,
         notes: formData.notes.trim() || undefined
         // Not: Budget field'ı backend model'inde henüz yok, ileride eklenebilir
       };
@@ -453,6 +457,33 @@ export default function AddProject() {
               <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 İletişim Kişisi <span className="text-red-500">*</span>
               </label>
+
+              {/* Contact Selection Dropdown */}
+              {customers.find(c => c.id === formData.customer)?.contacts && customers.find(c => c.id === formData.customer).contacts.length > 0 && (
+                <div className="mb-2">
+                  <select
+                    className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm dark:bg-gray-700 dark:text-white"
+                    onChange={(e) => {
+                      const selectedContact = customers.find(c => c.id === formData.customer)?.contacts[e.target.value];
+                      if (selectedContact) {
+                        setFormData(prev => ({
+                          ...prev,
+                          contactPerson: selectedContact.name,
+                          contactEmail: selectedContact.email,
+                          contactPhone: selectedContact.phone
+                        }));
+                      }
+                    }}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Kayıtlı kişilerden seç...</option>
+                    {customers.find(c => c.id === formData.customer).contacts.map((contact: any, index: number) => (
+                      <option key={index} value={index}>{contact.name} - {contact.role}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <input
                 type="text"
                 id="contactPerson"

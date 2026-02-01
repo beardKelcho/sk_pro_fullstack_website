@@ -90,10 +90,18 @@ export class ProjectController {
     session.startTransaction();
     try {
       const { id } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new AppError('Geçersiz proje ID', 400);
+      }
+
       const userId = (req as any).user?._id;
 
+      // Prevent updating immutable fields
+      const { _id, createdAt, updatedAt, createdBy, ...updateData } = req.body;
+
       const project = await projectService.updateProject(id, {
-        ...req.body,
+        ...updateData,
         userId
       }, session);
 

@@ -10,8 +10,11 @@ export interface IProject extends Document {
   client: mongoose.Types.ObjectId;
   team: mongoose.Types.ObjectId[];
   equipment: mongoose.Types.ObjectId[];
-  budget?: number; // Added
-  manager?: mongoose.Types.ObjectId; // Added
+  budget?: number;
+  manager?: mongoose.Types.ObjectId;
+  contactPerson?: string; // Added
+  contactEmail?: string; // Added
+  contactPhone?: string; // Added
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +26,7 @@ const ProjectSchema: Schema = new Schema(
       required: [true, 'Proje adı gereklidir'],
       trim: true,
     },
+    // ... (description, startDate etc unchanged) ...
     description: {
       type: String,
       trim: true,
@@ -36,7 +40,6 @@ const ProjectSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      // PLANNING legacy (geriye uyumluluk): UI'da kullanılmıyor; PENDING_APPROVAL ile aynı anlamda ele alınır
       enum: ['PLANNING', 'PENDING_APPROVAL', 'APPROVED', 'ON_HOLD', 'ACTIVE', 'COMPLETED', 'CANCELLED'],
       default: 'PENDING_APPROVAL',
     },
@@ -56,6 +59,9 @@ const ProjectSchema: Schema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    contactPerson: { type: String },
+    contactEmail: { type: String },
+    contactPhone: { type: String },
     team: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

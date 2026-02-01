@@ -1,9 +1,12 @@
 import mongoose, { FilterQuery } from 'mongoose';
-import { Project, Equipment, Client, User } from '../models';
+import { Project, Equipment, Client, User, Task } from '../models'; // Task added
 import { IProject } from '../models/Project';
 import { AppError, IProjectPopulated } from '../types/common';
+import * as NotificationService from '../utils/notificationService'; // Added
+import * as EmailService from '../utils/emailService'; // Added
+import logger from '../utils/logger';
 
-
+// ... (interfaces unchanged) ...
 export interface PaginatedProjects {
     projects: IProjectPopulated[];
     total: number;
@@ -21,6 +24,9 @@ export interface CreateProjectData {
     status?: string;
     budget?: number; // Added
     manager?: string; // Added, ObjectId string
+    contactPerson?: string; // Added
+    contactEmail?: string; // Added
+    contactPhone?: string; // Added
     team?: string[]; // Array of ObjectId strings
     equipment?: string[]; // Array of ObjectId strings
     createdBy?: string; // Added for logging
@@ -31,17 +37,21 @@ export interface UpdateProjectData {
     description?: string;
     client?: string;
     location?: string;
-    startDate?: Date; // Changed from Date | string to just Date or whatever passed
+    startDate?: Date;
     endDate?: Date;
     status?: string;
-    budget?: number; // Added
-    manager?: string; // Added
+    budget?: number;
+    manager?: string;
+    contactPerson?: string; // Added
+    contactEmail?: string; // Added
+    contactPhone?: string; // Added
     team?: string[];
     equipment?: string[];
-    userId?: string; // Added for logging
+    userId?: string;
 }
 
 class ProjectService {
+    // ... (checkEquipmentAvailability and listProjects unchanged) ...
     /**
      * Check equipment availability for a date range
      */
@@ -207,9 +217,64 @@ class ProjectService {
             endDate: data.endDate,
             location: data.location,
             status: data.status || 'PENDING_APPROVAL',
+            budget: data.budget,
+            manager: data.manager,
+            contactPerson: data.contactPerson,
+            contactEmail: data.contactEmail,
+            contactPhone: data.contactPhone,
             team: data.team || [],
             equipment: data.equipment || []
         }], { session });
+
+        // Auto-Task Creation for Team Members
+        if (data.team && data.team.length > 0) {
+            try {
+                // Fetch users to get names/emails for notifications
+                const teamMembers = await User.find({ _id: { $in: data.team } });
+
+                const taskPromises = teamMembers.map(async (user) => {
+                    // 1. Create Task
+                    const task = await Task.create([{
+                        title: `Yeni Proje Ataması: ${project.name}`,
+                        description: `Bu projeye yetkili personel olarak atandınız. Lütfen proje detaylarını ve takvimi kontrol ediniz.`,
+                        project: project._id,
+                        assignedTo: user._id,
+                        status: 'TODO',
+                        priority: 'MEDIUM',
+                    }], { session });
+
+                    // 2. Send In-App Notification
+                    await NotificationService.notifyUser(
+                        user._id,
+                        'TASK_ASSIGNED',
+                        'Yeni Proje Görevi',
+                        `${project.name} projesine atandınız.`,
+                        { projectId: project._id, taskId: task[0]._id }
+                    );
+
+                    // 3. Send Email
+                    if (user.email) {
+                        const emailHtml = `
+                            <div style="font-family: Arial, sans-serif;">
+                                <h2>Yeni Proje Ataması</h2>
+                                <p>Merhaba ${user.name},</p>
+                                <p><strong>${project.name}</strong> projesine yetkili personel olarak atandınız.</p>
+                                <p>Admin panelinden proje detaylarını inceleyebilirsiniz.</p>
+                                <br>
+                                <p>İyi çalışmalar,</p>
+                                <p>SK Production Ekibi</p>
+                            </div>
+                        `;
+                        await EmailService.sendEmail(user.email, `Proje Ataması: ${project.name}`, emailHtml);
+                    }
+                });
+
+                await Promise.all(taskPromises);
+            } catch (err) {
+                logger.error('Auto-task creation failed:', err);
+                // Don't block project creation if notification fails
+            }
+        }
 
         // Handle Equipment Checkout logic
         if (data.equipment && data.equipment.length > 0) {
@@ -294,15 +359,20 @@ class ProjectService {
             }
         }
 
+        // Check for new team members
+        const oldTeamIds = (project.team as any[]).map(t => t.toString());
+        const newTeamIds = data.team || [];
+        const addedTeamMembers = newTeamIds.filter(id => !oldTeamIds.includes(id));
+
         // Apply updates
-        // Get old project for comparison
+        // Get old project for comparison (re-fetch logic is fine, but we already have `project` above which is the 'old' state before save)
         const oldProject = await Project.findById(id).session(session || null);
         if (!oldProject) throw new AppError('Project not found', 404);
 
         if (data.name) project.name = data.name;
         if (data.description) project.description = data.description;
         if (data.startDate) project.startDate = new Date(data.startDate);
-        if (data.endDate) project.endDate = new Date(data.endDate); // Allow setting undefined? Typescript says Optional
+        if (data.endDate) project.endDate = new Date(data.endDate);
         if (data.location) project.location = data.location;
         if (data.status) project.status = data.status as IProject['status'];
         if (data.client) project.client = new mongoose.Types.ObjectId(data.client);
@@ -310,18 +380,69 @@ class ProjectService {
         if (data.equipment) project.equipment = data.equipment.map(id => new mongoose.Types.ObjectId(id));
         if (data.budget) project.budget = data.budget;
         if (data.manager) project.manager = new mongoose.Types.ObjectId(data.manager);
+        if (data.contactPerson) project.contactPerson = data.contactPerson;
+        if (data.contactEmail) project.contactEmail = data.contactEmail;
+        if (data.contactPhone) project.contactPhone = data.contactPhone;
 
         await project.save({ session });
+
+        // Handle Auto-Tasks for NEW Team Members
+        if (addedTeamMembers.length > 0) {
+            try {
+                const teamMembers = await User.find({ _id: { $in: addedTeamMembers } });
+
+                const taskPromises = teamMembers.map(async (user) => {
+                    // 1. Create Task
+                    const task = await Task.create([{
+                        title: `Yeni Proje Ataması: ${project.name}`,
+                        description: `Bu projeye yeni atandınız. Lütfen detayları kontrol ediniz.`,
+                        project: project._id,
+                        assignedTo: user._id,
+                        status: 'TODO',
+                        priority: 'MEDIUM',
+                    }], { session });
+
+                    // 2. Send In-App Notification
+                    await NotificationService.notifyUser(
+                        user._id,
+                        'TASK_ASSIGNED',
+                        'Yeni Proje Görevi',
+                        `${project.name} projesine atandınız.`,
+                        { projectId: project._id, taskId: task[0]._id }
+                    );
+
+                    // 3. Send Email
+                    if (user.email) {
+                        const emailHtml = `
+                            <div style="font-family: Arial, sans-serif;">
+                                <h2>Yeni Proje Ataması</h2>
+                                <p>Merhaba ${user.name},</p>
+                                <p><strong>${project.name}</strong> projesine yeni atandınız.</p>
+                                <p>Admin panelinden proje detaylarını inceleyebilirsiniz.</p>
+                                <br>
+                                <p>İyi çalışmalar,</p>
+                                <p>SK Production Ekibi</p>
+                            </div>
+                        `;
+                        await EmailService.sendEmail(user.email, `Proje Ataması: ${project.name}`, emailHtml);
+                    }
+                });
+
+                await Promise.all(taskPromises);
+            } catch (err) {
+                logger.error('Auto-task creation (update) failed:', err);
+            }
+        }
 
         // Equipment Logic
         const EquipmentModel = mongoose.model('Equipment');
         const InventoryLogModel = mongoose.model('InventoryLog');
-        const userId = (data as any).userId; // Need to ensure passed from controller
+        const userId = (data as any).userId;
 
         // 1. Check if Status Changed to COMPLETED or CANCELLED
         if ((project.status === 'COMPLETED' || project.status === 'CANCELLED') && oldProject.status !== project.status) {
             if (project.equipment && project.equipment.length > 0) {
-                const eqIds = project.equipment.map((e: any) => e._id || e); // e might be object or id
+                const eqIds = project.equipment.map((e: any) => e._id || e);
 
                 await EquipmentModel.updateMany(
                     { _id: { $in: eqIds } },
@@ -397,6 +518,7 @@ class ProjectService {
         return await this.getProjectById(id);
     }
 
+    // ... (deleteProject and getStats unchanged)
     /**
      * Delete Project
      */
@@ -410,12 +532,7 @@ class ProjectService {
             throw new AppError('Proje bulunamadı', 404);
         }
 
-        // Model pre-hook handles equipment status reset if needed?
-        // Actually, ProjectSchema has a pre 'findOneAndUpdate' hook for status change, 
-        // but for delete, we might need to manually free equipment if implicit logic requires it.
-        // Let's check schema... Schema doesn't have pre 'deleteOne'.
-        // We should ensure equipment is freed.
-
+        // Ensure equipment is freed.
         if (project.equipment && project.equipment.length > 0) {
             await Equipment.updateMany(
                 { _id: { $in: project.equipment } },

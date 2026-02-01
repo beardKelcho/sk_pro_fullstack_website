@@ -176,7 +176,7 @@ export class InventoryController {
                 .lean();
 
             // Transform location based on status
-            const transformedItems = items.map((item: any) => {
+            const transformedItems = await Promise.all(items.map(async (item: any) => {
                 if (item.status === 'IN_USE' && item.currentProject) {
                     item.location = {
                         _id: item.currentProject._id,
@@ -192,7 +192,7 @@ export class InventoryController {
                     };
                 }
                 return item;
-            });
+            }));
 
             const total = await Equipment.countDocuments(query);
 

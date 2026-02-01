@@ -93,7 +93,7 @@ export default function AddProject() {
       const clients = data.clients || [];
       setCustomers(clients.map((client: any) => ({
         id: client._id || client.id || '',
-        companyName: client.companyName || client.name || '',
+        companyName: client.company || client.companyName || client.name || '',
         name: client.name || '',
         email: client.email || '',
         phone: client.phone || '',

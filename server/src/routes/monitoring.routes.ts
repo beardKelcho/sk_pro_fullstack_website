@@ -12,4 +12,6 @@ router.use(authorize('admin')); // Only admins can access monitoring
 // Monitoring dashboard (admin only)
 router.get('/dashboard', authenticate, authorize('admin', 'business_owner'), getMonitoringDashboard);
 
+export default router;
+
 

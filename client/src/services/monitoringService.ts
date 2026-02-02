@@ -252,7 +252,7 @@ function getMockPerformanceMetrics(timeRange: '1h' | '24h' | '7d' | '30d'): Perf
   const now = Date.now();
   const rangeMs = timeRange === '1h' ? 3600000 : timeRange === '24h' ? 86400000 : timeRange === '7d' ? 604800000 : 2592000000;
   const points = timeRange === '1h' ? 12 : timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : 30;
-  
+
   return Array.from({ length: points }, (_, i) => ({
     pageLoadTime: 800 + Math.random() * 400,
     apiResponseTime: 150 + Math.random() * 100,
@@ -269,7 +269,7 @@ function getMockPerformanceMetrics(timeRange: '1h' | '24h' | '7d' | '30d'): Perf
 function getMockApiResponseMetrics(timeRange: '1h' | '24h' | '7d' | '30d'): ApiResponseMetrics[] {
   const endpoints = ['/api/equipment', '/api/projects', '/api/tasks', '/api/users', '/api/dashboard/stats'];
   const methods = ['GET', 'POST', 'PUT', 'DELETE'];
-  
+
   return Array.from({ length: 50 }, () => ({
     endpoint: endpoints[Math.floor(Math.random() * endpoints.length)],
     method: methods[Math.floor(Math.random() * methods.length)],
@@ -326,7 +326,7 @@ function getMockMonitoringDashboard(timeRange: '1h' | '24h' | '7d' | '30d'): Mon
       topPages: [
         { path: '/admin/dashboard', views: 120 },
         { path: '/admin/projects', views: 85 },
-        { path: '/admin/equipment', views: 70 },
+        { path: '/admin/inventory', views: 70 },
         { path: '/admin/tasks', views: 55 },
         { path: '/admin/users', views: 40 },
       ],

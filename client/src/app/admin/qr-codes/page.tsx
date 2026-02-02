@@ -42,7 +42,7 @@ export default function QRCodesPage() {
     if (process.env.NODE_ENV === 'development') {
       logger.debug('QR kod tarandı:', result);
     }
-    
+
     // İşlem tipine göre yönlendirme
     if (result.qrCode) {
       if (result.qrCode.relatedType === 'Equipment') {
@@ -52,7 +52,7 @@ export default function QRCodesPage() {
           toast.info('Ekipman durumu güncelleniyor...');
           // Burada ekipman durumunu güncelleme işlemi yapılabilir
         }
-        window.location.href = `/admin/equipment/view/${result.qrCode.relatedId}`;
+        window.location.href = `/admin/inventory/view/${result.qrCode.relatedId}`;
       } else if (result.qrCode.relatedType === 'Project') {
         window.location.href = `/admin/projects/view/${result.qrCode.relatedId}`;
       } else {
@@ -196,11 +196,10 @@ export default function QRCodesPage() {
                 </p>
               </div>
               <span
-                className={`px-2 py-1 text-xs rounded ${
-                  qrCode.isActive
+                className={`px-2 py-1 text-xs rounded ${qrCode.isActive
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                     : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                }`}
+                  }`}
               >
                 {qrCode.isActive ? 'Aktif' : 'Pasif'}
               </span>

@@ -25,10 +25,10 @@ export const ROUTES = {
       VIEW: (id: string) => `/admin/tasks/view/${id}`,
     },
     EQUIPMENT: {
-      LIST: '/admin/equipment',
-      ADD: '/admin/equipment/add',
-      EDIT: (id: string) => `/admin/equipment/edit/${id}`,
-      VIEW: (id: string) => `/admin/equipment/view/${id}`,
+      LIST: '/admin/inventory',
+      ADD: '/admin/inventory', // Modal based
+      EDIT: (id: string) => `/admin/inventory/view/${id}`, // Or trigger modal
+      VIEW: (id: string) => `/admin/inventory/view/${id}`,
     },
     CALENDAR: '/admin/calendar',
     SETTINGS: '/admin/settings',

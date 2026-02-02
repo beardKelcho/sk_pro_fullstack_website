@@ -32,7 +32,7 @@ const typeColors: Record<string, string> = {
 };
 
 const typePaths: Record<string, string> = {
-  equipment: '/admin/equipment/view',
+  equipment: '/admin/inventory/view',
   project: '/admin/projects/view',
   task: '/admin/tasks/view',
   client: '/admin/clients/view',
@@ -266,8 +266,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             <button
               onClick={() => setActiveTab('search')}
               className={`flex-1 px-4 py-2 text-sm font-medium ${activeTab === 'search'
-                  ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
             >
               Arama
@@ -275,8 +275,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             <button
               onClick={() => setActiveTab('saved')}
               className={`flex-1 px-4 py-2 text-sm font-medium ${activeTab === 'saved'
-                  ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
             >
               Kaydedilmiş ({savedSearches.length})
@@ -284,8 +284,8 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             <button
               onClick={() => setActiveTab('history')}
               className={`flex-1 px-4 py-2 text-sm font-medium ${activeTab === 'history'
-                  ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'text-[#0066CC] dark:text-primary-light border-b-2 border-[#0066CC] dark:border-primary-light'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
             >
               Geçmiş ({searchHistory.length})

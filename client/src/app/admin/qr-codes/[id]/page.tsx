@@ -155,7 +155,7 @@ export default function QRCodeDetailPage() {
           {/* QR Kod Detayları */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">QR Kod Bilgileri</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">QR Kod</label>
@@ -177,11 +177,10 @@ export default function QRCodeDetailPage() {
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Durum</label>
                   <p className="mt-1">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        qrCode.isActive
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${qrCode.isActive
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                           : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}
+                        }`}
                     >
                       {qrCode.isActive ? 'Aktif' : 'Pasif'}
                     </span>
@@ -224,13 +223,13 @@ export default function QRCodeDetailPage() {
           {relatedItem && (
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">İlişkili Kayıt</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Tip</label>
                   <p className="mt-1 text-sm text-gray-900 dark:text-white">{qrCode.relatedType}</p>
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">İsim</label>
                   <p className="mt-1 text-sm text-gray-900 dark:text-white">{relatedItem.name || relatedItem.title || '-'}</p>
@@ -240,10 +239,10 @@ export default function QRCodeDetailPage() {
                   <Link
                     href={
                       qrCode.relatedType === 'Equipment'
-                        ? `/admin/equipment/view/${qrCode.relatedId}`
+                        ? `/admin/inventory/view/${qrCode.relatedId}`
                         : qrCode.relatedType === 'Project'
-                        ? `/admin/projects/view/${qrCode.relatedId}`
-                        : '#'
+                          ? `/admin/projects/view/${qrCode.relatedId}`
+                          : '#'
                     }
                     className="text-sm text-[#0066CC] dark:text-primary-light hover:underline"
                   >
@@ -257,7 +256,7 @@ export default function QRCodeDetailPage() {
           {/* Tarama Geçmişi */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tarama Geçmişi</h2>
-            
+
             {scanHistory && scanHistory.length > 0 ? (
               <div className="space-y-3">
                 {scanHistory.map((scan: any, index: number) => (
@@ -348,7 +347,7 @@ export default function QRCodeDetailPage() {
           {/* İstatistikler */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">İstatistikler</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Toplam Tarama</label>
@@ -391,7 +390,7 @@ export default function QRCodeDetailPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">QR Kod Düzenle</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -492,12 +491,12 @@ export default function QRCodeDetailPage() {
                 ✕
               </button>
             </div>
-            
+
             <div className="text-center mb-4">
-              <Image 
-                src={qrImage || ''} 
-                alt="QR Kod" 
-                width={256} 
+              <Image
+                src={qrImage || ''}
+                alt="QR Kod"
+                width={256}
                 height={256}
                 className="mx-auto border border-gray-200 dark:border-gray-700 rounded"
                 priority
@@ -506,7 +505,7 @@ export default function QRCodeDetailPage() {
                 QR kodu yazdırmak için sağ tıklayıp &quot;Resmi Farklı Kaydet&quot; seçeneğini kullanabilirsiniz.
               </p>
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={() => {

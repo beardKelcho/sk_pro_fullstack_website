@@ -724,8 +724,8 @@ export default function AddProject() {
                 Ekipman & Stok
               </label>
               <EquipmentSelector
-                inventoryService.getItems({page: 1, limit: 1000 }), selectedEquipment={formData.equipment}
-              onSelectionChange={(ids) => setFormData(prev => ({ ...prev, equipment: ids }))}
+                selectedEquipment={formData.equipment}
+                onSelectionChange={(ids) => setFormData(prev => ({ ...prev, equipment: ids }))}
               />
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Projeye atamak istediğiniz ekipmanları seçin veya QR kod ile ekleyin.

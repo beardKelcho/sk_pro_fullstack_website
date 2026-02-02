@@ -19,7 +19,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ isOpen, onClose, onSucces
         brand: '',
         model: '',
         criticalStockLevel: 0,
-        criticalStockLevel: 0,
         status: 'AVAILABLE',
         subComponents: [] as any[]
     });

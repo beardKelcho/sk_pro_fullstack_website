@@ -5,29 +5,30 @@ import apiClient from '@/services/api/axios';
 import { toast } from 'react-toastify';
 
 interface ExportMenuProps {
-  baseEndpoint: string; // Örn: '/export/equipment'
+  type: string; // Örn: 'inventory', 'projects'
   baseFilename: string; // Örn: 'equipment'
   label?: string;
   className?: string;
 }
 
-export default function ExportMenu({ 
-  baseEndpoint, 
-  baseFilename, 
+export default function ExportMenu({
+  type,
+  baseFilename,
   label = 'Dışa Aktar',
   className = ''
 }: ExportMenuProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
+  const handleExport = async (format: 'csv' | 'excel' | 'pdf' | 'json') => {
     setLoading(format);
     setIsOpen(false);
-    
+
     try {
-      const endpoint = `${baseEndpoint}/${format}`;
+      // Generic endpoint: /api/export?type=...&format=...
+      const endpoint = `/export?type=${type}&format=${format}`;
       const filename = `${baseFilename}-export.${format === 'excel' ? 'xlsx' : format}`;
-      
+
       const response = await apiClient.get(endpoint, {
         responseType: 'blob',
       });
@@ -41,13 +42,13 @@ export default function ExportMenu({
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       toast.success(`${format.toUpperCase()} formatında dışa aktarma başarılı`);
     } catch (error: any) {
       console.error('Export hatası:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Dışa aktarma işlemi başarısız oldu';
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        'Dışa aktarma işlemi başarısız oldu';
       toast.error(errorMessage);
     } finally {
       setLoading(null);
@@ -84,8 +85,8 @@ export default function ExportMenu({
 
       {isOpen && (
         <>
-          <div 
-            className="fixed inset-0 z-10" 
+          <div
+            className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
           <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-20">
@@ -124,6 +125,18 @@ export default function ExportMenu({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                   PDF olarak dışa aktar
+                </div>
+              </button>
+              <button
+                onClick={() => handleExport('json')}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                role="menuitem"
+              >
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                  </svg>
+                  JSON olarak dışa aktar
                 </div>
               </button>
             </div>

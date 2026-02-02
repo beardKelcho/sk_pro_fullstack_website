@@ -16,7 +16,20 @@ export interface IEquipment extends Omit<Document, 'model'> {
   createdAt: Date;
   updatedAt: Date;
   currentProject?: mongoose.Types.ObjectId;
+  subComponents?: Array<{
+    name: string;
+    type: string;
+    serialNumber?: string;
+    specs?: string;
+  }>;
 }
+
+const SubComponentSchema = new Schema({
+  name: { type: String, required: true },
+  type: { type: String, required: true }, // 'GPU', 'CPU', 'RAM', etc.
+  serialNumber: { type: String, trim: true },
+  specs: { type: String, trim: true }
+}, { _id: false });
 
 const EquipmentSchema: Schema = new Schema(
   {
@@ -25,6 +38,7 @@ const EquipmentSchema: Schema = new Schema(
       required: [true, 'Ekipman adı gereklidir'],
       trim: true,
     },
+    subComponents: [SubComponentSchema],
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',

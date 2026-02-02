@@ -22,8 +22,11 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
         brand: '',
         model: '',
         criticalStockLevel: 0,
-        status: 'AVAILABLE'
+        status: 'AVAILABLE',
+        subComponents: [] as any[]
     });
+    const [subComponent, setSubComponent] = useState({ name: '', type: 'GPU', serialNumber: '', specs: '' });
+    const [isSystemBuilderActive, setIsSystemBuilderActive] = useState(false);
     const [loading, setLoading] = useState(false);
 
     // Reset form when modal opens
@@ -39,10 +42,38 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
                 brand: '',
                 model: '',
                 criticalStockLevel: 0,
-                status: 'AVAILABLE'
+                status: 'AVAILABLE',
+                subComponents: []
             });
+            setSubComponent({ name: '', type: 'GPU', serialNumber: '', specs: '' });
+            setIsSystemBuilderActive(false);
         }
     }, [isOpen, categories, locations]);
+
+    // Watch for "Custom PC" or similar categories
+    useEffect(() => {
+        const selectedCat = categories.find(c => c._id === formData.category);
+        if (selectedCat && (selectedCat.name.toLowerCase().includes('pc') || selectedCat.name.toLowerCase().includes('bilgisayar') || selectedCat.name.toLowerCase().includes('system'))) {
+            setIsSystemBuilderActive(true);
+        } else {
+            setIsSystemBuilderActive(false);
+        }
+    }, [formData.category, categories]);
+
+    const addSubComponent = () => {
+        if (!subComponent.name || !subComponent.type) return;
+        setFormData({
+            ...formData,
+            subComponents: [...(formData.subComponents || []), subComponent]
+        });
+        setSubComponent({ name: '', type: 'GPU', serialNumber: '', specs: '' });
+    };
+
+    const removeSubComponent = (index: number) => {
+        const newComponents = [...(formData.subComponents || [])];
+        newComponents.splice(index, 1);
+        setFormData({ ...formData, subComponents: newComponents });
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -144,8 +175,8 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
                                     <button
                                         type="button"
                                         className={`flex-1 py-1 rounded-md text-sm font-medium transition-all ${formData.trackingType === 'BULK'
-                                                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-white shadow-sm'
-                                                : 'text-gray-500 dark:text-gray-400'
+                                            ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-white shadow-sm'
+                                            : 'text-gray-500 dark:text-gray-400'
                                             }`}
                                         onClick={() => setFormData({ ...formData, trackingType: 'BULK', quantity: 1, serialNumber: '' })}
                                     >
@@ -154,8 +185,8 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
                                     <button
                                         type="button"
                                         className={`flex-1 py-1 rounded-md text-sm font-medium transition-all ${formData.trackingType === 'SERIALIZED'
-                                                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-white shadow-sm'
-                                                : 'text-gray-500 dark:text-gray-400'
+                                            ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-white shadow-sm'
+                                            : 'text-gray-500 dark:text-gray-400'
                                             }`}
                                         onClick={() => setFormData({ ...formData, trackingType: 'SERIALIZED', quantity: 1 })}
                                     >
@@ -206,6 +237,76 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
                                 </div>
                             )}
                         </div>
+
+                        {/* System Builder Section */}
+                        {isSystemBuilderActive && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-3 flex items-center">
+                                    <span className="mr-2">🖥️</span> System Builder
+                                </h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-3">
+                                    <input
+                                        type="text"
+                                        placeholder="Bileşen Adı (örn: RTX 4090)"
+                                        className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        value={subComponent.name}
+                                        onChange={e => setSubComponent({ ...subComponent, name: e.target.value })}
+                                    />
+                                    <select
+                                        className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        value={subComponent.type}
+                                        onChange={e => setSubComponent({ ...subComponent, type: e.target.value })}
+                                    >
+                                        <option value="GPU">GPU</option>
+                                        <option value="CPU">CPU</option>
+                                        <option value="RAM">RAM</option>
+                                        <option value="Motherboard">Anakart</option>
+                                        <option value="Storage">Depolama</option>
+                                        <option value="PSU">PSU</option>
+                                        <option value="Case">Kasa</option>
+                                        <option value="Cooling">Soğutma</option>
+                                        <option value="Other">Diğer</option>
+                                    </select>
+                                    <input
+                                        type="text"
+                                        placeholder="Seri No (Opsiyonel)"
+                                        className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        value={subComponent.serialNumber}
+                                        onChange={e => setSubComponent({ ...subComponent, serialNumber: e.target.value })}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={addSubComponent}
+                                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                                    >
+                                        Ekle
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2">
+                                    {formData.subComponents?.map((comp, index) => (
+                                        <div key={index} className="flex justify-between items-center bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-700">
+                                            <div className="flex gap-2">
+                                                <span className="font-bold text-gray-700 dark:text-gray-300 w-24">{comp.type}</span>
+                                                <span className="text-gray-900 dark:text-white">{comp.name}</span>
+                                                {comp.serialNumber && <span className="text-gray-500 text-sm">({comp.serialNumber})</span>}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSubComponent(index)}
+                                                className="text-red-500 hover:text-red-700"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {(!formData.subComponents || formData.subComponents.length === 0) && (
+                                        <p className="text-sm text-gray-500 italic text-center py-2">Henüz bileşen eklenmedi.</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex justify-end gap-3 mt-6">
                             <button

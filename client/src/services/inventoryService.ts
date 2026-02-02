@@ -15,6 +15,12 @@ export interface InventoryItem {
     qrCode?: string;
     createdAt: string;
     updatedAt: string;
+    subComponents?: Array<{
+        name: string;
+        type: string;
+        serialNumber?: string;
+        specs?: string;
+    }>;
 }
 
 export interface Category {

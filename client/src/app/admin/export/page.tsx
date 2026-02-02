@@ -22,7 +22,7 @@ export default function ExportPage() {
                 <h3 className="font-medium text-gray-900 dark:text-white mb-2">Ekipmanlar</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Tüm ekipman verilerini dışa aktar</p>
                 <ExportMenu
-                  baseEndpoint="/api/export/equipment"
+                  type="inventory"
                   baseFilename="equipment"
                   label="Dışa Aktar"
                 />
@@ -31,7 +31,7 @@ export default function ExportPage() {
                 <h3 className="font-medium text-gray-900 dark:text-white mb-2">Projeler</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Tüm proje verilerini dışa aktar</p>
                 <ExportMenu
-                  baseEndpoint="/api/export/projects"
+                  type="projects"
                   baseFilename="projects"
                   label="Dışa Aktar"
                 />
@@ -40,7 +40,7 @@ export default function ExportPage() {
                 <h3 className="font-medium text-gray-900 dark:text-white mb-2">Görevler</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Tüm görev verilerini dışa aktar</p>
                 <ExportMenu
-                  baseEndpoint="/api/export/tasks"
+                  type="tasks"
                   baseFilename="tasks"
                   label="Dışa Aktar"
                 />
@@ -49,7 +49,7 @@ export default function ExportPage() {
                 <h3 className="font-medium text-gray-900 dark:text-white mb-2">Müşteriler</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Tüm müşteri verilerini dışa aktar</p>
                 <ExportMenu
-                  baseEndpoint="/api/export/clients"
+                  type="clients"
                   baseFilename="clients"
                   label="Dışa Aktar"
                 />
@@ -58,7 +58,7 @@ export default function ExportPage() {
                 <h3 className="font-medium text-gray-900 dark:text-white mb-2">Bakımlar</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Tüm bakım kayıtlarını dışa aktar</p>
                 <ExportMenu
-                  baseEndpoint="/api/export/maintenance"
+                  type="maintenance"
                   baseFilename="maintenance"
                   label="Dışa Aktar"
                 />
@@ -67,7 +67,7 @@ export default function ExportPage() {
                 <h3 className="font-medium text-gray-900 dark:text-white mb-2">Kullanıcılar</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Tüm kullanıcı verilerini dışa aktar</p>
                 <ExportMenu
-                  baseEndpoint="/api/export/users"
+                  type="users"
                   baseFilename="users"
                   label="Dışa Aktar"
                 />

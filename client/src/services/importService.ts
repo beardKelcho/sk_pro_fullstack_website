@@ -17,8 +17,11 @@ export interface ImportResponse {
 /**
  * Template dosyası indir
  */
-export const downloadTemplate = async (type: 'equipment' | 'project'): Promise<Blob> => {
-  const response = await apiClient.get(`/import/template/${type}`, {
+/**
+ * Template dosyası indir
+ */
+export const downloadTemplate = async (type: string): Promise<Blob> => {
+  const response = await apiClient.get(`/import/template?type=${type}`, {
     responseType: 'blob',
   });
   return response.data;
@@ -30,8 +33,9 @@ export const downloadTemplate = async (type: 'equipment' | 'project'): Promise<B
 export const importEquipment = async (file: File): Promise<ImportResponse> => {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('type', 'inventory'); // Backend expects 'inventory' or 'equipment'
 
-  const response = await apiClient.post<ImportResponse>('/import/equipment', formData, {
+  const response = await apiClient.post<ImportResponse>('/import', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -45,8 +49,9 @@ export const importEquipment = async (file: File): Promise<ImportResponse> => {
 export const importProjects = async (file: File): Promise<ImportResponse> => {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('type', 'projects');
 
-  const response = await apiClient.post<ImportResponse>('/import/projects', formData, {
+  const response = await apiClient.post<ImportResponse>('/import', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -57,7 +62,7 @@ export const importProjects = async (file: File): Promise<ImportResponse> => {
 // React Query Hooks
 export const useImportEquipment = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: importEquipment,
     onSuccess: () => {
@@ -68,7 +73,7 @@ export const useImportEquipment = () => {
 
 export const useImportProjects = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: importProjects,
     onSuccess: () => {

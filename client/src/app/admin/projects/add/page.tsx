@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCreateProject } from '@/services/projectService';
+import { getAllCustomers } from '@/services/customerService';
 import inventoryService, { type InventoryItem as EquipmentItem } from '@/services/inventoryService';
 import { getAllUsers } from '@/services/userService';
 import { toast } from 'react-toastify';

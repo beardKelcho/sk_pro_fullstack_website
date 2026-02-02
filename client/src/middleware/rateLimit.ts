@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const path = request.nextUrl.pathname;
-  const ip = request.ip ?? '127.0.0.1';
+  const ip = (request as any).ip || request.headers.get('x-forwarded-for') || '127.0.0.1';
   const config = RATE_LIMITS[path] || RATE_LIMITS.default;
 
   const key = `rate_limit:${ip}:${path}`;

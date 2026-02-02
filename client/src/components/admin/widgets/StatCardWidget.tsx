@@ -17,7 +17,7 @@ const StatCardWidget: React.FC<StatCardWidgetProps> = ({ widget, dashboardStats,
 
     // dashboardStats.stats yapısını kontrol et
     const stats = dashboardStats.stats || dashboardStats;
-    
+
     const statType = widget.settings?.statType;
     switch (statType) {
       case 'equipment_total':
@@ -47,7 +47,7 @@ const StatCardWidget: React.FC<StatCardWidgetProps> = ({ widget, dashboardStats,
 
   const getLink = () => {
     const statType = widget.settings?.statType;
-    if (statType?.includes('equipment')) return '/admin/equipment';
+    if (statType?.includes('equipment')) return '/admin/inventory';
     if (statType?.includes('project')) return '/admin/projects';
     if (statType?.includes('task')) return '/admin/tasks';
     if (statType?.includes('client')) return '/admin/clients';
@@ -89,12 +89,11 @@ const StatCardWidget: React.FC<StatCardWidgetProps> = ({ widget, dashboardStats,
 
   const link = getLink();
   const content = (
-    <div 
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-full relative ${
-        isEditable 
-          ? 'widget-drag-handle cursor-move border-2 border-blue-400 border-dashed' 
+    <div
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 h-full relative ${isEditable
+          ? 'widget-drag-handle cursor-move border-2 border-blue-400 border-dashed'
           : 'cursor-default'
-      } ${isEditable ? 'hover:border-blue-500' : ''}`}
+        } ${isEditable ? 'hover:border-blue-500' : ''}`}
     >
       {isEditable && (
         <div className="absolute top-2 right-2 text-xs bg-blue-500 text-white px-2 py-1 rounded">

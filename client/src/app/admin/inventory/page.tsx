@@ -8,6 +8,8 @@ import { Pencil, QrCode, Trash2, ArrowUpRight, ArrowDownLeft } from 'lucide-reac
 import AssignProjectModal from '@/components/admin/inventory/AssignProjectModal';
 import ReturnModal from '@/components/admin/inventory/ReturnModal';
 import QRCodeModal from '@/components/admin/inventory/QRCodeModal';
+import ImportModal from '@/components/admin/ImportModal';
+import ExportMenu from '@/components/admin/ExportMenu';
 import { toast } from 'react-toastify';
 
 export default function InventoryPage() {
@@ -26,6 +28,7 @@ export default function InventoryPage() {
 
     // Modals
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [importModalOpen, setImportModalOpen] = useState(false);
     const [assignItem, setAssignItem] = useState<InventoryItem | null>(null);
     const [returnItem, setReturnItem] = useState<InventoryItem | null>(null);
     const [editItem, setEditItem] = useState<InventoryItem | null>(null);
@@ -105,15 +108,27 @@ export default function InventoryPage() {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Envanter Yönetimi</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1">Ekipman takibi ve stok yönetimi</p>
                 </div>
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Yeni Ekle
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setImportModalOpen(true)}
+                        className="px-4 py-2 bg-green-600 dark:bg-green-700 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 transition-colors"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        İçe Aktar
+                    </button>
+                    <ExportMenu type="inventory" baseFilename="inventory" label="Dışa Aktar" />
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Yeni Ekle
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -292,6 +307,14 @@ export default function InventoryPage() {
             </div>
 
             {/* Modals */}
+            <ImportModal
+                isOpen={importModalOpen}
+                onClose={() => setImportModalOpen(false)}
+                onSuccess={fetchData}
+                type="inventory"
+                title="Envanter İçe Aktar"
+            />
+
             <AddItemModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}

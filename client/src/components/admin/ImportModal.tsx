@@ -10,9 +10,9 @@ import { AxiosError } from 'axios';
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'equipment' | 'project';
-  onSuccess?: () => void;
-  title?: string;
+  onSuccess: () => void;
+  type: 'equipment' | 'projects' | 'inventory';
+  title: string;
 }
 
 interface ApiErrorResponse {
@@ -31,7 +31,7 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess, title }:
   const importProjects = useImportProjects();
 
   const isImporting = importEquipment.isPending || importProjects.isPending;
-  const importMutation = type === 'equipment' ? importEquipment : importProjects;
+  const importMutation = (type === 'equipment' || type === 'inventory') ? importEquipment : importProjects;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -122,7 +122,7 @@ export default function ImportModal({ isOpen, onClose, type, onSuccess, title }:
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 id="import-modal-title" className="text-2xl font-bold text-gray-900 dark:text-white">
-              {title || (type === 'equipment' ? 'Ekipman' : 'Proje') + ' Import'}
+              {title || ((type === 'equipment' || type === 'inventory') ? 'Ekipman' : 'Proje') + ' Import'}
             </h2>
             <button
               onClick={handleClose}

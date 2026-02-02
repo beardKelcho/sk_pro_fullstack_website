@@ -238,6 +238,20 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
                             )}
                         </div>
 
+                        {/* System Builder Toggle */}
+                        <div className="flex items-center gap-2 mb-2">
+                            <input
+                                type="checkbox"
+                                id="systemBuilderToggle"
+                                checked={isSystemBuilderActive}
+                                onChange={(e) => setIsSystemBuilderActive(e.target.checked)}
+                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                            />
+                            <label htmlFor="systemBuilderToggle" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                System Builder Modunu Aç (PC Toplama / Alt Bileşen Ekleme)
+                            </label>
+                        </div>
+
                         {/* System Builder Section */}
                         {isSystemBuilderActive && (
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">

@@ -224,8 +224,8 @@ export default function InventoryPage() {
                             ) : items.map((item) => (
                                 <tr key={item._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                                        <div className="text-xs text-gray-500">{item.brand} {item.model}</div>
+                                        <div className="font-medium text-gray-900 dark:text-white">{String(item.name || '')}</div>
+                                        <div className="text-xs text-gray-500">{String(item.brand || '')} {String(item.model || '')}</div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                                         {getCategoryName(item.category)}
@@ -235,7 +235,7 @@ export default function InventoryPage() {
                                             <span className="inline-flex items-center gap-1">
                                                 {item.location.type === 'VEHICLE' && '🚚'}
                                                 {item.location.type === 'WAREHOUSE' && '🏢'}
-                                                {item.location.name}
+                                                {String(item.location.name || '')}
                                             </span>
                                         ) : '-'}
                                     </td>

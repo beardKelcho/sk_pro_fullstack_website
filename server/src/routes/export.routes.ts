@@ -1,3 +1,7 @@
+/**
+ * Export Routes
+ * Handles data export functionality
+ */
 import express from 'express';
 import { exportData } from '../controllers/export.controller';
 import { authenticate as protect, authorize as restrictTo } from '../middleware/auth.middleware';

@@ -1,3 +1,7 @@
+/**
+ * Import Routes
+ * Handles data import functionality
+ */
 import express from 'express';
 import { importData, downloadTemplate } from '../controllers/import.controller';
 import { authenticate as protect, authorize as restrictTo } from '../middleware/auth.middleware';

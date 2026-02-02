@@ -164,7 +164,7 @@ export default function EquipmentList() {
           >
             Import
           </button>
-          <ExportMenu baseEndpoint="/api/export/equipment" baseFilename="equipment" label="Dışa Aktar" />
+          <ExportMenu type="inventory" baseFilename="equipment" label="Dışa Aktar" />
           <Link href="/admin/equipment/add">
             <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center">
               Yeni Ekipman Ekle

@@ -113,7 +113,7 @@ export default function ProjectsPage() {
         </div>
         <div className="mt-4 md:mt-0 flex gap-2">
           <ExportMenu
-            baseEndpoint={API_ENDPOINTS.EXPORT.PROJECTS}
+            type="projects"
             baseFilename="projects"
             label="Dışa Aktar"
           />

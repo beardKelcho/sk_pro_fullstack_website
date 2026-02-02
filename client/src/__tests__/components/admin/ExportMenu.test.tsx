@@ -137,7 +137,7 @@ describe('ExportMenu Component', () => {
   it('should show loading state during export', async () => {
     const user = userEvent.setup();
     const mockBlob = new Blob(['test data']);
-    
+
     // Delay the response to test loading state
     mockApiClient.get.mockImplementation(
       () =>
@@ -207,8 +207,7 @@ describe('ExportMenu Component', () => {
   });
 
   it('should use custom label when provided', () => {
-    render(<ExportMenu {...defaultProps} label="Export Data" />);
+    render(<ExportMenu type="inventory" baseFilename="test-file" />);
     expect(screen.getByText('Export Data')).toBeInTheDocument();
   });
 });
-

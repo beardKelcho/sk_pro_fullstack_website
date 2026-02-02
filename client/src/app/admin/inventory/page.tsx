@@ -206,7 +206,9 @@ export default function InventoryPage() {
                                         <div className="text-xs text-gray-500">{item.brand} {item.model}</div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                                        {typeof item.category === 'object' ? item.category.name : '-'}
+                                        {item.category && typeof item.category === 'object' && 'name' in item.category
+                                            ? (typeof (item.category as any).name === 'string' ? (item.category as any).name : '-')
+                                            : '-'}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                                         {typeof item.location === 'object' ? (

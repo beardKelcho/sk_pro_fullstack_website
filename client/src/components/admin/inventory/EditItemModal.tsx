@@ -19,7 +19,9 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ isOpen, onClose, onSucces
         brand: '',
         model: '',
         criticalStockLevel: 0,
-        status: 'AVAILABLE'
+        criticalStockLevel: 0,
+        status: 'AVAILABLE',
+        subComponents: [] as any[]
     });
     const [loading, setLoading] = useState(false);
 
@@ -32,7 +34,8 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ isOpen, onClose, onSucces
                 brand: item.brand || '',
                 model: item.model || '',
                 criticalStockLevel: item.criticalStockLevel || 0,
-                status: item.status
+                status: item.status,
+                subComponents: item.subComponents || []
             });
         }
     }, [isOpen, item]);
@@ -145,18 +148,79 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ isOpen, onClose, onSucces
                             </div>
                         </div>
 
-                        {/* Only show Serial Number if item is serialized (read only or editable? prompt said update safe fields including serialNumber) */}
-                        {item?.trackingType === 'SERIALIZED' && (
-                            <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seri Numarası</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                    value={formData.serialNumber}
-                                    onChange={e => setFormData({ ...formData, serialNumber: e.target.value })}
-                                />
+                        {/* Sub Components Section */}
+                        <div className="mt-6 border-t pt-4 dark:border-gray-700">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-semibold text-gray-900 dark:text-white">Alt Bileşenler / Parçalar</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({
+                                        ...formData,
+                                        subComponents: [...(formData.subComponents || []), { name: '', type: '', serialNumber: '' }]
+                                    })}
+                                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                >
+                                    + Parça Ekle
+                                </button>
                             </div>
-                        )}
+
+                            {formData.subComponents?.length > 0 ? (
+                                <div className="space-y-3">
+                                    {formData.subComponents.map((comp: any, index: number) => (
+                                        <div key={index} className="flex gap-2 items-start p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Parça Adı (örn: RTX 3060)"
+                                                    className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                    value={comp.name}
+                                                    onChange={(e) => {
+                                                        const newComps = [...formData.subComponents];
+                                                        newComps[index].name = e.target.value;
+                                                        setFormData({ ...formData, subComponents: newComps });
+                                                    }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Tür (GPU, RAM vb.)"
+                                                    className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                    value={comp.type}
+                                                    onChange={(e) => {
+                                                        const newComps = [...formData.subComponents];
+                                                        newComps[index].type = e.target.value;
+                                                        setFormData({ ...formData, subComponents: newComps });
+                                                    }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Seri No (Opsiyonel)"
+                                                    className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                    value={comp.serialNumber || ''}
+                                                    onChange={(e) => {
+                                                        const newComps = [...formData.subComponents];
+                                                        newComps[index].serialNumber = e.target.value;
+                                                        setFormData({ ...formData, subComponents: newComps });
+                                                    }}
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const newComps = formData.subComponents.filter((_, i) => i !== index);
+                                                    setFormData({ ...formData, subComponents: newComps });
+                                                }}
+                                                className="text-red-500 hover:text-red-700 p-1"
+                                                title="Sil"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-gray-500 dark:text-gray-400 italic">Henüz eklenmiş alt parça yok.</p>
+                            )}
+                        </div>
 
                         <div className="flex justify-end gap-3 mt-6">
                             <button

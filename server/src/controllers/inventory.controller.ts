@@ -492,7 +492,7 @@ export class InventoryController {
     async updateItem(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const { name, brand, model, serialNumber, category, status, criticalStockLevel } = req.body;
+            const { name, brand, model, serialNumber, category, status, criticalStockLevel, subComponents } = req.body;
 
             const item = await Equipment.findById(id);
             if (!item) {
@@ -507,6 +507,7 @@ export class InventoryController {
             if (category) item.category = category;
             if (status) item.status = status;
             if (criticalStockLevel !== undefined) item.criticalStockLevel = criticalStockLevel;
+            if (subComponents) item.subComponents = subComponents;
 
             await item.save();
 

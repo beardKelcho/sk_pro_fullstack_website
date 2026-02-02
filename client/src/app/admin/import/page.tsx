@@ -39,12 +39,13 @@ export default function ImportPage() {
 
       <ImportModal
         isOpen={importModalOpen}
-        type="project"
+        type="projects"
         onClose={() => setImportModalOpen(false)}
         onSuccess={() => {
           toast.success('Veri başarıyla içe aktarıldı');
           setImportModalOpen(false);
         }}
+        title="Proje İçe Aktar"
       />
     </div>
   );

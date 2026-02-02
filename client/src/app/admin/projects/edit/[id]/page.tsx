@@ -140,7 +140,7 @@ export default function EditProject() {
 
         const equipmentStates: { [key: string]: boolean } = {};
         (equipmentRes.data || []).forEach((eq: EquipmentItem) => {
-          const eid = (eq._id || eq.id || '').toString();
+          const eid = eq._id;
           if (!eid) return;
           equipmentStates[eid] = equipmentIds.includes(eid);
         });
@@ -540,7 +540,7 @@ export default function EditProject() {
                 ) : (
                   <div className="space-y-2">
                     {equipmentList.map((eq) => {
-                      const eid = (eq._id || eq.id || '').toString();
+                      const eid = eq._id;
                       if (!eid) return null;
                       const isSelected = formData.equipment.includes(eid);
                       const backendStatus = (eq as any).status as string | undefined;
@@ -564,7 +564,7 @@ export default function EditProject() {
                             <label htmlFor={`equipment-${eid}`} className="font-medium text-gray-700 dark:text-gray-300">
                               {eq.name}
                             </label>
-                            <p className="text-gray-500 dark:text-gray-400">{eq.type}</p>
+                            <p className="text-gray-500 dark:text-gray-400">{eq.model || (typeof eq.category === 'object' ? eq.category.name : '-')}</p>
                             {isDisabled && (
                               <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
                                 Kullanımda/Bakımda olduğu için atanamaz

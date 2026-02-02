@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCreateProject } from '@/services/projectService';
-import { getAllCustomers } from '@/services/customerService';
+import inventoryService, { type InventoryItem as EquipmentItem } from '@/services/inventoryService';
 import { getAllUsers } from '@/services/userService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
@@ -724,8 +724,8 @@ export default function AddProject() {
                 Ekipman & Stok
               </label>
               <EquipmentSelector
-                selectedEquipment={formData.equipment}
-                onSelectionChange={(ids) => setFormData(prev => ({ ...prev, equipment: ids }))}
+                inventoryService.getItems({page: 1, limit: 1000 }), selectedEquipment={formData.equipment}
+              onSelectionChange={(ids) => setFormData(prev => ({ ...prev, equipment: ids }))}
               />
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Projeye atamak istediğiniz ekipmanları seçin veya QR kod ile ekleyin.

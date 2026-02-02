@@ -8,7 +8,7 @@ import { ProjectStatus } from '@/types/project';
 import { getProjectById, updateProject } from '@/services/projectService';
 import { getAllCustomers, type Customer } from '@/services/customerService';
 import { getAllUsers, getRoleLabel, type User } from '@/services/userService';
-import { getAllEquipment, type Equipment as EquipmentItem } from '@/services/equipmentService';
+import inventoryService, { type InventoryItem as EquipmentItem } from '@/services/inventoryService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { getStoredUserRole } from '@/utils/authStorage';
@@ -58,7 +58,7 @@ export default function EditProject() {
   const projectId = params.id as string;
   const [userRole, setUserRole] = useState<string>('');
   const canViewBudget = hasRole(userRole, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI);
-  
+
   // Form state'leri
   const [formData, setFormData] = useState<FormData>({
     id: '',
@@ -74,14 +74,14 @@ export default function EditProject() {
     equipment: [],
     notes: ''
   });
-  
+
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
-  
+
   // State'ler - takım üyeleri ve ekipman seçimi için
   const [teamCheckboxes, setTeamCheckboxes] = useState<{ [key: string]: boolean }>({});
   const [equipmentCheckboxes, setEquipmentCheckboxes] = useState<{ [key: string]: boolean }>({});
@@ -100,19 +100,19 @@ export default function EditProject() {
           getProjectById(projectId),
           getAllCustomers({ page: 1, limit: 1000 }),
           getAllUsers({ page: 1, limit: 1000 }),
-          getAllEquipment({ page: 1, limit: 1000 }),
+          inventoryService.getItems({ page: 1, limit: 1000 }),
         ]);
         setCustomers(customerRes.clients || []);
         setUsers(userRes.users || []);
-        setEquipmentList(equipmentRes.equipment || []);
-        
+        setEquipmentList(equipmentRes.data || []);
+
         // Backend formatını frontend formatına dönüştür
         const clientId = typeof project.client === 'string' ? project.client : (project.client as any)?._id || (project.client as any)?.id || '';
         // Legacy normalize: PLANNING -> PENDING_APPROVAL (UI'da PLANNING gösterme)
         const status = (project.status === 'PLANNING' ? 'PENDING_APPROVAL' : project.status) as ProjectStatus;
         const teamIds = Array.isArray(project.team) ? project.team.map((t: any) => typeof t === 'string' ? t : t._id || t.id) : [];
         const equipmentIds = Array.isArray(project.equipment) ? project.equipment.map((e: any) => typeof e === 'string' ? e : e._id || e.id) : [];
-        
+
         // Form verilerini ayarla
         setFormData({
           id: project._id || project.id || '',
@@ -128,7 +128,7 @@ export default function EditProject() {
           equipment: equipmentIds,
           notes: project.notes || ''
         });
-        
+
         // Ekip ve ekipman checkbox'larını mevcut verilerle doldur
         const teamStates: { [key: string]: boolean } = {};
         (userRes.users || []).forEach((u: User) => {
@@ -137,20 +137,20 @@ export default function EditProject() {
           teamStates[uid] = teamIds.includes(uid);
         });
         setTeamCheckboxes(teamStates);
-        
+
         const equipmentStates: { [key: string]: boolean } = {};
-        (equipmentRes.equipment || []).forEach((eq: EquipmentItem) => {
+        (equipmentRes.data || []).forEach((eq: EquipmentItem) => {
           const eid = (eq._id || eq.id || '').toString();
           if (!eid) return;
           equipmentStates[eid] = equipmentIds.includes(eid);
         });
         setEquipmentCheckboxes(equipmentStates);
-        
+
         // Yüklemeyi tamamla
         setTimeout(() => {
           setLoading(false);
         }, 500);
-        
+
       } catch (error) {
         logger.error('Veri yükleme hatası:', error);
         setError('Proje bilgileri yüklenirken bir hata oluştu');
@@ -158,7 +158,7 @@ export default function EditProject() {
         setLoading(false);
       }
     };
-    
+
     fetchProject();
   }, [projectId]);
 
@@ -166,15 +166,15 @@ export default function EditProject() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     let processedValue: any = value;
-    
+
     // Bütçe için sayısal değer dönüşümü
     if (name === 'budget') {
       processedValue = parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
     }
-    
+
     setFormData(prev => ({ ...prev, [name]: processedValue }));
   };
-  
+
   // Ekip üyelerini toggle
   const handleTeamToggle = (id: string) => {
     // Checkbox durumunu değiştir
@@ -182,17 +182,17 @@ export default function EditProject() {
       ...prev,
       [id]: !prev[id]
     }));
-    
+
     // Form state'ini güncelle
     setFormData(prev => {
       const newTeam = prev.team.includes(id)
         ? prev.team.filter(memberId => memberId !== id)
         : [...prev.team, id];
-      
+
       return { ...prev, team: newTeam };
     });
   };
-  
+
   // Ekipmanları toggle
   const handleEquipmentToggle = (id: string) => {
     // Checkbox durumunu değiştir
@@ -200,44 +200,44 @@ export default function EditProject() {
       ...prev,
       [id]: !prev[id]
     }));
-    
+
     // Form state'ini güncelle
     setFormData(prev => {
       const newEquipment = prev.equipment.includes(id)
         ? prev.equipment.filter(equipId => equipId !== id)
         : [...prev.equipment, id];
-      
+
       return { ...prev, equipment: newEquipment };
     });
   };
-  
+
   // Form doğrulama
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
       setError('Proje adı gereklidir');
       return false;
     }
-    
+
     if (!formData.customer) {
       setError('Müşteri seçmelisiniz');
       return false;
     }
-    
+
     if (!formData.startDate) {
       setError('Başlangıç tarihi gereklidir');
       return false;
     }
-    
+
     if (!formData.endDate) {
       setError('Bitiş tarihi gereklidir');
       return false;
     }
-    
+
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
       setError('Bitiş tarihi, başlangıç tarihinden önce olamaz');
       return false;
     }
-    
+
     if (!formData.location.trim()) {
       setError('Lokasyon gereklidir');
       return false;
@@ -245,7 +245,7 @@ export default function EditProject() {
 
     return true;
   };
-  
+
   // Form gönderimi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,7 +291,7 @@ export default function EditProject() {
       maximumFractionDigits: 0,
     }).format(amount);
   };
-  
+
   // Yükleniyor durumu
   if (loading) {
     return (
@@ -303,7 +303,7 @@ export default function EditProject() {
       </div>
     );
   }
-  
+
   // Proje bulunamadı durumu
   if (notFound) {
     return (
@@ -323,7 +323,7 @@ export default function EditProject() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Başlık */}
@@ -340,7 +340,7 @@ export default function EditProject() {
           <p className="mt-1 text-gray-600 dark:text-gray-300">Proje bilgilerini güncelle</p>
         </div>
       </div>
-      
+
       {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-6">
         {/* Temel Bilgiler */}
@@ -363,7 +363,7 @@ export default function EditProject() {
                 required
               />
             </div>
-            
+
             {/* Müşteri */}
             <div>
               <label htmlFor="customer" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -390,7 +390,7 @@ export default function EditProject() {
                 })}
               </select>
             </div>
-            
+
             {/* Başlangıç Tarihi */}
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -406,7 +406,7 @@ export default function EditProject() {
                 required
               />
             </div>
-            
+
             {/* Bitiş Tarihi */}
             <div>
               <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -422,7 +422,7 @@ export default function EditProject() {
                 required
               />
             </div>
-            
+
             {/* Lokasyon */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -439,7 +439,7 @@ export default function EditProject() {
                 required
               />
             </div>
-            
+
             {/* Durum */}
             <div>
               <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -458,7 +458,7 @@ export default function EditProject() {
                 ))}
               </select>
             </div>
-            
+
             {/* Bütçe */}
             {canViewBudget && (
               <div>
@@ -502,23 +502,23 @@ export default function EditProject() {
                       const uid = (u._id || u.id || '').toString();
                       if (!uid) return null;
                       return (
-                      <div key={uid} className="flex items-start">
-                        <div className="flex items-center h-5">
-                          <input
-                            id={`team-${uid}`}
-                            type="checkbox"
-                            checked={teamCheckboxes[uid] || false}
-                            onChange={() => handleTeamToggle(uid)}
-                            className="focus:ring-[#0066CC] dark:focus:ring-primary-light h-4 w-4 text-[#0066CC] dark:text-primary-light border-gray-300 dark:border-gray-600 rounded"
-                          />
+                        <div key={uid} className="flex items-start">
+                          <div className="flex items-center h-5">
+                            <input
+                              id={`team-${uid}`}
+                              type="checkbox"
+                              checked={teamCheckboxes[uid] || false}
+                              onChange={() => handleTeamToggle(uid)}
+                              className="focus:ring-[#0066CC] dark:focus:ring-primary-light h-4 w-4 text-[#0066CC] dark:text-primary-light border-gray-300 dark:border-gray-600 rounded"
+                            />
+                          </div>
+                          <div className="ml-3 text-sm">
+                            <label htmlFor={`team-${uid}`} className="font-medium text-gray-700 dark:text-gray-300">
+                              {u.name}
+                            </label>
+                            <p className="text-gray-500 dark:text-gray-400">{getRoleLabel(u.role)}</p>
+                          </div>
                         </div>
-                        <div className="ml-3 text-sm">
-                          <label htmlFor={`team-${uid}`} className="font-medium text-gray-700 dark:text-gray-300">
-                            {u.name}
-                          </label>
-                          <p className="text-gray-500 dark:text-gray-400">{getRoleLabel(u.role)}</p>
-                        </div>
-                      </div>
                       );
                     })}
                   </div>
@@ -528,7 +528,7 @@ export default function EditProject() {
                 Seçilen Ekip Üyeleri: {formData.team.length}
               </p>
             </div>
-            
+
             {/* Ekipmanlar */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -546,32 +546,32 @@ export default function EditProject() {
                       const backendStatus = (eq as any).status as string | undefined;
                       const isDisabled = !isSelected && backendStatus !== undefined && backendStatus !== 'AVAILABLE';
                       return (
-                      <div key={eid} className={`flex items-start ${isDisabled ? 'opacity-60' : ''}`}>
-                        <div className="flex items-center h-5">
-                          <input
-                            id={`equipment-${eid}`}
-                            type="checkbox"
-                            checked={equipmentCheckboxes[eid] || false}
-                            onChange={() => {
-                              if (isDisabled) return;
-                              handleEquipmentToggle(eid);
-                            }}
-                            className="focus:ring-[#0066CC] dark:focus:ring-primary-light h-4 w-4 text-[#0066CC] dark:text-primary-light border-gray-300 dark:border-gray-600 rounded"
-                            disabled={isDisabled}
-                          />
+                        <div key={eid} className={`flex items-start ${isDisabled ? 'opacity-60' : ''}`}>
+                          <div className="flex items-center h-5">
+                            <input
+                              id={`equipment-${eid}`}
+                              type="checkbox"
+                              checked={equipmentCheckboxes[eid] || false}
+                              onChange={() => {
+                                if (isDisabled) return;
+                                handleEquipmentToggle(eid);
+                              }}
+                              className="focus:ring-[#0066CC] dark:focus:ring-primary-light h-4 w-4 text-[#0066CC] dark:text-primary-light border-gray-300 dark:border-gray-600 rounded"
+                              disabled={isDisabled}
+                            />
+                          </div>
+                          <div className="ml-3 text-sm">
+                            <label htmlFor={`equipment-${eid}`} className="font-medium text-gray-700 dark:text-gray-300">
+                              {eq.name}
+                            </label>
+                            <p className="text-gray-500 dark:text-gray-400">{eq.type}</p>
+                            {isDisabled && (
+                              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                                Kullanımda/Bakımda olduğu için atanamaz
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="ml-3 text-sm">
-                          <label htmlFor={`equipment-${eid}`} className="font-medium text-gray-700 dark:text-gray-300">
-                            {eq.name}
-                          </label>
-                          <p className="text-gray-500 dark:text-gray-400">{eq.type}</p>
-                          {isDisabled && (
-                            <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                              Kullanımda/Bakımda olduğu için atanamaz
-                            </p>
-                          )}
-                        </div>
-                      </div>
                       );
                     })}
                   </div>
@@ -583,7 +583,7 @@ export default function EditProject() {
             </div>
           </div>
         </div>
-        
+
         {/* Açıklama ve Notlar */}
         <div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Açıklama ve Notlar</h3>
@@ -603,7 +603,7 @@ export default function EditProject() {
                 placeholder="Proje hakkında genel bilgiler"
               />
             </div>
-            
+
             {/* Notlar */}
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -621,7 +621,7 @@ export default function EditProject() {
             </div>
           </div>
         </div>
-        
+
         {/* Form Düğmeleri */}
         <div className="flex justify-end items-center space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           {/* Hata Mesajı */}
@@ -632,7 +632,7 @@ export default function EditProject() {
               </p>
             </div>
           )}
-          
+
           {/* Başarı Mesajı */}
           {success && (
             <div className="flex-grow">
@@ -644,7 +644,7 @@ export default function EditProject() {
               </p>
             </div>
           )}
-          
+
           {/* Versiyon Geçmişi Butonu */}
           <button
             type="button"
@@ -656,7 +656,7 @@ export default function EditProject() {
             </svg>
             Versiyon Geçmişi
           </button>
-          
+
           {/* İptal ve Kaydet Düğmeleri */}
           <Link href={`/admin/projects/view/${projectId}`}>
             <button
@@ -669,9 +669,8 @@ export default function EditProject() {
           <button
             type="submit"
             disabled={submitting}
-            className={`px-4 py-2 text-sm font-medium text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary rounded-md shadow-sm focus:outline-none ${
-              submitting ? 'opacity-70 cursor-not-allowed' : ''
-            }`}
+            className={`px-4 py-2 text-sm font-medium text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary rounded-md shadow-sm focus:outline-none ${submitting ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
           >
             {submitting ? (
               <span className="flex items-center">
@@ -687,7 +686,7 @@ export default function EditProject() {
           </button>
         </div>
       </form>
-      
+
       {/* Versiyon Geçmişi Modal */}
       <VersionHistoryModal
         isOpen={showVersionHistory}

@@ -100,6 +100,28 @@ export default function InventoryPage() {
         );
     };
 
+    const getCategoryName = (category: any) => {
+        if (!category) return '-';
+        // Handle if category is just an ID string
+        if (typeof category === 'string') return '-';
+
+        // Handle if category is an object
+        if (typeof category === 'object') {
+            // Check if name exists
+            if ('name' in category) {
+                const name = category.name;
+                // Ensure name is a primitive
+                if (typeof name === 'string' || typeof name === 'number') {
+                    return String(name);
+                }
+                // If name is somehow an object?
+                return '-';
+            }
+            return '-';
+        }
+        return '-';
+    };
+
     return (
         <div className="p-6 max-w-[1600px] mx-auto">
             {/* Header */}
@@ -153,7 +175,7 @@ export default function InventoryPage() {
                 >
                     <option value="">Tüm Kategoriler</option>
                     {categories.map(cat => (
-                        <option key={cat._id} value={cat._id}>{cat.name}</option>
+                        <option key={cat._id} value={cat._id}>{String(cat.name)}</option>
                     ))}
                 </select>
 
@@ -206,9 +228,7 @@ export default function InventoryPage() {
                                         <div className="text-xs text-gray-500">{item.brand} {item.model}</div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                                        {item.category && typeof item.category === 'object' && 'name' in item.category
-                                            ? (typeof (item.category as any).name === 'string' ? (item.category as any).name : '-')
-                                            : '-'}
+                                        {getCategoryName(item.category)}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                                         {typeof item.location === 'object' ? (

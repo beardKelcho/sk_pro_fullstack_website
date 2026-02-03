@@ -103,13 +103,81 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
                         className="w-full pl-9 pr-4 py-2 bg-gray-100 dark:bg-gray-700 border-none rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
+
+
+                {/* Inline QR Input */}
+                <div className="relative flex-1 min-w-[200px]">
+                    <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="QR Okutunuz (Ekle/Çıkar)..."
+                        className="w-full pl-9 pr-4 py-2 bg-white border-2 border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        autoFocus
+                        onKeyDown={async (e) => {
+                            if (e.key === 'Enter') {
+                                const input = e.currentTarget;
+                                const val = input.value.trim();
+                                if (!val) return;
+
+                                // Parse Value
+                                let id = val;
+                                try {
+                                    const parsed = JSON.parse(val);
+                                    if (parsed.id) id = parsed.id;
+                                    else if (parsed._id) id = parsed._id;
+                                } catch (err) { }
+
+                                // Toggle Logic
+                                if (selectedEquipment.includes(id)) {
+                                    // Remove
+                                    onSelectionChange(selectedEquipment.filter(eqId => eqId !== id));
+                                    toast.info('Ekipman çıkarıldı');
+                                    // Play remove sound if available
+                                } else {
+                                    // Add - Verify availability first
+                                    // We need to fetch item details to check status if not in current list
+                                    try {
+                                        // Check if we already have it in items list
+                                        const existingItem = items.find((i: any) => i._id === id);
+                                        if (existingItem) {
+                                            if (existingItem.status !== 'AVAILABLE') {
+                                                toast.error(`Ekipman müsait değil: ${existingItem.status}`);
+                                            } else {
+                                                onSelectionChange([...selectedEquipment, id]);
+                                                toast.success(`${existingItem.name} eklendi`);
+                                            }
+                                        } else {
+                                            // Fetch from API
+                                            const item = await inventoryService.getItem(id);
+                                            if (item) {
+                                                if (item.status !== 'AVAILABLE') {
+                                                    toast.error(`Ekipman müsait değil: ${item.status}`);
+                                                } else {
+                                                    setItemMap(prev => ({ ...prev, [item._id]: item }));
+                                                    onSelectionChange([...selectedEquipment, item._id]);
+                                                    toast.success(`${item.name} eklendi`);
+                                                }
+                                            }
+                                        }
+                                    } catch (error) {
+                                        toast.error('Ekipman bulunamadı');
+                                    }
+                                }
+
+                                // Clear input
+                                input.value = '';
+                            }
+                        }}
+                    />
+                </div>
+
                 <button
                     type="button"
                     onClick={() => setIsQRScannerOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
                 >
                     <QrCode className="w-5 h-5" />
-                    <span>QR ile Ekle</span>
+                    <span>Kamera</span>
                 </button>
             </div>
 
@@ -220,12 +288,14 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
             </div>
 
             {/* QR Scanner Modal */}
-            {isQRScannerOpen && (
-                <QRScanner
-                    onClose={() => setIsQRScannerOpen(false)}
-                    onScanSuccess={(result) => handleScanSuccessWithMapUpdate(result)}
-                />
-            )}
-        </div>
+            {
+                isQRScannerOpen && (
+                    <QRScanner
+                        onClose={() => setIsQRScannerOpen(false)}
+                        onScanSuccess={(result) => handleScanSuccessWithMapUpdate(result)}
+                    />
+                )
+            }
+        </div >
     );
 }

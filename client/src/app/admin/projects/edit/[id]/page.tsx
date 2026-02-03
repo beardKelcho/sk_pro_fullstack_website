@@ -14,6 +14,7 @@ import logger from '@/utils/logger';
 import { getStoredUserRole } from '@/utils/authStorage';
 import { hasRole, Role } from '@/config/permissions';
 import VersionHistoryModal from '@/components/admin/VersionHistoryModal';
+import EquipmentSelector from '@/components/admin/projects/EquipmentSelector';
 
 // Form verileri için arayüz
 interface FormData {
@@ -530,52 +531,15 @@ export default function EditProject() {
             </div>
 
             {/* Ekipmanlar */}
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Ekipmanlar
               </label>
-              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-                {equipmentList.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Ekipman bulunamadı</p>
-                ) : (
-                  <div className="space-y-2">
-                    {equipmentList.map((eq) => {
-                      const eid = eq._id;
-                      if (!eid) return null;
-                      const isSelected = formData.equipment.includes(eid);
-                      const backendStatus = (eq as any).status as string | undefined;
-                      const isDisabled = !isSelected && backendStatus !== undefined && backendStatus !== 'AVAILABLE';
-                      return (
-                        <div key={eid} className={`flex items-start ${isDisabled ? 'opacity-60' : ''}`}>
-                          <div className="flex items-center h-5">
-                            <input
-                              id={`equipment-${eid}`}
-                              type="checkbox"
-                              checked={equipmentCheckboxes[eid] || false}
-                              onChange={() => {
-                                if (isDisabled) return;
-                                handleEquipmentToggle(eid);
-                              }}
-                              className="focus:ring-[#0066CC] dark:focus:ring-primary-light h-4 w-4 text-[#0066CC] dark:text-primary-light border-gray-300 dark:border-gray-600 rounded"
-                              disabled={isDisabled}
-                            />
-                          </div>
-                          <div className="ml-3 text-sm">
-                            <label htmlFor={`equipment-${eid}`} className="font-medium text-gray-700 dark:text-gray-300">
-                              {eq.name}
-                            </label>
-                            <p className="text-gray-500 dark:text-gray-400">{eq.model || (typeof eq.category === 'object' ? eq.category.name : '-')}</p>
-                            {isDisabled && (
-                              <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
-                                Kullanımda/Bakımda olduğu için atanamaz
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-1 border border-gray-200 dark:border-gray-700">
+                <EquipmentSelector
+                  selectedEquipment={formData.equipment}
+                  onSelectionChange={(ids) => setFormData(prev => ({ ...prev, equipment: ids }))}
+                />
               </div>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Seçilen Ekipmanlar: {formData.equipment.length}

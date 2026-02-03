@@ -1,22 +1,31 @@
 import nodemailer from 'nodemailer';
 
 // Create email transporter
+// Create email transporter
 export const createEmailTransporter = () => {
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT;
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;
+    const smtpSecure = process.env.SMTP_SECURE === 'true';
 
     // If SMTP credentials are not configured, return null
-    if (!smtpUser || !smtpPass) {
+    if (!smtpUser || !smtpPass || !smtpHost) {
         console.warn('⚠️  SMTP credentials not configured. Email sending disabled.');
         return null;
     }
 
     try {
         const transporter = nodemailer.createTransport({
-            service: 'gmail', // Works for Google Workspace
+            host: smtpHost,
+            port: Number(smtpPort) || 587,
+            secure: smtpSecure, // true for 465, false for other ports
             auth: {
                 user: smtpUser,
                 pass: smtpPass
+            },
+            tls: {
+                rejectUnauthorized: false // Helps with some self-signed cert issues if any, but strictly for gmail usually not needed unless environment issues
             }
         });
 
@@ -38,7 +47,7 @@ export interface ContactEmailData {
 
 export const createContactEmailTemplate = (data: ContactEmailData) => {
     return {
-        from: process.env.SMTP_USER,
+        from: `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM_EMAIL}>`,
         to: process.env.SMTP_USER, // Send to yourself
         replyTo: data.email, // User can reply directly to sender
         subject: `Web Sitesi Mesajı: ${data.subject}`,

@@ -33,7 +33,6 @@ const SystemSettingSchema: Schema = new Schema(
     }
 );
 
-// Index for fast key lookup
-SystemSettingSchema.index({ key: 1 });
+
 
 export const SystemSetting = mongoose.model<ISystemSetting>('SystemSetting', SystemSettingSchema);

@@ -48,7 +48,7 @@ export interface ContactEmailData {
 export const createContactEmailTemplate = (data: ContactEmailData) => {
     return {
         from: `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM_EMAIL}>`,
-        to: process.env.SMTP_USER, // Send to yourself
+        to: process.env.CONTACT_FORM_TO_EMAIL || process.env.SMTP_USER, // Send to configured recipient or fallback to sender
         replyTo: data.email, // User can reply directly to sender
         subject: `Web Sitesi Mesajı: ${data.subject}`,
         text: `

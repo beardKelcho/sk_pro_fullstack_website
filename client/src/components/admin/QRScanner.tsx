@@ -15,9 +15,9 @@ interface QRScannerProps {
   location?: string;
 }
 
-export default function QRScanner({ 
-  onScanSuccess, 
-  onClose, 
+export default function QRScanner({
+  onScanSuccess,
+  onClose,
   action = 'VIEW',
   relatedItem,
   relatedItemType,
@@ -33,7 +33,7 @@ export default function QRScanner({
     return () => {
       // Component unmount olduğunda scanner'ı temizle
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.stop().catch(() => { });
       }
     };
   }, []);
@@ -79,14 +79,35 @@ export default function QRScanner({
     }
   };
 
+  // Helper to parse QR content that might be JSON
+  const parseQRContent = (content: string): string => {
+    try {
+      const parsed = JSON.parse(content);
+      // Check for common ID fields
+      if (parsed.id) return parsed.id;
+      if (parsed._id) return parsed._id;
+      if (parsed.equipmentId) return parsed.equipmentId;
+      // If it's an object but no obvious ID, maybe return stringified or just the content?
+      // For now, if we can't find an ID, we might want to return the original content assuming it handles serials
+      return content;
+    } catch (e) {
+      // Not JSON, return as is
+      return content;
+    }
+  };
+
   const handleQRCodeScanned = async (qrContent: string) => {
     try {
       // Scanner'ı durdur
       await stopScanning();
 
+      // Parse content (e.g., extract ID from JSON)
+      const cleanContent = parseQRContent(qrContent);
+      console.log('Original QR:', qrContent, 'Parsed:', cleanContent);
+
       // QR kod tarama
       const result = await scanMutation.mutateAsync({
-        qrContent,
+        qrContent: cleanContent,
         action,
         relatedItem,
         relatedItemType,
@@ -95,7 +116,7 @@ export default function QRScanner({
       });
 
       toast.success('QR kod başarıyla tarandı!');
-      
+
       if (onScanSuccess) {
         onScanSuccess(result);
       }
@@ -104,6 +125,7 @@ export default function QRScanner({
         onClose();
       }
     } catch (err: any) {
+      console.error('Scan Error:', err);
       toast.error(err.response?.data?.message || 'QR kod taranırken bir hata oluştu');
       // Hata durumunda tekrar taramaya başla
       setTimeout(() => {

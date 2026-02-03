@@ -134,18 +134,7 @@ export default function QRScanner({
     }
   };
 
-  const handleManualInput = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const qrContent = formData.get('qrContent') as string;
 
-    if (!qrContent.trim()) {
-      toast.error('Lütfen QR kod içeriğini girin');
-      return;
-    }
-
-    await handleQRCodeScanned(qrContent.trim());
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
@@ -193,21 +182,43 @@ export default function QRScanner({
 
         <div className="border-t pt-4">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Manuel Giriş:</p>
-          <form onSubmit={handleManualInput} className="flex gap-2">
+          <div className="flex gap-2">
             <input
               type="text"
               name="qrContent"
               placeholder="QR kod içeriğini girin"
               className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  // Get value properly from input
+                  const val = (e.currentTarget as HTMLInputElement).value;
+                  if (val.trim()) {
+                    handleQRCodeScanned(val.trim());
+                  } else {
+                    toast.error('Lütfen QR kod içeriğini girin');
+                  }
+                }
+              }}
             />
             <button
-              type="submit"
+              type="button"
               disabled={scanMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                // Find sibling input
+                const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                if (input && input.value.trim()) {
+                  handleQRCodeScanned(input.value.trim());
+                } else {
+                  toast.error('Lütfen QR kod içeriğini girin');
+                }
+              }}
               className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 disabled:opacity-50"
             >
               {scanMutation.isPending ? 'Taranıyor...' : 'Tara'}
             </button>
-          </form>
+          </div>
         </div>
       </div>
     </div>

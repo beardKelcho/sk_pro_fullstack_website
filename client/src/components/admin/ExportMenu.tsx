@@ -29,6 +29,9 @@ export default function ExportMenu({
       const endpoint = `/export?type=${type}&format=${format}`;
       const filename = `${baseFilename}-export.${format === 'excel' ? 'xlsx' : format}`;
 
+      console.log('Export requested:', { type, format, endpoint, filename });
+
+
       const response = await apiClient.get(endpoint, {
         responseType: 'blob',
       });

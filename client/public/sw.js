@@ -68,6 +68,11 @@ async function handleNavigation(request) {
 }
 
 async function handleAsset(request) {
+  // Sadece GET isteklerini cache'le
+  if (request.method !== 'GET') {
+    return fetch(request);
+  }
+
   const cached = await caches.match(request);
   if (cached) return cached;
   try {

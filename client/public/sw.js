@@ -78,7 +78,7 @@ async function handleAsset(request) {
   try {
     const res = await fetch(request);
     const cache = await caches.open(DYNAMIC_CACHE);
-    if (res.ok) cache.put(request, res.clone());
+    if (res.ok && res.status !== 206) cache.put(request, res.clone());
     return res;
   } catch (e) {
     // asset yoksa boş dön
@@ -94,7 +94,7 @@ async function handleApi(request) {
     try {
       const res = await fetch(request);
       const cache = await caches.open(API_CACHE);
-      if (res.ok) cache.put(request, res.clone());
+      if (res.ok && res.status !== 206) cache.put(request, res.clone());
       return res;
     } catch (e) {
       const cached = await caches.match(request);

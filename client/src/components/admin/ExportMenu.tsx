@@ -49,9 +49,22 @@ export default function ExportMenu({
       toast.success(`${format.toUpperCase()} formatında dışa aktarma başarılı`);
     } catch (error: any) {
       console.error('Export hatası:', error);
-      const errorMessage = error.response?.data?.message ||
-        error.message ||
-        'Dışa aktarma işlemi başarısız oldu';
+      let errorMessage = 'Dışa aktarma işlemi başarısız oldu';
+
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const json = JSON.parse(text);
+          errorMessage = json.message || text;
+        } catch (e) {
+          errorMessage = 'Sunucu yanıtı okunamadı.';
+        }
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast.error(errorMessage);
     } finally {
       setLoading(null);

@@ -12,7 +12,7 @@ const getDataByType = async (type: string) => {
     case 'inventory':
     case 'equipment':
       return {
-        data: await Equipment.find().populate('responsibleUser', 'name email').lean(),
+        data: await Equipment.find().lean(),
         headers: ['Ad', 'Tip', 'Model', 'Seri No', 'Durum', 'Konum', 'Notlar'],
         fields: ['name', 'type', 'model', 'serialNumber', 'status', 'location', 'notes'],
         filename: 'equipment'

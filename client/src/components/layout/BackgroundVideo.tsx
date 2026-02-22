@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
@@ -18,7 +20,7 @@ const BackgroundVideo: React.FC = () => {
                 const res = await axios.get('/public/site-content/hero');
                 return res.data;
             } catch (error) {
-                console.error('Failed to fetch hero video:', error);
+                logger.error('Failed to fetch hero video:', error);
                 return null;
             }
         },

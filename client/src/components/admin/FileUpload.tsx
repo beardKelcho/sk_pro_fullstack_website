@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useState, useRef } from 'react';
 import apiClient from '@/services/api/axios';
 
@@ -69,7 +71,7 @@ export default function FileUpload({
         throw new Error(response.data.message || 'Yükleme başarısız');
       }
     } catch (error: any) {
-      console.error('Dosya yükleme hatası:', error);
+      logger.error('Dosya yükleme hatası:', error);
       const errorMessage = error.response?.data?.message || 
                           error.message || 
                           'Dosya yüklenirken bir hata oluştu';

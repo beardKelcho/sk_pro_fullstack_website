@@ -1,9 +1,11 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import inventoryService, { InventoryItem } from '@/services/inventoryService';
+import inventoryService, { InventoryItem, Category } from '@/services/inventoryService';
 import { toast } from 'react-toastify';
 import { ArrowLeft, Edit, QrCode } from 'lucide-react';
 import EditItemModal from '@/components/admin/inventory/EditItemModal';
@@ -18,7 +20,7 @@ export default function InventoryItemView({ params }: { params: { id: string } }
     // Modals
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [qrItem, setQrItem] = useState<InventoryItem | null>(null);
-    const [categories, setCategories] = useState<any[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -34,7 +36,7 @@ export default function InventoryItemView({ params }: { params: { id: string } }
             setItem(itemData);
             setCategories(catsRes.data || catsRes);
         } catch (error) {
-            console.error(error);
+            logger.error(error instanceof Error ? error.message : String(error), { error });
             toast.error('Ekipman detayları alınamadı');
             router.push('/admin/inventory');
         } finally {
@@ -59,14 +61,14 @@ export default function InventoryItemView({ params }: { params: { id: string } }
     if (!item) return null;
 
     const getStatusBadge = (status: string) => {
-        const colors: any = {
+        const colors: Record<string, string> = {
             'AVAILABLE': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
             'IN_USE': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
             'MAINTENANCE': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
             'RETIRED': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
             'MISSING': 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
         };
-        const labels: any = {
+        const labels: Record<string, string> = {
             'AVAILABLE': 'Müsait',
             'IN_USE': 'Kullanımda',
             'MAINTENANCE': 'Bakımda',
@@ -80,12 +82,12 @@ export default function InventoryItemView({ params }: { params: { id: string } }
         );
     };
 
-    const getCategoryName = (cat: any) => {
+    const getCategoryName = (cat: unknown) => {
         if (!cat) return '-';
-        if (typeof cat === 'object') return cat.name || '-';
+        if (typeof cat === 'object') return (cat as { name?: string }).name || '-';
         // Find in categories if we have ID
         const found = categories.find(c => c._id === cat);
-        return found ? found.name : cat;
+        return found ? String(found.name) : String(cat);
     };
 
     return (

@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 /**
  * Service Worker Utility
  * PWA (Progressive Web App) özellikleri için service worker yönetimi
@@ -32,7 +33,7 @@ export function registerServiceWorker() {
         .register('/sw.js', { scope: '/' })
         .then((registration) => {
           if (process.env.NODE_ENV === 'development') {
-            console.log('ServiceWorker registration successful:', registration.scope);
+            logger.info('ServiceWorker registration successful:', registration.scope);
           }
 
           // Service Worker güncellemelerini kontrol et
@@ -43,7 +44,7 @@ export function registerServiceWorker() {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // Yeni service worker hazır, kullanıcıya bildir
                   if (process.env.NODE_ENV === 'development') {
-                    console.log('New service worker available');
+                    logger.info('New service worker available');
                   }
                 }
               });
@@ -52,7 +53,7 @@ export function registerServiceWorker() {
         })
         .catch((err) => {
           if (process.env.NODE_ENV === 'development') {
-            console.error('ServiceWorker registration failed:', err);
+            logger.error('ServiceWorker registration failed:', err);
           }
         });
     });
@@ -67,7 +68,7 @@ export function registerServiceWorker() {
     // Service Worker mesajlarını dinle
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('Service Worker message:', event.data);
+        logger.info('Service Worker message:', event.data);
       }
     });
   }
@@ -90,7 +91,7 @@ export function unregisterServiceWorker() {
         registration.unregister();
       })
       .catch((error) => {
-        console.error(error.message);
+        logger.error(error.message);
       });
   }
 } 

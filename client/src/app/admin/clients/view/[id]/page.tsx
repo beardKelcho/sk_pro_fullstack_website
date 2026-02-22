@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
@@ -259,13 +261,13 @@ export default function ViewClient() {
             })) : [];
           setClientProjects(clientProjectsList);
         } catch (err) {
-          console.error('Projeler yüklenirken hata:', err);
+          logger.error('Projeler yüklenirken hata:', err);
           setClientProjects([]);
         }
         
         setLoading(false);
       } catch (error) {
-        console.error('Veri yükleme hatası:', error);
+        logger.error('Veri yükleme hatası:', error);
         setLoading(false);
       }
     };

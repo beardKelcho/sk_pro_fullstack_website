@@ -167,9 +167,10 @@ export class InventoryController {
 
             // Populate currentProject to get details
             const items = await Equipment.find(query)
-                .populate('category')
-                .populate('location')
-                .populate('currentProject')
+                .select('-__v')
+                .populate('category', 'name description')
+                .populate('location', 'name type')
+                .populate('currentProject', 'name location startDate endDate')
                 .limit(Number(limit))
                 .skip((Number(page) - 1) * Number(limit))
                 .sort({ createdAt: -1 })
@@ -206,7 +207,7 @@ export class InventoryController {
                 }
             });
         } catch (error) {
-            console.error('Get Items Error:', error);
+            logger.error('Get Items Error', { error });
             res.status(500).json({ success: false, message: 'Sunucu hatası' });
         }
     }

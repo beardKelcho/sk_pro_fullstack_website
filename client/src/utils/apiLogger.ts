@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Optional Redis import - logging will be disabled if not available
@@ -13,7 +14,7 @@ try {
   });
 } catch (error) {
   // Redis not available, logging will be disabled
-  console.warn('@upstash/redis not available, API logging disabled');
+  logger.warn('@upstash/redis not available, API logging disabled');
 }
 
 interface ApiLog {
@@ -76,7 +77,7 @@ export class ApiLogger {
       // Log sayısını kontrol et ve gerekirse eski logları temizle
       await this.cleanupOldLogs();
     } catch (error) {
-      console.error('API log error:', error);
+      logger.error('API log error:', error);
     }
   }
 
@@ -92,7 +93,7 @@ export class ApiLogger {
         await redis.del(...keysToDelete);
       }
     } catch (error) {
-      console.error('Log cleanup error:', error);
+      logger.error('Log cleanup error:', error);
     }
   }
 
@@ -126,7 +127,7 @@ export class ApiLogger {
       // Limit uygula
       return options.limit ? logs.slice(0, options.limit) : logs;
     } catch (error) {
-      console.error('Get logs error:', error);
+      logger.error('Get logs error:', error);
       return [];
     }
   }
@@ -183,7 +184,7 @@ export class ApiLogger {
 
       return stats;
     } catch (error) {
-      console.error('Get stats error:', error);
+      logger.error('Get stats error:', error);
       return {
         totalRequests: 0,
         averageResponseTime: 0,

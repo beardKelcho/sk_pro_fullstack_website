@@ -26,7 +26,7 @@ export interface ApiError {
  *   await api.get('/users');
  * } catch (error) {
  *   const apiError = handleApiError(error);
- *   console.error(apiError.message);
+ *   logger.error(apiError.message);
  * }
  */
 export const handleApiError = (error: unknown): ApiError => {

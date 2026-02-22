@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authApi } from '@/services/api/auth';
@@ -40,17 +42,17 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
         // Profil bilgilerini kontrol et
         const response = await authApi.getProfile();
-        
+
         if (!isMounted) return; // Component unmount olduysa devam etme
-        
+
         // Debug: Response'u logla
         if (process.env.NODE_ENV === 'development') {
-          console.log('ProtectedRoute - Profile response:', response.data);
+          logger.info('ProtectedRoute - Profile response:', response.data);
         }
-        
+
         if (response.data && response.data.success && response.data.user) {
           const user = response.data.user;
-          
+
           // Rol kontrolü
           if (requiredRole) {
             const roleHierarchy: Record<string, number> = {
@@ -59,17 +61,17 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
               'INVENTORY_MANAGER': 3,
               'ADMIN': 4
             };
-            
+
             const userRoleLevel = roleHierarchy[user.role] || 0;
             const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
-            
+
             if (userRoleLevel < requiredRoleLevel) {
               router.replace('/admin/forbidden');
               setIsLoading(false);
               return;
             }
           }
-          
+
           // Kullanıcı aktif değilse
           if (!user.isActive) {
             localStorage.removeItem('accessToken');
@@ -80,7 +82,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
             setIsLoading(false);
             return;
           }
-          
+
           // Authentication başarılı
           setIsAuthenticated(true);
           setIsLoading(false); // CRITICAL: Loading'i false yap, yoksa sürekli loading'de kalır!
@@ -99,7 +101,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
       } catch (error: any) {
         // Hata durumunda sessizce login'e yönlendir (sürekli log spam'ini önle)
         if (process.env.NODE_ENV === 'development') {
-          console.error('Auth check failed:', error, error.response?.data);
+          logger.error('Auth check failed:', { error, responseData: error.response?.data });
         }
         // Hem localStorage hem sessionStorage'dan temizle
         localStorage.removeItem('accessToken');

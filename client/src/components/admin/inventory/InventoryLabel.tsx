@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface InventoryLabelProps {
     serialNumber: string;
@@ -36,12 +37,13 @@ const InventoryLabel: React.FC<InventoryLabelProps> = ({
             >
                 {/* Sol Sütun (%38) */}
                 <div className="w-[38%] flex flex-col items-center justify-center p-1 border-r border-gray-100">
-                    <div className="w-full aspect-square flex items-center justify-center mb-0.5">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                    <div className="w-full aspect-square relative flex items-center justify-center mb-0.5">
+                        <Image
                             src={qrUrl}
                             alt={`QR: ${serialNumber}`}
-                            className="w-full h-full object-contain"
+                            fill
+                            unoptimized
+                            className="object-contain"
                         />
                     </div>
                     <span className="text-[7px] leading-none font-mono text-center break-all text-gray-800">

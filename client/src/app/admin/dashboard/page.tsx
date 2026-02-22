@@ -5,10 +5,24 @@ import Link from 'next/link';
 import { useDashboard } from '@/hooks/useDashboard';
 import type { Widget } from '@/services/widgetService';
 import StatCardWidget from '@/components/admin/widgets/StatCardWidget';
-import DonutChartWidget from '@/components/admin/widgets/DonutChartWidget';
-import PieChartWidget from '@/components/admin/widgets/PieChartWidget';
-import LineChartWidget from '@/components/admin/widgets/LineChartWidget';
-import BarChartWidget from '@/components/admin/widgets/BarChartWidget';
+import dynamic from 'next/dynamic';
+
+const DonutChartWidget = dynamic(() => import('@/components/admin/widgets/DonutChartWidget'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-64 rounded-xl border border-gray-200 dark:border-gray-700"></div>
+});
+const PieChartWidget = dynamic(() => import('@/components/admin/widgets/PieChartWidget'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-64 rounded-xl border border-gray-200 dark:border-gray-700"></div>
+});
+const LineChartWidget = dynamic(() => import('@/components/admin/widgets/LineChartWidget'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-64 rounded-xl border border-gray-200 dark:border-gray-700"></div>
+});
+const BarChartWidget = dynamic(() => import('@/components/admin/widgets/BarChartWidget'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-64 rounded-xl border border-gray-200 dark:border-gray-700"></div>
+});
 
 export default function Dashboard() {
   const {

@@ -35,11 +35,13 @@ class QrCodeService {
 
         const [qrCodes, total] = await Promise.all([
             QRCode.find(filters)
+                .select('-__v')
                 .populate('createdBy', 'name email')
                 .populate('lastScannedBy', 'name email')
                 .sort({ createdAt: -1 })
                 .skip(skip)
-                .limit(limit),
+                .limit(limit)
+                .lean(),
             QRCode.countDocuments(filters)
         ]);
 
@@ -153,9 +155,11 @@ class QrCodeService {
         }
 
         const scanHistory = await QRScanHistory.find({ qrCode: qrCode._id })
+            .select('-__v')
             .populate('scannedBy', 'name email')
             .sort({ scannedAt: -1 })
-            .limit(50);
+            .limit(50)
+            .lean();
 
         return {
             qrCode,

@@ -1,89 +1,57 @@
 /**
- * Client-side Logger Utility
- * Production'da console.log'ları temizler, development'ta gösterir
+ * src/utils/logger.ts
+ * Merkezi Loglama Servisi
+ * 
+ * Production ortamında console loglarını engellemek ve merkezi
+ * bir log yönetimi sağlamak için kullanılır.
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+const isProduction = process.env.NODE_ENV === 'production';
 
-/**
- * Client-side logger class
- * Production'da sadece warn ve error seviyelerini gösterir
- */
+type LogLevel = 'info' | 'warn' | 'error' | 'debug';
+
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development';
-
-  /**
-   * Belirli bir log seviyesinin gösterilip gösterilmeyeceğini kontrol eder
-   * @param level - Log seviyesi
-   * @returns Log gösterilmeli mi?
-   */
-  private shouldLog(level: LogLevel): boolean {
-    // Development'ta her şeyi göster
-    if (this.isDevelopment) {
-      return true;
-    }
-
-    // Production'da sadece warn ve error göster
-    return level === 'warn' || level === 'error';
+  private formatMessage(level: LogLevel, message: string) {
+    const timestamp = new Date().toISOString();
+    return `[${timestamp}] [${level.toUpperCase()}] ${message}`;
   }
 
-  /**
-   * Debug seviyesinde log yazdırır
-   * @param args - Log mesajları
-   */
-  /**
-   * Debug seviyesinde log yazdırır
-   * @param args - Log mesajları
-   */
-  debug(...args: unknown[]): void {
-    if (this.shouldLog('debug')) {
-      console.debug('[DEBUG]', ...args);
+  info(message: string, data?: unknown) {
+    if (isProduction) return;
+    if (data !== undefined) {
+      console.info(this.formatMessage('info', message), data);
+    } else {
+      console.info(this.formatMessage('info', message));
     }
   }
 
-  /**
-   * Info seviyesinde log yazdırır
-   * @param args - Log mesajları
-   */
-  info(...args: unknown[]): void {
-    if (this.shouldLog('info')) {
-      console.info('[INFO]', ...args);
+  warn(message: string, data?: unknown) {
+    if (isProduction) return;
+    if (data !== undefined) {
+      console.warn(this.formatMessage('warn', message), data);
+    } else {
+      console.warn(this.formatMessage('warn', message));
     }
   }
 
-  /**
-   * Warning seviyesinde log yazdırır
-   * @param args - Log mesajları
-   */
-  warn(...args: unknown[]): void {
-    if (this.shouldLog('warn')) {
-      console.warn('[WARN]', ...args);
+  error(message: string, error?: unknown) {
+    // Hatalar production'da external tracking aracına (Sentry vb.) gönderilebilir
+    if (error !== undefined) {
+      console.error(this.formatMessage('error', message), error);
+    } else {
+      console.error(this.formatMessage('error', message));
     }
   }
 
-  /**
-   * Error seviyesinde log yazdırır
-   * @param args - Log mesajları
-   */
-  error(...args: unknown[]): void {
-    if (this.shouldLog('error')) {
-      console.error('[ERROR]', ...args);
+  debug(message: string, data?: unknown) {
+    if (isProduction) return;
+    if (data !== undefined) {
+      console.debug(this.formatMessage('debug', message), data);
+    } else {
+      console.debug(this.formatMessage('debug', message));
     }
-  }
-
-  /**
-   * Genel log yazdırır (info seviyesi kullanır)
-   * @param args - Log mesajları
-   */
-  log(...args: unknown[]): void {
-    // log() için info seviyesini kullan
-    this.info(...args);
   }
 }
 
-// Singleton instance
 export const logger = new Logger();
-
-// Default export
 export default logger;
-

@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next';
 import { locales, defaultLocale } from '@/i18n/locales';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://skproduction.com';
-  
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://skpro.com.tr';
+
   const now = new Date();
 
   const routes: MetadataRoute.Sitemap = locales.flatMap((locale) => {

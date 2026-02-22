@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 // Optional Redis import - if @upstash/redis is not installed, rate limiting will be disabled
@@ -74,7 +75,7 @@ export async function apiRateLimit(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Rate limit error:', error);
+    logger.error('Rate limit error:', error);
     // Redis hatası durumunda isteği geçir
     return NextResponse.next();
   }

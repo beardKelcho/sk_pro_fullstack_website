@@ -3,6 +3,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
 import { X, Save, Loader2, Upload, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import NextImage from 'next/image';
 
 interface AboutSectionModalProps {
     isOpen: boolean;
@@ -207,12 +208,16 @@ const AboutSectionModal: React.FC<AboutSectionModalProps> = ({ isOpen, onClose }
                                     Görsel *
                                 </label>
                                 {formData.imageUrl ? (
-                                    <div className="relative group">
-                                        <img
-                                            src={formData.imageUrl}
-                                            alt="About"
-                                            className="w-full h-64 object-cover rounded-lg"
-                                        />
+                                    <div className="relative group overflow-hidden rounded-lg">
+                                        <div className="relative w-full h-64">
+                                            <NextImage
+                                                src={formData.imageUrl}
+                                                alt="About"
+                                                fill
+                                                sizes="(max-width: 768px) 100vw, 800px"
+                                                className="object-cover"
+                                            />
+                                        </div>
                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
                                             <button
                                                 type="button"
@@ -374,10 +379,12 @@ const AboutSectionModal: React.FC<AboutSectionModalProps> = ({ isOpen, onClose }
                                                     }}
                                                     className="relative group aspect-video rounded-lg overflow-hidden hover:ring-2 hover:ring-blue-500 transition-all"
                                                 >
-                                                    <img
+                                                    <NextImage
                                                         src={item.url}
                                                         alt={item.name || 'Media'}
-                                                        className="w-full h-full object-cover"
+                                                        fill
+                                                        sizes="(max-width: 768px) 33vw, 250px"
+                                                        className="object-cover"
                                                     />
                                                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                         <span className="text-white text-sm font-medium">Seç</span>

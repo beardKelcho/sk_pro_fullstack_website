@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import type { IUser } from '../models/User';
+import logger from './logger';
 
 export type AccessTokenPayload = {
   id: string;
@@ -20,8 +21,8 @@ export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'sk-producti
 
 // Development modunda JWT_SECRET'ı logla (güvenlik için production'da loglanmaz)
 if (process.env.NODE_ENV === 'development') {
-  console.log('JWT_SECRET configured:', JWT_SECRET ? 'Yes (length: ' + JWT_SECRET.length + ')' : 'No (using default)');
-  console.log('JWT_SECRET value (first 10 chars):', JWT_SECRET.substring(0, 10) + '...');
+  logger.info('JWT_SECRET configured', { status: JWT_SECRET ? 'Yes (length: ' + JWT_SECRET.length + ')' : 'No (using default)' });
+  logger.info('JWT_SECRET value (first 10 chars)', { value: JWT_SECRET.substring(0, 10) + '...' });
 }
 
 export const createTokenHash = (token: string): string => {

@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useState } from 'react';
 import apiClient from '@/services/api/axios';
 import { toast } from 'react-toastify';
@@ -36,7 +38,7 @@ export default function ExportButton({
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
-      console.error('Export hatası:', error);
+      logger.error('Export hatası:', error);
       const errorMessage = error.response?.data?.message || 
                           error.message || 
                           'Dışa aktarma işlemi başarısız oldu';

@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 /**
  * Monitoring Service
  * Production monitoring ve performance metrics için
@@ -122,7 +123,7 @@ export interface MonitoringDashboardData {
  * @example
  * ```typescript
  * const metrics = await getPerformanceMetrics('24h');
- * console.log(metrics.averagePageLoadTime);
+ * logger.info(metrics.averagePageLoadTime);
  * ```
  */
 export const getPerformanceMetrics = async (
@@ -157,7 +158,7 @@ export const getPerformanceMetrics = async (
  * @example
  * ```typescript
  * const apiMetrics = await getApiResponseMetrics('24h');
- * console.log(apiMetrics[0].responseTime);
+ * logger.info(apiMetrics[0].responseTime);
  * ```
  */
 export const getApiResponseMetrics = async (
@@ -190,7 +191,7 @@ export const getApiResponseMetrics = async (
  * @example
  * ```typescript
  * const activity = await getUserActivityMetrics('24h');
- * console.log(activity[0].pageViews);
+ * logger.info(activity[0].pageViews);
  * ```
  */
 export const getUserActivityMetrics = async (
@@ -223,8 +224,8 @@ export const getUserActivityMetrics = async (
  * @example
  * ```typescript
  * const dashboard = await getMonitoringDashboard('24h');
- * console.log(dashboard.performance.averagePageLoadTime);
- * console.log(dashboard.apiMetrics.successRate);
+ * logger.info(dashboard.performance.averagePageLoadTime);
+ * logger.info(dashboard.apiMetrics.successRate);
  * ```
  */
 export const getMonitoringDashboard = async (

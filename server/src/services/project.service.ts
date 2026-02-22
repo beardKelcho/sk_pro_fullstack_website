@@ -5,6 +5,8 @@ import { AppError, IProjectPopulated } from '../types/common';
 import * as NotificationService from '../utils/notificationService'; // Added
 import * as EmailService from '../utils/emailService'; // Added
 import logger from '../utils/logger';
+import { getRedisClient } from '../config/redis';
+import calendarSyncService from './calendarSync.service';
 
 // ... (interfaces unchanged) ...
 export interface PaginatedProjects {
@@ -51,6 +53,21 @@ export interface UpdateProjectData {
 }
 
 class ProjectService {
+    // Redis Invalidation Helper
+    private async invalidateCache(pattern: string): Promise<void> {
+        const redisClient = getRedisClient();
+        if (!redisClient) return;
+        try {
+            const keys = await redisClient.keys(pattern);
+            if (keys.length > 0) {
+                await redisClient.del(keys);
+                logger.info(`Redis cache temizlendi: ${pattern}`, { count: keys.length });
+            }
+        } catch (err) {
+            logger.warn('Redis invalidation hatası', { error: String(err) });
+        }
+    }
+
     // ... (checkEquipmentAvailability and listProjects unchanged) ...
     /**
      * Check equipment availability for a date range
@@ -109,6 +126,18 @@ class ProjectService {
         status?: string,
         client?: string
     ): Promise<PaginatedProjects> {
+        const cacheKey = `projects:list:${page}:${limit}:${sort}:${search || 'none'}:${status || 'all'}:${client || 'all'}`;
+        const redisClient = getRedisClient();
+
+        if (redisClient) {
+            try {
+                const cached = await redisClient.get(cacheKey);
+                if (cached) return JSON.parse(cached);
+            } catch (err) {
+                logger.warn('Redis okuma hatası', { error: String(err) });
+            }
+        }
+
         const filters: FilterQuery<IProject> = {};
 
         if (status && status !== 'all') filters.status = status;
@@ -131,21 +160,33 @@ class ProjectService {
 
         const [projects, total] = await Promise.all([
             Project.find(filters)
-                .populate('client', 'name company email')
-                .populate('team', 'name email role')
-                .populate('equipment', 'name type model serialNumber')
+                .select('-__v')
+                .populate('client', 'name company email phone')
+                .populate('team', 'name email role phone')
+                .populate('equipment', 'name brand model type serialNumber status quantity')
                 .sort(sortOptions)
                 .skip(skip)
-                .limit(limit),
+                .limit(limit)
+                .lean(),
             Project.countDocuments(filters)
         ]);
 
-        return {
+        const result = {
             projects: projects as unknown as IProjectPopulated[],
             total,
             page,
             totalPages: Math.ceil(total / limit)
         };
+
+        if (redisClient) {
+            try {
+                await redisClient.setEx(cacheKey, 1800, JSON.stringify(result)); // 30 min cache
+            } catch (err) {
+                logger.warn('Redis yazma hatası', { error: String(err) });
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -157,9 +198,11 @@ class ProjectService {
         }
 
         const project = await Project.findById(id)
-            .populate('client', 'name company email plane phone')
+            .select('-__v')
+            .populate('client', 'name company email phone')
             .populate('team', 'name email role phone')
-            .populate('equipment');
+            .populate('equipment', 'name brand model type serialNumber status quantity')
+            .lean();
 
         if (!project) {
             throw new AppError('Proje bulunamadı', 404);
@@ -300,6 +343,13 @@ class ProjectService {
             }));
             await InventoryLogModel.insertMany(logs, { session });
         }
+
+        await this.invalidateCache('projects:*');
+
+        // Fire-and-forget calendar sync
+        calendarSyncService.syncProjectEvent(project as unknown as IProjectPopulated).catch(err => {
+            logger.error('Calendar sync error during project creation', { error: String(err) });
+        });
 
         return project as unknown as IProjectPopulated;
     }
@@ -515,7 +565,16 @@ class ProjectService {
             }
         }
 
-        return await this.getProjectById(id);
+        await this.invalidateCache('projects:*');
+
+        const updatedProject = await this.getProjectById(id);
+
+        // Fire-and-forget calendar sync update
+        calendarSyncService.syncProjectEvent(updatedProject, true).catch(err => {
+            logger.error('Calendar sync error during project update', { error: String(err) });
+        });
+
+        return updatedProject;
     }
 
     // ... (deleteProject and getStats unchanged)
@@ -541,12 +600,30 @@ class ProjectService {
         }
 
         await project.deleteOne();
+
+        await this.invalidateCache('projects:*');
+
+        calendarSyncService.deleteProjectEvent(project as unknown as IProjectPopulated).catch(err => {
+            logger.error('Calendar sync error during project deletion', { error: String(err) });
+        });
     }
 
     /**
      * Get Stats
      */
     async getStats(): Promise<any> {
+        const cacheKey = `projects:stats`;
+        const redisClient = getRedisClient();
+
+        if (redisClient) {
+            try {
+                const cached = await redisClient.get(cacheKey);
+                if (cached) return JSON.parse(cached);
+            } catch (err) {
+                logger.warn('Redis okuma hatası', { error: String(err) });
+            }
+        }
+
         const [
             total,
             active,
@@ -566,13 +643,23 @@ class ProjectService {
             })
         ]);
 
-        return {
+        const stats = {
             total,
             active,
             completed,
             pending,
             thisMonth
         };
+
+        if (redisClient) {
+            try {
+                await redisClient.setEx(cacheKey, 1800, JSON.stringify(stats));
+            } catch (err) {
+                logger.warn('Redis yazma hatası', { error: String(err) });
+            }
+        }
+
+        return stats;
     }
 }
 

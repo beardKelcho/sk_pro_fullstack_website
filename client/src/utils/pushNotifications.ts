@@ -65,7 +65,7 @@ class PushNotificationService {
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('Push notification initialization failed:', error);
+        logger.error('Push notification initialization failed:', error);
       }
     }
   }
@@ -93,7 +93,7 @@ class PushNotificationService {
         await this.updateSubscriptionOnServer(subscription);
       }
     } catch (error) {
-      console.error('Subscription check failed:', error);
+      logger.error('Subscription check failed:', error);
     }
   }
 
@@ -151,7 +151,7 @@ class PushNotificationService {
       await this.deleteSubscriptionFromServer();
       return true;
     } catch (error) {
-      console.error('Push notification unsubscription failed:', error);
+      logger.error('Push notification unsubscription failed:', error);
       return false;
     }
   }
@@ -172,7 +172,7 @@ class PushNotificationService {
         },
       });
     } catch (error) {
-      console.error('Show notification failed:', error);
+      logger.error('Show notification failed:', error);
     }
   }
 
@@ -192,7 +192,7 @@ class PushNotificationService {
       });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        process.env.NODE_ENV === 'development' && console.error('Update subscription on server failed:', error);
+        process.env.NODE_ENV === 'development' && logger.error('Update subscription on server failed:', error);
       }
     }
   }
@@ -202,7 +202,7 @@ class PushNotificationService {
       await apiClient.post('/push/unsubscribe', {});
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('Delete subscription from server failed:', error);
+        logger.error('Delete subscription from server failed:', error);
       }
     }
   }

@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useState } from 'react';
 import apiClient from '@/services/api/axios';
 import { toast } from 'react-toastify';
@@ -29,7 +31,7 @@ export default function ExportMenu({
       const endpoint = `/export?type=${type}&format=${format}`;
       const filename = `${baseFilename}-export.${format === 'excel' ? 'xlsx' : format}`;
 
-      console.log('Export requested:', { type, format, endpoint, filename });
+      logger.info('Export requested:', { type, format, endpoint, filename });
 
 
       const response = await apiClient.get(endpoint, {
@@ -48,7 +50,7 @@ export default function ExportMenu({
 
       toast.success(`${format.toUpperCase()} formatında dışa aktarma başarılı`);
     } catch (error: any) {
-      console.error('Export hatası:', error);
+      logger.error('Export hatası:', error);
       let errorMessage = 'Dışa aktarma işlemi başarısız oldu';
 
       if (error.response?.data instanceof Blob) {

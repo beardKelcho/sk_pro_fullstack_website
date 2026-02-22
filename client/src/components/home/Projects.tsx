@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { Play, X, Loader2, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import NextImage from 'next/image';
 
 interface Project {
     _id: string;
@@ -179,10 +180,12 @@ const Projects = () => {
                                             {/* Cover Image */}
                                             {(project.coverUrl || project.imageUrls?.[0]) && (
                                                 <div className="relative h-64 overflow-hidden">
-                                                    <img
-                                                        src={project.coverUrl || project.imageUrls?.[0]}
+                                                    <NextImage
+                                                        src={project.coverUrl || project.imageUrls?.[0] || ''}
                                                         alt={project.title}
-                                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                                        fill
+                                                        sizes="(max-width: 768px) 100vw, 400px"
+                                                        className="object-cover transform group-hover:scale-110 transition-transform duration-700"
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
@@ -271,11 +274,15 @@ const Projects = () => {
                                                         className="w-full h-full object-cover"
                                                     />
                                                 ) : (
-                                                    <img
-                                                        src={project.coverUrl}
-                                                        alt={project.title}
-                                                        className="w-full h-full object-cover"
-                                                    />
+                                                    <div className="relative w-full h-full">
+                                                        <NextImage
+                                                            src={project.coverUrl || ''}
+                                                            alt={project.title}
+                                                            fill
+                                                            sizes="(max-width: 768px) 100vw, 400px"
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
                                                 )}
 
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />

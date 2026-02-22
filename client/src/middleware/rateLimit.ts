@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -14,7 +15,7 @@ try {
   });
 } catch (error) {
   // Redis not available, rate limiting will be disabled
-  console.warn('@upstash/redis not available, rate limiting disabled');
+  logger.warn('@upstash/redis not available, rate limiting disabled');
 }
 
 interface RateLimitConfig {

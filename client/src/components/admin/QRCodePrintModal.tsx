@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
+import Image from 'next/image';
 import { useModalA11y } from '@/hooks/useModalA11y';
 
 interface QRCodePrintModalProps {
@@ -98,9 +99,8 @@ export default function QRCodePrintModal({ isOpen, onClose, title, code, qrImage
 
         <div className="p-5">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-64 h-64 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrImage} alt="QR" className="w-full h-full object-contain" />
+            <div className="w-64 h-64 relative bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
+              <Image src={qrImage} alt="QR" fill unoptimized className="object-contain" />
             </div>
             {title && (
               <p className="text-sm font-medium text-gray-900 dark:text-white text-center">{title}</p>

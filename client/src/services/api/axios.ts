@@ -99,7 +99,7 @@ apiClient.interceptors.response.use(
     // 403 Forbidden
     if (error.response?.status === 403) {
       if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        console.warn('403 Forbidden:', error.response.data?.message);
+        logger.warn('403 Forbidden:', error.response.data?.message);
       }
     }
 

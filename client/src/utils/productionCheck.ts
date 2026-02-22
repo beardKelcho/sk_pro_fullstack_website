@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 /**
  * Production Environment Check Utility
  * Production'a deploy etmeden önce gerekli kontrolleri yapar
@@ -12,7 +13,7 @@
  * const results = productionChecker.runChecks();
  * const failed = results.filter(r => r.status === 'fail');
  * if (failed.length > 0) {
- *   console.error(productionChecker.formatResults(results));
+ *   logger.error(productionChecker.formatResults(results));
  * }
  * ```
  */
@@ -152,7 +153,7 @@ class ProductionChecker {
    * @example
    * ```typescript
    * const results = productionChecker.runChecks();
-   * console.log(productionChecker.formatResults(results));
+   * logger.info(productionChecker.formatResults(results));
    * ```
    */
   formatResults(results: CheckResult[]): string {
@@ -189,7 +190,7 @@ if (process.env.NODE_ENV === 'development' && typeof window === 'undefined') {
   const failed = results.filter(r => r.status === 'fail' && r.required);
   
   if (failed.length > 0) {
-    console.warn(productionChecker.formatResults(results));
+    logger.warn(productionChecker.formatResults(results));
   }
 }
 

@@ -51,7 +51,7 @@ export interface WidgetResponse {
  * @example
  * ```typescript
  * const widgets = await getUserWidgets();
- * widgets.forEach(widget => console.log(widget.type));
+ * widgets.forEach(widget => logger.info(widget.type));
  * ```
  */
 export const getUserWidgets = async (): Promise<Widget[]> => {
@@ -75,7 +75,7 @@ export const getUserWidgets = async (): Promise<Widget[]> => {
  * @example
  * ```typescript
  * const widget = await getWidgetById('widget123');
- * console.log(widget.title);
+ * logger.info(widget.title);
  * ```
  */
 export const getWidgetById = async (id: string): Promise<Widget> => {
@@ -199,7 +199,7 @@ export const updateWidgetsBulk = async (widgets: Array<{ id: string; position?: 
  * @example
  * ```typescript
  * const defaultWidgets = await createDefaultWidgets();
- * console.log(`Created ${defaultWidgets.length} default widgets`);
+ * logger.info(`Created ${defaultWidgets.length} default widgets`);
  * ```
  */
 export const createDefaultWidgets = async (): Promise<Widget[]> => {

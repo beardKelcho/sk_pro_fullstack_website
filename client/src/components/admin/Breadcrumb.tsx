@@ -17,18 +17,18 @@ interface BreadcrumbProps {
 
 export default function Breadcrumb({ items, showHome = true }: BreadcrumbProps) {
   const pathname = usePathname();
-  
+
   // Eğer items verilmemişse, pathname'den otomatik oluştur
   const breadcrumbItems = useMemo(() => {
     if (items) return items;
-    
+
     const paths = pathname.split('/').filter(Boolean);
     const breadcrumbs: BreadcrumbItem[] = [];
-    
+
     if (showHome) {
       breadcrumbs.push({ name: 'Ana Sayfa', url: '/' });
     }
-    
+
     const isObjectId = (segment: string) => /^[a-f0-9]{24}$/i.test(segment);
 
     // Admin panel route'ları için daha okunabilir isimler
@@ -78,7 +78,7 @@ export default function Breadcrumb({ items, showHome = true }: BreadcrumbProps) 
           .split('-')
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
           .join(' ');
-      
+
       // Son öğe için URL ekleme (mevcut sayfa)
       if (index === paths.length - 1) {
         breadcrumbs.push({ name, url: currentPath });
@@ -86,17 +86,17 @@ export default function Breadcrumb({ items, showHome = true }: BreadcrumbProps) 
         breadcrumbs.push({ name, url: currentPath });
       }
     });
-    
+
     return breadcrumbs;
   }, [pathname, items, showHome]);
-  
+
   const breadcrumbSchema = useMemo(() => {
     return createBreadcrumbListSchema(breadcrumbItems);
   }, [breadcrumbItems]);
 
   return (
     <>
-      <StructuredData type="breadcrumbList" data={breadcrumbSchema} />
+      <StructuredData data={breadcrumbSchema} />
       <nav aria-label="Breadcrumb" className="mb-4">
         <ol className="flex items-center space-x-2 text-sm">
           {breadcrumbItems.map((item, index) => (
@@ -124,8 +124,8 @@ export default function Breadcrumb({ items, showHome = true }: BreadcrumbProps) 
                 </Link>
               ) : (
                 <span
-                  className={index === breadcrumbItems.length - 1 
-                    ? 'text-gray-900 dark:text-white font-medium' 
+                  className={index === breadcrumbItems.length - 1
+                    ? 'text-gray-900 dark:text-white font-medium'
                     : 'text-gray-500 dark:text-gray-400'
                   }
                   aria-current={index === breadcrumbItems.length - 1 ? 'page' : undefined}

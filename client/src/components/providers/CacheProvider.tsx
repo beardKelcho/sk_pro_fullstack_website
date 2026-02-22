@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { cache } from '@/utils/cache';
 
@@ -38,7 +39,7 @@ export function CacheProvider({ children, defaultTTL = 3600, defaultTags = [] }:
       try {
         return cache.get<T>(key);
       } catch (error) {
-        console.error('Cache get error:', error);
+        logger.error('Cache get error:', error);
         return null;
       }
     },
@@ -50,7 +51,7 @@ export function CacheProvider({ children, defaultTTL = 3600, defaultTags = [] }:
           tags: options.tags || defaultTags,
         });
       } catch (error) {
-        console.error('Cache set error:', error);
+        logger.error('Cache set error:', error);
       }
     },
 
@@ -58,7 +59,7 @@ export function CacheProvider({ children, defaultTTL = 3600, defaultTags = [] }:
       try {
         cache.delete(key);
       } catch (error) {
-        console.error('Cache remove error:', error);
+        logger.error('Cache remove error:', error);
       }
     },
 
@@ -75,7 +76,7 @@ export function CacheProvider({ children, defaultTTL = 3600, defaultTags = [] }:
           size: JSON.stringify(item.data).length,
         };
       } catch (error) {
-        console.error('Cache check status error:', error);
+        logger.error('Cache check status error:', error);
         return {
           exists: false,
           ttl: 0,
@@ -99,7 +100,7 @@ export function CacheProvider({ children, defaultTTL = 3600, defaultTags = [] }:
           tags,
         };
       } catch (error) {
-        console.error('Cache get stats error:', error);
+        logger.error('Cache get stats error:', error);
         return {
           totalKeys: 0,
           totalSize: 0,

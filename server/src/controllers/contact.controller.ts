@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import ContactMessage from '../models/ContactMessage';
 import { createEmailTransporter, createContactEmailTemplate, ContactEmailData } from '../config/email.config';
+import logger from '../utils/logger';
 
 // Send Contact Message
 export const sendMessage = async (req: Request, res: Response) => {
@@ -32,7 +33,7 @@ export const sendMessage = async (req: Request, res: Response) => {
             message
         });
 
-        console.log('✅ Contact message saved to database:', contactMessage._id);
+        logger.info('Contact message saved to database', { id: contactMessage._id });
 
         // STEP 2: Attempt to send email (NON-BLOCKING)
         try {
@@ -43,14 +44,14 @@ export const sendMessage = async (req: Request, res: Response) => {
                 const mailOptions = createContactEmailTemplate(emailData);
 
                 await transporter.sendMail(mailOptions);
-                console.log('✅ Email sent successfully to:', process.env.SMTP_USER);
+                logger.info('Email sent successfully', { to: process.env.SMTP_USER });
             } else {
-                console.warn('⚠️  Email transporter not available. Message saved to DB only.');
+                logger.warn('Email transporter not available. Message saved to DB only.');
             }
         } catch (emailError: any) {
             // Email failed, but DB save was successful
-            console.error('❌ Email sending failed:', emailError.message);
-            console.log('ℹ️  Message still saved to database. Email notification skipped.');
+            logger.error('Email sending failed', { error: emailError.message });
+            logger.info('Message still saved to database. Email notification skipped.');
         }
 
         // Always return success if DB save worked
@@ -65,7 +66,7 @@ export const sendMessage = async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('❌ Contact message error:', error);
+        logger.error('Contact message error', { error });
 
         // Check if it's a validation error
         if (error.name === 'ValidationError') {

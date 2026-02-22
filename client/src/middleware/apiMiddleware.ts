@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiLogger } from '@/utils/apiLogger';
 import { ApiVersioning } from '@/utils/apiVersioning';
@@ -26,7 +27,7 @@ export async function apiMiddleware(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('API middleware error:', error);
+    logger.error('API middleware error:', error);
 
     // Hata durumunda da loglama yap
     const apiLogger = ApiLogger.getInstance();

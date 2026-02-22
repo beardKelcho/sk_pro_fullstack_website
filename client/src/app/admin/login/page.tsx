@@ -37,7 +37,7 @@ export default function AdminLogin() {
           if (response.data && response.data.success && response.data.user) {
             // Token geçerli, dashboard'a yönlendir
             if (process.env.NODE_ENV === 'development') {
-              console.log('Valid token found, redirecting to dashboard...');
+              logger.info('Valid token found, redirecting to dashboard...');
             }
             window.location.href = '/admin/dashboard';
             return;
@@ -45,7 +45,7 @@ export default function AdminLogin() {
         } catch (error) {
           // Token geçersiz, temizle
           if (process.env.NODE_ENV === 'development') {
-            console.log('Invalid token found, clearing...');
+            logger.info('Invalid token found, clearing...');
           }
           localStorage.removeItem('accessToken');
           localStorage.removeItem('user');
@@ -113,7 +113,7 @@ export default function AdminLogin() {
 
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log('Attempting login with:', { email: formData.email, passwordLength: formData.password.length });
+        logger.info('Attempting login with:', { email: formData.email, passwordLength: formData.password.length });
       }
 
       const response = await authApi.login({
@@ -125,16 +125,16 @@ export default function AdminLogin() {
 
       // Debug: Response'u console'a yazdır
       if (process.env.NODE_ENV === 'development') {
-        console.log('=== LOGIN RESPONSE ===');
-        console.log('Full response:', response);
-        console.log('Response data:', response.data);
-        console.log('Response success:', response.data?.success);
-        console.log('AccessToken exists:', !!response.data?.accessToken);
-        console.log('AccessToken value:', response.data?.accessToken);
-        console.log('AccessToken type:', typeof response.data?.accessToken);
-        console.log('User:', response.data?.user);
-        console.log('Requires2FA:', response.data?.requires2FA);
-        console.log('=====================');
+        logger.info('=== LOGIN RESPONSE ===');
+        logger.info('Full response:', response);
+        logger.info('Response data:', response.data);
+        logger.info('Response success:', response.data?.success);
+        logger.info('AccessToken exists:', !!response.data?.accessToken);
+        logger.info('AccessToken value:', response.data?.accessToken);
+        logger.info('AccessToken type:', typeof response.data?.accessToken);
+        logger.info('User:', response.data?.user);
+        logger.info('Requires2FA:', response.data?.requires2FA);
+        logger.info('=====================');
       }
 
       if (response.data && response.data.success) {
@@ -165,27 +165,27 @@ export default function AdminLogin() {
           if (formData.rememberMe) {
             localStorage.setItem('accessToken', cleanToken);
             if (process.env.NODE_ENV === 'development') {
-              console.log('Token saved to localStorage');
-              console.log('Token length:', cleanToken.length);
-              console.log('Token (first 30 chars):', cleanToken.substring(0, 30) + '...');
-              console.log('Token (last 10 chars):', '...' + cleanToken.substring(cleanToken.length - 10));
+              logger.info('Token saved to localStorage');
+              logger.info('Token length:', cleanToken.length);
+              logger.info('Token (first 30 chars):', cleanToken.substring(0, 30) + '...');
+              logger.info('Token (last 10 chars):', '...' + cleanToken.substring(cleanToken.length - 10));
             }
           } else {
             sessionStorage.setItem('accessToken', cleanToken);
             if (process.env.NODE_ENV === 'development') {
-              console.log('Token saved to sessionStorage');
-              console.log('Token length:', cleanToken.length);
-              console.log('Token (first 30 chars):', cleanToken.substring(0, 30) + '...');
-              console.log('Token (last 10 chars):', '...' + cleanToken.substring(cleanToken.length - 10));
+              logger.info('Token saved to sessionStorage');
+              logger.info('Token length:', cleanToken.length);
+              logger.info('Token (first 30 chars):', cleanToken.substring(0, 30) + '...');
+              logger.info('Token (last 10 chars):', '...' + cleanToken.substring(cleanToken.length - 10));
             }
           }
         } else {
           // Token yok - detaylı log
           if (process.env.NODE_ENV === 'development') {
-            console.error('=== TOKEN NOT FOUND IN RESPONSE ===');
-            console.error('Response data keys:', Object.keys(response.data || {}));
-            console.error('Response data:', response.data);
-            console.error('====================================');
+            logger.error('=== TOKEN NOT FOUND IN RESPONSE ===');
+            logger.error('Response data keys:', Object.keys(response.data || {}));
+            logger.error('Response data:', response.data);
+            logger.error('====================================');
           }
           logger.error('Login response does not contain accessToken', {
             responseKeys: Object.keys(response.data || {}),
@@ -200,7 +200,7 @@ export default function AdminLogin() {
 
         // Kullanıcı bilgilerini kaydet
         // Backend'den gelen user formatı: { id, name, email, role }
-        console.log('🔍 Login Response:', {
+        logger.info('🔍 Login Response:', {
           hasUser: !!response.data.user,
           user: response.data.user,
           fullResponse: response.data
@@ -219,28 +219,28 @@ export default function AdminLogin() {
 
           if (formData.rememberMe) {
             localStorage.setItem('user', JSON.stringify(userData));
-            console.log('✅ User saved to localStorage:', userData);
-            console.log('✅ localStorage.getItem("user"):', localStorage.getItem('user'));
+            logger.info('✅ User saved to localStorage:', userData);
+            logger.info('✅ localStorage.getItem("user"):', localStorage.getItem('user'));
           } else {
             sessionStorage.setItem('user', JSON.stringify(userData));
-            console.log('✅ User saved to sessionStorage:', userData);
-            console.log('✅ sessionStorage.getItem("user"):', sessionStorage.getItem('user'));
+            logger.info('✅ User saved to sessionStorage:', userData);
+            logger.info('✅ sessionStorage.getItem("user"):', sessionStorage.getItem('user'));
           }
 
           // Header'ı anında güncellemek için custom event dispatch et
           setTimeout(() => {
             window.dispatchEvent(new CustomEvent('auth:login'));
-            console.log('✅ auth:login event dispatched');
+            logger.info('✅ auth:login event dispatched');
           }, 100);
         } else {
-          console.error('❌ User data not found in response!', {
+          logger.error('❌ User data not found in response!', {
             responseKeys: Object.keys(response.data || {}),
             responseData: response.data
           });
 
           // User yoksa, token varsa getProfile ile user bilgisini al
           if (response.data.accessToken) {
-            console.log('⚠️ User not in response, trying to get profile...');
+            logger.info('⚠️ User not in response, trying to get profile...');
             try {
               const profileResponse = await authApi.getProfile();
               if (profileResponse.data && profileResponse.data.success && profileResponse.data.user) {
@@ -256,19 +256,19 @@ export default function AdminLogin() {
 
                 if (formData.rememberMe) {
                   localStorage.setItem('user', JSON.stringify(userData));
-                  console.log('✅ User saved to localStorage (from profile):', userData);
+                  logger.info('✅ User saved to localStorage (from profile):', userData);
                 } else {
                   sessionStorage.setItem('user', JSON.stringify(userData));
-                  console.log('✅ User saved to sessionStorage (from profile):', userData);
+                  logger.info('✅ User saved to sessionStorage (from profile):', userData);
                 }
 
                 setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('auth:login'));
-                  console.log('✅ auth:login event dispatched (from profile)');
+                  logger.info('✅ auth:login event dispatched (from profile)');
                 }, 100);
               }
             } catch (profileError) {
-              console.error('❌ Failed to get profile:', profileError);
+              logger.error('❌ Failed to get profile:', profileError);
             }
           }
         }
@@ -282,11 +282,11 @@ export default function AdminLogin() {
         const savedToken = formData.rememberMe ? savedTokenLocal : savedTokenSession;
 
         if (process.env.NODE_ENV === 'development') {
-          console.log('Token verification after save:');
-          console.log('Remember me:', formData.rememberMe);
-          console.log('Token in localStorage:', !!savedTokenLocal, savedTokenLocal ? savedTokenLocal.length + ' chars' : 'none');
-          console.log('Token in sessionStorage:', !!savedTokenSession, savedTokenSession ? savedTokenSession.length + ' chars' : 'none');
-          console.log('Using token from:', formData.rememberMe ? 'localStorage' : 'sessionStorage');
+          logger.info('Token verification after save:');
+          logger.info('Remember me:', formData.rememberMe);
+          logger.info('Token in localStorage', { exists: !!savedTokenLocal, info: savedTokenLocal ? savedTokenLocal.length + ' chars' : 'none' });
+          logger.info('Token in sessionStorage', { exists: !!savedTokenSession, info: savedTokenSession ? savedTokenSession.length + ' chars' : 'none' });
+          logger.info('Using token from:', formData.rememberMe ? 'localStorage' : 'sessionStorage');
         }
 
         if (!savedToken) {
@@ -314,18 +314,18 @@ export default function AdminLogin() {
         }
 
         if (process.env.NODE_ENV === 'development') {
-          console.log('Token saved successfully and format verified');
-          console.log('Token (first 30 chars):', savedToken.substring(0, 30) + '...');
-          console.log('Token (last 10 chars):', '...' + savedToken.substring(savedToken.length - 10));
-          console.log('Token length:', savedToken.length);
-          console.log('Token parts:', tokenParts.length);
+          logger.info('Token saved successfully and format verified');
+          logger.info('Token (first 30 chars):', savedToken.substring(0, 30) + '...');
+          logger.info('Token (last 10 chars):', '...' + savedToken.substring(savedToken.length - 10));
+          logger.info('Token length:', savedToken.length);
+          logger.info('Token parts:', tokenParts.length);
         }
 
         // Token kaydedildi, direkt dashboard'a yönlendir
         // getProfile çağrısı yapmıyoruz çünkü bu gereksiz ve hata kaynağı olabilir
         // Token zaten backend'den geldi ve geçerli, bu yeterli
         if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Login başarılı, token kaydedildi, dashboard\'a yönlendiriliyor...');
+          logger.info('✅ Login başarılı, token kaydedildi, dashboard\'a yönlendiriliyor...');
         }
 
         // Kısa bir delay ile redirect yap (storage'a yazılmasını garantile)
@@ -341,14 +341,14 @@ export default function AdminLogin() {
     } catch (error: any) {
       // Detaylı hata loglama
       if (process.env.NODE_ENV === 'development') {
-        console.error('=== LOGIN ERROR ===');
-        console.error('Error:', error);
-        console.error('Error response:', error.response);
-        console.error('Error response data:', error.response?.data);
-        console.error('Error message:', error.message);
-        console.error('Error status:', error.response?.status);
-        console.error('Error code:', error.code);
-        console.error('==================');
+        logger.error('=== LOGIN ERROR ===');
+        logger.error('Error:', error);
+        logger.error('Error response:', error.response);
+        logger.error('Error response data:', error.response?.data);
+        logger.error('Error message:', error.message);
+        logger.error('Error status:', error.response?.status);
+        logger.error('Error code:', error.code);
+        logger.error('==================');
       }
 
       logger.error('Giriş hatası:', error);
@@ -405,7 +405,7 @@ export default function AdminLogin() {
               isActive: response.user.isActive !== undefined ? response.user.isActive : true,
             };
             localStorage.setItem('user', JSON.stringify(userData));
-            console.log('✅ User saved to localStorage (2FA):', userData);
+            logger.info('✅ User saved to localStorage (2FA):', userData);
           }
         } else {
           sessionStorage.setItem('accessToken', response.accessToken);
@@ -420,7 +420,7 @@ export default function AdminLogin() {
               isActive: response.user.isActive !== undefined ? response.user.isActive : true,
             };
             sessionStorage.setItem('user', JSON.stringify(userData));
-            console.log('✅ User saved to sessionStorage (2FA):', userData);
+            logger.info('✅ User saved to sessionStorage (2FA):', userData);
           }
         }
         // Header'ı anında güncellemek için custom event dispatch et
@@ -565,8 +565,8 @@ export default function AdminLogin() {
                           autoComplete="username"
                           inputMode="email"
                           className={`w-full rounded-xl border bg-black/30 px-4 py-3 pl-11 text-white placeholder-white/30 outline-none transition focus:ring-4 ${errors.email
-                              ? 'border-red-500/50 focus:ring-red-500/20'
-                              : 'border-white/10 focus:border-white/20 focus:ring-white/10'
+                            ? 'border-red-500/50 focus:ring-red-500/20'
+                            : 'border-white/10 focus:border-white/20 focus:ring-white/10'
                             }`}
                           placeholder="ornek@skproduction.com veya +905xxxxxxxxx"
                           aria-invalid={Boolean(errors.email)}
@@ -595,8 +595,8 @@ export default function AdminLogin() {
                         error={errors.password}
                         placeholder="••••••••"
                         className={`w-full rounded-xl border bg-black/30 px-4 py-3 text-white placeholder-white/30 outline-none transition focus:ring-4 ${errors.password
-                            ? 'border-red-500/50 focus:ring-red-500/20'
-                            : 'border-white/10 focus:border-white/20 focus:ring-white/10'
+                          ? 'border-red-500/50 focus:ring-red-500/20'
+                          : 'border-white/10 focus:border-white/20 focus:ring-white/10'
                           }`}
                       />
                       {errors.password ? <p className="mt-2 text-xs text-red-200">{errors.password}</p> : null}

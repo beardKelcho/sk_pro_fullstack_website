@@ -43,6 +43,7 @@ import showcaseProjectsRoutes from './showcaseProjects.routes';
 import servicesRoutes from './services.routes';
 import cmsRoutes from './cms.routes';
 import contactRoutes from './contact.routes';
+import reportRoutes from './report.routes';
 import { getRedisClient } from '../config/redis';
 
 import scanRoutes from './scan.routes';
@@ -172,6 +173,7 @@ router.use('/showcase-projects', showcaseProjectsRoutes);
 router.use('/services', servicesRoutes);
 router.use('/cms', cmsRoutes);
 router.use('/contact', contactRoutes);
+router.use('/reports', reportRoutes);
 
 // === CMS V2 Routes ===
 // Public routes (no auth)

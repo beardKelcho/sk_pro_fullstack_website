@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useState } from 'react';
 import { useSiteImages, useUploadSiteImage, SiteImage } from '@/hooks/useSiteContent';
 import AssetCard from './AssetCard';
@@ -120,7 +122,7 @@ const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
                                 {filteredAssets.map(asset => (
                                     <div key={asset.id || asset._id} onClick={() => {
                                         const finalUrl = asset.url || getImageUrl(asset.id || asset._id);
-                                        console.log('MediaPicker: Selecting', { id: asset.id || asset._id, url: finalUrl, rawAsset: asset });
+                                        logger.info('MediaPicker: Selecting', { id: asset.id || asset._id, url: finalUrl, rawAsset: asset });
                                         onSelect(asset.id || asset._id || '', finalUrl);
                                     }}>
                                         <AssetCard

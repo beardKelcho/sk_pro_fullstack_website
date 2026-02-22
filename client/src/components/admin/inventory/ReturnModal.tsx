@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -35,7 +36,7 @@ export default function ReturnModal({ isOpen, onClose, onSuccess, item }: Return
             onSuccess();
             onClose();
         } catch (error: any) {
-            console.error(error);
+            logger.error(error);
             toast.error(error.response?.data?.message || 'İade işlemi başarısız');
         } finally {
             setSubmitting(false);

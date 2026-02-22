@@ -3,6 +3,9 @@ import { AppError } from '../types/common';
 import { Maintenance, Project } from '../models';
 import { hasPermission, Permission, Role } from '../config/permissions';
 import logger from '../utils/logger';
+import User from '../models/User';
+import googleCalendarService from '../services/googleCalendar.service';
+import outlookCalendarService from '../services/outlookCalendar.service';
 
 const parseDate = (raw: unknown): Date | null => {
   if (typeof raw !== 'string' || !raw) return null;
@@ -63,13 +66,13 @@ export const getCalendarEvents = async (req: Request, res: Response) => {
 
     const maintenances = canViewMaintenance
       ? await Maintenance.find({
-          scheduledDate: { $gte: startDate, $lte: endDate },
-          status: { $in: ['SCHEDULED', 'IN_PROGRESS'] },
-        })
-          .populate('equipment', 'name')
-          .select('scheduledDate status equipment type')
-          .sort({ scheduledDate: 1 })
-          .lean()
+        scheduledDate: { $gte: startDate, $lte: endDate },
+        status: { $in: ['SCHEDULED', 'IN_PROGRESS'] },
+      })
+        .populate('equipment', 'name')
+        .select('scheduledDate status equipment type')
+        .sort({ scheduledDate: 1 })
+        .lean()
       : [];
 
     const events = [
@@ -172,13 +175,13 @@ export const exportCalendarIcs = async (req: Request, res: Response) => {
 
     const maintenances = canViewMaintenance
       ? await Maintenance.find({
-          scheduledDate: { $gte: startDate, $lte: endDate },
-          status: { $in: ['SCHEDULED', 'IN_PROGRESS'] },
-        })
-          .populate('equipment', 'name')
-          .select('scheduledDate status equipment type')
-          .sort({ scheduledDate: 1 })
-          .lean()
+        scheduledDate: { $gte: startDate, $lte: endDate },
+        status: { $in: ['SCHEDULED', 'IN_PROGRESS'] },
+      })
+        .populate('equipment', 'name')
+        .select('scheduledDate status equipment type')
+        .sort({ scheduledDate: 1 })
+        .lean()
       : [];
 
     const now = new Date();
@@ -263,7 +266,7 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       if (line === 'BEGIN:VEVENT') {
         inEvent = true;
         currentEvent = {};
@@ -275,7 +278,7 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
             start.setDate(start.getDate() + 1);
             currentEvent.endDate = start;
           }
-          
+
           // Proje mi bakım mı? SUMMARY'den anla
           if (currentEvent.summary.includes('[Proje]') || currentEvent.summary.includes('[Project]')) {
             currentEvent.type = 'project';
@@ -287,7 +290,7 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
             // Varsayılan olarak proje
             currentEvent.type = 'project';
           }
-          
+
           events.push(currentEvent);
         }
         inEvent = false;
@@ -299,14 +302,14 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
         }
         // DTSTART
         else if (line.startsWith('DTSTART')) {
-          const dateStr = line.includes('VALUE=DATE:') 
+          const dateStr = line.includes('VALUE=DATE:')
             ? line.substring(line.indexOf('VALUE=DATE:') + 11)
             : line.substring(line.indexOf(':') + 1);
           currentEvent.startDate = parseIcsDate(dateStr);
         }
         // DTEND
         else if (line.startsWith('DTEND')) {
-          const dateStr = line.includes('VALUE=DATE:') 
+          const dateStr = line.includes('VALUE=DATE:')
             ? line.substring(line.indexOf('VALUE=DATE:') + 11)
             : line.substring(line.indexOf(':') + 1);
           currentEvent.endDate = parseIcsDate(dateStr);
@@ -326,11 +329,11 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
     const user = req.user as any;
     const role = user?.role as string;
     const userPermissions = (user?.permissions || []) as string[];
-    const canCreateProject = 
+    const canCreateProject =
       role === Role.ADMIN ||
       role === Role.FIRMA_SAHIBI ||
       hasPermission(role, Permission.PROJECT_CREATE, userPermissions);
-    const canCreateMaintenance = 
+    const canCreateMaintenance =
       role === Role.ADMIN ||
       role === Role.FIRMA_SAHIBI ||
       hasPermission(role, Permission.MAINTENANCE_CREATE, userPermissions);
@@ -386,7 +389,7 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
           result.errors.push(`${event.summary}: Yetki yetersiz`);
         }
       } catch (error: unknown) {
-      const appError = error as AppError;
+        const appError = error as AppError;
         result.failed++;
         result.errors.push(`${event.summary}: ${appError?.message || (error as Error)?.message || 'Bilinmeyen hata'}`);
         logger.error('iCal import event oluşturma hatası:', error);
@@ -438,4 +441,100 @@ const unescapeIcsText = (text: string): string => {
     .replace(/\\,/g, ',')
     .replace(/\\;/g, ';')
     .replace(/\\\\/g, '\\');
+};
+
+// --- Google & Outlook OAuth API ---
+
+export const getGoogleAuthUrl = (req: Request, res: Response) => {
+  try {
+    const url = googleCalendarService.getAuthUrl();
+    res.json({ url });
+  } catch (error: any) {
+    logger.error('Error generating Google Auth URL', { error: error.message });
+    res.status(500).json({ message: 'URL oluşturulamadı' });
+  }
+};
+
+export const getOutlookAuthUrl = (req: Request, res: Response) => {
+  try {
+    const url = outlookCalendarService.getAuthUrl();
+    res.json({ url });
+  } catch (error: any) {
+    logger.error('Error generating Outlook Auth URL', { error: error.message });
+    res.status(500).json({ message: 'URL oluşturulamadı' });
+  }
+};
+
+export const googleCallback = async (req: Request, res: Response) => {
+  try {
+    const { code } = req.body;
+    const userId = (req as any).user?.id; // Assuming auth middleware
+
+    if (!code || !userId) {
+      return res.status(400).json({ message: 'Geçersiz istek' });
+    }
+
+    const tokens = await googleCalendarService.getTokens(code as string);
+
+    await User.findByIdAndUpdate(userId, {
+      googleTokens: {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiryDate: Date.now() + (tokens.expires_in * 1000)
+      }
+    });
+
+    res.json({ message: 'Google Takvim başarıyla bağlandı' });
+  } catch (error: any) {
+    logger.error('Google Callback Error', { error: error.message });
+    res.status(500).json({ message: 'Takvim bağlantısı başarısız' });
+  }
+};
+
+export const outlookCallback = async (req: Request, res: Response) => {
+  try {
+    const { code } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!code || !userId) {
+      return res.status(400).json({ message: 'Geçersiz istek' });
+    }
+
+    const tokens = await outlookCalendarService.getTokens(code as string);
+
+    await User.findByIdAndUpdate(userId, {
+      outlookTokens: {
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiryDate: Date.now() + (tokens.expires_in * 1000)
+      }
+    });
+
+    res.json({ message: 'Outlook Takvim başarıyla bağlandı' });
+  } catch (error: any) {
+    logger.error('Outlook Callback Error', { error: error.message });
+    res.status(500).json({ message: 'Takvim bağlantısı başarısız' });
+  }
+};
+
+export const getCalendarStatus = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId).select('+googleTokens +outlookTokens');
+    if (!user) {
+      return res.status(404).json({ message: 'Kullanıcı bulunamadı' });
+    }
+
+    res.json({
+      googleConnected: !!user.googleTokens?.refreshToken,
+      outlookConnected: !!user.outlookTokens?.refreshToken
+    });
+  } catch (error: any) {
+    logger.error('Status Error', { error: error.message });
+    res.status(500).json({ message: 'Sunucu hatası' });
+  }
 };

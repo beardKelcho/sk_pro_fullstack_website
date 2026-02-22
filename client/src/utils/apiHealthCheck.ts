@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 /**
  * API Health Check Utility
  * Backend API'nin erişilebilir olup olmadığını kontrol eder
@@ -26,7 +27,7 @@ export const checkApiHealth = async (): Promise<boolean> => {
   } catch (error) {
     // Network hatası veya timeout
     if (process.env.NODE_ENV === 'development') {
-      console.warn('API health check failed:', error);
+      logger.warn('API health check failed:', error);
     }
     return false;
   }

@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -172,7 +174,7 @@ export default function AddClient() {
       }, 2000);
 
     } catch (error) {
-      console.error('Müşteri ekleme hatası:', error);
+      logger.error('Müşteri ekleme hatası:', error);
       setErrors({
         form: 'Müşteri eklenirken bir hata oluştu. Lütfen tekrar deneyin.'
       });

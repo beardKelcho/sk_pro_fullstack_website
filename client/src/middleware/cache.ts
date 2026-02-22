@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { cache, invalidateCache } from '@/utils/cache';
@@ -70,7 +71,7 @@ export async function cacheMiddleware(
 
     return response;
   } catch (error) {
-    console.error('Cache middleware error:', error);
+    logger.error('Cache middleware error:', error);
     return NextResponse.next();
   }
 }
@@ -87,7 +88,7 @@ export async function cacheInvalidationMiddleware(
     try {
       await Promise.all(tags.map(tag => invalidateCache.byTag(tag)));
     } catch (error) {
-      console.error('Cache invalidation error:', error);
+      logger.error('Cache invalidation error:', error);
     }
   }
 

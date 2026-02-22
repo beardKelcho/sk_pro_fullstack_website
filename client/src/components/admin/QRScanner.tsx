@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import { useState, useRef, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useScanQRCode } from '@/services/qrCodeService';
@@ -74,7 +76,7 @@ export default function QRScanner({
         scannerRef.current = null;
         setIsScanning(false);
       } catch (err) {
-        console.error('Scanner durdurma hatası:', err);
+        logger.error('Scanner durdurma hatası:', err);
       }
     }
   };
@@ -103,7 +105,7 @@ export default function QRScanner({
 
       // Parse content (e.g., extract ID from JSON)
       const cleanContent = parseQRContent(qrContent);
-      console.log('Original QR:', qrContent, 'Parsed:', cleanContent);
+      logger.info('QR Parsed', { original: qrContent, parsed: cleanContent });
 
       // QR kod tarama
       const result = await scanMutation.mutateAsync({
@@ -125,7 +127,7 @@ export default function QRScanner({
         onClose();
       }
     } catch (err: any) {
-      console.error('Scan Error:', err);
+      logger.error('Scan Error:', err);
       toast.error(err.response?.data?.message || 'QR kod taranırken bir hata oluştu');
       // Hata durumunda tekrar taramaya başla
       setTimeout(() => {

@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 /**
  * Dashboard Service
  * Dashboard istatistikleri ve grafik verilerini yönetir
@@ -72,7 +73,7 @@ export interface UpcomingProject {
  * @example
  * ```typescript
  * const stats = await getDashboardStats();
- * console.log(stats.stats.equipment.total); // Toplam ekipman sayısı
+ * logger.info(stats.stats.equipment.total); // Toplam ekipman sayısı
  * ```
  */
 export const getDashboardStats = async (): Promise<{
@@ -126,7 +127,7 @@ export interface ChartData {
  * @example
  * ```typescript
  * const charts = await getDashboardCharts(7); // Son 7 gün
- * console.log(charts.equipmentStatus); // Ekipman durum grafiği
+ * logger.info(charts.equipmentStatus); // Ekipman durum grafiği
  * ```
  */
 export const getDashboardCharts = async (period: number = 30): Promise<ChartData> => {

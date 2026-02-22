@@ -2,7 +2,16 @@ import express from 'express';
 import multer from 'multer';
 import { authenticate, requirePermission } from '../middleware/auth.middleware';
 import { Permission } from '../config/permissions';
-import { exportCalendarIcs, getCalendarEvents, importCalendarIcs } from '../controllers/calendar.controller';
+import {
+  exportCalendarIcs,
+  getCalendarEvents,
+  importCalendarIcs,
+  getGoogleAuthUrl,
+  getOutlookAuthUrl,
+  googleCallback,
+  outlookCallback,
+  getCalendarStatus
+} from '../controllers/calendar.controller';
 
 const router = express.Router();
 
@@ -23,6 +32,13 @@ const icsUpload = multer({
 router.get('/events', authenticate, requirePermission(Permission.PROJECT_VIEW), getCalendarEvents);
 router.get('/ics', authenticate, requirePermission(Permission.PROJECT_VIEW), exportCalendarIcs);
 router.post('/import', authenticate, requirePermission(Permission.PROJECT_CREATE), icsUpload.single('file'), importCalendarIcs);
+
+// OAuth API
+router.get('/google/auth', authenticate, getGoogleAuthUrl);
+router.get('/outlook/auth', authenticate, getOutlookAuthUrl);
+router.post('/google/callback', authenticate, googleCallback);
+router.post('/outlook/callback', authenticate, outlookCallback);
+router.get('/status', authenticate, getCalendarStatus);
 
 export default router;
 

@@ -3,6 +3,7 @@ import { SiteContent } from '../models/SiteContent';
 import SiteImage from '../models/SiteImage';
 import { AppError } from '../types/common';
 import logger from '../utils/logger';
+import { getRedisClient } from '../config/redis';
 
 // Old ISiteImage interface kept for SiteImage methods which haven't changed
 export interface ISiteImage extends mongoose.Document {
@@ -17,6 +18,20 @@ export interface ISiteImage extends mongoose.Document {
 
 class SiteService {
     private readonly cdnBaseUrl = 'https://res.cloudinary.com/dmeviky6f';
+
+    private async invalidateCache(pattern: string): Promise<void> {
+        const redisClient = getRedisClient();
+        if (!redisClient) return;
+        try {
+            const keys = await redisClient.keys(pattern);
+            if (keys.length > 0) {
+                await redisClient.del(keys);
+                logger.info(`Redis cache temizlendi: ${pattern}`, { count: keys.length });
+            }
+        } catch (err) {
+            logger.warn('Redis invalidation hatası', { error: String(err) });
+        }
+    }
 
     /**
      * Helper: Fix Content URLs (moved from controller)
@@ -239,29 +254,73 @@ class SiteService {
     /* --- Content Methods --- */
 
     async listContents(section?: string, isActive?: boolean): Promise<any[]> {
+        const cacheKey = `site:contents:${section || 'all'}:${isActive ?? 'all'}`;
+        const redisClient = getRedisClient();
+
+        if (redisClient) {
+            try {
+                const cached = await redisClient.get(cacheKey);
+                if (cached) return JSON.parse(cached);
+            } catch (err) {
+                logger.warn('Redis okuma hatası', { error: String(err) });
+            }
+        }
+
         const filters: any = {};
         if (section) filters.section = section;
         if (isActive !== undefined) filters.isActive = isActive;
 
         // NOTE: 'order' field removed from schema, removed sort by order
-        const contents = await SiteContent.find(filters).sort({ createdAt: -1 });
+        const contents = await SiteContent.find(filters).select('-__v').sort({ createdAt: -1 }).lean();
 
-        return Promise.all(contents.map(async (doc) => {
-            const docObj = doc.toObject();
+        const result = await Promise.all(contents.map(async (doc: any) => {
+            const docObj = { ...doc };
             // Use 'data' instead of 'content'
             docObj.data = await this.fixContentUrls(docObj.data) as any;
             return docObj;
         }));
+
+        if (redisClient) {
+            try {
+                // 1 saat (3600 sn) cache süresi
+                await redisClient.setEx(cacheKey, 3600, JSON.stringify(result));
+            } catch (err) {
+                logger.warn('Redis yazma hatası', { error: String(err) });
+            }
+        }
+
+        return result;
     }
 
     async getContentBySection(section: string): Promise<any | null> {
         const normalized = section.toLowerCase().trim();
-        const content = await SiteContent.findOne({ section: normalized, isActive: true });
+        const cacheKey = `site:content:${normalized}`;
+        const redisClient = getRedisClient();
+
+        if (redisClient) {
+            try {
+                const cached = await redisClient.get(cacheKey);
+                if (cached) return JSON.parse(cached);
+            } catch (err) {
+                logger.warn('Redis okuma hatası', { error: String(err) });
+            }
+        }
+
+        const content = await SiteContent.findOne({ section: normalized, isActive: true }).select('-__v').lean();
 
         if (!content) return null;
 
-        const docObj = content.toObject();
-        docObj.data = await this.fixContentUrls(docObj.data) as any;
+        const docObj = { ...content };
+        docObj.data = await this.fixContentUrls((docObj as any).data) as any;
+
+        if (redisClient) {
+            try {
+                await redisClient.setEx(cacheKey, 3600, JSON.stringify(docObj));
+            } catch (err) {
+                logger.warn('Redis yazma hatası', { error: String(err) });
+            }
+        }
+
         return docObj;
     }
 
@@ -295,6 +354,9 @@ class SiteService {
 
         const docObj = siteContent.toObject();
         docObj.data = await this.fixContentUrls(docObj.data) as any;
+
+        await this.invalidateCache('site:content*');
+
         return docObj;
     }
 
@@ -325,30 +387,56 @@ class SiteService {
         const docObj = siteContent.toObject();
         console.log('SITE_CONTENT_SAVED:', docObj.data);
         docObj.data = await this.fixContentUrls(docObj.data) as any;
+
+        await this.invalidateCache('site:content*');
+
         return docObj;
     }
 
     async deleteContent(id: string): Promise<void> {
         if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError('Geçersiz ID', 400);
         await SiteContent.deleteOne({ _id: id });
+        await this.invalidateCache('site:content*');
     }
 
     /* --- Image Methods --- */
 
     async listImages(category?: string, isActive?: boolean): Promise<any[]> {
+        const cacheKey = `site:images:${category || 'all'}:${isActive ?? 'all'}`;
+        const redisClient = getRedisClient();
+
+        if (redisClient) {
+            try {
+                const cached = await redisClient.get(cacheKey);
+                if (cached) return JSON.parse(cached);
+            } catch (err) {
+                logger.warn('Redis okuma hatası', { error: String(err) });
+            }
+        }
+
         const filters: any = {};
         if (category) filters.category = category;
         if (isActive !== undefined) filters.isActive = isActive;
 
-        const images = await SiteImage.find(filters).sort({ category: 1, order: 1, createdAt: -1 });
-        return images.map(img => this.fixImageUrls(img.toObject()));
+        const images = await SiteImage.find(filters).select('-__v').sort({ category: 1, order: 1, createdAt: -1 }).lean();
+        const result = images.map((img: any) => this.fixImageUrls(img));
+
+        if (redisClient) {
+            try {
+                await redisClient.setEx(cacheKey, 3600, JSON.stringify(result));
+            } catch (err) {
+                logger.warn('Redis yazma hatası', { error: String(err) });
+            }
+        }
+
+        return result;
     }
 
     async getImageById(id: string): Promise<any> {
         if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError('Geçersiz ID', 400);
-        const image = await SiteImage.findById(id);
+        const image = await SiteImage.findById(id).select('-__v').lean();
         if (!image) throw new AppError('Resim bulunamadı', 404);
-        return this.fixImageUrls(image.toObject());
+        return this.fixImageUrls(image as any);
     }
 
     async createImage(data: { filename: string, originalName: string, path: string, url: string, category?: string, order?: number }): Promise<any> {
@@ -358,6 +446,9 @@ class SiteService {
             order: data.order || 0,
             isActive: true
         });
+
+        await this.invalidateCache('site:images*');
+
         return image;
     }
 
@@ -371,20 +462,26 @@ class SiteService {
         if (data.isActive !== undefined) image.isActive = data.isActive;
 
         await image.save();
+
+        await this.invalidateCache('site:images*');
+
         return image;
     }
 
     async deleteImage(id: string): Promise<void> {
         if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError('Geçersiz ID', 400);
         await SiteImage.deleteOne({ _id: id });
+        await this.invalidateCache('site:images*');
     }
 
     async deleteMultipleImages(ids: string[]): Promise<void> {
         await SiteImage.deleteMany({ _id: { $in: ids } });
+        await this.invalidateCache('site:images*');
     }
 
     async updateImageOrders(updates: { id: string, order: number }[]): Promise<void> {
         await Promise.all(updates.map(u => SiteImage.findByIdAndUpdate(u.id, { order: u.order })));
+        await this.invalidateCache('site:images*');
     }
 }
 

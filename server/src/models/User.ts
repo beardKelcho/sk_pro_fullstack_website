@@ -16,6 +16,16 @@ export interface IUser extends Document {
   twoFactorSecretHash?: string; // Hash'lenmiş secret
   backupCodes?: string[]; // Backup kodlar (hash'lenmiş)
   comparePassword(candidatePassword: string): Promise<boolean>;
+  googleTokens?: {
+    accessToken?: string;
+    refreshToken?: string;
+    expiryDate?: number;
+  };
+  outlookTokens?: {
+    accessToken?: string;
+    refreshToken?: string;
+    expiryDate?: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -78,6 +88,16 @@ const UserSchema: Schema = new Schema(
       type: String,
       select: false,
     }],
+    googleTokens: {
+      accessToken: String,
+      refreshToken: String,
+      expiryDate: Number,
+    },
+    outlookTokens: {
+      accessToken: String,
+      refreshToken: String,
+      expiryDate: Number,
+    }
   },
   {
     timestamps: true,

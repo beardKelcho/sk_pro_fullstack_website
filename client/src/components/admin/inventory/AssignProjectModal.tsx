@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -38,7 +39,7 @@ export default function AssignProjectModal({ isOpen, onClose, onSuccess, item }:
             // Let's try to handle both or generic.
             setProjects((res as any).projects || (res as any).data || []);
         } catch (error) {
-            console.error(error);
+            logger.error(error instanceof Error ? error.message : String(error), { error });
             toast.error('Projeler yüklenemedi');
         } finally {
             setLoading(false);
@@ -60,7 +61,7 @@ export default function AssignProjectModal({ isOpen, onClose, onSuccess, item }:
             onSuccess();
             onClose();
         } catch (error: any) {
-            console.error(error);
+            logger.error(error);
             toast.error(error.response?.data?.message || 'Atama işlemi başarısız');
         } finally {
             setSubmitting(false);

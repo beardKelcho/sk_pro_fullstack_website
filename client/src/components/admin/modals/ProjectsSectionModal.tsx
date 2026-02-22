@@ -6,6 +6,7 @@ import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2, Image, Film
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableProjectItem from '../SortableProjectItem';
+import NextImage from 'next/image';
 
 interface ProjectsSectionModalProps {
     isOpen: boolean;
@@ -477,7 +478,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                             <div className="grid grid-cols-3 gap-3">
                                                 {formData.imageUrls.map((url, idx) => (
                                                     <div key={idx} className="relative group">
-                                                        <img src={url} alt={`Resim ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                                                        <NextImage src={url} alt={`Resim ${idx + 1}`} fill sizes="(max-width: 768px) 100vw, 300px" className="object-cover rounded-lg" />
                                                         <button
                                                             type="button"
                                                             onClick={() => setFormData(prev => ({
@@ -666,7 +667,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                                             }`}
                                                     >
                                                         {item.type === 'image' ? (
-                                                            <img src={item.url} alt={item.name || 'Media'} className="w-full h-full object-cover" />
+                                                            <NextImage src={item.url} alt={item.name || 'Media'} fill sizes="(max-width: 768px) 50vw, 300px" className="object-cover" />
                                                         ) : (
                                                             <video src={item.url} className="w-full h-full object-cover" title={item.name || 'Video'} />
                                                         )}

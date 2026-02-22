@@ -2,6 +2,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Edit2, Trash2, Image as ImageIcon, Video } from 'lucide-react';
+import Image from 'next/image';
 
 interface SortableProjectItemProps {
     project: any;
@@ -77,11 +78,15 @@ const SortableProjectItem: React.FC<SortableProjectItemProps> = ({
                             muted
                         />
                     ) : (
-                        <img
-                            src={previewUrl}
-                            alt={project.title}
-                            className="w-full h-40 object-cover rounded-lg"
-                        />
+                        <div className="relative w-full h-40 rounded-lg overflow-hidden">
+                            <Image
+                                src={previewUrl}
+                                alt={project.title || 'Project Preview'}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 300px"
+                                className="object-cover"
+                            />
+                        </div>
                     )
                 ) : (
                     <div className="w-full h-40 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center">

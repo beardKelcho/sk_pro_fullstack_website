@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 interface OfflineFormData {
   id: string;
   formName: string;
@@ -39,14 +40,14 @@ class OfflineStorage {
 
   private initDB(): void {
     if (!window.indexedDB) {
-      console.error('IndexedDB is not supported');
+      logger.error('IndexedDB is not supported');
       return;
     }
 
     const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
 
     request.onerror = (event) => {
-      console.error('Database error:', event);
+      logger.error('Database error:', event);
     };
 
     request.onupgradeneeded = (event) => {

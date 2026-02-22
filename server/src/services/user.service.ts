@@ -64,10 +64,11 @@ class UserService {
 
         const [users, total] = await Promise.all([
             User.find(filters)
-                .select('-password')
-                .sort({ [sortField]: sortOrder })
+                .select('-password -__v')
+                .sort({ createdAt: -1 })
                 .skip(skip)
-                .limit(limit),
+                .limit(limit)
+                .lean() as unknown as IUser[],
             User.countDocuments(filters)
         ]);
 
@@ -82,15 +83,12 @@ class UserService {
     /**
      * Get user by ID
      */
-    async getUserById(id: string): Promise<IUser> {
+    async getUserById(id: string): Promise<IUser | null> {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             throw new AppError('Geçersiz kullanıcı ID', 400);
         }
-
-        const user = await User.findById(id).select('-password');
-        if (!user) {
-            throw new AppError('Kullanıcı bulunamadı', 404);
-        }
+        const user = await User.findById(id).select('-password -__v').lean() as unknown as IUser;
+        if (!user) throw new AppError('Kullanıcı bulunamadı', 404);
 
         return user;
     }

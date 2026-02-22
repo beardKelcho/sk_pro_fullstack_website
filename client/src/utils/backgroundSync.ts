@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 interface SyncTask {
   id: string;
   type: 'form' | 'data' | 'media';
@@ -80,7 +81,7 @@ class BackgroundSync {
           } else {
             // Maksimum deneme sayısına ulaşıldı, görevi kuyruktan çıkar
             this.syncQueue.shift();
-            console.error(`Task failed after ${this.MAX_RETRIES} retries:`, task);
+            logger.error(`Task failed after ${this.MAX_RETRIES} retries:`, task);
           }
         }
       }

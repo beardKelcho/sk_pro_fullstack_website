@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import React, { useState, useEffect } from 'react';
 import Icon from './Icon';
 
@@ -28,7 +29,7 @@ const Map: React.FC<MapProps> = ({ location, onOpenMobileNavigation }) => {
         // Sadece development'ta uyarı ver, production'da sessizce statik harita kullan
         if (process.env.NODE_ENV === 'development') {
           // Uyarıyı sadece development'ta göster
-          // console.warn('Google Maps API anahtarı bulunamadı. Statik harita kullanılıyor.');
+          // logger.warn('Google Maps API anahtarı bulunamadı. Statik harita kullanılıyor.');
         }
         // Statik harita alternatifi
         setIframeSrc(`https://maps.google.com/maps?q=${encodedAddress}&t=&z=15&ie=UTF8&iwloc=&output=embed`);
@@ -39,7 +40,7 @@ const Map: React.FC<MapProps> = ({ location, onOpenMobileNavigation }) => {
       
       setIsLoading(false);
     } catch (error) {
-      console.error('Harita yüklenirken hata oluştu:', error);
+      logger.error('Harita yüklenirken hata oluştu:', error);
       setHasError(true);
       setIsLoading(false);
     }

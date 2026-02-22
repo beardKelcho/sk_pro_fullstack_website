@@ -1,8 +1,10 @@
+import logger from '@/utils/logger';
 import type { Metadata } from 'next';
 import HomePage from '@/components/home/HomePage';
 import MaintenancePage from '@/app/maintenance/page';
 import React from 'react';
 import { HeroContent, AboutContent, ServicesContent, ContactContent, SiteContent } from '@/types/cms';
+import StructuredData, { generateLocalBusinessSchema } from '@/components/common/StructuredData';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -35,7 +37,7 @@ async function getSiteData() {
     });
 
     if (!contentRes.ok) {
-      console.error('Failed to fetch site content');
+      logger.error('Failed to fetch site content');
       return { isMaintenanceMode: false, content: {} };
     }
 
@@ -82,12 +84,12 @@ async function getSiteData() {
       }
     }
 
-    console.log('Processed ContentMap Keys:', Object.keys(contentMap)); // Server loglarında görmek için
+    logger.info('Processed ContentMap Keys:', Object.keys(contentMap)); // Server loglarında görmek için
 
     return { isMaintenanceMode: false, content: contentMap };
 
   } catch (error) {
-    console.error('Error fetching site data:', error);
+    logger.error('Error fetching site data:', error);
     return { isMaintenanceMode: false, content: {} };
   }
 }
@@ -123,5 +125,10 @@ export default async function Home() {
     return <MaintenancePage />;
   }
 
-  return <HomePage content={content as SiteContent} />;
+  return (
+    <>
+      <StructuredData data={generateLocalBusinessSchema()} />
+      <HomePage content={content as SiteContent} />
+    </>
+  );
 }

@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
+import logger from '../utils/logger';
 
-// Create email transporter
 // Create email transporter
 export const createEmailTransporter = () => {
     const smtpHost = process.env.SMTP_HOST;
@@ -11,7 +11,7 @@ export const createEmailTransporter = () => {
 
     // If SMTP credentials are not configured, return null
     if (!smtpUser || !smtpPass || !smtpHost) {
-        console.warn('⚠️  SMTP credentials not configured. Email sending disabled.');
+        logger.warn('SMTP credentials not configured. Email sending disabled.');
         return null;
     }
 
@@ -29,10 +29,10 @@ export const createEmailTransporter = () => {
             }
         });
 
-        console.log('✅ Email transporter configured successfully');
+        logger.info('Email transporter configured successfully');
         return transporter;
     } catch (error) {
-        console.error('❌ Error creating email transporter:', error);
+        logger.error('Error creating email transporter', { error });
         return null;
     }
 };

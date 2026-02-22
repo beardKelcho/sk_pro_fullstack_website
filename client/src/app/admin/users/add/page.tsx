@@ -1,5 +1,7 @@
 'use client';
 
+import logger from '@/utils/logger';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -160,7 +162,7 @@ export default function AddUser() {
       }, 2000);
       
     } catch (error: any) {
-      console.error('Ekleme hatası:', error);
+      logger.error('Ekleme hatası:', error);
       
       // Backend'den gelen validation hatalarını göster
       if (error.response?.data?.errors) {

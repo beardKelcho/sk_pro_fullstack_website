@@ -8,11 +8,14 @@
 import { useState } from 'react';
 import { useMonitoringDashboard } from '@/services/monitoringService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import dynamic from 'next/dynamic';
+
+const MonitoringCharts = dynamic(() => import('@/components/admin/MonitoringCharts'), {
+  ssr: false,
+  loading: () => <div className="h-96 w-full bg-gray-100 animate-pulse rounded-lg"></div>
+});
 
 type TimeRange = '1h' | '24h' | '7d' | '30d';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export default function MonitoringPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
@@ -87,11 +90,10 @@ export default function MonitoringPage() {
             <button
               key={range}
               onClick={() => setTimeRange(range)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                timeRange === range
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${timeRange === range
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               {range === '1h' ? '1 Saat' : range === '24h' ? '24 Saat' : range === '7d' ? '7 Gün' : '30 Gün'}
             </button>
@@ -139,46 +141,7 @@ export default function MonitoringPage() {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* API Response Times */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">En Yavaş Endpoint&apos;ler</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={apiMetricsData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="time" fill="#8884d8" name="Ortalama Süre (ms)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Top Pages */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">En Çok Ziyaret Edilen Sayfalar</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={topPagesData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {topPagesData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      <MonitoringCharts apiMetricsData={apiMetricsData} topPagesData={topPagesData} />
 
       {/* Error Metrics */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -216,9 +179,8 @@ export default function MonitoringPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">DB En Yavaş Sorgular</h3>
             <span
-              className={`text-xs px-2 py-1 rounded-full ${
-                data.database.status === 'connected' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-              }`}
+              className={`text-xs px-2 py-1 rounded-full ${data.database.status === 'connected' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                }`}
             >
               DB: {data.database.status}
             </span>

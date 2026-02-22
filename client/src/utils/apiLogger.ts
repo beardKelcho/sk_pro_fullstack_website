@@ -35,7 +35,7 @@ export class ApiLogger {
   private readonly maxLogs: number = 1000;
   private readonly logTTL: number = 7 * 24 * 60 * 60; // 7 gün
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): ApiLogger {
     if (!ApiLogger.instance) {
@@ -56,7 +56,7 @@ export class ApiLogger {
         headers: Object.fromEntries(request.headers),
         responseStatus: response.status,
         responseTime,
-        ip: request.ip ?? 'unknown',
+        ip: request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown',
         userAgent: request.headers.get('user-agent') ?? 'unknown',
       };
 
@@ -156,7 +156,7 @@ export class ApiLogger {
   }> {
     try {
       const logs = await this.getLogs();
-      
+
       const stats = {
         totalRequests: logs.length,
         averageResponseTime: 0,
@@ -169,13 +169,13 @@ export class ApiLogger {
 
       logs.forEach(log => {
         totalResponseTime += log.responseTime;
-        
+
         // Status code istatistikleri
         stats.statusCodes[log.responseStatus] = (stats.statusCodes[log.responseStatus] || 0) + 1;
-        
+
         // Method istatistikleri
         stats.methods[log.method] = (stats.methods[log.method] || 0) + 1;
-        
+
         // Path istatistikleri
         stats.paths[log.path] = (stats.paths[log.path] || 0) + 1;
       });

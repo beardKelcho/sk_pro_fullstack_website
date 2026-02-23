@@ -195,12 +195,10 @@ class UserService {
             throw new AppError('Kendi hesabınızı silemezsiniz', 400);
         }
 
-        const user = await User.findById(id);
+        const user = await User.findByIdAndDelete(id);
         if (!user) {
             throw new AppError('Kullanıcı bulunamadı', 404);
         }
-
-        await user.deleteOne();
     }
 }
 

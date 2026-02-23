@@ -71,14 +71,19 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
 
     useEffect(() => {
         if (items.length > 0) {
-            const newMap = { ...itemMap };
-            items.forEach((item: any) => {
-                newMap[item._id] = item;
+            setItemMap(prev => {
+                const newMap = { ...prev };
+                let hasChanges = false;
+                items.forEach((item: any) => {
+                    // Primitive id check / shallow diff
+                    if (!newMap[item._id] || newMap[item._id].updatedAt !== item.updatedAt) {
+                        newMap[item._id] = item;
+                        hasChanges = true;
+                    }
+                });
+                return hasChanges ? newMap : prev;
             });
-            setItemMap(newMap);
         }
-        // Also add scanned items to map? 
-        // Logic: if handleScanSuccess returns item, add to map.
     }, [items]);
 
     // Update map manually on scan success if item not in list
@@ -110,7 +115,7 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
                     <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                         type="text"
-                        placeholder="QR Okutunuz (Ekle/Çıkar)..."
+                        placeholder="QR kod okutun..."
                         className="w-full pl-9 pr-4 py-2 bg-white border-2 border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm"
                         autoFocus
                         onKeyDown={async (e) => {

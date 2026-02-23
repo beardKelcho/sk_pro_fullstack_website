@@ -84,10 +84,10 @@ cd SKpro
 # 2. Bağımlılıkları yükle
 npm install
 
-# 3. MongoDB Atlas kurulumu yap (KURULUM_REHBERI.md'ye bak)
+# 3. MongoDB Atlas kurulumu yap (KURULUM_VE_BASLANGIC.md'ye bak)
 
 # 4. Environment dosyalarını oluştur
-# server/.env ve client/.env.local (KURULUM_REHBERI.md'ye bak)
+# server/.env ve client/.env.local (KURULUM_VE_BASLANGIC.md'ye bak)
 
 # 5. İlk admin kullanıcısını oluştur
 cd server && npm run seed && cd ..
@@ -197,7 +197,7 @@ cd client && npm run cypress:open
 
 ## 🚢 Deployment
 
-Detaylı deployment rehberi için **[KURULUM_REHBERI.md](./docs/KURULUM_REHBERI.md)** dosyasının "Deployment" bölümüne bakın.
+Detaylı deployment rehberi için **[KURULUM_VE_BASLANGIC.md](./docs/KURULUM_VE_BASLANGIC.md)** dosyasının "Deployment" bölümüne bakın.
 
 ### Özet
 

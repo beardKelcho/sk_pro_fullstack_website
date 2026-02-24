@@ -80,6 +80,7 @@
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "electron-serve": "^3.0.1",
     "framer-motion": "^12.25.0",
     "gsap": "^3.14.2",
     "html5-qrcode": "^2.3.8",

@@ -1,6 +1,11 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
-const url = require('url');
+const serve = require('electron-serve');
+
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+
+// electron-serve paketi `/out` klasörü için `app://-` adında bir local sunucu oluşturur
+const loadURL = serve({ directory: path.join(__dirname, '../out') });
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -12,17 +17,12 @@ function createWindow() {
         },
     });
 
-    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-
     if (isDev) {
         mainWindow.loadURL('http://localhost:3000');
         mainWindow.webContents.openDevTools();
     } else {
-        mainWindow.loadURL(url.format({
-            pathname: path.join(__dirname, '../out/index.html'),
-            protocol: 'file:',
-            slashes: true
-        }));
+        // file:// protokolü yerine custom internal server'ı kullanıyoruz
+        loadURL(mainWindow);
     }
 }
 

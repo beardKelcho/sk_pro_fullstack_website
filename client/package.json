@@ -123,7 +123,7 @@
     "concurrently": "^9.2.1",
     "critters": "^0.0.23",
     "cross-env": "^10.1.0",
-    "cypress": "^13.6.6",
+    "cypress": "^15.10.0",
     "cypress-axe": "^1.6.0",
     "electron": "^40.6.0",
     "electron-builder": "^26.8.1",

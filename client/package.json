@@ -3,9 +3,39 @@
   "version": "0.1.0",
   "private": true,
   "main": "electron/main.js",
+  "build": {
+    "appId": "com.skproduction.app",
+    "productName": "SK Production",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png"
+    }
+  },
   "scripts": {
     "electron:dev": "cross-env NODE_ENV=development concurrently -k \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "npm run build && electron-builder",
+    "electron:build:all": "npm run build && electron-builder -m -w",
     "clean:next": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "dev": "next dev -p 3000",
     "dev:clean": "npm run clean:next && next dev",

@@ -49,7 +49,7 @@ ENABLE_GRAPHQL=true
 
 ### 2. GraphQL Endpoint
 
-- **Development**: `http://localhost:5001/graphql`
+- **Development**: `<your-backend-url>/graphql`
 - **Production**: `https://yourdomain.com/graphql`
 
 ---

@@ -134,7 +134,7 @@ NODE_ENV=production
 PORT=5001
 
 # MongoDB
-MONGO_URI=mongodb+srv://skproduction-prod-admin:ŞİFRENİZ@sk-production-cluster.xxxxx.mongodb.net/skproduction?retryWrites=true&w=majority
+MONGO_URI=<mongodb-atlas-connection-string>
 
 # JWT Secrets (GÜÇLÜ, RASTGELE STRINGLER!)
 JWT_SECRET=<güçlü-random-string>
@@ -182,7 +182,7 @@ NEXT_PUBLIC_SITE_URL=https://yourdomain.com
 NEXTAUTH_SECRET=<güçlü-random-string>
 NEXTAUTH_URL=https://yourdomain.com
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
+NEXT_PUBLIC_SENTRY_DSN=<your-sentry-dsn>
 ```
 
 ### GitHub Secrets (CI/CD için)

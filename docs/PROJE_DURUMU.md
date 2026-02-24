@@ -1,207 +1,79 @@
-# 📊 SK Production - Proje Durumu
+# 📊 SK Production - Proje Durumu ve Geliştirme Özeti
 
-> **Proje Durumu, Özellikler ve Yol Haritası**  
-> Bu doküman, projenin mevcut durumunu, tamamlanan özellikleri ve gelecek planlarını içerir.
-
----
-
-## 📋 İçindekiler
-
-1. [Genel Bakış](#genel-bakış)
-2. [Proje İstatistikleri](#proje-istatistikleri)
-3. [Tamamlanan Özellikler](#tamamlanan-özellikler)
-4. [Teknik Stack](#teknik-stack)
-5. [Yol Haritası](#yol-haritası)
+> **Proje Durumu, Özellikler ve Geliştirme Metrikleri**  
+> Bu doküman, projenin mevcut production durumunu, tamamlanan özellikleri ve yol haritasını içerir.
+> **Versiyon:** 3.0.0
+> **Son Güncelleme:** 2026-02-24
 
 ---
 
 ## 🎯 Genel Bakış
 
-SK Production projesi, görüntü rejisi ve medya server hizmetleri için geliştirilmiş kapsamlı bir web sitesi ve admin paneli sistemidir. Proje, modern web teknolojileri kullanılarak geliştirilmiş ve **production'a hazır** durumdadır.
+SK Production projesi, görüntü rejisi ve medya server hizmetleri için geliştirilmiş kapsamlı bir web sitesi ve admin paneli sistemidir. Proje, modern web teknolojileri (Next.js 14, TypeScript, Express, MongoDB) kullanılarak geliştirilmiş ve **production'a tam hazır** durumdadır.
 
 **Durum:** ✅ **PRODUCTION READY**  
-**Versiyon:** 2.0.1  
-**Son Güncelleme:** 2026-01-08
 
 ---
 
-## 📈 Proje İstatistikleri
+## 📈 Proje İstatistikleri ve Mimari
 
-### Kod Metrikleri
-
+**Kod Metrikleri**
 - **Toplam TypeScript Dosyası**: 330+
-- **Test Dosyası**: 249+
-- **Dokümantasyon Dosyası**: 60+
-- **Toplam Kod Satırı**: 48,636+ satır
-  - Server: 11,045+ satır
-  - Client: 37,591+ satır
+- **Test Dosyası**: 447+ (85+ başarı)
+- **Toplam Kod Satırı**: 48,636+ satır (Server: 11,045+ / Client: 37,591+)
 
-### Dosya Yapısı
+**Teknik Stack**
+- **Frontend**: Next.js 14 (App Router), Redux Toolkit, React Query, TailwindCSS
+- **Backend**: Node.js + Express, MongoDB + Mongoose, JWT + Bcrypt, Redis Cache
+- **DevOps**: Vercel & Render & MongoDB Atlas, GitHub Actions, Docker/Container yapısına uygun, Electron (Masaüstü), Capacitor (Mobil) tam destekli.
 
-- **Backend Model**: 21
-- **API Endpoint**: 100+
-- **Frontend Component**: 50+
-- **Service**: 25+
-- **Utility**: 19+
+**Dosya Yükleme Mimarisi**
+Projede hibrit bir yaklaşım benimsenmiştir: Dosyalar `server/uploads/` içerisinde `(Volume / Local Storage)` saklanırken, metadata'ları boyut optimizasyonu için veritabanında saklanmaktadır.
 
 ---
 
-## ✅ Tamamlanan Özellikler
+## ✅ Tamamlanan Özellikler ve Modüller
 
-### 🔐 Kimlik Doğrulama ve Yetkilendirme
+### 🔐 Kimlik Doğrulama ve Güvenlik
+- JWT tabanlı kimlik doğrulama (HttpOnly cookies) ve Refresh token.
+- 2FA (İki Faktörlü Kimlik Doğrulama) & TOTP Entegrasyonu.
+- Rol bazlı detaylı erişim kontrolü (Admin, Firma Sahibi, Proje Yöneticisi, Depo Sorumlusu, Teknisyen).
+- Rate Limiting, Input Validation (Express-validator + Zod), Kapsamlı Error Tracking.
 
-- ✅ JWT tabanlı kimlik doğrulama (HttpOnly cookies)
-- ✅ Refresh token mekanizması
-- ✅ 2FA (İki Faktörlü Kimlik Doğrulama)
-- ✅ Rol bazlı erişim kontrolü (RBAC)
-- ✅ Permission-based yetkilendirme
-- ✅ Rate limiting (IP ve kullanıcı bazlı)
+### 💼 Admin Paneli ve Yönetim
+- **Ekipman Yönetimi**: Ekipman takibi, QR kod (HTML5 Qrcode tarama), bakım planlaması.
+- **Proje & Görev Yönetimi**: Proje oluşturma, sürükle-bırak takvim (Drag & Drop), otomatik durum güncellemeleri.
+- **Raporlama ve Export**: PDF ve Excel export, Rapor Zamanlama.
+- **Bildirim & Log**: Aktivite Audit Logları, SSE Real-time Webhooks ve Email template sistemi.
+- **Global Search**: Gelişmiş autocomplete destekli arama ve arama geçmişi kaydedici UI.
 
-### 🌐 Web Sitesi
-
-- ✅ Modern ve responsive tasarım
-- ✅ Multi-language desteği (TR, EN, FR, ES)
-- ✅ SEO optimizasyonu
-- ✅ Dark mode desteği
-- ✅ PWA özellikleri
-- ✅ Offline mode
-- ✅ Görüntü rejisi ve medya server hizmetleri sunumu
-- ✅ Proje galerisi ve carousel
-- ✅ İletişim formu
-
-### 📱 Admin Paneli
-
-- ✅ **Dashboard**: İstatistikler, grafikler ve özet bilgiler
-- ✅ **Ekipman Yönetimi**: Ekipman takibi, QR kod, bakım planlaması
-- ✅ **Proje Yönetimi**: Proje oluşturma, takip, durum yönetimi, otomatik durum güncellemesi
-- ✅ **Müşteri Yönetimi**: Müşteri bilgileri ve proje geçmişi
-- ✅ **Görev Yönetimi**: Görev atama, takip ve durum yönetimi
-- ✅ **Bakım Yönetimi**: Ekipman bakım takvimi, hatırlatmalar ve kayıtları
-- ✅ **Kullanıcı Yönetimi**: Rol bazlı erişim kontrolü, permission yönetimi
-- ✅ **Takvim**: Proje ve bakım takvimi (Ay/Hafta/Gün görünümü, drag & drop)
-- ✅ **Site İçerik Yönetimi**: Hero, Services, About, Contact bölümleri
-- ✅ **Site Görsel Yönetimi**: Görsel upload, kategorilendirme
-- ✅ **Dosya Yönetimi**: Dosya upload, listeleme, silme
-- ✅ **Yorum Sistemi**: Rich text editor, @mention desteği
-- ✅ **Bildirim Sistemi**: Real-time SSE bildirimleri
-- ✅ **Webhook Desteği**: Event-based webhook'lar
-- ✅ **Email Template Sistemi**: HTML email template'leri
-- ✅ **Analytics Dashboard**: Gelişmiş analiz ve raporlama
-- ✅ **Monitoring Dashboard**: Sistem izleme ve metrikler
-
-### 📱 Mobil Uygulama
-
-- ✅ React Native (Expo) tabanlı mobil uygulama
-- ✅ Authentication (Bearer tokens, refresh tokens, 2FA)
-- ✅ Dashboard, Tasks, Equipment, Calendar modülleri
-- ✅ Push Notifications
-- ✅ Offline Mode
-
-### 🔧 Gelişmiş Özellikler
-
-- ✅ **GraphQL API**: Apollo Server ile GraphQL endpoint
-- ✅ **WebSocket**: Real-time communication (Socket.io)
-- ✅ **Calendar Integrations**: Google Calendar, Outlook Calendar, iCal import/export
-- ✅ **CDN Entegrasyonu**: Cloudinary ve AWS S3 desteği
-- ✅ **Error Tracking**: Sentry entegrasyonu
-- ✅ **Logging**: Winston ile structured logging
-- ✅ **Health Checks**: `/api/livez`, `/api/readyz`, `/api/health`
-- ✅ **API Documentation**: Swagger/OpenAPI
+### 📱 Çapraz Platform Mimarisi (Mobil / Desktop)
+- Service Worker & PWA Manifest entegrasyonu tamamen aktif.
+- Capacitor (iOS / Android) native app builder entegrasyonu yapıldı ve mobil readiness sağlandı.
+- Electron.js ile MacOS (Silicon/Intel), Windows ve Linux masaüstü sürümleri admin paneli Üzerinden İndirme Merkezine aktarıldı.
 
 ---
 
-## 🛠️ Teknik Stack
+## 🗺️ Yol Haritası ve İyileştirmeler
 
-### Frontend
+### Yüksek Öncelikli
+1. **Güvenlik / Scrubber Analizi**: Dosya depolama metriklerinin ve hard-coded sızıntıların (localhost vs) tespiti.
+2. **Performans İzleme**: Web Vitals tracking ile RUM (Real User Monitoring) entegrasyonu tamamlandı ancak dashboard'da daha çok widget gerekmekte.
 
-- **Next.js 14** - React framework (App Router)
-- **TypeScript** - Type safety
-- **TailwindCSS** - Styling
-- **Redux Toolkit** - State management
-- **React Query** - Data fetching
-- **Axios** - HTTP client
-
-### Backend
-
-- **Node.js** - Runtime
-- **Express** - Web framework
-- **TypeScript** - Type safety
-- **MongoDB** - Database
-- **Mongoose** - ODM
-- **JWT** - Authentication
-- **Bcrypt** - Password hashing
-- **Socket.io** - WebSocket
-- **Apollo Server** - GraphQL
-
-### DevOps
-
-- **GitHub Actions** - CI/CD
-- **Vercel** - Frontend hosting
-- **Render** - Backend hosting
-- **MongoDB Atlas** - Database hosting
+### Orta Planlamalar
+1. AWS S3 / Cloudinary gibi Cloud Storage ve CDN çözümlerinin tam aktivasyonu (Hibrit mimariden bulut mimarisine transfer).
+2. Advanced Analytics ve yapay zeka entegrasyonları ile ekipman bozulma tahminlemeleri.
 
 ---
 
-## 🗺️ Yol Haritası
+## 🔐 Yetki Sistemi Özeti
 
-### Tamamlanan Fazlar ✅
-
-#### Faz 1: Temel Özellikler ✅
-- Web sitesi ve admin paneli
-- Kimlik doğrulama ve yetkilendirme
-- CRUD operasyonları (Ekipman, Proje, Müşteri, Görev, Bakım)
-
-#### Faz 2: Gelişmiş Özellikler ✅
-- Bildirim sistemi
-- Dashboard widget sistemi
-- QR kod yönetimi
-- Takvim entegrasyonu
-- Site içerik yönetimi
-
-#### Faz 3: Entegrasyonlar ✅
-- Calendar integrations (Google, Outlook, iCal)
-- CDN entegrasyonu (Cloudinary, S3)
-- GraphQL API
-- WebSocket
-- Error tracking (Sentry)
-
-### Gelecek Planlar (Opsiyonel)
-
-#### Kısa Vadeli (1-3 Ay)
-- Test coverage artırma (%80+ hedefi)
-- Performance optimizasyonları
-- Additional calendar integrations
-
-#### Orta Vadeli (3-6 Ay)
-- Microservices mimarisi (opsiyonel)
-- Database sharding (yüksek trafik için)
-- Advanced analytics
-
-#### Uzun Vadeli (6+ Ay)
-- Mobile app geliştirmeleri
-- AI/ML entegrasyonları
-- International expansion
+- **ADMIN / FIRMA SAHIBI**: Her iki rol de tam yetkiye sahiptir.
+- **PROJE YONETICISI**: Malzeme ekleyemez (sadece görür), Görev ve projelerde tam yetkilidir.
+- **DEPO SORUMLUSU**: Proje ekleyip silemez (sadece görür), Sistem ve Ekipman/Bakım takibinde tam yetki sahibidir.
+- **TEKNISYEN**: Read-only (Sadece okuma) iznine sahiptir.
 
 ---
 
-## 📝 Önemli Notlar
-
-1. **Production Ready**: Proje production'a alınmaya hazır durumda
-2. **Güvenlik**: Tüm güvenlik önlemleri alındı
-3. **Performans**: Performans optimizasyonları yapıldı
-4. **Dokümantasyon**: Kapsamlı dokümantasyon mevcut
-5. **Test**: Test coverage yeterli seviyede
-
----
-
-## 📚 İlgili Dokümanlar
-
-- **[Kurulum ve Başlangıç](./KURULUM_VE_BASLANGIC.md)** - Projeyi kurmak için
-- **[Production Deployment](./PRODUCTION_DEPLOYMENT.md)** - Production'a almak için
-- **[Proje Geliştirme](./PROJE_GELISTIRME.md)** - Geliştirme süreçleri
-
----
-
-**Başarılar! 🚀**
-
-*Son Güncelleme: 2026-01-08*
+## 📚 Diğer Runbook ve Kılavuzlar
+Yönergeler ve arıza durumları için `/docs/runbooks` ve `/docs/guides` klasörlerine başvurunuz.

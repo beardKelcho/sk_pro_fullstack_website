@@ -47,7 +47,7 @@ ENABLE_WEBSOCKET=true
 ```typescript
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5001', {
+const socket = io('<your-backend-url>', {
   auth: {
     token: localStorage.getItem('accessToken'),
   },

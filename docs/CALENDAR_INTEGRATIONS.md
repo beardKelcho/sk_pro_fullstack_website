@@ -43,7 +43,7 @@ Proje artık **Google Calendar** ve **Outlook Calendar** ile senkronizasyon dest
 1. [Google Cloud Console](https://console.cloud.google.com/) > API & Services > Credentials
 2. Create Credentials > OAuth 2.0 Client ID
 3. Application type: Web application
-4. Authorized redirect URIs: `http://localhost:3000/admin/calendar/integrations/google/callback` (development)
+4. Authorized redirect URIs: `<your-frontend-url>/admin/calendar/integrations/google/callback` (development)
 5. Authorized redirect URIs: `https://yourdomain.com/admin/calendar/integrations/google/callback` (production)
 6. Scopes: `https://www.googleapis.com/auth/calendar`
 7. Client ID ve Client Secret'ı kopyala
@@ -54,7 +54,7 @@ Proje artık **Google Calendar** ve **Outlook Calendar** ile senkronizasyon dest
 # Google Calendar OAuth2
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:3000/admin/calendar/integrations/google/callback
+GOOGLE_REDIRECT_URI=<your-frontend-url>/admin/calendar/integrations/google/callback
 ```
 
 ---
@@ -67,7 +67,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/admin/calendar/integrations/google/cal
 2. New registration
 3. Name: SK Production Calendar Integration
 4. Supported account types: Accounts in any organizational directory and personal Microsoft accounts
-5. Redirect URI: `http://localhost:3000/admin/calendar/integrations/outlook/callback` (development)
+5. Redirect URI: `<your-frontend-url>/admin/calendar/integrations/outlook/callback` (development)
 6. Redirect URI: `https://yourdomain.com/admin/calendar/integrations/outlook/callback` (production)
 7. API permissions > Add permission > Microsoft Graph > Delegated permissions
    - `Calendars.ReadWrite`
@@ -81,7 +81,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/admin/calendar/integrations/google/cal
 # Outlook Calendar OAuth2
 OUTLOOK_CLIENT_ID=your-outlook-client-id
 OUTLOOK_CLIENT_SECRET=your-outlook-client-secret
-OUTLOOK_REDIRECT_URI=http://localhost:3000/admin/calendar/integrations/outlook/callback
+OUTLOOK_REDIRECT_URI=<your-frontend-url>/admin/calendar/integrations/outlook/callback
 OUTLOOK_TENANT_ID=common  # veya organization-specific tenant ID
 ```
 
@@ -188,7 +188,7 @@ server/src/
 
 **"redirect_uri_mismatch" hatası:**
 - Google Cloud Console'da redirect URI'nin tam olarak eşleştiğinden emin olun
-- Development: `http://localhost:3000/admin/calendar/integrations/google/callback`
+- Development: `<your-frontend-url>/admin/calendar/integrations/google/callback`
 - Production: `https://yourdomain.com/admin/calendar/integrations/google/callback`
 
 **Token refresh hatası:**
@@ -199,7 +199,7 @@ server/src/
 
 **"AADSTS50011" hatası:**
 - Azure Portal'da redirect URI'nin tam olarak eşleştiğinden emin olun
-- Development: `http://localhost:3000/admin/calendar/integrations/outlook/callback`
+- Development: `<your-frontend-url>/admin/calendar/integrations/outlook/callback`
 - Production: `https://yourdomain.com/admin/calendar/integrations/outlook/callback`
 
 **Token refresh hatası:**

@@ -24,8 +24,8 @@ Mevcut local storage'daki dosyaları Cloud Storage'a (Cloudinary veya AWS S3) ta
 # .env dosyasına ekle
 STORAGE_TYPE=cloudinary
 CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+CLOUDINARY_API_KEY=<your-cloudinary-api-key>
+CLOUDINARY_API_SECRET=<your-cloudinary-api-secret>
 ```
 
 ### 2. Migration Çalıştırma

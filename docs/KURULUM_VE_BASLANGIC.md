@@ -66,7 +66,7 @@ Bu komut:
 4. Network Access → "Allow Access from Anywhere" (0.0.0.0/0) ekleyin
 5. Connection String'i alın:
    ```
-   mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/skproduction?retryWrites=true&w=majority
+   <mongodb-atlas-connection-string>
    ```
 
 **Local MongoDB kullanıyorsanız:**
@@ -93,11 +93,11 @@ cp .env.example .env
 ```env
 PORT=5001
 NODE_ENV=development
-MONGO_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/skproduction?retryWrites=true&w=majority
+MONGO_URI=<mongodb-atlas-connection-string>
 JWT_SECRET=super-secret-jwt-key-change-this-in-production
 JWT_REFRESH_SECRET=super-secret-refresh-key-change-this-in-production
-CLIENT_URL=http://localhost:3000
-CORS_ORIGIN=http://localhost:3000
+CLIENT_URL=<your-frontend-url>
+CORS_ORIGIN=<your-frontend-url>
 ```
 
 **Önemli:** 
@@ -119,9 +119,9 @@ cp .env.local.example .env.local
 `client/.env.local` dosyasını düzenleyin:
 
 ```env
-NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
-NEXT_PUBLIC_API_URL=http://localhost:5001/api
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_BACKEND_URL=<your-backend-url>
+NEXT_PUBLIC_API_URL=<your-api-url>
+NEXT_PUBLIC_SITE_URL=<your-frontend-url>
 ```
 
 ### 5. İlk Admin Kullanıcısını Oluştur
@@ -145,14 +145,14 @@ npm run dev
 ```
 
 Bu komut hem server hem client'ı başlatır:
-- **Backend**: http://localhost:5001
-- **Frontend**: http://localhost:3000
+- **Backend**: <your-backend-url>
+- **Frontend**: <your-frontend-url>
 
 ### 7. Tarayıcıda Aç
 
-- **Web Sitesi**: http://localhost:3000
-- **Admin Paneli**: http://localhost:3000/admin/login
-- **API Docs**: http://localhost:5001/api-docs
+- **Web Sitesi**: <your-frontend-url>
+- **Admin Paneli**: <your-frontend-url>/admin/login
+- **API Docs**: <your-api-url>-docs
 
 ---
 
@@ -204,7 +204,7 @@ Bu komut hem `client` hem de `server` klasörlerindeki tüm bağımlılıkları 
 3. Driver: **Node.js**, Version: **5.5 or later**
 4. Connection string'i kopyalayın:
    ```
-   mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/skproduction?retryWrites=true&w=majority
+   <mongodb-atlas-connection-string>
    ```
 5. `<password>` kısmını kendi şifrenizle değiştirin
 6. Database adını ekleyin: `...mongodb.net/skproduction?...`
@@ -238,15 +238,15 @@ NODE_ENV=development
 PORT=5001
 
 # MongoDB
-MONGO_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/skproduction?retryWrites=true&w=majority
+MONGO_URI=<mongodb-atlas-connection-string>
 
 # JWT Secrets (GÜÇLÜ, RASTGELE STRINGLER!)
 JWT_SECRET=<güçlü-random-string>
 JWT_REFRESH_SECRET=<güçlü-random-string>
 
 # Client URL (CORS için)
-CLIENT_URL=http://localhost:3000
-CORS_ORIGIN=http://localhost:3000
+CLIENT_URL=<your-frontend-url>
+CORS_ORIGIN=<your-frontend-url>
 ```
 
 **JWT Secret Oluşturma:**
@@ -267,9 +267,9 @@ Gerekli değişkenler:
 
 ```env
 # Backend API URLs
-NEXT_PUBLIC_BACKEND_URL=http://localhost:5001
-NEXT_PUBLIC_API_URL=http://localhost:5001/api
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_BACKEND_URL=<your-backend-url>
+NEXT_PUBLIC_API_URL=<your-api-url>
+NEXT_PUBLIC_SITE_URL=<your-frontend-url>
 ```
 
 ### Adım 4: İlk Admin Kullanıcısını Oluştur
@@ -298,8 +298,8 @@ npm run dev
 ```
 
 Bu komut:
-- Server'ı `http://localhost:5001` adresinde başlatır
-- Client'ı `http://localhost:3000` adresinde başlatır
+- Server'ı `<your-backend-url>` adresinde başlatır
+- Client'ı `<your-frontend-url>` adresinde başlatır
 - Her ikisini de aynı terminal'de gösterir
 
 ### Yöntem 2: Ayrı Ayrı Başlat

@@ -66,7 +66,7 @@ JWT_SECRET=<güçlü-random-string>
 JWT_REFRESH_SECRET=<güçlü-random-string>
 
 # MongoDB network access kısıtlı
-MONGO_URI=mongodb+srv://...
+MONGO_URI=<mongodb-atlas-connection-string>
 
 # CORS sadece frontend domain'i
 CLIENT_URL=https://yourdomain.com

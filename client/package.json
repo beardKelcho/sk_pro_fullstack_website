@@ -35,7 +35,7 @@
   "scripts": {
     "electron:dev": "cross-env NODE_ENV=development concurrently -k \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "npm run build && electron-builder",
-    "electron:build:all": "npm run build && electron-builder -m -w",
+    "electron:build:all": "npm run build && electron-builder --mac arm64 x64 --win x64 arm64 --linux arm64 x64 -c.extraMetadata.main=electron/main.js",
     "clean:next": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "dev": "next dev -p 3000",
     "dev:clean": "npm run clean:next && next dev",

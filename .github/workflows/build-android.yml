@@ -1,0 +1,55 @@
+name: Build Android APK
+
+on:
+  # Kullanıcının manuel olarak Github Actions menüsünden başlatabilmesi için
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Next.js & Capacitor APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java JDK (Android için)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Client Dependencies
+        working-directory: ./client
+        run: npm install
+
+      - name: Build Next.js Application
+        working-directory: ./client
+        env:
+          # Next.js build sırasında çevre değişkenlerini devredışı bıraktığı için sahte değerler verebiliriz (gerekirse)
+          NEXT_PUBLIC_APP_URL: https://skpro.com.tr
+        run: npm run build
+
+      - name: Sync Capacitor Android
+        working-directory: ./client
+        run: npx cap sync android
+
+      - name: Build APK File Using Gradle
+        working-directory: ./client/android
+        run: ./gradlew assembleDebug
+
+      - name: Rename APK for Production
+        working-directory: ./client/android/app/build/outputs/apk/debug
+        run: mv app-debug.apk SK-Production.apk
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SK-Production-Android-APK
+          path: client/android/app/build/outputs/apk/debug/SK-Production.apk
+          retention-days: 7

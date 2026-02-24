@@ -175,14 +175,14 @@ export default function ProjectsPage() {
         const project = info.row.original;
         return (
           <div className="flex justify-end space-x-2">
-            <Link href={`/admin/projects/view/${project.id}`}>
+            <Link href={`/admin/projects/view?id=${project.id}`}>
               <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm">
                 Görüntüle
               </button>
             </Link>
             <PermissionLink
               permission={Permission.PROJECT_UPDATE}
-              href={`/admin/projects/edit/${project.id}`}
+              href={`/admin/projects/edit?id=${project.id}`}
               className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-sm"
               disabledMessage={MESSAGES.ERRORS.UNAUTHORIZED}
             >

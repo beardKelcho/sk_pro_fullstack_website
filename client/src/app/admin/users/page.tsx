@@ -202,14 +202,14 @@ export default function UserList() {
         const user = info.row.original;
         return (
           <div className="flex justify-end space-x-2">
-            <Link href={`/admin/users/view/${user.id}`}>
+            <Link href={`/admin/users/view?id=${user.id}`}>
               <button className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80 text-sm font-medium">
                 Görüntüle
               </button>
             </Link>
             <PermissionLink
               permission={Permission.USER_UPDATE}
-              href={`/admin/users/edit/${user.id}`}
+              href={`/admin/users/edit?id=${user.id}`}
               className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm font-medium"
               disabledMessage="Kullanıcı düzenleme yetkiniz bulunmamaktadır"
             >

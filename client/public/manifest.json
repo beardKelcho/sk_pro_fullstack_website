@@ -9,15 +9,46 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/images/sk-logo.png",
-      "sizes": "any",
+      "src": "../icons/icon-48.webp",
       "type": "image/png",
+      "sizes": "48x48",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicon.ico",
-      "sizes": "any",
-      "type": "image/x-icon"
+      "src": "../icons/icon-72.webp",
+      "type": "image/png",
+      "sizes": "72x72",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-96.webp",
+      "type": "image/png",
+      "sizes": "96x96",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-128.webp",
+      "type": "image/png",
+      "sizes": "128x128",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-192.webp",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-256.webp",
+      "type": "image/png",
+      "sizes": "256x256",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "../icons/icon-512.webp",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -26,22 +57,41 @@
       "short_name": "Hizmetler",
       "description": "SK Production hizmetlerini görüntüle",
       "url": "/hizmetler",
-      "icons": [{ "src": "/images/sk-logo.png", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "/images/sk-logo.png",
+          "sizes": "any"
+        }
+      ]
     },
     {
       "name": "Projeler",
       "short_name": "Projeler",
       "description": "Tamamlanan projeleri görüntüle",
       "url": "/projeler",
-      "icons": [{ "src": "/images/sk-logo.png", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "/images/sk-logo.png",
+          "sizes": "any"
+        }
+      ]
     },
     {
       "name": "İletişim",
       "short_name": "İletişim",
       "description": "Bizimle iletişime geçin",
       "url": "/iletisim",
-      "icons": [{ "src": "/images/sk-logo.png", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "/images/sk-logo.png",
+          "sizes": "any"
+        }
+      ]
     }
   ],
-  "categories": ["business", "technology", "entertainment"]
-} 
+  "categories": [
+    "business",
+    "technology",
+    "entertainment"
+  ]
+}

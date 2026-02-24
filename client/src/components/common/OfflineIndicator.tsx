@@ -9,7 +9,7 @@ export default function OfflineIndicator() {
 
   useEffect(() => {
     // İlk yüklemede online durumunu kontrol et
-    setIsOnline(navigator.onLine);
+    setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
     const handleOnline = () => {
       setIsOnline(true);
@@ -38,16 +38,14 @@ export default function OfflineIndicator() {
 
   return (
     <div
-      className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-        isOnline ? 'translate-y-0' : 'translate-y-0'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${isOnline ? 'translate-y-0' : 'translate-y-0'
+        }`}
     >
       <div
-        className={`${
-          isOnline
+        className={`${isOnline
             ? 'bg-green-500 text-white'
             : 'bg-red-500 text-white'
-        } px-4 py-2 text-center text-sm font-medium shadow-md`}
+          } px-4 py-2 text-center text-sm font-medium shadow-md`}
       >
         <div className="flex items-center justify-center gap-2">
           {isOnline ? (

@@ -6,8 +6,8 @@ import React from 'react';
 import { HeroContent, AboutContent, ServicesContent, ContactContent, SiteContent } from '@/types/cms';
 import StructuredData, { generateLocalBusinessSchema } from '@/components/common/StructuredData';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Removed force-dynamic to support static export
+export const revalidate = 60; // Revalidate at most every 60 seconds (for SSG updates if supported, otherwise just static)
 
 // Fetch site data helper
 async function getSiteData() {
@@ -16,9 +16,7 @@ async function getSiteData() {
 
   try {
     // 1. Check Maintenance Mode
-    const maintenanceRes = await fetch(`${apiUrl}/public/maintenance`, {
-      cache: 'no-store'
-    });
+    const maintenanceRes = await fetch(`${apiUrl}/public/maintenance`);
 
     // Default to false if fetch fails
     let isMaintenanceMode = false;
@@ -32,9 +30,7 @@ async function getSiteData() {
     }
 
     // 2. Fetch Site Content
-    const contentRes = await fetch(`${apiUrl}/public/site-content`, {
-      cache: 'no-store'
-    });
+    const contentRes = await fetch(`${apiUrl}/public/site-content`);
 
     if (!contentRes.ok) {
       logger.error('Failed to fetch site content');

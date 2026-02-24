@@ -139,7 +139,7 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
                                         {task.dueDate ? new Date(task.dueDate).toLocaleDateString('tr-TR') : '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <Link href={`/admin/tasks/edit/${task._id || task.id}`} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">
+                                        <Link href={`/admin/tasks/edit?id=${task._id || task.id}`} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">
                                             Düzenle
                                         </Link>
                                         <button onClick={() => handleDelete(task._id || task.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">

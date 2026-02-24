@@ -322,12 +322,12 @@ export default function MaintenanceList() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
-                          <Link href={`/admin/maintenance/view/${item.id || item._id}`}>
+                          <Link href={`/admin/maintenance/view?id=${item.id || item._id}`}>
                             <button className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80">
                               Görüntüle
                             </button>
                           </Link>
-                          <Link href={`/admin/maintenance/edit/${item.id || item._id}`}>
+                          <Link href={`/admin/maintenance/edit?id=${item.id || item._id}`}>
                             <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                               Düzenle
                             </button>

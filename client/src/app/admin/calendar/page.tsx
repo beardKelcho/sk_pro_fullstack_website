@@ -525,8 +525,8 @@ export default function Calendar() {
                         <div className="flex-grow overflow-y-auto mt-1">
                           {cell.events.map((event: Event, eventIndex) => {
                             const href = event.type === 'maintenance' 
-                              ? `/admin/maintenance/edit/${event.id}` 
-                              : `/admin/projects/view/${event.id}`;
+                              ? `/admin/maintenance/edit?id=${event.id}` 
+                              : `/admin/projects/view?id=${event.id}`;
                             return (
                               <Link href={href} key={eventIndex}>
                                 <div
@@ -639,7 +639,7 @@ export default function Calendar() {
                   ) : (
                     events.map((event, idx) => {
                       const href =
-                        event.type === 'maintenance' ? `/admin/maintenance/edit/${event.id}` : `/admin/projects/view/${event.id}`;
+                        event.type === 'maintenance' ? `/admin/maintenance/edit?id=${event.id}` : `/admin/projects/view?id=${event.id}`;
                       return (
                         <Link href={href} key={`${event.id}-${idx}`}>
                           <div
@@ -718,7 +718,7 @@ export default function Calendar() {
             <div className="space-y-2">
               {events.map((event, idx) => {
                 const href =
-                  event.type === 'maintenance' ? `/admin/maintenance/edit/${event.id}` : `/admin/projects/view/${event.id}`;
+                  event.type === 'maintenance' ? `/admin/maintenance/edit?id=${event.id}` : `/admin/projects/view?id=${event.id}`;
                 return (
                   <Link href={href} key={`${event.id}-${idx}`}>
                     <div

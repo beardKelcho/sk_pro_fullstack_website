@@ -271,12 +271,12 @@ export default function CustomerList() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
-                          <Link href={`/admin/customers/view/${customer.id}`}>
+                          <Link href={`/admin/customers/view?id=${customer.id}`}>
                             <button className="text-[#0066CC] dark:text-primary-light hover:text-[#0055AA] dark:hover:text-primary-light/80">
                               Görüntüle
                             </button>
                           </Link>
-                          <Link href={`/admin/customers/edit/${customer.id}`}>
+                          <Link href={`/admin/customers/edit?id=${customer.id}`}>
                             <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                               Düzenle
                             </button>

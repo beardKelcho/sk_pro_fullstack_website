@@ -114,7 +114,7 @@ export default function Dashboard() {
           {recentProjects.length > 0 ? (
             <div className="max-h-80 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
               {recentProjects.map((project: any) => (
-                <Link key={project.id || project._id} href={`/admin/projects/view/${project.id || project._id}`} className="block py-3 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
+                <Link key={project.id || project._id} href={`/admin/projects/view?id=${project.id || project._id}`} className="block py-3 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{project.name}</p>

@@ -32,9 +32,9 @@ const DownloadPage = () => {
                         <a href="/downloads/SK-Production-mac-arm64.dmg" download className="block w-full text-center py-3 bg-[#0066CC] hover:bg-[#0052a3] text-white rounded-lg transition-colors font-medium">
                             Apple Silicon (M1/M2/M3)
                         </a>
-                        <a href="/downloads/SK-Production-mac-x64.dmg" download className="block w-full text-center py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors font-medium shadow-sm">
-                            Eski Nesil Intel Cihazlar
-                        </a>
+                        <button disabled className="block w-full text-center py-3 bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-500 rounded-lg font-medium shadow-sm cursor-not-allowed" title="Intel derlemesi CI sunucusu üzerinden otomatik indirilecektir.">
+                            Eski Nesil Intel Cihazlar (Yakında)
+                        </button>
                     </div>
                 </div>
 
@@ -51,8 +51,11 @@ const DownloadPage = () => {
                     </p>
                     <div className="flex flex-col gap-3">
                         <a href="/downloads/SK-Production-win-x64.exe" download className="block w-full text-center py-3 bg-[#0078D7] hover:bg-[#005fb8] text-white rounded-lg transition-colors font-medium shadow-md">
-                            Windows (64-bit) İndir
+                            Windows İndir (x64)
                         </a>
+                        <button disabled className="block w-full text-center py-3 bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-500 rounded-lg font-medium shadow-sm cursor-not-allowed">
+                            Windows İndir (ARM64 Yakında)
+                        </button>
                     </div>
                 </div>
 
@@ -68,9 +71,9 @@ const DownloadPage = () => {
                         Ubuntu, Debian serisi ve diğer popüler tüm dağıtımlar için taşınabilir dosyadır.
                     </p>
                     <div className="flex flex-col gap-3">
-                        <a href="/downloads/SK-Production-linux-x64.AppImage" download className="block w-full text-center py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium">
-                            Linux İndir
-                        </a>
+                        <button disabled className="block w-full text-center py-3 bg-gray-600/50 text-gray-300 cursor-not-allowed rounded-lg font-medium" title="Kısa süre içerisinde derlenecektir.">
+                            Linux İndir (Yakında)
+                        </button>
                     </div>
                 </div>
             </div>

@@ -77,11 +77,56 @@ const DownloadPage = () => {
                     </div>
                 </div>
             </div>
-            <div className="mt-8 p-6 bg-gradient-to-r from-[#0066CC]/10 to-[#00C49F]/10 rounded-2xl border border-white/10 dark:border-white/5">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Mobil Uygulamalar (Test Aşamasında)</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                    iOS ve Android cihazlarınız için geliştirilen yerel uygulamaların beta süreçleri arka planda devam etmektedir. Tamamlandığında resmi uygulama mağazalarından veya kurulum linkiyle paylaşılacaktır.
-                </p>
+            <div className="mt-12 bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                            <svg className="w-6 h-6 text-[#00C49F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            Mobil Cihazlar (Akıllı Telefonlar)
+                        </h2>
+                        <p className="mt-2 text-gray-600 dark:text-gray-400">
+                            İşletim sisteminize göre doğrudan kurulum veya ana erkrana ekleme (PWA) işlemini yapabilirsiniz.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Android */}
+                    <div className="glass dark:glass-dark rounded-xl p-6 relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+                        <div className="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center mb-5">
+                            <svg className="w-7 h-7 text-[#3DDC84]" viewBox="0 0 512 512" fill="currentColor">
+                                <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 141.5L280.3 275l106-106L47 141.5zm253.3 162.6l-58.2 58.2-13.3-13.3-25.9 25.9 83.1 83.1c9.4 9.4 24.6 9.4 33.9 0l83.1-83.1-83.1-83.1 13.3-13.3 58.2-58.2L300.3 304l-25.9 25.9-106.3-106.3-58.2 58.2L280 452c16.1 16.1 42.4 16.1 58.5 0L496.2 294.5 325.3 502.2c9.4 9.4 24.6 9.4 33.9 0l110.1-110.1 23.4 46.1c-13.9 14.1-36.5 14.2-50.5 .3zM153 331L34.1 212.1 6.5 264C1 274.6 1.7 287.5 8 297.4l119 191.1L153 331z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-white">Android Sürümü (.apk)</h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
+                            Android cihazınıza SK Production uygulamasını direkt market kullanmadan indirebilir ve kurabilirsiniz.
+                        </p>
+                        <a href="https://github.com/beardKelcho/sk_pro_fullstack_website/releases/download/v0.1.0-beta/SK-Production.apk" target="_blank" rel="noopener noreferrer" className="block w-full text-center py-2.5 bg-[#3DDC84] hover:bg-[#34BE71] text-white rounded-lg transition-colors font-medium shadow-sm">
+                            Android (APK) İndir
+                        </a>
+                    </div>
+
+                    {/* iOS (iPhone) PWA Instructions */}
+                    <div className="glass dark:glass-dark rounded-xl p-6 relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+                        <div className="w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center mb-5">
+                            <svg className="w-7 h-7 text-gray-800 dark:text-gray-200" viewBox="0 0 384 512" fill="currentColor">
+                                <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-white">Apple iOS (iPhone / iPad)</h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                            Apple politikaları gereği doğrudan indirme engellenmektedir. Cihazınıza uygulama olarak kurmak için lütfen iPhone'unuzdan Safari ile bu siteye girin ve şu adımları izleyin:
+                        </p>
+                        <ol className="list-decimal ml-4 text-sm text-gray-700 dark:text-gray-300 space-y-2">
+                            <li>Tarayıcının alt menüsündeki <strong>Paylaş</strong> (Kare içinden ok çıkan ikon) düğmesine dokunun.</li>
+                            <li>Açılan menüyü aşağı kaydırıp <strong>Ana Ekrana Ekle</strong> (Add to Home Screen) seçeneğine tıklayın.</li>
+                            <li>Sağ üst köşedeki <strong>Ekle</strong> butonuna basın. Uygulamanız hazır!</li>
+                        </ol>
+                    </div>
+                </div>
             </div>
         </div>
     );

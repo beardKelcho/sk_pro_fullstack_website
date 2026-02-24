@@ -84,8 +84,7 @@ const Header: React.FC = () => {
               alt="SK Production Logo"
               width={40}
               height={40}
-              className="w-10 h-10"
-              style={{ width: 'auto', height: 'auto' }}
+              className="w-10 h-10 object-contain"
             />
             <span className="text-xl font-bold text-[#0A1128] dark:text-white">SK Production</span>
           </Link>

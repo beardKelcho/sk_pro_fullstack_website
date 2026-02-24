@@ -14,6 +14,21 @@ const CalendarOAuthContent = () => {
         outlookConnected: false
     });
 
+    const handleCallback = React.useCallback(async (provider: 'google' | 'outlook', code: string) => {
+        setLoading(true);
+        try {
+            await api.post(`/calendar/${provider}/callback`, { code });
+            toast.success(`${provider === 'google' ? 'Google' : 'Outlook'} başarıyla bağlandı`);
+
+            // Clean up URL
+            window.history.replaceState({}, document.title, '/admin/calendar/settings');
+            await fetchStatus();
+        } catch (error) {
+            toast.error('Bağlantı işlemi başarısız oldu');
+            setLoading(false);
+        }
+    }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
+
     useEffect(() => {
         fetchStatus();
 
@@ -28,7 +43,7 @@ const CalendarOAuthContent = () => {
                 handleCallback('outlook', code);
             }
         }
-    }, [searchParams]);
+    }, [searchParams, handleCallback]);
 
     const fetchStatus = async () => {
         try {
@@ -38,21 +53,6 @@ const CalendarOAuthContent = () => {
             console.error('Error fetching calendar status', error);
             toast.error('Bağlantı durumları alınamadı');
         } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCallback = async (provider: 'google' | 'outlook', code: string) => {
-        setLoading(true);
-        try {
-            await api.post(`/calendar/${provider}/callback`, { code });
-            toast.success(`${provider === 'google' ? 'Google' : 'Outlook'} başarıyla bağlandı`);
-
-            // Clean up URL
-            window.history.replaceState({}, document.title, '/admin/calendar/settings');
-            await fetchStatus();
-        } catch (error) {
-            toast.error('Bağlantı işlemi başarısız oldu');
             setLoading(false);
         }
     };
@@ -115,8 +115,8 @@ const CalendarOAuthContent = () => {
                         <button
                             onClick={() => connectProvider('google')}
                             className={`w-full py-2 px-4 rounded-md text-sm font-medium transition-colors flex justify-center items-center ${status.googleConnected
-                                    ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-primary-light dark:hover:bg-primary'
+                                ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                                : 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-primary-light dark:hover:bg-primary'
                                 }`}
                         >
                             {status.googleConnected ? 'Yeniden Yetkilendir' : 'Google İle Bağlan'}
@@ -150,8 +150,8 @@ const CalendarOAuthContent = () => {
                         <button
                             onClick={() => connectProvider('outlook')}
                             className={`w-full py-2 px-4 rounded-md text-sm font-medium transition-colors flex justify-center items-center ${status.outlookConnected
-                                    ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
-                                    : 'bg-[#0078D4] text-white hover:bg-[#005A9E]'
+                                ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                                : 'bg-[#0078D4] text-white hover:bg-[#005A9E]'
                                 }`}
                         >
                             {status.outlookConnected ? 'Yeniden Yetkilendir' : 'Outlook İle Bağlan'}

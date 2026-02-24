@@ -118,7 +118,7 @@ const DownloadPage = () => {
                         </div>
                         <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-white">Apple iOS (iPhone / iPad)</h3>
                         <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-                            Apple politikaları gereği doğrudan indirme engellenmektedir. Cihazınıza uygulama olarak kurmak için lütfen iPhone'unuzdan Safari ile bu siteye girin ve şu adımları izleyin:
+                            Apple politikaları gereği doğrudan indirme engellenmektedir. Cihazınıza uygulama olarak kurmak için lütfen iPhone&apos;unuzdan Safari ile bu siteye girin ve şu adımları izleyin:
                         </p>
                         <ol className="list-decimal ml-4 text-sm text-gray-700 dark:text-gray-300 space-y-2">
                             <li>Tarayıcının alt menüsündeki <strong>Paylaş</strong> (Kare içinden ok çıkan ikon) düğmesine dokunun.</li>

@@ -24,7 +24,7 @@ function InventoryItemViewContent() {
     const [qrItem, setQrItem] = useState<InventoryItem | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
 
-    const fetchData = async () => {
+    const fetchData = React.useCallback(async () => {
         setLoading(true);
         try {
             const [itemRes, catsRes] = await Promise.all([
@@ -44,13 +44,13 @@ function InventoryItemViewContent() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id, router]);
 
     useEffect(() => {
         if (id) {
             fetchData();
         }
-    }, [id]);
+    }, [id, fetchData]);
 
     if (loading) {
         return (

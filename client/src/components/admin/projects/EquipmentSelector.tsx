@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { QrCode, Search, ShoppingCart, X, Plus } from 'lucide-react';
@@ -33,7 +33,7 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
         }),
         staleTime: 60000
     });
-    const items = inventoryData?.data || [];
+    const items = useMemo(() => inventoryData?.data || [], [inventoryData?.data]);
 
     // Handle QR Scan
     const handleScanSuccess = (result: any) => {

@@ -46,21 +46,27 @@ const Projects = () => {
     const videoProjects = projects.filter(p => p.type === 'video');
 
     // Lightbox navigation
-    const nextImage = () => {
+    const nextImage = React.useCallback(() => {
         if (!lightbox) return;
-        setLightbox({
-            ...lightbox,
-            currentIndex: (lightbox.currentIndex + 1) % lightbox.images.length
+        setLightbox((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                currentIndex: (prev.currentIndex + 1) % prev.images.length
+            };
         });
-    };
+    }, [lightbox]);
 
-    const prevImage = () => {
+    const prevImage = React.useCallback(() => {
         if (!lightbox) return;
-        setLightbox({
-            ...lightbox,
-            currentIndex: (lightbox.currentIndex - 1 + lightbox.images.length) % lightbox.images.length
+        setLightbox((prev) => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                currentIndex: (prev.currentIndex - 1 + prev.images.length) % prev.images.length
+            };
         });
-    };
+    }, [lightbox]);
 
     // Keyboard navigation
     useEffect(() => {

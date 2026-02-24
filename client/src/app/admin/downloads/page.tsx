@@ -29,7 +29,7 @@ const DownloadPage = () => {
                         Apple M1/M2/M3 ve Intel işlemcili tüm Mac bilgisayarlar için tam erişimlidir.
                     </p>
                     <div className="flex flex-col gap-3">
-                        <a href="/downloads/SK-Production-mac-arm64.dmg" download className="block w-full text-center py-3 bg-[#0066CC] hover:bg-[#0052a3] text-white rounded-lg transition-colors font-medium">
+                        <a href="https://github.com/beardKelcho/sk_pro_fullstack_website/releases/download/v0.1.0-beta/SK-Production-mac-arm64.dmg" target="_blank" rel="noopener noreferrer" className="block w-full text-center py-3 bg-[#0066CC] hover:bg-[#0052a3] text-white rounded-lg transition-colors font-medium">
                             Apple Silicon (M1/M2/M3)
                         </a>
                         <button disabled className="block w-full text-center py-3 bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-500 rounded-lg font-medium shadow-sm cursor-not-allowed" title="Intel derlemesi CI sunucusu üzerinden otomatik indirilecektir.">
@@ -50,7 +50,7 @@ const DownloadPage = () => {
                         Windows 10 ve 11 (64-bit) işletim sistemiyle tam optimizasyon sağlar.
                     </p>
                     <div className="flex flex-col gap-3">
-                        <a href="/downloads/SK-Production-win-x64.exe" download className="block w-full text-center py-3 bg-[#0078D7] hover:bg-[#005fb8] text-white rounded-lg transition-colors font-medium shadow-md">
+                        <a href="https://github.com/beardKelcho/sk_pro_fullstack_website/releases/download/v0.1.0-beta/SK-Production-win-x64.exe" target="_blank" rel="noopener noreferrer" className="block w-full text-center py-3 bg-[#0078D7] hover:bg-[#005fb8] text-white rounded-lg transition-colors font-medium shadow-md">
                             Windows İndir (x64)
                         </a>
                         <button disabled className="block w-full text-center py-3 bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-500 rounded-lg font-medium shadow-sm cursor-not-allowed">

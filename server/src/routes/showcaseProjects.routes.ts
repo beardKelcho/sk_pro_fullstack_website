@@ -7,6 +7,7 @@ import {
     deleteShowcaseProject,
     reorderProjects,
 } from '../controllers/showcaseProjects.controller';
+import { Role } from "../config/permissions";
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = express.Router();
@@ -16,9 +17,9 @@ router.get('/', getShowcaseProjects);
 router.get('/:id', getShowcaseProjectById);
 
 // Admin routes (protected)
-router.post('/', authenticate, authorize('admin'), createShowcaseProject);
-router.put('/reorder', authenticate, authorize('admin'), reorderProjects);
-router.put('/:id', authenticate, authorize('admin'), updateShowcaseProject);
-router.delete('/:id', authenticate, authorize('admin'), deleteShowcaseProject);
+router.post('/', authenticate, authorize(Role.ADMIN), createShowcaseProject);
+router.put('/reorder', authenticate, authorize(Role.ADMIN), reorderProjects);
+router.put('/:id', authenticate, authorize(Role.ADMIN), updateShowcaseProject);
+router.delete('/:id', authenticate, authorize(Role.ADMIN), deleteShowcaseProject);
 
 export default router;

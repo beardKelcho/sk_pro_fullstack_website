@@ -7,6 +7,7 @@ import {
     deleteService,
     reorderServices,
 } from '../controllers/services.controller';
+import { Role } from "../config/permissions";
 import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = express.Router();
@@ -16,9 +17,9 @@ router.get('/', getAllServices);
 router.get('/:id', getServiceById);
 
 // Admin routes (protected)
-router.post('/', authenticate, authorize('admin'), createService);
-router.put('/reorder', authenticate, authorize('admin'), reorderServices);
-router.put('/:id', authenticate, authorize('admin'), updateService);
-router.delete('/:id', authenticate, authorize('admin'), deleteService);
+router.post('/', authenticate, authorize(Role.ADMIN), createService);
+router.put('/reorder', authenticate, authorize(Role.ADMIN), reorderServices);
+router.put('/:id', authenticate, authorize(Role.ADMIN), updateService);
+router.delete('/:id', authenticate, authorize(Role.ADMIN), deleteService);
 
 export default router;

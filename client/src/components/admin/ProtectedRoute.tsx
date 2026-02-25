@@ -8,7 +8,7 @@ import { authApi } from '@/services/api/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'ADMIN' | 'TECHNICIAN' | 'INVENTORY_MANAGER' | 'USER';
+  requiredRole?: 'ADMIN' | 'FIRMA_SAHIBI' | 'PROJE_YONETICISI' | 'DEPO_SORUMLUSU' | 'TEKNISYEN';
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -56,9 +56,10 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
           // Rol kontrolü
           if (requiredRole) {
             const roleHierarchy: Record<string, number> = {
-              'USER': 1,
-              'TECHNICIAN': 2,
-              'INVENTORY_MANAGER': 3,
+              'TEKNISYEN': 1,
+              'PROJE_YONETICISI': 2,
+              'DEPO_SORUMLUSU': 2,
+              'FIRMA_SAHIBI': 3,
               'ADMIN': 4
             };
 

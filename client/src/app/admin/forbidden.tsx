@@ -12,7 +12,7 @@ export default function Forbidden() {
             Bu sayfaya erişim yetkiniz bulunmamaktadır. Lütfen yöneticinizle iletişime geçin.
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/admin/dashboard"
@@ -27,15 +27,14 @@ export default function Forbidden() {
             Ana Sayfaya Dön
           </Link>
         </div>
-        
+
         <div className="mt-12">
           <Image
             src="/images/sk-logo.png"
             alt="SK Production Logo"
             width={120}
             height={40}
-            className="mx-auto opacity-50"
-            style={{ width: 'auto', height: 'auto' }}
+            className="mx-auto opacity-50 h-10 w-auto object-contain"
           />
         </div>
       </div>

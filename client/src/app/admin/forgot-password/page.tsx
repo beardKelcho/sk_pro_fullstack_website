@@ -17,38 +17,38 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email) {
       setError('E-posta adresi gereklidir');
       return;
     }
-    
+
     if (!/\S+@\S+\.\S+/.test(email)) {
       setError('Geçerli bir e-posta adresi girin');
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       // Backend'de forgot-password endpoint'i olmalı
       // Şimdilik mock response
       await authApi.forgotPassword({ email });
-      
+
       setSuccess(true);
       toast.success('Şifre sıfırlama bağlantısı e-posta adresinize gönderildi');
-      
+
       // 3 saniye sonra login sayfasına yönlendir
       setTimeout(() => {
         router.push('/admin/login');
       }, 3000);
     } catch (error: any) {
       logger.error('Şifre sıfırlama hatası:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message || 
-                          'Şifre sıfırlama işlemi sırasında bir hata oluştu';
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Şifre sıfırlama işlemi sırasında bir hata oluştu';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -62,13 +62,13 @@ export default function ForgotPassword() {
         <div className="bg-black dark:bg-black p-6 text-center">
           <div className="flex justify-center mb-4">
             <div>
-              <Image 
-                src="/images/sk-logo.png" 
+              <Image
+                src="/images/sk-logo.png"
                 alt="SK Production Logo"
                 width={120}
                 height={40}
                 priority
-                style={{ width: 'auto', height: 'auto' }}
+                className="h-10 w-auto object-contain"
               />
             </div>
           </div>
@@ -117,14 +117,13 @@ export default function ForgotPassword() {
                       setEmail(e.target.value);
                       setError('');
                     }}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-black focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                      error ? 'border-red-500 dark:border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-black focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white ${error ? 'border-red-500 dark:border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="ornek@skproduction.com"
                     disabled={loading}
                   />
                 </div>
-                
+
                 <button
                   type="submit"
                   disabled={loading}

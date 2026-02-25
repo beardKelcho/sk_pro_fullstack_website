@@ -516,7 +516,7 @@ export default function AdminLogin() {
                     width={132}
                     height={44}
                     priority
-                    style={{ width: 'auto', height: 'auto' }}
+                    className="h-11 w-auto object-contain"
                   />
                   <div className="hidden sm:block">
                     <p className="text-sm font-semibold text-white">Admin Girişi</p>

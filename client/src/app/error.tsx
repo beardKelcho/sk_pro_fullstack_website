@@ -32,7 +32,7 @@ export default function Error({
             </div>
           )}
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <button
             onClick={reset}
@@ -47,15 +47,14 @@ export default function Error({
             Ana Sayfaya Dön
           </Link>
         </div>
-        
+
         <div className="mt-12">
           <Image
             src="/images/sk-logo.png"
             alt="SK Production Logo"
             width={120}
             height={40}
-            className="mx-auto opacity-50"
-            style={{ width: 'auto', height: 'auto' }}
+            className="mx-auto opacity-50 h-10 w-auto object-contain"
           />
         </div>
       </div>

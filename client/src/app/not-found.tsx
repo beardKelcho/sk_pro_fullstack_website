@@ -12,7 +12,7 @@ export default function NotFound() {
             Aradığınız sayfa mevcut değil veya taşınmış olabilir.
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/"
@@ -27,15 +27,14 @@ export default function NotFound() {
             Admin Paneli
           </Link>
         </div>
-        
+
         <div className="mt-12">
           <Image
             src="/images/sk-logo.png"
             alt="SK Production Logo"
             width={120}
             height={40}
-            className="mx-auto opacity-50"
-            style={{ width: 'auto', height: 'auto' }}
+            className="mx-auto opacity-50 h-10 w-auto object-contain"
           />
         </div>
       </div>

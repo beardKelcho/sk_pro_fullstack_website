@@ -6,6 +6,9 @@ on:
       - 'v*' # Sadece v ile başlayan tag'ler tetikler (Örn: v1.0.1)
   workflow_dispatch: # Manuel tetiklemeye izin verir
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     name: Build for Windows

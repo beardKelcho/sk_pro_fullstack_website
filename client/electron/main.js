@@ -1,6 +1,6 @@
 const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
-const serve = require('electron-serve').default || require('electron-serve');
+const serve = require('electron-serve');
 const log = require('electron-log');
 const { autoUpdater } = require('electron-updater');
 

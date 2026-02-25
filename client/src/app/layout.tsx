@@ -122,7 +122,8 @@ export default function RootLayout({
                 var isNative = typeof window !== 'undefined' && (window.Capacitor || (window.navigator && window.navigator.userAgent.includes('Electron')));
                 var isRoot = window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '';
                 if (isNative && isRoot) {
-                  window.location.replace('/admin');
+                  // Next.js redirect mekanizmasına bırakmadan DİREKT olarak login sayfasına fırlat
+                  window.location.replace('/admin/login');
                 }
               })();
             `

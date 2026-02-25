@@ -31,8 +31,8 @@ function createWindow() {
     } else {
         // TAMAMEN YEREL (NATIVE) ÇALIŞTIRMA MANTIĞI:
         loadURL(mainWindow).then(() => {
-            // out klasöründeki admin panelini zorunlu aç
-            mainWindow.loadURL('app://-/admin');
+            // out klasöründeki admin panelini zorunlu aç, static HTML dosyasını tam belirt
+            mainWindow.loadURL('app://-/admin/login/index.html');
         });
     }
 
@@ -45,7 +45,7 @@ function createWindow() {
                 // Eğer anasayfaya (web sitesine) gitmeye çalışırsa engelle ve admin'e yönlendir
                 if (pn === '/' || pn === '' || pn === '/index.html') {
                     event.preventDefault();
-                    mainWindow.loadURL('app://-/admin');
+                    mainWindow.loadURL('app://-/admin/login/index.html');
                 }
             }
         } catch (error) {

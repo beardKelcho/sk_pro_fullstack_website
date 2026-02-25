@@ -115,6 +115,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="apple-mobile-web-app-title" content="SK Production" />
         <link rel="apple-touch-icon" href="/images/sk-logo.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var isNative = typeof window !== 'undefined' && (window.Capacitor || (window.navigator && window.navigator.userAgent.includes('Electron')));
+                var isRoot = window.location.pathname === '/' || window.location.pathname === '/index.html' || window.location.pathname === '';
+                if (isNative && isRoot) {
+                  window.location.replace('/admin');
+                }
+              })();
+            `
+          }}
+        />
       </head>
       <body className={`${montserrat.className} antialiased min-h-screen bg-black`} suppressHydrationWarning>
         <LocalizedErrorBoundary>

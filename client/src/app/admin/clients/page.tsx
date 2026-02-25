@@ -6,6 +6,8 @@ import ExportButton from '@/components/admin/ExportButton';
 import { deleteCustomer } from '@/services/customerService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+import PermissionLink from '@/components/common/PermissionLink';
+import { Permission } from '@/config/permissions';
 
 // Müşteri türü tanımlama
 interface Client {
@@ -45,7 +47,7 @@ export default function ClientList() {
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
-  
+
   // Veri yükleme
   useEffect(() => {
     const fetchClients = async () => {
@@ -76,38 +78,38 @@ export default function ClientList() {
         setLoading(false);
       }
     };
-    
+
     fetchClients();
   }, []);
-  
+
   // Filtreleme
   const filteredClients = clients.filter(client => {
-    const matchesSearch = 
+    const matchesSearch =
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.phone.includes(searchTerm);
-    
+
     const matchesIndustry = selectedIndustry === 'Tümü' || client.industry === selectedIndustry;
-    
-    const matchesStatus = 
-      selectedStatus === 'Tümü' || 
+
+    const matchesStatus =
+      selectedStatus === 'Tümü' ||
       (selectedStatus === 'Aktif' && client.status === 'Active') ||
       (selectedStatus === 'Pasif' && client.status === 'Inactive');
-    
+
     return matchesSearch && matchesIndustry && matchesStatus;
   });
-  
+
   // Tarihi formatlama
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('tr-TR', options);
   };
-  
+
   // Müşteri silme işlevi
   const handleDeleteClient = async () => {
     if (!clientToDelete) return;
-    
+
     try {
       await deleteCustomer(clientToDelete);
       setClients(clients.filter(client => client.id !== clientToDelete));
@@ -120,7 +122,7 @@ export default function ClientList() {
       toast.error(errorMessage);
     }
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Üst bölüm - başlık ve ekleme butonu */}
@@ -135,17 +137,20 @@ export default function ClientList() {
             filename="clients-export.csv"
             label="Dışa Aktar"
           />
-          <Link href="/admin/clients/add">
-            <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              Yeni Müşteri Ekle
-            </button>
-          </Link>
+          <PermissionLink
+            permission={Permission.CLIENT_CREATE}
+            href="/admin/clients/add"
+            className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center"
+            disabledMessage="Müşteri oluşturma yetkiniz bulunmamaktadır"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Yeni Müşteri Ekle
+          </PermissionLink>
         </div>
       </div>
-      
+
       {/* Filtreler */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -168,7 +173,7 @@ export default function ClientList() {
               />
             </div>
           </div>
-          
+
           {/* Endüstri filtresi */}
           <div>
             <label htmlFor="industry-filter" className="sr-only">Endüstri</label>
@@ -183,7 +188,7 @@ export default function ClientList() {
               ))}
             </select>
           </div>
-          
+
           {/* Durum filtresi */}
           <div>
             <label htmlFor="status-filter" className="sr-only">Durum</label>
@@ -200,7 +205,7 @@ export default function ClientList() {
           </div>
         </div>
       </div>
-      
+
       {/* Müşteri Tablosu */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         {loading ? (
@@ -229,11 +234,14 @@ export default function ClientList() {
                 Filtreleri Temizle
               </button>
             ) : (
-              <Link href="/admin/clients/add">
-                <button className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none">
-                  Yeni Müşteri Ekle
-                </button>
-              </Link>
+              <PermissionLink
+                permission={Permission.CLIENT_CREATE}
+                href="/admin/clients/add"
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none"
+                disabledMessage="Müşteri oluşturma yetkiniz bulunmamaktadır"
+              >
+                Yeni Müşteri Ekle
+              </PermissionLink>
             )}
           </div>
         ) : (
@@ -291,11 +299,10 @@ export default function ClientList() {
                       <div className="text-sm text-gray-900 dark:text-white">{client.industry}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        client.status === 'Active'
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${client.status === 'Active'
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
                           : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                      }`}>
+                        }`}>
                         {client.status === 'Active' ? 'Aktif' : 'Pasif'}
                       </span>
                     </td>
@@ -314,7 +321,7 @@ export default function ClientList() {
                             Düzenle
                           </button>
                         </Link>
-                        <button 
+                        <button
                           onClick={() => {
                             setClientToDelete(client.id);
                             setShowDeleteModal(true);
@@ -332,7 +339,7 @@ export default function ClientList() {
           </div>
         )}
       </div>
-      
+
       {/* Silme onay modalı */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

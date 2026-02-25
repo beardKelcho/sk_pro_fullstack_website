@@ -174,7 +174,7 @@ export default function TaskList() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Görev verilerini getirme
   useEffect(() => {
     const fetchTasks = async () => {
@@ -190,11 +190,11 @@ export default function TaskList() {
           title: item.title,
           description: item.description || '',
           priority: (item.priority === 'LOW' ? 'Düşük' :
-                   item.priority === 'MEDIUM' ? 'Orta' :
-                   item.priority === 'HIGH' ? 'Yüksek' : 'Acil') as 'Düşük' | 'Orta' | 'Yüksek' | 'Acil',
+            item.priority === 'MEDIUM' ? 'Orta' :
+              item.priority === 'HIGH' ? 'Yüksek' : 'Acil') as 'Düşük' | 'Orta' | 'Yüksek' | 'Acil',
           status: (item.status === 'TODO' ? 'Atandı' :
-                 item.status === 'IN_PROGRESS' ? 'Devam Ediyor' :
-                 item.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
+            item.status === 'IN_PROGRESS' ? 'Devam Ediyor' :
+              item.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
           dueDate: item.dueDate || '',
           assignedTo: typeof item.assignedTo === 'string' ? item.assignedTo : item.assignedTo?._id || item.assignedTo?.id || '',
           relatedProject: typeof item.project === 'string' ? item.project : item.project?._id || item.project?.id || '',
@@ -212,40 +212,40 @@ export default function TaskList() {
     };
     fetchTasks();
   }, []);
-  
+
   // Kullanıcı bilgisini bul
   const findUserById = (userId: string): User | undefined => {
     return sampleUsers.find(user => user.id === userId);
   };
-  
+
   // Proje bilgisini bul
   const findProjectById = (projectId?: string): Project | undefined => {
     if (!projectId) return undefined;
     return sampleProjects.find(project => project.id === projectId);
   };
-  
+
   // Tarihi formatlama
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('tr-TR', options);
   };
-  
+
   // Filtreleme
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = 
+    const matchesSearch =
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesPriority = selectedPriority === 'Tümü' || task.priority === selectedPriority;
     const matchesStatus = selectedStatus === 'Tümü' || task.status === selectedStatus;
-    
-    const matchesAssignee = 
-      selectedAssignee === 'Tümü' || 
+
+    const matchesAssignee =
+      selectedAssignee === 'Tümü' ||
       task.assignedTo === selectedAssignee;
-    
+
     return matchesSearch && matchesPriority && matchesStatus && matchesAssignee;
   });
-  
+
   // Görev silme işlevi
   const handleDeleteTask = async () => {
     if (!taskToDelete) return;
@@ -265,24 +265,24 @@ export default function TaskList() {
       setIsDeleting(false);
     }
   };
-  
+
   // Günleri hesaplama fonksiyonu
   const calculateDaysRemaining = (dueDate: string): number => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const due = new Date(dueDate);
     due.setHours(0, 0, 0, 0);
-    
+
     const timeDiff = due.getTime() - today.getTime();
     return Math.ceil(timeDiff / (1000 * 3600 * 24));
   };
-  
+
   // Son teslim tarihine göre durum belirleme
   const getDueDateStatus = (dueDate: string, status: string): string => {
     if (status === 'Tamamlandı' || status === 'İptal Edildi') return '';
-    
+
     const daysRemaining = calculateDaysRemaining(dueDate);
-    
+
     if (daysRemaining < 0) {
       return 'text-red-600 dark:text-red-400 font-medium';
     } else if (daysRemaining <= 2) {
@@ -291,7 +291,7 @@ export default function TaskList() {
       return '';
     }
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Üst bölüm - başlık ve ekleme butonu */}
@@ -306,17 +306,20 @@ export default function TaskList() {
             filename="tasks-export.csv"
             label="Dışa Aktar"
           />
-          <Link href="/admin/tasks/add">
-            <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-              </svg>
-              Yeni Görev Ekle
-            </button>
-          </Link>
+          <PermissionLink
+            permission={Permission.TASK_CREATE}
+            href="/admin/tasks/add"
+            className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center"
+            disabledMessage="Görev oluşturma yetkiniz bulunmamaktadır"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Yeni Görev Ekle
+          </PermissionLink>
         </div>
       </div>
-      
+
       {/* Filtreler */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
@@ -339,7 +342,7 @@ export default function TaskList() {
               />
             </div>
           </div>
-          
+
           {/* Öncelik filtresi */}
           <div>
             <label htmlFor="priority-filter" className="sr-only">Öncelik</label>
@@ -356,7 +359,7 @@ export default function TaskList() {
               <option value="Acil">Acil</option>
             </select>
           </div>
-          
+
           {/* Durum filtresi */}
           <div>
             <label htmlFor="status-filter" className="sr-only">Durum</label>
@@ -374,7 +377,7 @@ export default function TaskList() {
               <option value="İptal Edildi">İptal Edildi</option>
             </select>
           </div>
-          
+
           {/* Atanan kişi filtresi */}
           <div>
             <label htmlFor="assignee-filter" className="sr-only">Atanan Kişi</label>
@@ -392,7 +395,7 @@ export default function TaskList() {
           </div>
         </div>
       </div>
-      
+
       {/* Görev Tablosu */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         {loading ? (
@@ -422,11 +425,14 @@ export default function TaskList() {
                 Filtreleri Temizle
               </button>
             ) : (
-              <Link href="/admin/tasks/add">
-                <button className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none">
-                  Yeni Görev Ekle
-                </button>
-              </Link>
+              <PermissionLink
+                permission={Permission.TASK_CREATE}
+                href="/admin/tasks/add"
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none"
+                disabledMessage="Görev oluşturma yetkiniz bulunmamaktadır"
+              >
+                Yeni Görev Ekle
+              </PermissionLink>
             )}
           </div>
         ) : (
@@ -460,7 +466,7 @@ export default function TaskList() {
                   const project = findProjectById(task.relatedProject);
                   const daysRemaining = calculateDaysRemaining(task.dueDate);
                   const dueDateClass = getDueDateStatus(task.dueDate, task.status);
-                  
+
                   return (
                     <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -558,7 +564,7 @@ export default function TaskList() {
           </div>
         )}
       </div>
-      
+
       {/* Silme onay modalı */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

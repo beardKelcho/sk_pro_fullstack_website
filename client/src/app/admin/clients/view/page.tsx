@@ -7,6 +7,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ProjectStatus } from '@/types/project';
+import PermissionLink from '@/components/common/PermissionLink';
+import { Permission } from '@/config/permissions';
 
 // Müşteri ve Proje türleri
 interface Client {
@@ -149,55 +151,55 @@ const sampleClients: Client[] = [
 
 // Örnek proje verileri
 const sampleProjects: Project[] = [
-  { 
-    id: '1', 
-    name: 'TechCon 2023 Lansman Etkinliği', 
-    clientId: '1', 
-    status: 'Tamamlandı', 
-    startDate: '2023-03-15', 
-    endDate: '2023-03-16', 
-    budget: 250000, 
-    location: 'Hilton Convention Center, İstanbul' 
+  {
+    id: '1',
+    name: 'TechCon 2023 Lansman Etkinliği',
+    clientId: '1',
+    status: 'Tamamlandı',
+    startDate: '2023-03-15',
+    endDate: '2023-03-16',
+    budget: 250000,
+    location: 'Hilton Convention Center, İstanbul'
   },
-  { 
-    id: '2', 
-    name: 'TechCon Bayi Toplantısı', 
-    clientId: '1', 
-    status: 'Planlanıyor', 
-    startDate: '2023-07-10', 
-    endDate: '2023-07-11', 
-    budget: 175000, 
-    location: 'Wyndham Grand, İzmir' 
+  {
+    id: '2',
+    name: 'TechCon Bayi Toplantısı',
+    clientId: '1',
+    status: 'Planlanıyor',
+    startDate: '2023-07-10',
+    endDate: '2023-07-11',
+    budget: 175000,
+    location: 'Wyndham Grand, İzmir'
   },
-  { 
-    id: '3', 
-    name: 'X Teknoloji Ürün Tanıtımı', 
-    clientId: '2', 
-    status: 'Devam Ediyor', 
-    startDate: '2023-05-20', 
-    endDate: '2023-05-20', 
-    budget: 120000, 
-    location: 'X Teknoloji Genel Merkezi, İstanbul' 
+  {
+    id: '3',
+    name: 'X Teknoloji Ürün Tanıtımı',
+    clientId: '2',
+    status: 'Devam Ediyor',
+    startDate: '2023-05-20',
+    endDate: '2023-05-20',
+    budget: 120000,
+    location: 'X Teknoloji Genel Merkezi, İstanbul'
   },
-  { 
-    id: '4', 
-    name: 'Y İletişim Çekimleri', 
-    clientId: '3', 
-    status: 'Tamamlandı', 
-    startDate: '2023-02-05', 
-    endDate: '2023-02-07', 
-    budget: 85000, 
-    location: 'Y İletişim Stüdyoları, İstanbul' 
+  {
+    id: '4',
+    name: 'Y İletişim Çekimleri',
+    clientId: '3',
+    status: 'Tamamlandı',
+    startDate: '2023-02-05',
+    endDate: '2023-02-07',
+    budget: 85000,
+    location: 'Y İletişim Stüdyoları, İstanbul'
   },
-  { 
-    id: '5', 
-    name: 'Festival Organizasyonu', 
-    clientId: '4', 
-    status: 'Devam Ediyor', 
-    startDate: '2023-06-15', 
-    endDate: '2023-06-18', 
-    budget: 500000, 
-    location: 'KüçükÇiftlik Park, İstanbul' 
+  {
+    id: '5',
+    name: 'Festival Organizasyonu',
+    clientId: '4',
+    status: 'Devam Ediyor',
+    startDate: '2023-06-15',
+    endDate: '2023-06-18',
+    budget: 500000,
+    location: 'KüçükÇiftlik Park, İstanbul'
   }
 ];
 
@@ -205,12 +207,12 @@ function ViewClientContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = (searchParams.get('id') as string);
-  
+
   const [client, setClient] = useState<Client | null>(null);
   const [clientProjects, setClientProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'info' | 'projects' | 'notes'>('info');
-  
+
   // Veri yükleme
   useEffect(() => {
     const fetchClientData = async () => {
@@ -218,10 +220,10 @@ function ViewClientContent() {
       try {
         const { getCustomerById } = await import('@/services/customerService');
         const { projectApi } = await import('@/services/api/project');
-        
+
         // Müşteri bilgilerini çek
         const clientData = await getCustomerById(clientId);
-        
+
         // Backend formatını frontend formatına dönüştür
         const formattedClient = {
           id: clientData._id || clientData.id || '',
@@ -236,9 +238,9 @@ function ViewClientContent() {
           createdAt: clientData.createdAt || new Date().toISOString(),
           notes: clientData.notes || ''
         };
-        
+
         setClient(formattedClient);
-        
+
         // Müşterinin projelerini çek
         try {
           const projectsResponse = await projectApi.getAll();
@@ -253,8 +255,8 @@ function ViewClientContent() {
               name: p.name || '',
               clientId: typeof p.client === 'string' ? p.client : p.client?._id || p.client?.id || '',
               status: (p.status === 'PLANNING' ? 'Planlanıyor' :
-                      p.status === 'ACTIVE' ? 'Devam Ediyor' :
-                      p.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Planlanıyor' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
+                p.status === 'ACTIVE' ? 'Devam Ediyor' :
+                  p.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Planlanıyor' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
               startDate: p.startDate || '',
               endDate: p.endDate || '',
               budget: p.budget || 0,
@@ -265,28 +267,28 @@ function ViewClientContent() {
           logger.error('Projeler yüklenirken hata:', err);
           setClientProjects([]);
         }
-        
+
         setLoading(false);
       } catch (error) {
         logger.error('Veri yükleme hatası:', error);
         setLoading(false);
       }
     };
-    
+
     fetchClientData();
   }, [clientId]);
-  
+
   // Tarihi formatlama
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('tr-TR', options);
   };
-  
+
   // Para birimini formatlama
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
   };
-  
+
   // Müşteri bulunamadı gösterimi
   if (!loading && !client) {
     return (
@@ -298,7 +300,7 @@ function ViewClientContent() {
         <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md">
           Aradığınız müşteri bulunamadı. Müşteri silinmiş olabilir veya geçersiz bir ID belirtmiş olabilirsiniz.
         </p>
-        <button 
+        <button
           onClick={() => router.push('/admin/clients')}
           className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors"
         >
@@ -307,7 +309,7 @@ function ViewClientContent() {
       </div>
     );
   }
-  
+
   return (
     <div className="space-y-6">
       {loading ? (
@@ -335,16 +337,15 @@ function ViewClientContent() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap gap-2">
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  client?.status === 'Active'
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                }`}>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${client?.status === 'Active'
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                  }`}>
                   {client?.status === 'Active' ? 'Aktif' : 'Pasif'}
                 </span>
-                
+
                 <Link href={`/admin/clients/edit?id=${client?.id}`}>
                   <button className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -353,8 +354,8 @@ function ViewClientContent() {
                     Düzenle
                   </button>
                 </Link>
-                
-                <button 
+
+                <button
                   onClick={() => router.push('/admin/clients')}
                   className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
@@ -366,103 +367,100 @@ function ViewClientContent() {
               </div>
             </div>
           </div>
-          
+
           {/* Tab menüsü */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-1 mb-4">
             <div className="flex">
               <button
                 onClick={() => setActiveTab('info')}
-                className={`flex-1 py-3 px-4 text-center rounded-md transition-colors ${
-                  activeTab === 'info'
-                    ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light font-medium'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/30'
-                }`}
+                className={`flex-1 py-3 px-4 text-center rounded-md transition-colors ${activeTab === 'info'
+                  ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light font-medium'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/30'
+                  }`}
               >
                 Müşteri Bilgileri
               </button>
               <button
                 onClick={() => setActiveTab('projects')}
-                className={`flex-1 py-3 px-4 text-center rounded-md transition-colors ${
-                  activeTab === 'projects'
-                    ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light font-medium'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/30'
-                }`}
+                className={`flex-1 py-3 px-4 text-center rounded-md transition-colors ${activeTab === 'projects'
+                  ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light font-medium'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/30'
+                  }`}
               >
                 Projeler ({clientProjects.length})
               </button>
               <button
                 onClick={() => setActiveTab('notes')}
-                className={`flex-1 py-3 px-4 text-center rounded-md transition-colors ${
-                  activeTab === 'notes'
-                    ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light font-medium'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/30'
-                }`}
+                className={`flex-1 py-3 px-4 text-center rounded-md transition-colors ${activeTab === 'notes'
+                  ? 'bg-[#0066CC]/10 dark:bg-primary-light/10 text-[#0066CC] dark:text-primary-light font-medium'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/30'
+                  }`}
               >
                 Notlar
               </button>
             </div>
           </div>
-          
+
           {/* Müşteri Bilgileri Tab İçeriği */}
           {activeTab === 'info' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Sol kolon - Temel Bilgiler */}
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                 <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">İletişim Bilgileri</h2>
-                
+
                 <div className="space-y-4">
                   <div className="flex flex-col">
                     <span className="text-sm text-gray-500 dark:text-gray-400">İletişim Kişisi</span>
                     <span className="text-gray-800 dark:text-white font-medium mt-1">{client?.contactPerson}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-sm text-gray-500 dark:text-gray-400">E-posta</span>
                     <span className="text-gray-800 dark:text-white font-medium mt-1">{client?.email}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-sm text-gray-500 dark:text-gray-400">Telefon</span>
                     <span className="text-gray-800 dark:text-white font-medium mt-1">{client?.phone}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-sm text-gray-500 dark:text-gray-400">Adres</span>
                     <span className="text-gray-800 dark:text-white font-medium mt-1">{client?.address}</span>
                   </div>
-                  
+
                   <div className="flex flex-col">
                     <span className="text-sm text-gray-500 dark:text-gray-400">Endüstri</span>
                     <span className="text-gray-800 dark:text-white font-medium mt-1">{client?.industry}</span>
                   </div>
                 </div>
               </div>
-              
+
               {/* Sağ kolon - Özet Bilgiler */}
               <div className="space-y-6">
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Özet Bilgiler</h2>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                       <p className="text-sm text-gray-500 dark:text-gray-400">Toplam Proje</p>
                       <p className="text-2xl font-bold text-[#0066CC] dark:text-primary-light">{client?.projectCount}</p>
                     </div>
-                    
+
                     <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                       <p className="text-sm text-gray-500 dark:text-gray-400">Aktif Projeler</p>
                       <p className="text-2xl font-bold text-[#0066CC] dark:text-primary-light">
                         {clientProjects.filter(p => p.status === 'Devam Ediyor' || p.status === 'Planlanıyor').length}
                       </p>
                     </div>
-                    
+
                     <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                       <p className="text-sm text-gray-500 dark:text-gray-400">Tamamlanan Projeler</p>
                       <p className="text-2xl font-bold text-[#0066CC] dark:text-primary-light">
                         {clientProjects.filter(p => p.status === 'Tamamlandı').length}
                       </p>
                     </div>
-                    
+
                     <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
                       <p className="text-sm text-gray-500 dark:text-gray-400">İptal Edilen Projeler</p>
                       <p className="text-2xl font-bold text-[#0066CC] dark:text-primary-light">
@@ -471,21 +469,20 @@ function ViewClientContent() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
                   <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Müşteri Durumu</h2>
-                  
+
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-gray-600 dark:text-gray-300">Müşteri İlişkisi</span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      client?.status === 'Active'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                    }`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${client?.status === 'Active'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                      }`}>
                       {client?.status === 'Active' ? 'Aktif' : 'Pasif'}
                     </span>
                   </div>
-                  
+
                   <div className="mt-4">
                     <Link href={`/admin/clients/edit?id=${client?.id}`}>
                       <button className="w-full px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors">
@@ -497,7 +494,7 @@ function ViewClientContent() {
               </div>
             </div>
           )}
-          
+
           {/* Projeler Tab İçeriği */}
           {activeTab === 'projects' && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
@@ -509,17 +506,20 @@ function ViewClientContent() {
                       {client?.name} ile ilişkili tüm projeler ({clientProjects.length})
                     </p>
                   </div>
-                  <Link href="/admin/projects/add">
-                    <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                      </svg>
-                      Yeni Proje Ekle
-                    </button>
-                  </Link>
+                  <PermissionLink
+                    permission={Permission.PROJECT_CREATE}
+                    href="/admin/projects/add"
+                    className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center"
+                    disabledMessage="Proje oluşturma yetkiniz bulunmamaktadır"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Yeni Proje Ekle
+                  </PermissionLink>
                 </div>
               </div>
-              
+
               {clientProjects.length === 0 ? (
                 <div className="text-center py-12">
                   <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -527,11 +527,14 @@ function ViewClientContent() {
                   </svg>
                   <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-100">Proje Bulunamadı</h3>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Bu müşteri ile ilişkili herhangi bir proje bulunmamaktadır.</p>
-                  <Link href="/admin/projects/add">
-                    <button className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none">
-                      Yeni Proje Ekle
-                    </button>
-                  </Link>
+                  <PermissionLink
+                    permission={Permission.PROJECT_CREATE}
+                    href="/admin/projects/add"
+                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none"
+                    disabledMessage="Proje oluşturma yetkiniz bulunmamaktadır"
+                  >
+                    Yeni Proje Ekle
+                  </PermissionLink>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -563,15 +566,14 @@ function ViewClientContent() {
                             <div className="text-sm text-gray-500 dark:text-gray-400">{project.location}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              project.status === 'Planlanıyor'
-                                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
-                                : project.status === 'Devam Ediyor'
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.status === 'Planlanıyor'
+                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
+                              : project.status === 'Devam Ediyor'
                                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400'
                                 : project.status === 'Tamamlandı'
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                            }`}>
+                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                                  : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                              }`}>
                               {project.status}
                             </span>
                           </td>
@@ -600,12 +602,12 @@ function ViewClientContent() {
               )}
             </div>
           )}
-          
+
           {/* Notlar Tab İçeriği */}
           {activeTab === 'notes' && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Müşteri Notları</h2>
-              
+
               {client?.notes ? (
                 <div className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-4">
                   <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{client.notes}</p>
@@ -630,7 +632,7 @@ function ViewClientContent() {
       )}
     </div>
   );
-} 
+}
 export default function ViewClient() {
   return (
     <Suspense fallback={

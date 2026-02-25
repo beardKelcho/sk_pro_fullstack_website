@@ -7,6 +7,8 @@ import { getAllCustomers, deleteCustomer, getStatusLabel, industries, cities } f
 import type { Customer } from '@/services/customerService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+import PermissionLink from '@/components/common/PermissionLink';
+import { Permission } from '@/config/permissions';
 
 // Renk ayarları
 const statusColors = {
@@ -19,18 +21,18 @@ export default function CustomerList() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Filtre state'leri
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState<string>('Tümü');
   const [selectedCity, setSelectedCity] = useState<string>('Tümü');
   const [selectedStatus, setSelectedStatus] = useState<string>('Tümü');
-  
+
   // Modal state'leri
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Müşteri verilerini getir
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -47,23 +49,23 @@ export default function CustomerList() {
     };
     fetchCustomers();
   }, []);
-  
+
   // Filtreleme
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = 
+    const matchesSearch =
       (customer.companyName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (customer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (customer.phone || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const customerAny = customer as any;
     const matchesIndustry = selectedIndustry === 'Tümü' || customerAny.industry === selectedIndustry;
     const matchesCity = selectedCity === 'Tümü' || customerAny.city === selectedCity;
     const matchesStatus = selectedStatus === 'Tümü' || customerAny.status === selectedStatus;
-    
+
     return matchesSearch && matchesIndustry && matchesCity && matchesStatus;
   });
-  
+
   // Müşteri silme
   const handleDeleteCustomer = async () => {
     if (!customerToDelete) return;
@@ -83,7 +85,7 @@ export default function CustomerList() {
       setIsDeleting(false);
     }
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Üst bölüm - başlık ve ekleme butonu */}
@@ -92,16 +94,19 @@ export default function CustomerList() {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Müşteri Yönetimi</h1>
           <p className="mt-1 text-gray-600 dark:text-gray-300">Müşteri kayıtlarını yönetin</p>
         </div>
-        <Link href="/admin/customers/add">
-          <button className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-            Yeni Müşteri Ekle
-          </button>
-        </Link>
+        <PermissionLink
+          permission={Permission.CLIENT_CREATE}
+          href="/admin/customers/add"
+          className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors flex items-center"
+          disabledMessage="Müşteri oluşturma yetkiniz bulunmamaktadır"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Yeni Müşteri Ekle
+        </PermissionLink>
       </div>
-      
+
       {/* Filtreler */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
@@ -124,7 +129,7 @@ export default function CustomerList() {
               />
             </div>
           </div>
-          
+
           {/* Sektör filtresi */}
           <div>
             <label htmlFor="industry-filter" className="sr-only">Sektör</label>
@@ -140,7 +145,7 @@ export default function CustomerList() {
               ))}
             </select>
           </div>
-          
+
           {/* Şehir filtresi */}
           <div>
             <label htmlFor="city-filter" className="sr-only">Şehir</label>
@@ -156,7 +161,7 @@ export default function CustomerList() {
               ))}
             </select>
           </div>
-          
+
           {/* Durum filtresi */}
           <div>
             <label htmlFor="status-filter" className="sr-only">Durum</label>
@@ -173,7 +178,7 @@ export default function CustomerList() {
           </div>
         </div>
       </div>
-      
+
       {/* Müşteri Listesi */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         {loading ? (
@@ -203,11 +208,14 @@ export default function CustomerList() {
                 Filtreleri Temizle
               </button>
             ) : (
-              <Link href="/admin/customers/add">
-                <button className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none">
-                  Yeni Müşteri Ekle
-                </button>
-              </Link>
+              <PermissionLink
+                permission={Permission.CLIENT_CREATE}
+                href="/admin/customers/add"
+                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary focus:outline-none"
+                disabledMessage="Müşteri oluşturma yetkiniz bulunmamaktadır"
+              >
+                Yeni Müşteri Ekle
+              </PermissionLink>
             )}
           </div>
         ) : (
@@ -240,7 +248,7 @@ export default function CustomerList() {
                   const customerAny = customer as any;
                   return (
                     <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">{customer.companyName || customer.name || ''}</div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">{customer.name || ''}</div>
@@ -281,7 +289,7 @@ export default function CustomerList() {
                               Düzenle
                             </button>
                           </Link>
-                          <button 
+                          <button
                             onClick={() => {
                               setCustomerToDelete(customer.id || null);
                               setShowDeleteModal(true);
@@ -300,7 +308,7 @@ export default function CustomerList() {
           </div>
         )}
       </div>
-      
+
       {/* Silme onay modalı */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -337,4 +345,3 @@ export default function CustomerList() {
     </div>
   );
 }
- 

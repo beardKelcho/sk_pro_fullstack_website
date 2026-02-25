@@ -1,6 +1,7 @@
-const { app, BrowserWindow, dialog, protocol } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
-const fs = require('fs');
+// require('electron-serve') modülünü kullanıyoruz (import sorunu için .default fallback)
+const serve = require('electron-serve').default || require('electron-serve');
 const log = require('electron-log');
 const { autoUpdater } = require('electron-updater');
 
@@ -11,39 +12,8 @@ log.info('App starting...');
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
-// Özel Electron dosya sunucusu (Next.js statik export yapısını %100 destekler)
-function registerNextJSScheme() {
-    protocol.registerFileProtocol('app', (request, callback) => {
-        const url = new URL(request.url);
-        let pathname = decodeURIComponent(url.pathname);
-        if (pathname === '/' || pathname === '') pathname = '/admin'; // Ana rotayı her zaman admin yap
-
-        const outPath = path.join(__dirname, '../out');
-        let filePath = path.join(outPath, pathname);
-
-        // Dosya mevcut mu kontrolcü
-        const stat = (p) => { try { return fs.statSync(p); } catch (e) { return null; } };
-
-        let finalPath = '';
-        if (stat(filePath) && stat(filePath).isFile()) {
-            finalPath = filePath;
-        } else if (stat(filePath + '.html')) {
-            finalPath = filePath + '.html';
-        } else if (stat(path.join(filePath, 'index.html'))) {
-            finalPath = path.join(filePath, 'index.html');
-        } else {
-            // Hiçbiri yoksa her zaman admin.html fallback!
-            finalPath = path.join(outPath, 'admin.html');
-        }
-
-        callback({ path: finalPath });
-    });
-}
-
-// Güvenli scheme ayarı
-protocol.registerSchemesAsPrivileged([
-    { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
-]);
+// electron-serve konfigürasyonu (out klasörünü native servis eder)
+const loadURL = serve({ directory: path.join(__dirname, '../out') });
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -59,19 +29,23 @@ function createWindow() {
         mainWindow.loadURL('http://localhost:3000/admin');
         mainWindow.webContents.openDevTools();
     } else {
-        mainWindow.loadURL('app://-/admin/login');
+        // TAMAMEN YEREL (NATIVE) ÇALIŞTIRMA MANTIĞI:
+        loadURL(mainWindow).then(() => {
+            // out klasöründeki admin panelini zorunlu aç
+            mainWindow.loadURL('app://-/admin/login/');
+        });
     }
 
-    // Uygulama içerisinden public web sitelerine veya anasayfaya (/) kaçışı tamamen kilitler
+    // Uygulama içerisinden public web sitelerine veya anasayfaya (/) sızmayı TAMAMEN KİLİTLİYORUZ.
     mainWindow.webContents.on('will-navigate', (event, url) => {
         try {
             const parsedUrl = new URL(url);
             if (parsedUrl.protocol === 'app:') {
                 const pn = parsedUrl.pathname;
-                // Anasayfaya kaçışı engelle
+                // Eğer anasayfaya (web sitesine) gitmeye çalışırsa engelle ve admin'e yönlendir
                 if (pn === '/' || pn === '' || pn === '/index.html') {
                     event.preventDefault();
-                    mainWindow.loadURL('app://-/admin/login');
+                    mainWindow.loadURL('app://-/admin/login/');
                 }
             }
         } catch (error) {
@@ -81,7 +55,6 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    registerNextJSScheme();
     createWindow();
 
     app.on('activate', function () {

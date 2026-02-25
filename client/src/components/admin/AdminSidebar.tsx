@@ -153,6 +153,7 @@ const initialMenuItems: MenuItem[] = [
         title: 'Yeni Proje Ekle',
         path: '/admin/projects/add',
         icon: <></>,
+        roles: [Role.ADMIN, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI],
       },
     ],
   },
@@ -175,6 +176,7 @@ const initialMenuItems: MenuItem[] = [
         title: 'Yeni Müşteri Ekle',
         path: '/admin/clients/add',
         icon: <></>,
+        roles: [Role.ADMIN, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI],
       },
     ],
   },
@@ -197,6 +199,7 @@ const initialMenuItems: MenuItem[] = [
         title: 'Görev Ekle',
         path: '/admin/tasks/add',
         icon: <></>,
+        roles: [Role.ADMIN, Role.FIRMA_SAHIBI, Role.PROJE_YONETICISI],
       },
     ],
   },
@@ -323,14 +326,31 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
 
   // Menu items filtering
   const menuItems = useMemo(() => {
-    return initialMenuItems.filter(item => {
-      // Eğer role kısıtlaması varsa kontrol et
-      if (item.roles && item.roles.length > 0) {
-        if (!userRole) return false; // Rol henüz yüklenmediyse gizle
-        return item.roles.includes(userRole);
-      }
-      return true;
-    });
+    return initialMenuItems
+      .filter(item => {
+        // Eğer role kısıtlaması varsa kontrol et
+        if (item.roles && item.roles.length > 0) {
+          if (!userRole) return false; // Rol henüz yüklenmediyse gizle
+          return item.roles.includes(userRole);
+        }
+        return true;
+      })
+      .map(item => {
+        // Eğer alt menüsü varsa, alt menüleri de rollerine göre filtrele
+        if (item.submenu) {
+          return {
+            ...item,
+            submenu: item.submenu.filter(subItem => {
+              if (subItem.roles && subItem.roles.length > 0) {
+                if (!userRole) return false;
+                return subItem.roles.includes(userRole);
+              }
+              return true;
+            })
+          };
+        }
+        return item;
+      });
   }, [userRole]);
 
   const isActive = useCallback((path: string) => {

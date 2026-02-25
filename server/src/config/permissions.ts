@@ -6,52 +6,52 @@ export enum Permission {
   USER_UPDATE = 'user:update',
   USER_DELETE = 'user:delete',
   USER_MANAGE_ROLES = 'user:manage_roles',
-  
+
   // Proje yönetimi
   PROJECT_VIEW = 'project:view',
   PROJECT_CREATE = 'project:create',
   PROJECT_UPDATE = 'project:update',
   PROJECT_DELETE = 'project:delete',
-  
+
   // Görev yönetimi
   TASK_VIEW = 'task:view',
   TASK_CREATE = 'task:create',
   TASK_UPDATE = 'task:update',
   TASK_DELETE = 'task:delete',
-  
+
   // Müşteri yönetimi
   CLIENT_VIEW = 'client:view',
   CLIENT_CREATE = 'client:create',
   CLIENT_UPDATE = 'client:update',
   CLIENT_DELETE = 'client:delete',
-  
+
   // Ekipman yönetimi
   EQUIPMENT_VIEW = 'equipment:view',
   EQUIPMENT_CREATE = 'equipment:create',
   EQUIPMENT_UPDATE = 'equipment:update',
   EQUIPMENT_DELETE = 'equipment:delete',
-  
+
   // Bakım yönetimi
   MAINTENANCE_VIEW = 'maintenance:view',
   MAINTENANCE_CREATE = 'maintenance:create',
   MAINTENANCE_UPDATE = 'maintenance:update',
   MAINTENANCE_DELETE = 'maintenance:delete',
-  
+
   // Export
   EXPORT_DATA = 'export:data',
-  
+
   // Upload/File
   FILE_VIEW = 'file:view',
   FILE_UPLOAD = 'file:upload',
   FILE_DELETE = 'file:delete',
-  
+
   // QR Kod yönetimi
   QR_VIEW = 'qr:view',
   QR_CREATE = 'qr:create',
   QR_UPDATE = 'qr:update',
   QR_DELETE = 'qr:delete',
   QR_SCAN = 'qr:scan',
-  
+
   // Audit Log
   VIEW_AUDIT_LOGS = 'audit:view',
 
@@ -117,7 +117,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.EMAIL_TEMPLATE_MANAGE,
     Permission.ANALYTICS_VIEW,
   ],
-  
+
   [Role.FIRMA_SAHIBI]: [
     // Firma sahibi admin ile aynı yetkilere sahip
     Permission.USER_VIEW,
@@ -159,7 +159,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.EMAIL_TEMPLATE_MANAGE,
     Permission.ANALYTICS_VIEW,
   ],
-  
+
   [Role.PROJE_YONETICISI]: [
     // Proje: Tam yetki
     Permission.PROJECT_VIEW,
@@ -190,7 +190,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     // Dosya: Yükleme
     Permission.FILE_UPLOAD,
   ],
-  
+
   [Role.DEPO_SORUMLUSU]: [
     // Ekipman: Tam yetki
     Permission.EQUIPMENT_VIEW,
@@ -204,6 +204,8 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.MAINTENANCE_DELETE,
     // Proje: Sadece görüntüleme (görev giremez)
     Permission.PROJECT_VIEW,
+    // Görev: Sadece görüntüleme (atandığı görevler ve liste okuması)
+    Permission.TASK_VIEW,
     // Müşteri: Sadece görüntüleme
     Permission.CLIENT_VIEW,
     // Export: Veri dışa aktarma
@@ -218,7 +220,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     Permission.FILE_UPLOAD,
     Permission.FILE_DELETE,
   ],
-  
+
   [Role.TEKNISYEN]: [
     // Teknisyen: Sadece görüntüleme yetkisi (okuma yetkisi)
     // Hiçbir veri oluşturma/güncelleme/silme yetkisi yok
@@ -240,7 +242,7 @@ export const hasPermission = (userRole: string, permission: Permission, userPerm
   if (userPermissions && userPermissions.includes(permission)) {
     return true;
   }
-  
+
   // Özel yetkiler yoksa rol yetkilerine bak
   const role = userRole as Role;
   if (!rolePermissions[role]) {

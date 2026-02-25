@@ -72,7 +72,8 @@ const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:3000',
   process.env.CORS_ORIGIN,
   'https://skpro.com.tr',
-  'https://www.skpro.com.tr'
+  'https://www.skpro.com.tr',
+  'app://-' // Electron masaüstü uygulaması için izin verilen origin
 ].filter(Boolean); // undefined/null değerleri filtrele
 
 // Development modunda local network IP'lerine izin ver

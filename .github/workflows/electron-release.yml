@@ -1,0 +1,66 @@
+name: Electron Release Build
+
+on:
+  push:
+    tags:
+      - 'v*' # Sadece v ile başlayan tag'ler tetikler (Örn: v1.0.1)
+  workflow_dispatch: # Manuel tetiklemeye izin verir
+
+jobs:
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-latest
+    
+    steps:
+      - name: Kodu Checkout Yap
+        uses: actions/checkout@v4
+
+      - name: Node.js Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22' # Stabil Node.js sürümü
+          cache: 'npm'
+          cache-dependency-path: 'client/package-lock.json'
+
+      - name: Bağımlılıkları Yükle
+        working-directory: ./client
+        run: npm ci
+
+      - name: Next.js Projesini Derle
+        working-directory: ./client
+        run: npm run build
+
+      - name: Electron Builder ile Windows (.exe) Paketle ve Yayınla
+        working-directory: ./client
+        run: npx electron-builder --win --publish always
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos:
+    name: Build for macOS
+    runs-on: macos-latest
+    
+    steps:
+      - name: Kodu Checkout Yap
+        uses: actions/checkout@v4
+
+      - name: Node.js Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'client/package-lock.json'
+
+      - name: Bağımlılıkları Yükle
+        working-directory: ./client
+        run: npm ci
+
+      - name: Next.js Projesini Derle
+        working-directory: ./client
+        run: npm run build
+
+      - name: Electron Builder ile macOS (.dmg) Paketle ve Yayınla
+        working-directory: ./client
+        run: npx electron-builder --mac --publish always
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

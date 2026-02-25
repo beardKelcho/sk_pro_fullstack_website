@@ -15,8 +15,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "skproduction",
-        "repo": "skpro-app"
+        "owner": "beardKelcho",
+        "repo": "sk_pro_fullstack_website"
       }
     ],
     "directories": {

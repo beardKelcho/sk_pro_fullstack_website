@@ -59,8 +59,25 @@ function createWindow() {
         mainWindow.loadURL('http://localhost:3000/admin');
         mainWindow.webContents.openDevTools();
     } else {
-        mainWindow.loadURL('app://-/admin.html');
+        mainWindow.loadURL('app://-/admin/login');
     }
+
+    // Uygulama içerisinden public web sitelerine veya anasayfaya (/) kaçışı tamamen kilitler
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        try {
+            const parsedUrl = new URL(url);
+            if (parsedUrl.protocol === 'app:') {
+                const pn = parsedUrl.pathname;
+                // Anasayfaya kaçışı engelle
+                if (pn === '/' || pn === '' || pn === '/index.html') {
+                    event.preventDefault();
+                    mainWindow.loadURL('app://-/admin/login');
+                }
+            }
+        } catch (error) {
+            log.error('Navigation error caught:', error);
+        }
+    });
 }
 
 app.whenReady().then(() => {

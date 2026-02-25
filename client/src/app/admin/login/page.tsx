@@ -39,7 +39,8 @@ export default function AdminLogin() {
             if (process.env.NODE_ENV === 'development') {
               logger.info('Valid token found, redirecting to dashboard...');
             }
-            window.location.href = '/admin/dashboard';
+            router.replace('/admin/dashboard');
+            router.refresh();
             return;
           }
         } catch (error) {
@@ -332,7 +333,8 @@ export default function AdminLogin() {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // Dashboard'a yönlendir - full page reload ile
-        window.location.href = '/admin/dashboard';
+        router.replace('/admin/dashboard');
+        router.refresh();
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
         logger.error('Login failed:', errorMsg);
@@ -434,7 +436,8 @@ export default function AdminLogin() {
         // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
         // Sonra dashboard'a yönlendir - window.location.href kullan (full page reload)
         await new Promise(resolve => setTimeout(resolve, 100));
-        window.location.href = '/admin/dashboard';
+        router.replace('/admin/dashboard');
+        router.refresh();
       } else {
         setLoginError(response.message || '2FA doğrulama başarısız');
       }

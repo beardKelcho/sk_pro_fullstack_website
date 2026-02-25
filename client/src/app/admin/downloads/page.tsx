@@ -1,8 +1,45 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const DownloadPage = () => {
+    // Statik yedek linkler
+    const defaultRepoUrl = "https://github.com/beardKelcho/sk_pro_fullstack_website/releases/latest";
+    const [downloadLinks, setDownloadLinks] = useState({
+        mac: defaultRepoUrl,
+        win: defaultRepoUrl,
+        android: defaultRepoUrl
+    });
+
+    const [version, setVersion] = useState("Yükleniyor...");
+
+    useEffect(() => {
+        // Github API'den dinamik olarak en son sürümün bilgilerini al
+        fetch('https://api.github.com/repos/beardKelcho/sk_pro_fullstack_website/releases/latest')
+            .then(res => res.json())
+            .then(data => {
+                if (data.assets && data.assets.length > 0) {
+                    setVersion(data.tag_name || 'En Son Sürüm');
+
+                    const macAsset = data.assets.find((a: any) => a.name.endsWith('.dmg'));
+                    const winAsset = data.assets.find((a: any) => a.name.endsWith('.exe'));
+                    const apkAsset = data.assets.find((a: any) => a.name.endsWith('.apk'));
+
+                    setDownloadLinks({
+                        mac: macAsset ? macAsset.browser_download_url : downloadLinks.mac,
+                        win: winAsset ? winAsset.browser_download_url : downloadLinks.win,
+                        android: apkAsset ? apkAsset.browser_download_url : downloadLinks.android
+                    });
+                } else {
+                    setVersion('Sürüm Bulunamadı');
+                }
+            })
+            .catch(err => {
+                console.error("En son sürüm bilgileri alınamadı:", err);
+                setVersion('Bağlantı Hatası');
+            });
+    }, []);
+
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -11,7 +48,7 @@ const DownloadPage = () => {
                         Masaüstü & Mobil Uygulamalar
                     </h1>
                     <p className="mt-2 text-gray-600 dark:text-gray-400">
-                        Sistemi tüm işletim sistemlerinde tarayıcı sekmesi olmadan daha yüksek performans ile kullanmak için işletim sisteminize uygun uygulamayı indirin.
+                        Sistemi tüm işletim sistemlerinde tarayıcı sekmesi olmadan daha yüksek performans ile kullanmak için <strong className="text-[#0066CC] dark:text-primary-light">{version}</strong> uygulamasını indirin.
                     </p>
                 </div>
             </div>
@@ -29,7 +66,7 @@ const DownloadPage = () => {
                         Apple M1/M2/M3 ve Intel işlemcili tüm Mac bilgisayarlar için tam erişimlidir.
                     </p>
                     <div className="flex flex-col gap-3">
-                        <a href="https://github.com/beardKelcho/sk_pro_fullstack_website/releases/download/v0.1.0-beta/SK-Production-mac-arm64.dmg" target="_blank" rel="noopener noreferrer" className="block w-full text-center py-3 bg-[#0066CC] hover:bg-[#0052a3] text-white rounded-lg transition-colors font-medium">
+                        <a href={downloadLinks.mac} target="_blank" rel="noopener noreferrer" className="block w-full text-center py-3 bg-[#0066CC] hover:bg-[#0052a3] text-white rounded-lg transition-colors font-medium">
                             Apple Silicon (M1/M2/M3)
                         </a>
                         <button disabled className="block w-full text-center py-3 bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-500 rounded-lg font-medium shadow-sm cursor-not-allowed" title="Intel derlemesi CI sunucusu üzerinden otomatik indirilecektir.">
@@ -50,7 +87,7 @@ const DownloadPage = () => {
                         Windows 10 ve 11 (64-bit) işletim sistemiyle tam optimizasyon sağlar.
                     </p>
                     <div className="flex flex-col gap-3">
-                        <a href="https://github.com/beardKelcho/sk_pro_fullstack_website/releases/download/v0.1.0-beta/SK-Production-win-x64.exe" target="_blank" rel="noopener noreferrer" className="block w-full text-center py-3 bg-[#0078D7] hover:bg-[#005fb8] text-white rounded-lg transition-colors font-medium shadow-md">
+                        <a href={downloadLinks.win} target="_blank" rel="noopener noreferrer" className="block w-full text-center py-3 bg-[#0078D7] hover:bg-[#005fb8] text-white rounded-lg transition-colors font-medium shadow-md">
                             Windows İndir (x64)
                         </a>
                         <button disabled className="block w-full text-center py-3 bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-500 rounded-lg font-medium shadow-sm cursor-not-allowed">
@@ -104,7 +141,7 @@ const DownloadPage = () => {
                         <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
                             Android cihazınıza SK Production uygulamasını direkt market kullanmadan indirebilir ve kurabilirsiniz.
                         </p>
-                        <a href="https://github.com/beardKelcho/sk_pro_fullstack_website/releases/download/v0.1.0-beta/SK-Production.apk" target="_blank" rel="noopener noreferrer" className="block w-full text-center py-2.5 bg-[#3DDC84] hover:bg-[#34BE71] text-white rounded-lg transition-colors font-medium shadow-sm">
+                        <a href={downloadLinks.android} target="_blank" rel="noopener noreferrer" className="block w-full text-center py-2.5 bg-[#3DDC84] hover:bg-[#34BE71] text-white rounded-lg transition-colors font-medium shadow-sm">
                             Android (APK) İndir
                         </a>
                     </div>

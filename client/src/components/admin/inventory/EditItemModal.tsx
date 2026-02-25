@@ -80,7 +80,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ isOpen, onClose, onSucces
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ürün Adı *</label>
                                 <input
                                     type="text"
-                                    required
                                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -89,7 +88,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({ isOpen, onClose, onSucces
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori *</label>
                                 <select
-                                    required
                                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     value={formData.category}
                                     onChange={e => setFormData({ ...formData, category: e.target.value })}

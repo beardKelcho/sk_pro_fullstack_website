@@ -25,8 +25,8 @@ export interface IEquipment extends Omit<Document, 'model'> {
 }
 
 const SubComponentSchema = new Schema({
-  name: { type: String, required: true },
-  type: { type: String, required: true }, // 'GPU', 'CPU', 'RAM', etc.
+  name: { type: String },
+  type: { type: String }, // 'GPU', 'CPU', 'RAM', etc.
   serialNumber: { type: String, trim: true },
   specs: { type: String, trim: true }
 }, { _id: false });
@@ -35,20 +35,17 @@ const EquipmentSchema: Schema = new Schema(
   {
     name: {
       type: String,
-      required: [true, 'Ekipman adı gereklidir'],
       trim: true,
     },
     subComponents: [SubComponentSchema],
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
-      required: [true, 'Kategori gereklidir'],
       index: true,
     },
     location: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Location',
-      required: [true, 'Lokasyon gereklidir'],
       index: true,
     },
     currentProject: {
@@ -60,7 +57,6 @@ const EquipmentSchema: Schema = new Schema(
     trackingType: {
       type: String,
       enum: ['SERIALIZED', 'BULK'],
-      required: true,
       default: 'BULK',
     },
     serialNumber: {

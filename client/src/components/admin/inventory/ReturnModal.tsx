@@ -80,7 +80,6 @@ export default function ReturnModal({ isOpen, onClose, onSuccess, item }: Return
                                     type="number"
                                     min="1"
                                     max={item?.quantity}
-                                    required
                                     className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white"
                                     value={quantity}
                                     onChange={e => setQuantity(Number(e.target.value))}

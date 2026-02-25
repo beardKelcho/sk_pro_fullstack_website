@@ -6,6 +6,12 @@
   "build": {
     "appId": "com.skproduction.app",
     "productName": "SK Production",
+    "files": [
+      "out/**/*",
+      "electron/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
     "publish": [
       {
         "provider": "github",

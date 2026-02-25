@@ -104,7 +104,19 @@ autoUpdater.on('update-downloaded', (info) => {
     };
 
     dialog.showMessageBox(dialogOpts).then((returnValue) => {
-        if (returnValue.response === 0) autoUpdater.quitAndInstall(); // Onaylanırsa kurar
+        if (returnValue.response === 0) {
+            // Açık kalan tüm pencerelerin yükleyiciyi bloke etmemesi için zorla kapat
+            app.removeAllListeners('window-all-closed');
+            const windows = BrowserWindow.getAllWindows();
+            if (windows.length) {
+                windows.forEach((w) => w.close());
+            }
+
+            // UI thread'ini rahatlatıp yükleyiciyi başlat
+            setImmediate(() => {
+                autoUpdater.quitAndInstall(false, true); // (isSilent, isForceRunAfter)
+            });
+        }
     });
 });
 /* ----------------------------------------- */

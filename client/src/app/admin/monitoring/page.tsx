@@ -29,13 +29,13 @@ export default function MonitoringPage() {
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h2 className="text-red-800 font-semibold mb-2">Hata</h2>
-          <p className="text-red-600">
-            Monitoring verileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 animate-pulse">
+          <h2 className="text-yellow-800 font-semibold mb-2">Bağlantı Bekleniyor / Yetki Yenileniyor</h2>
+          <p className="text-yellow-700">
+            Monitoring sunucusuyla iletişim şu an beklemede. Veri güvenliği için bu sayfada tutuluyorsunuz, bağlantı/token sağlandığında grafikler otomatik gelecektir.
           </p>
         </div>
       </div>
@@ -91,8 +91,8 @@ export default function MonitoringPage() {
               key={range}
               onClick={() => setTimeRange(range)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${timeRange === range
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               {range === '1h' ? '1 Saat' : range === '24h' ? '24 Saat' : range === '7d' ? '7 Gün' : '30 Gün'}

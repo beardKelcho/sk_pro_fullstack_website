@@ -88,12 +88,18 @@ apiClient.interceptors.response.use(
     // 401 Handling - Simplified
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        sessionStorage.removeItem('accessToken');
-        window.location.href = '/admin/login';
+        const isMonitoringPage = window.location.pathname.includes('/admin/monitoring');
+
+        // Monitoring sayfasında isek kullanıcıyı login'e fırlatmıyoruz, sessizce bırakıyoruz
+        if (!isMonitoringPage) {
+          localStorage.removeItem('accessToken');
+          sessionStorage.removeItem('accessToken');
+          window.location.href = '/admin/login';
+          // Başka istek atmasını durdurmak için asılı promise
+          return new Promise(() => { });
+        }
       }
-      // Return a promise that never resolves to prevent UI errors/crashes
-      return new Promise(() => { });
+      return Promise.reject(error);
     }
 
     // 403 Forbidden

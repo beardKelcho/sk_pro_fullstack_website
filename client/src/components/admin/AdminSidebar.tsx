@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getStoredUserRole } from '@/utils/authStorage';
 import { Role } from '@/config/permissions';
+import packageJson from '../../../../package.json';
 
 // Sidebar menüsü için tip tanımlaması
 interface MenuItem {
@@ -527,6 +528,9 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
 
       {/* Footer menü öğeleri */}
       <div className="p-3 mt-auto border-t border-white/20 dark:border-white/10 relative z-10">
+        <div className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 mb-3 border-b border-gray-200 dark:border-white/10 pb-3">
+          Sürüm: v{packageJson.version}
+        </div>
         <button
           className={`
             flex items-center w-full py-3 px-4 

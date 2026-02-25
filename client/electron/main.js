@@ -1,6 +1,6 @@
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, protocol } = require('electron');
 const path = require('path');
-const serve = require('electron-serve').default || require('electron-serve');
+const fs = require('fs');
 const log = require('electron-log');
 const { autoUpdater } = require('electron-updater');
 
@@ -11,8 +11,39 @@ log.info('App starting...');
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
-// electron-serve paketi `/out` klasörü için `app://-` adında bir local sunucu oluşturur
-const loadURL = serve({ directory: path.join(__dirname, '../out') });
+// Özel Electron dosya sunucusu (Next.js statik export yapısını %100 destekler)
+function registerNextJSScheme() {
+    protocol.registerFileProtocol('app', (request, callback) => {
+        const url = new URL(request.url);
+        let pathname = decodeURIComponent(url.pathname);
+        if (pathname === '/' || pathname === '') pathname = '/admin'; // Ana rotayı her zaman admin yap
+
+        const outPath = path.join(__dirname, '../out');
+        let filePath = path.join(outPath, pathname);
+
+        // Dosya mevcut mu kontrolcü
+        const stat = (p) => { try { return fs.statSync(p); } catch (e) { return null; } };
+
+        let finalPath = '';
+        if (stat(filePath) && stat(filePath).isFile()) {
+            finalPath = filePath;
+        } else if (stat(filePath + '.html')) {
+            finalPath = filePath + '.html';
+        } else if (stat(path.join(filePath, 'index.html'))) {
+            finalPath = path.join(filePath, 'index.html');
+        } else {
+            // Hiçbiri yoksa her zaman admin.html fallback!
+            finalPath = path.join(outPath, 'admin.html');
+        }
+
+        callback({ path: finalPath });
+    });
+}
+
+// Güvenli scheme ayarı
+protocol.registerSchemesAsPrivileged([
+    { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }
+]);
 
 function createWindow() {
     const mainWindow = new BrowserWindow({
@@ -28,14 +59,12 @@ function createWindow() {
         mainWindow.loadURL('http://localhost:3000/admin');
         mainWindow.webContents.openDevTools();
     } else {
-        // file:// protokolü yerine custom internal server'ı kullanıyoruz
-        loadURL(mainWindow).then(() => {
-            mainWindow.loadURL('app://-/admin.html');
-        });
+        mainWindow.loadURL('app://-/admin.html');
     }
 }
 
 app.whenReady().then(() => {
+    registerNextJSScheme();
     createWindow();
 
     app.on('activate', function () {

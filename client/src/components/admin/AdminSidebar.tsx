@@ -527,11 +527,8 @@ export default function AdminSidebar({ collapsed, onToggleCollapse }: AdminSideb
 
       {/* Footer menü öğeleri */}
       <div className="p-3 mt-auto border-t border-white/20 dark:border-white/10 relative z-10">
-        {/* NOT: Next.js Client tarafında import(package.json) build şişkinliği ve kök dosya çakışması (1.0.0)
-            yarattığı için burası manuel yazılmıştır. Her yeni release'de (ör: v0.1.13) package.json ile
-            eşleşecek şekilde burayı el ile güncelleyin. */}
         <div className="text-center text-sm font-bold text-red-600 dark:text-red-500 mb-3 border-b border-red-200 dark:border-red-900/50 pb-3 uppercase bg-red-50 dark:bg-red-900/20 p-2 rounded tracking-widest border-2 border-red-500 shadow-md">
-          Sürüm: v0.1.12
+          Sürüm: v{process.env.NEXT_PUBLIC_APP_VERSION || 'Belirsiz'}
         </div>
         <button
           className={`

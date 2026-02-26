@@ -255,21 +255,25 @@ const initialMenuItems: MenuItem[] = [
     title: 'Kullanıcılar',
     path: '/admin/users',
     icon: <UserIcon />,
+    roles: [Role.ADMIN, Role.FIRMA_SAHIBI],
     submenu: [
       {
         title: 'Tüm Kullanıcılar',
         path: '/admin/users',
         icon: <></>,
+        roles: [Role.ADMIN, Role.FIRMA_SAHIBI],
       },
       {
         title: 'Kullanıcı Ekle',
         path: '/admin/users/add',
         icon: <></>,
+        roles: [Role.ADMIN, Role.FIRMA_SAHIBI],
       },
       {
         title: 'Yetki Yönetimi',
         path: '/admin/permissions',
         icon: <></>,
+        roles: [Role.ADMIN, Role.FIRMA_SAHIBI],
       },
     ],
   },

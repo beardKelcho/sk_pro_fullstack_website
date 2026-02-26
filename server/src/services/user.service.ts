@@ -43,12 +43,15 @@ class UserService {
         limit: number = 10,
         sort: string = '-createdAt',
         search?: string,
-        role?: string
+        role?: string,
+        excludeRole?: string
     ): Promise<PaginatedUsers> {
         const filters: mongoose.FilterQuery<IUser> = {};
 
         if (role) {
             filters.role = role;
+        } else if (excludeRole) {
+            filters.role = { $ne: excludeRole } as unknown as IUser['role'];
         }
 
         if (search) {

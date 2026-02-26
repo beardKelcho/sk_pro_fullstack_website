@@ -9,12 +9,16 @@ export class UserController {
   async getAllUsers(req: Request, res: Response): Promise<void> {
     try {
       const { role, search, sort, page, limit } = req.query;
+      const requestUser = (req as AuthenticatedRequest).user;
+      const excludeRole = requestUser?.role !== 'ADMIN' ? 'ADMIN' : undefined;
+
       const result: PaginatedUsers = await userService.listUsers(
         parseInt(page as string, 10) || 1,
         parseInt(limit as string, 10) || 10,
         (sort as string) || '-createdAt',
         search as string,
-        role as string
+        role as string,
+        excludeRole
       );
 
       res.status(200).json({
@@ -99,6 +103,12 @@ export class UserController {
     try {
       const { id } = req.params;
       const requestUserId = (req as AuthenticatedRequest).user?.id;
+
+      // System Lock: ADMIN hesabı silinemez
+      const targetUser = await userService.getUserById(id);
+      if (targetUser && targetUser.role === 'ADMIN') {
+        throw new AppError('Bu hesap sistem tarafından korunmaktadır', 403);
+      }
 
       await userService.deleteUser(id, requestUserId);
 

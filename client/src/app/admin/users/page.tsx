@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAllUsers, deleteUser, getRoleLabel, mapBackendRoleToFrontend } from '@/services/userService';
+import { getStoredUserRole } from '@/utils/authStorage';
 import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 import logger from '@/utils/logger';
 import { toast } from 'react-toastify';
@@ -58,14 +59,19 @@ export default function UserList() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedUserForPassword, setSelectedUserForPassword] = useState<{ id: string; name: string } | null>(null);
 
+  const [userRole, setUserRole] = useState<string>('');
+
   useEffect(() => {
+    const role = getStoredUserRole() || '';
+    setUserRole(role);
+
     const fetchUsers = async () => {
       setLoading(true);
       setError(null);
       try {
         const response = await getAllUsers();
         const usersList = response.users || response;
-        const formattedUsers = Array.isArray(usersList) ? usersList.map((item: any) => ({
+        let formattedUsers = Array.isArray(usersList) ? usersList.map((item: any) => ({
           id: item._id || item.id,
           name: item.name,
           email: item.email,
@@ -76,6 +82,11 @@ export default function UserList() {
           phone: '',
           lastActive: item.updatedAt || new Date().toISOString()
         })) : [];
+
+        if (role !== 'ADMIN') {
+          formattedUsers = formattedUsers.filter((u: any) => u.role !== 'Admin');
+        }
+
         setUsers(formattedUsers);
       } catch (err) {
         logger.error('Kullanıcı yükleme hatası:', err);
@@ -181,8 +192,8 @@ export default function UserList() {
         const status = info.getValue();
         return (
           <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full ${status === 'Aktif'
-              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
-              : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
             }`}>
             {status}
           </span>
@@ -227,17 +238,19 @@ export default function UserList() {
             >
               Şifre
             </PermissionButton>
-            <PermissionButton
-              permission={Permission.USER_DELETE}
-              onClick={() => {
-                setUserToDelete(user.id);
-                setShowDeleteModal(true);
-              }}
-              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium"
-              disabledMessage="Kullanıcı silme yetkiniz bulunmamaktadır"
-            >
-              Sil
-            </PermissionButton>
+            {(userRole === 'ADMIN' || userRole === 'FIRMA_SAHIBI') && (
+              <PermissionButton
+                permission={Permission.USER_DELETE}
+                onClick={() => {
+                  setUserToDelete(user.id);
+                  setShowDeleteModal(true);
+                }}
+                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-medium"
+                disabledMessage="Kullanıcı silme yetkiniz bulunmamaktadır"
+              >
+                Sil
+              </PermissionButton>
+            )}
           </div>
         );
       }

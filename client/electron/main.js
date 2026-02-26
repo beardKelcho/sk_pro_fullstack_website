@@ -4,6 +4,8 @@ const fs = require('fs');
 const log = require('electron-log');
 const { autoUpdater } = require('electron-updater');
 
+let isShuttingDown = false;
+
 // Updater log ayarları (dosyaya yazar)
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
@@ -21,6 +23,11 @@ function registerNativeAdminProtocol() {
     protocol.registerFileProtocol('app', (request, callback) => {
         const urlObj = new URL(request.url);
         let pathname = decodeURIComponent(urlObj.pathname);
+
+        // Sistemin dosyaları meşgul tutmasını (EBUSY/EPERM) engellemek için okumayı kes
+        if (isShuttingDown) {
+            return callback({ error: -3 /* ABORTED */ });
+        }
 
         // --- KÖKTEN KİLİT 1: ANA SİTEYE ERİŞİMİ YASAKLA ---
         if (pathname === '/' || pathname === '' || pathname === '/index.html') {
@@ -117,7 +124,13 @@ app.whenReady().then(() => {
 autoUpdater.on('checking-for-update', () => log.info('Güncelleme kontrol ediliyor...'));
 autoUpdater.on('update-available', (info) => log.info('Güncelleme bulundu: ', info));
 autoUpdater.on('update-not-available', (info) => log.info('Şu anki sürüm en günceli: ', info));
-autoUpdater.on('error', (err) => log.error('Güncelleme hatası: ', err));
+autoUpdater.on('error', (err) => {
+    log.error('Güncelleme hatası: ', err);
+    const errString = err == null ? 'unknown' : (err.stack || err).toString();
+    if (errString.includes('EPERM') || errString.includes('EBUSY')) {
+        dialog.showErrorBox('Güncelleme Başarısız', 'Uygulama dosyaları meşgul olduğu veya izin eksikliği nedeniyle güncelleme kurulamadı. Lütfen uygulamayı tamamen kapatıp Yönetici olarak tekrar çalıştırın.');
+    }
+});
 
 autoUpdater.on('download-progress', (progressObj) => {
     log.info(`İndirme Hızı: ${progressObj.bytesPerSecond} - İndirilen ${Math.round(progressObj.percent)}% (${progressObj.transferred}/${progressObj.total})`);
@@ -136,22 +149,28 @@ autoUpdater.on('update-downloaded', (info) => {
 
     dialog.showMessageBox(dialogOpts).then((returnValue) => {
         if (returnValue.response === 0) {
-            // --- 5. GHOST PROCESS TEMİZLİĞİ: SERT KAPATMA MANTIĞI ---
-            log.info('Yol temizliği: Tüm süreçler zorla kapatılıyor...');
+            log.info('Yol temizliği: Tüm süreçler zorla kapatılıyor ve dosya okumaları durduruluyor...');
+            isShuttingDown = true;
+
             app.removeAllListeners('window-all-closed');
+            app.removeAllListeners('before-quit');
+
             BrowserWindow.getAllWindows().forEach((w) => {
                 if (!w.isDestroyed()) w.close();
             });
 
             setTimeout(() => {
-                autoUpdater.quitAndInstall(true, true); // (isSilent, isForceRunAfter)
-                app.quit();
+                log.info('Kurulum (Installer) tetikleniyor...');
+                autoUpdater.quitAndInstall(true, true);
 
-                // Eğer hala yaşayan süreç varsa Node altyapısından yok et
+                // Kurulum programının (setup.exe) sistemi ele alması için zaman tanı
+                // Eğer uygulama 3 saniye sonra hala Zombie olarak yaşıyorsa vur:
                 setTimeout(() => {
+                    log.info('İşletim sistemi katmanında uygulama kökten bitiriliyor (Zombie kalkanı) ...');
+                    app.quit();
                     process.exit(0);
-                }, 500);
-            }, 300);
+                }, 3000);
+            }, 500);
         }
     });
 });

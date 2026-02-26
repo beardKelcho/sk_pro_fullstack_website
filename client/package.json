@@ -144,7 +144,7 @@
     "electron": "^40.6.0",
     "electron-builder": "^26.8.1",
     "eslint": "^8.56.0",
-    "eslint-config-next": "^14.1.0",
+    "eslint-config-next": "^16.1.6",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-jest": "^27.6.0",
     "eslint-plugin-jsx-a11y": "^6.8.0",

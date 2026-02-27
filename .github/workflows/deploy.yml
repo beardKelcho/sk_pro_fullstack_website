@@ -19,7 +19,7 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       # Just trigger the hooks, no need to rebuild/retest if CI passed
       - name: Trigger Render deploy hook (staging)
@@ -53,7 +53,7 @@ jobs:
       name: production
       url: https://skpro.com.tr
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Trigger Render deploy hook (production)
         env:

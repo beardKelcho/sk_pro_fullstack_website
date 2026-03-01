@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
 
       - name: Setup Java JDK (Android için)
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '17'

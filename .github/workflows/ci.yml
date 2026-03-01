@@ -165,7 +165,7 @@ jobs:
 
       - name: Upload Screenshots
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: cypress-screenshots
           path: client/cypress/screenshots

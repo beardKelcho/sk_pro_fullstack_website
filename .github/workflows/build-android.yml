@@ -48,7 +48,7 @@ jobs:
         run: mv app-debug.apk SK-Production.apk
 
       - name: Upload APK as Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: SK-Production-Android-APK
           path: client/android/app/build/outputs/apk/debug/SK-Production.apk

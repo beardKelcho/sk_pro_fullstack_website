@@ -5,6 +5,7 @@ import logger from '@/utils/logger';
 import { useState, useRef, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useScanQRCode } from '@/services/qrCodeService';
+import { processCaseQR } from '@/services/caseService';
 import { toast } from 'react-toastify';
 
 interface QRScannerProps {
@@ -107,7 +108,16 @@ export default function QRScanner({
       const cleanContent = parseQRContent(qrContent);
       logger.info('QR Parsed', { original: qrContent, parsed: cleanContent });
 
-      // QR kod tarama
+      // Kasa QR Code check (CASE- ile başlıyorsa)
+      if (typeof cleanContent === 'string' && cleanContent.startsWith('CASE-')) {
+        await processCaseQR(cleanContent);
+        toast.success('Kasa başarıyla işlendi ve projeye atandı!');
+        if (onScanSuccess) onScanSuccess({ success: true, isCase: true, qr: cleanContent });
+        if (onClose) onClose();
+        return;
+      }
+
+      // Normal ekipman QR kod tarama
       const result = await scanMutation.mutateAsync({
         qrContent: cleanContent,
         action,
@@ -128,7 +138,7 @@ export default function QRScanner({
       }
     } catch (err: any) {
       logger.error('Scan Error:', err);
-      toast.error(err.response?.data?.message || 'QR kod taranırken bir hata oluştu');
+      toast.error(err.response?.data?.message || err.message || 'QR kod taranırken bir hata oluştu');
       // Hata durumunda tekrar taramaya başla
       setTimeout(() => {
         startScanning();

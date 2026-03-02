@@ -108,32 +108,13 @@ export default function AddClient() {
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
-    // Zorunlu alanları kontrol et
-    if (!formData.name.trim()) {
-      newErrors.name = 'Müşteri adı gereklidir';
-    }
-
-    if (!formData.contactPerson.trim()) {
-      newErrors.contactPerson = 'İletişim kişisi gereklidir';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'E-posta adresi gereklidir';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    // İsteğe bağlı doğrulama (girilmişse e-posta vs formatını kontrol edebiliriz)
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Geçerli bir e-posta adresi giriniz';
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Telefon numarası gereklidir';
-    } else if (!/^\+90\s*([0-9]{3})\s*([0-9]{3})\s*([0-9]{2})\s*([0-9]{2})$/.test(formData.phone)) {
+    if (formData.phone.trim() && !/^\+90\s*([0-9]{3})\s*([0-9]{3})\s*([0-9]{2})\s*([0-9]{2})$/.test(formData.phone)) {
       newErrors.phone = 'Geçerli bir telefon numarası giriniz (10 haneli)';
-    }
-
-    if (!city || !district) {
-      newErrors.address = 'İl ve İlçe seçimi gereklidir';
-    }
-    if (!formData.address.trim()) {
-      newErrors.address = 'Detaylı adres gereklidir';
     }
 
     setErrors(newErrors);
@@ -225,7 +206,7 @@ export default function AddClient() {
                 {/* Müşteri Adı */}
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Müşteri Adı <span className="text-red-500">*</span>
+                    Müşteri Adı
                   </label>
                   <input
                     type="text"
@@ -234,8 +215,8 @@ export default function AddClient() {
                     value={formData.name}
                     onChange={handleChange}
                     className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.name
-                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
-                        : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
+                      ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
                       } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
                     placeholder="Şirket veya organizasyon adı"
                   />
@@ -245,7 +226,7 @@ export default function AddClient() {
                 {/* İletişim Kişisi */}
                 <div>
                   <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    İletişim Kişisi <span className="text-red-500">*</span>
+                    İletişim Kişisi
                   </label>
                   <input
                     type="text"
@@ -254,8 +235,8 @@ export default function AddClient() {
                     value={formData.contactPerson}
                     onChange={handleChange}
                     className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.contactPerson
-                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
-                        : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
+                      ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
                       } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
                     placeholder="Müşteri temsilcisi veya yetkili kişi"
                   />
@@ -265,7 +246,7 @@ export default function AddClient() {
                 {/* E-posta */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    E-posta <span className="text-red-500">*</span>
+                    E-posta
                   </label>
                   <input
                     type="email"
@@ -274,8 +255,8 @@ export default function AddClient() {
                     value={formData.email}
                     onChange={handleChange}
                     className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.email
-                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
-                        : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
+                      ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
                       } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
                     placeholder="ornek@sirket.com"
                   />
@@ -285,14 +266,13 @@ export default function AddClient() {
                 {/* Telefon */}
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Telefon <span className="text-red-500">*</span>
+                    Telefon
                   </label>
                   <PhoneInput
                     id="phone"
                     name="phone"
                     value={formData.phone}
                     onChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
-                    required
                     error={errors.phone}
                     className="bg-gray-50 dark:bg-gray-900/50"
                   />
@@ -327,8 +307,6 @@ export default function AddClient() {
                     }}
                     cityLabel="İl"
                     districtLabel="İlçe"
-                    cityRequired
-                    districtRequired
                     cityError={errors.address}
                     districtError={errors.address}
                   />
@@ -337,7 +315,7 @@ export default function AddClient() {
                 {/* Detaylı Adres */}
                 <div>
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Detaylı Adres <span className="text-red-500">*</span>
+                    Detaylı Adres
                   </label>
                   <textarea
                     id="address"
@@ -346,8 +324,8 @@ export default function AddClient() {
                     value={formData.address}
                     onChange={handleChange}
                     className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.address
-                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
-                        : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
+                      ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
                       } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
                     placeholder="Mahalle, Sokak, Bina No vb."
                   />

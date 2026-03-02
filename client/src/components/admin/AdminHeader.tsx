@@ -180,8 +180,8 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
 
           {/* Bildirim paneli */}
           {showNotificationPanel && (
-            <div className="absolute right-0 mt-2 w-80 glass dark:glass-dark rounded-2xl shadow-2xl overflow-hidden z-50 
-              border border-white/20 dark:border-white/10 backdrop-blur-xl slide-in-right">
+            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden z-[60] 
+              border border-gray-200 dark:border-gray-700 slide-in-right">
               <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h3 className="font-medium text-gray-800 dark:text-white">Bildirimler</h3>
                 <button
@@ -270,8 +270,8 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
 
           {/* Profil açılır menüsü */}
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-48 glass dark:glass-dark rounded-2xl shadow-2xl overflow-hidden z-50 
-              border border-white/20 dark:border-white/10 backdrop-blur-xl slide-in-right">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden z-[60] 
+              border border-gray-200 dark:border-gray-700 slide-in-right">
               <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                 <p className="text-sm font-medium text-gray-800 dark:text-white">{user?.name || 'Kullanıcı'}</p>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{user?.email || 'email@example.com'}</p>

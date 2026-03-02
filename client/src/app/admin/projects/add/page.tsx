@@ -232,19 +232,19 @@ export default function AddProject() {
     const newErrors: Record<string, string> = {};
 
     // Zorunlu alanları kontrol et
-    if (!formData.name.trim()) newErrors.name = 'Proje adı zorunludur';
+    // if (!formData.name.trim()) newErrors.name = 'Proje adı zorunludur';
     // Müşteri selection mutlaka ID üzerinden yapılmalı (backend ObjectId bekliyor)
-    if (!formData.customer || !/^[0-9a-fA-F]{24}$/.test(formData.customer)) {
+    if (formData.customerName && (!formData.customer || !/^[0-9a-fA-F]{24}$/.test(formData.customer))) {
       newErrors.customerName = 'Lütfen listeden geçerli bir müşteri seçin';
     }
-    if (!formData.contactPerson.trim()) newErrors.contactPerson = 'İletişim kişisi zorunludur';
-    if (!formData.location.trim()) newErrors.location = 'Lokasyon zorunludur';
+    // if (!formData.contactPerson.trim()) newErrors.contactPerson = 'İletişim kişisi zorunludur';
+    // if (!formData.location.trim()) newErrors.location = 'Lokasyon zorunludur';
 
     // Tarihleri kontrol et
     const startDate = new Date(formData.startDate);
     const endDate = new Date(formData.endDate);
 
-    if (endDate < startDate) {
+    if (formData.startDate && formData.endDate && endDate < startDate) {
       newErrors.endDate = 'Bitiş tarihi başlangıç tarihinden önce olamaz';
     }
 
@@ -369,7 +369,7 @@ export default function AddProject() {
             {/* Proje Adı */}
             <div className="col-span-2">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Proje Adı <span className="text-red-500">*</span>
+                Proje Adı
               </label>
               <input
                 type="text"
@@ -379,7 +379,6 @@ export default function AddProject() {
                 onChange={handleChange}
                 className={`block w-full px-3 py-2 border ${errors.name ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm`}
                 placeholder="Örn: Teknoloji Zirvesi 2023"
-                required
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
@@ -389,7 +388,7 @@ export default function AddProject() {
             {/* Müşteri/Firma */}
             <div className="relative">
               <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Müşteri/Firma <span className="text-red-500">*</span>
+                Müşteri/Firma
               </label>
               <div className="relative">
                 <input
@@ -417,7 +416,6 @@ export default function AddProject() {
                   onFocus={() => setShowCustomerList(true)}
                   className={`block w-full px-3 py-2 border ${errors.customerName ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm`}
                   placeholder="Müşteri firma adı"
-                  required
                 />
                 {errors.customerName && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.customerName}</p>
@@ -456,7 +454,7 @@ export default function AddProject() {
             {/* İletişim Kişisi */}
             <div>
               <label htmlFor="contactPerson" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                İletişim Kişisi <span className="text-red-500">*</span>
+                İletişim Kişisi
               </label>
 
               {/* Contact Selection Dropdown */}
@@ -493,7 +491,6 @@ export default function AddProject() {
                 onChange={handleChange}
                 className={`block w-full px-3 py-2 border ${errors.contactPerson ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm`}
                 placeholder="İletişim kurulacak kişi"
-                required
               />
               {errors.contactPerson && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.contactPerson}</p>
@@ -535,7 +532,7 @@ export default function AddProject() {
             {/* Lokasyon */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Lokasyon <span className="text-red-500">*</span>
+                Lokasyon
               </label>
               <input
                 type="text"
@@ -545,7 +542,6 @@ export default function AddProject() {
                 onChange={handleChange}
                 className={`block w-full px-3 py-2 border ${errors.location ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm`}
                 placeholder="Örn: İstanbul Kongre Merkezi"
-                required
               />
               {errors.location && (
                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.location}</p>
@@ -556,7 +552,7 @@ export default function AddProject() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Başlangıç Tarihi <span className="text-red-500">*</span>
+                  Başlangıç Tarihi
                 </label>
                 <input
                   type="date"
@@ -565,12 +561,11 @@ export default function AddProject() {
                   value={formData.startDate}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm"
-                  required
                 />
               </div>
               <div>
                 <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Bitiş Tarihi <span className="text-red-500">*</span>
+                  Bitiş Tarihi
                 </label>
                 <input
                   type="date"
@@ -579,7 +574,6 @@ export default function AddProject() {
                   value={formData.endDate}
                   onChange={handleChange}
                   className={`block w-full px-3 py-2 border ${errors.endDate ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 sm:text-sm`}
-                  required
                 />
                 {errors.endDate && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.endDate}</p>

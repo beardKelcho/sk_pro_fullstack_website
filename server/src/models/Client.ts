@@ -19,14 +19,14 @@ export interface IClient extends Document {
 }
 
 const ClientSchema: Schema = new Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  phone: { type: String, required: true },
+  name: { type: String },
+  email: { type: String, unique: true },
+  phone: { type: String },
   company: { type: String },
   address: { type: String },
   contacts: [{
-    name: { type: String, required: true },
-    phone: { type: String, required: true },
+    name: { type: String },
+    phone: { type: String },
     email: { type: String },
     role: { type: String }
   }]

@@ -17,7 +17,6 @@ const TaskSchema: Schema = new Schema(
   {
     title: {
       type: String,
-      required: [true, 'Görev başlığı gereklidir'],
       trim: true,
     },
     description: {
@@ -31,7 +30,6 @@ const TaskSchema: Schema = new Schema(
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Atanan kişi gereklidir'],
     },
     status: {
       type: String,

@@ -37,7 +37,7 @@ interface TaskForm {
 
 export default function AddTask() {
   const router = useRouter();
-  
+
   // Form durumu
   const [formData, setFormData] = useState<TaskForm>({
     title: '',
@@ -48,22 +48,22 @@ export default function AddTask() {
     assignedTo: '',
     relatedProject: ''
   });
-  
+
   // Kullanıcı ve projeler durumu
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingProjects, setLoadingProjects] = useState(true);
-  
+
   // Hata durumu
   const [errors, setErrors] = useState<FormError<TaskForm>>({});
-  
+
   // İşleniyor durumu
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Bildirim durumu
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
-  
+
   // Kullanıcı ve proje verilerini yükle
   useEffect(() => {
     const fetchData = async () => {
@@ -78,7 +78,7 @@ export default function AddTask() {
           role: user.role || ''
         })));
         setLoadingUsers(false);
-        
+
         // Projeleri API'den çek
         const { getAllProjects } = await import('@/services/projectService');
         const projectsResponse = await getAllProjects();
@@ -89,27 +89,27 @@ export default function AddTask() {
           status: project.status || ''
         })));
         setLoadingProjects(false);
-        
+
       } catch (error) {
         logger.error('Veri yükleme hatası:', error);
         setLoadingUsers(false);
         setLoadingProjects(false);
       }
     };
-    
+
     fetchData();
-    
+
     // Varsayılan son tarih: yarın
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
-    
+
     setFormData(prev => ({
       ...prev,
       dueDate: tomorrowFormatted
     }));
   }, []);
-  
+
   // Form değişikliği işleyici
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -117,7 +117,7 @@ export default function AddTask() {
       ...prev,
       [name]: value
     }));
-    
+
     // O alan için hatayı temizle
     if (errors[name as keyof TaskForm]) {
       setErrors(prev => ({
@@ -126,66 +126,52 @@ export default function AddTask() {
       }));
     }
   };
-  
+
   // Form doğrulama
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof TaskForm, string>> = {};
-    
-    // Zorunlu alanlar
-    if (!formData.title.trim()) {
-      newErrors.title = 'Görev başlığı gereklidir';
-    }
-    
-    if (!formData.description.trim()) {
-      newErrors.description = 'Görev açıklaması gereklidir';
-    }
-    
-    if (!formData.dueDate) {
-      newErrors.dueDate = 'Son tarih gereklidir';
-    } else {
+
+    // İsteğe bağlı
+    if (formData.dueDate) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const due = new Date(formData.dueDate);
       due.setHours(0, 0, 0, 0);
-      
+
       if (due < today) {
         newErrors.dueDate = 'Son tarih bugünden ileri bir tarih olmalıdır';
       }
     }
-    
-    if (!formData.assignedTo) {
-      newErrors.assignedTo = 'Görev bir kişiye atanmalıdır';
-    }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   // Form gönderim işleyici
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // API'ye gönderilecek veri - Backend formatına uygun
       // Tarih formatını ISO8601'e çevir
       const dueDateISO = formData.dueDate ? new Date(formData.dueDate + 'T23:59:59.999Z').toISOString() : undefined;
-      
+
       const taskData = {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         status: (formData.status === 'Atandı' ? 'TODO' :
-                formData.status === 'Devam Ediyor' ? 'IN_PROGRESS' :
-                formData.status === 'Beklemede' ? 'TODO' :
-                formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+          formData.status === 'Devam Ediyor' ? 'IN_PROGRESS' :
+            formData.status === 'Beklemede' ? 'TODO' :
+              formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
         priority: (formData.priority === 'Düşük' ? 'LOW' :
-                 formData.priority === 'Orta' ? 'MEDIUM' :
-                 formData.priority === 'Yüksek' ? 'HIGH' : 'URGENT') as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
+          formData.priority === 'Orta' ? 'MEDIUM' :
+            formData.priority === 'Yüksek' ? 'HIGH' : 'URGENT') as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
         dueDate: dueDateISO,
         assignedTo: formData.assignedTo,
         project: formData.relatedProject || undefined
@@ -208,7 +194,7 @@ export default function AddTask() {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Üst bölüm - başlık ve geri butonu */}
@@ -226,7 +212,7 @@ export default function AddTask() {
           </button>
         </Link>
       </div>
-      
+
       {/* Form kartı */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         <form onSubmit={handleSubmit}>
@@ -237,16 +223,16 @@ export default function AddTask() {
                 <p>{errors.form}</p>
               </div>
             )}
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Sol kolon - Temel Bilgiler */}
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Görev Bilgileri</h2>
-                
+
                 {/* Görev Başlığı */}
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Görev Başlığı <span className="text-red-500">*</span>
+                    Görev Başlığı
                   </label>
                   <input
                     type="text"
@@ -254,20 +240,19 @@ export default function AddTask() {
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
-                    className={`bg-gray-50 dark:bg-gray-900/50 border ${
-                      errors.title 
-                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500' 
+                    className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.title
+                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
                         : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
-                    } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
+                      } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
                     placeholder="Görev başlığını girin"
                   />
                   {errors.title && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title}</p>}
                 </div>
-                
+
                 {/* Görev Açıklaması */}
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Görev Açıklaması <span className="text-red-500">*</span>
+                    Görev Açıklaması
                   </label>
                   <textarea
                     id="description"
@@ -275,16 +260,15 @@ export default function AddTask() {
                     rows={4}
                     value={formData.description}
                     onChange={handleChange}
-                    className={`bg-gray-50 dark:bg-gray-900/50 border ${
-                      errors.description 
-                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500' 
+                    className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.description
+                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
                         : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
-                    } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
+                      } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
                     placeholder="Görevin detaylı açıklamasını girin"
                   />
                   {errors.description && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description}</p>}
                 </div>
-                
+
                 {/* Durum ve Öncelik */}
                 <div className="grid grid-cols-2 gap-4">
                   {/* Durum */}
@@ -306,7 +290,7 @@ export default function AddTask() {
                       <option value="İptal Edildi">İptal Edildi</option>
                     </select>
                   </div>
-                  
+
                   {/* Öncelik */}
                   <div>
                     <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -327,26 +311,25 @@ export default function AddTask() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Sağ kolon - Atama ve Tarih Bilgileri */}
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Atama Bilgileri</h2>
-                
+
                 {/* Atanan Kişi */}
                 <div>
                   <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Atanan Kişi <span className="text-red-500">*</span>
+                    Atanan Kişi
                   </label>
                   <select
                     id="assignedTo"
                     name="assignedTo"
                     value={formData.assignedTo}
                     onChange={handleChange}
-                    className={`bg-gray-50 dark:bg-gray-900/50 border ${
-                      errors.assignedTo 
-                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500' 
+                    className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.assignedTo
+                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
                         : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
-                    } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
+                      } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
                   >
                     <option value="">Kişi Seçin</option>
                     {loadingUsers ? (
@@ -361,7 +344,7 @@ export default function AddTask() {
                   </select>
                   {errors.assignedTo && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.assignedTo}</p>}
                 </div>
-                
+
                 {/* İlgili Proje */}
                 <div>
                   <label htmlFor="relatedProject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -386,11 +369,11 @@ export default function AddTask() {
                     )}
                   </select>
                 </div>
-                
+
                 {/* Son Tarih */}
                 <div>
                   <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Son Tarih <span className="text-red-500">*</span>
+                    Son Tarih
                   </label>
                   <input
                     type="date"
@@ -398,23 +381,22 @@ export default function AddTask() {
                     name="dueDate"
                     value={formData.dueDate}
                     onChange={handleChange}
-                    className={`bg-gray-50 dark:bg-gray-900/50 border ${
-                      errors.dueDate 
-                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500' 
+                    className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.dueDate
+                        ? 'border-red-500 dark:border-red-500 focus:ring-red-500 dark:focus:ring-red-500 focus:border-red-500 dark:focus:border-red-500'
                         : 'border-gray-300 dark:border-gray-600 focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light'
-                    } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
+                      } text-gray-900 dark:text-white text-sm rounded-lg block w-full p-2.5`}
                   />
                   {errors.dueDate && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.dueDate}</p>}
                 </div>
               </div>
             </div>
           </div>
-          
+
           {/* Form Alt Kısmı - Gönderme Butonları */}
           <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/30 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
             <Link href="/admin/tasks">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 disabled={isSubmitting}
               >
@@ -439,7 +421,7 @@ export default function AddTask() {
           </div>
         </form>
       </div>
-      
+
       {/* Başarı bildirimi */}
       {showSuccessNotification && (
         <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center">

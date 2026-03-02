@@ -23,7 +23,6 @@ const ProjectSchema: Schema = new Schema(
   {
     name: {
       type: String,
-      required: [true, 'Proje adı gereklidir'],
       trim: true,
     },
     // ... (description, startDate etc unchanged) ...
@@ -33,7 +32,6 @@ const ProjectSchema: Schema = new Schema(
     },
     startDate: {
       type: Date,
-      required: [true, 'Başlangıç tarihi gereklidir'],
     },
     endDate: {
       type: Date,
@@ -50,7 +48,6 @@ const ProjectSchema: Schema = new Schema(
     client: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Client',
-      required: [true, 'Müşteri gereklidir'],
     },
     budget: {
       type: Number,

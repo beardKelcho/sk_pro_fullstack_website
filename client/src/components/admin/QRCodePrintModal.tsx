@@ -3,36 +3,52 @@
 import React, { useRef } from 'react';
 import Image from 'next/image';
 import { useModalA11y } from '@/hooks/useModalA11y';
+import { QRCodeCanvas } from 'qrcode.react';
 
 interface QRCodePrintModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   code: string;
-  qrImage: string; // data URL (base64 png)
+  qrImage?: string; // data URL (base64 png)
+  entityName?: string;
+  entityType?: string;
 }
 
-export default function QRCodePrintModal({ isOpen, onClose, title, code, qrImage }: QRCodePrintModalProps) {
+export default function QRCodePrintModal({ isOpen, onClose, title, code, qrImage, entityName, entityType }: QRCodePrintModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const displayTitle = title || entityName || 'QR Kod';
 
   useModalA11y({ isOpen, onClose, dialogRef, initialFocusRef: closeBtnRef });
   if (!isOpen) return null;
 
+  const getQrDataUrl = () => {
+    if (qrImage) return qrImage;
+    if (canvasRef.current) return canvasRef.current.toDataURL('image/png');
+    return '';
+  };
+
   const handleDownload = () => {
+    const dataUrl = getQrDataUrl();
+    if (!dataUrl) return;
     const a = document.createElement('a');
-    a.href = qrImage;
-    a.download = `${(title || code).replace(/\s+/g, '-').toLowerCase()}-qr.png`;
+    a.href = dataUrl;
+    a.download = `${(displayTitle || code).replace(/\s+/g, '-').toLowerCase()}-qr.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
   const handlePrint = () => {
+    const dataUrl = getQrDataUrl();
+    if (!dataUrl) return;
     const w = window.open('', '_blank', 'noopener,noreferrer,width=600,height=700');
     if (!w) return;
 
-    const safeTitle = (title || 'QR Kod').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const safeTitle = displayTitle.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const safeCode = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     w.document.write(`
@@ -54,7 +70,7 @@ export default function QRCodePrintModal({ isOpen, onClose, title, code, qrImage
         <body>
           <div class="wrap">
             <div class="title">${safeTitle}</div>
-            <img src="${qrImage}" alt="QR" />
+            <img src="${dataUrl}" alt="QR" />
             <div class="code">${safeCode}</div>
           </div>
           <script>
@@ -82,7 +98,7 @@ export default function QRCodePrintModal({ isOpen, onClose, title, code, qrImage
             <p id="qr-modal-title" className="text-sm font-semibold text-gray-900 dark:text-white">
               QR Kod Hazır
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Etiket için indir veya yazdır</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Etiket için indir veya yazdır {entityType ? `(${entityType})` : ''}</p>
           </div>
           <button
             type="button"
@@ -99,11 +115,15 @@ export default function QRCodePrintModal({ isOpen, onClose, title, code, qrImage
 
         <div className="p-5">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-64 h-64 relative bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
-              <Image src={qrImage} alt="QR" fill unoptimized className="object-contain" />
+            <div className="w-64 h-64 relative bg-white rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden p-4">
+              {qrImage ? (
+                <Image src={qrImage} alt="QR" fill unoptimized className="object-contain p-4" />
+              ) : (
+                <QRCodeCanvas ref={canvasRef} value={code} size={224} level="H" className="w-full h-full object-contain" />
+              )}
             </div>
-            {title && (
-              <p className="text-sm font-medium text-gray-900 dark:text-white text-center">{title}</p>
+            {displayTitle && (
+              <p className="text-sm font-medium text-gray-900 dark:text-white text-center">{displayTitle}</p>
             )}
             <code className="text-xs text-gray-600 dark:text-gray-300 break-all text-center bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 w-full">
               {code}

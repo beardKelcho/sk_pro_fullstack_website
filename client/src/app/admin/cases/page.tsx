@@ -140,7 +140,7 @@ export default function CasesPage() {
             <QRCodePrintModal
                 isOpen={showQRModal}
                 onClose={() => setShowQRModal(false)}
-                qrCode={selectedCase?.qrCode || ''}
+                code={selectedCase?.qrCode || ''}
                 entityName={selectedCase?.name}
                 entityType="Kasa"
             />

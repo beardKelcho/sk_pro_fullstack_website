@@ -5,12 +5,12 @@ import {
     getCaseById,
     processCaseQR,
 } from '../controllers/case.controller';
-import { protect, authorize } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Bütün route'lar login olmayı gerektirir
-router.use(protect);
+router.use(authenticate);
 
 router.post('/process-qr', processCaseQR);
 

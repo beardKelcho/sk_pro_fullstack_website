@@ -83,7 +83,7 @@ const Projects = () => {
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [lightbox, selectedVideo]);
+    }, [lightbox, selectedVideo, nextImage, prevImage]);
 
     // Lock body scroll when modal is open
     useEffect(() => {

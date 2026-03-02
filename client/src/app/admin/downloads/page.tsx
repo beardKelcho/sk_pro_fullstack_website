@@ -25,11 +25,11 @@ const DownloadPage = () => {
                     const winAsset = data.assets.find((a: any) => a.name.endsWith('.exe'));
                     const apkAsset = data.assets.find((a: any) => a.name.endsWith('.apk'));
 
-                    setDownloadLinks({
-                        mac: macAsset ? macAsset.browser_download_url : downloadLinks.mac,
-                        win: winAsset ? winAsset.browser_download_url : downloadLinks.win,
-                        android: apkAsset ? apkAsset.browser_download_url : downloadLinks.android
-                    });
+                    setDownloadLinks(prev => ({
+                        mac: macAsset ? macAsset.browser_download_url : prev.mac,
+                        win: winAsset ? winAsset.browser_download_url : prev.win,
+                        android: apkAsset ? apkAsset.browser_download_url : prev.android
+                    }));
                 } else {
                     setVersion('Sürüm Bulunamadı');
                 }

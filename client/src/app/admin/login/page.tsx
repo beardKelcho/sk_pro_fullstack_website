@@ -59,7 +59,7 @@ export default function AdminLogin() {
     };
 
     checkExistingAuth();
-  }, []);
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;

@@ -215,7 +215,7 @@ export default function AddCase() {
                                             </li>
                                         ))}
                                     </ul>
-                                    <p className="text-xs text-gray-500 py-2 px-4 italic">Not: Gerçekte 'Ekipman ID' yerine ekipman ismi getirilmesi için EquipmentSelector'dan detaylı veri dönmesi sağlanabilir. Bu örnekte ID gösterilmektedir.</p>
+                                    <p className="text-xs text-gray-500 py-2 px-4 italic">Not: Gerçekte &apos;Ekipman ID&apos; yerine ekipman ismi getirilmesi için EquipmentSelector&apos;dan detaylı veri dönmesi sağlanabilir. Bu örnekte ID gösterilmektedir.</p>
                                 </div>
                             )}
                         </div>

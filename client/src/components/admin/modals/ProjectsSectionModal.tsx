@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
-import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2, Image, Film, Images, Play } from 'lucide-react';
+import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2, Image as ImageIcon, Film, Images, Play } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableProjectItem from '../SortableProjectItem';
@@ -329,7 +329,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                         : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                                         }`}
                                 >
-                                    <Image className="w-4 h-4" />
+                                    <ImageIcon className="w-4 h-4" />
                                     Fotoğraflar
                                 </button>
                                 <button
@@ -402,7 +402,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                             : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                                             }`}
                                     >
-                                        <Image className="w-6 h-6 mx-auto mb-2" />
+                                        <ImageIcon className="w-6 h-6 mx-auto mb-2" />
                                         <div className="text-sm font-semibold">Fotoğraf Albümü</div>
                                     </button>
                                     <button

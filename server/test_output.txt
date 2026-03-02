@@ -1,0 +1,212 @@
+
+> skproduction-server@1.0.0 test
+> jest
+
+PASS src/test/utils/realtimeHub.test.ts (5.039 s)
+PASS src/test/controllers/emailTemplate.controller.test.ts (5.162 s)
+PASS src/test/controllers/export.controller.test.ts (5.375 s)
+  ● Console
+
+    console.log
+      2026-03-02 22:02:30 [[32minfo[39m]: Data exported (equipment - csv) by user test-user-id {"service":"sk-production-api"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:90:12)
+
+    console.log
+      2026-03-02 22:02:30 [[32minfo[39m]: Data exported (projects - excel) by user test-user-id {"service":"sk-production-api"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:90:12)
+
+    console.log
+      2026-03-02 22:02:30 [[32minfo[39m]: Data exported (clients - pdf) by user test-user-id {"service":"sk-production-api"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:90:12)
+
+    console.log
+      2026-03-02 22:02:30 [[31merror[39m]: Export Error: Geçersiz veri tipi {"service":"sk-production-api","name":"AppError","statusCode":400,"stack":"AppError: Geçersiz veri tipi\n    at getDataByType (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/export.controller.ts:56:13)\n    at Object.exportData (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/export.controller.ts:144:55)\n    at Object.<anonymous> (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/test/controllers/export.controller.test.ts:163:30)\n    at Promise.then.completed (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:121:9)\n    at run (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:90:12)
+
+    console.log
+      2026-03-02 22:02:30 [[31merror[39m]: Export Error: Database error {"service":"sk-production-api","stack":"Error: Database error\n    at Object.<anonymous> (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/test/controllers/export.controller.test.ts:176:43)\n    at Promise.then.completed (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/utils.js:298:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/utils.js:231:10)\n    at _callCircusTest (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:316:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:252:3)\n    at _runTestsForDescribeBlock (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:126:9)\n    at _runTestsForDescribeBlock (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:121:9)\n    at _runTestsForDescribeBlock (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:121:9)\n    at run (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/run.js:71:3)\n    at runAndTransformResultsToJestFormat (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)\n    at jestAdapter (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)\n    at runTestInternal (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-runner/build/runTest.js:367:16)\n    at runTest (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-runner/build/runTest.js:444:34)\n    at Object.worker (/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/node_modules/jest-runner/build/testWorker.js:106:12)"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:90:12)
+
+PASS src/test/routes/siteImage.routes.test.ts (5.362 s)
+  ● Console
+
+    console.log
+      2026-03-02 22:02:30 [[32minfo[39m]: 📦 Using local storage {"service":"sk-production-api"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:90:12)
+
+PASS src/test/utils/scheduledTasks.test.ts (5.393 s)
+PASS src/test/utils/auditLogger.test.ts (5.406 s)
+FAIL src/test/utils/notificationService.test.ts (5.415 s)
+  ● Console
+
+    console.log
+      2026-03-02 22:02:30 [[32minfo[39m]: VAPID keys ayarlanmamış. Push notification gönderilemeyecek. {"service":"sk-production-api"}
+
+      at Console.log (node_modules/winston/lib/winston/transports/console.js:90:12)
+
+  ● notificationService › createNotification › should create a notification
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"data": {}, "message": "This is a test notification", "read": false, "title": "Test Notification", "type": "TASK_ASSIGNED", "userId": "69a5dec51890412215ffd46a"}
+
+    Number of calls: 0
+
+      70 |       const result = await createNotification(baseParams);
+      71 |
+    > 72 |       expect(Notification.create).toHaveBeenCalledWith({
+         |                                   ^
+      73 |         userId: mockUserId,
+      74 |         type: 'TASK_ASSIGNED',
+      75 |         title: 'Test Notification',
+
+      at Object.<anonymous> (src/test/utils/notificationService.test.ts:72:35)
+
+  ● notificationService › createNotification › should send real-time notification via SSE
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "69a5dec51890412215ffd46a", "notification:new", ObjectContaining {"message": "This is a test notification", "title": "Test Notification", "type": "TASK_ASSIGNED", "userId": "69a5dec51890412215ffd46a"}
+
+    Number of calls: 0
+
+       97 |       await createNotification(baseParams);
+       98 |
+    >  99 |       expect(sendToUser).toHaveBeenCalledWith(
+          |                          ^
+      100 |         String(mockUserId),
+      101 |         'notification:new',
+      102 |         expect.objectContaining({
+
+      at Object.<anonymous> (src/test/utils/notificationService.test.ts:99:26)
+
+  ● notificationService › createNotification › should send push notification when settings allow
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "69a5dec51890412215ffd46a", ObjectContaining {"body": "This is a test notification", "data": ObjectContaining {"notificationId": "69a5dec51890412215ffd46b", "type": "TASK_ASSIGNED"}, "title": "Test Notification"}
+
+    Number of calls: 0
+
+      132 |       await createNotification(baseParams);
+      133 |
+    > 134 |       expect(sendPushNotification).toHaveBeenCalledWith(
+          |                                    ^
+      135 |         String(mockUserId),
+      136 |         expect.objectContaining({
+      137 |           title: 'Test Notification',
+
+      at Object.<anonymous> (src/test/utils/notificationService.test.ts:134:36)
+
+  ● notificationService › createNotification › should send email when sendEmail is true and settings allow
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      205 |       });
+      206 |
+    > 207 |       expect(sendEmail).toHaveBeenCalled();
+          |                         ^
+      208 |     });
+      209 |
+      210 |     it('should not send email when sendEmail is false', async () => {
+
+      at Object.<anonymous> (src/test/utils/notificationService.test.ts:207:25)
+
+  ● notificationService › createNotification › should handle notification with custom data
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: ObjectContaining {"data": {"projectId": "123", "status": "ACTIVE"}}
+
+    Number of calls: 0
+
+      252 |       });
+      253 |
+    > 254 |       expect(Notification.create).toHaveBeenCalledWith(
+          |                                   ^
+      255 |         expect.objectContaining({
+      256 |           data: { projectId: '123', status: 'ACTIVE' },
+      257 |         })
+
+      at Object.<anonymous> (src/test/utils/notificationService.test.ts:254:35)
+
+  ● notificationService › createNotification › should handle errors gracefully
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"__v": 0, "_id": "69a5dec61890412215ffd5ac", "createdAt": 2026-03-02T19:02:30.572Z, "message": "This is a test notification", "read": false, "title": "Test Notification", "type": "TASK_ASSIGNED", "updatedAt": 2026-03-02T19:02:30.572Z, "userId": "69a5dec51890412215ffd46a"}
+
+      262 |       (Notification.create as jest.Mock).mockRejectedValue(new Error('Database error'));
+      263 |
+    > 264 |       await expect(createNotification(baseParams)).rejects.toThrow('Database error');
+          |             ^
+      265 |     });
+      266 |
+      267 |     it('should handle real-time notification errors gracefully', async () => {
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (src/test/utils/notificationService.test.ts:264:13)
+
+PASS src/test/utils/authTokens.test.ts (5.506 s)
+FAIL src/test/controllers/calendar.controller.test.ts
+  ● Test suite failed to run
+
+    [96msrc/test/controllers/calendar.controller.test.ts[0m:[93m33[0m:[93m7[0m - [91merror[0m[90m TS2740: [0mType '{ role: "ADMIN"; permissions: never[]; }' is missing the following properties from type 'IUser': name, email, password, isActive, and 60 more.
+
+    [7m33[0m       user: { role: 'ADMIN', permissions: [] },
+    [7m  [0m [91m      ~~~~[0m
+
+      [96msrc/middleware/auth.middleware.ts[0m:[93m13[0m:[93m7[0m
+        [7m13[0m       user?: IUser;
+        [7m  [0m [96m      ~~~~[0m
+        The expected type comes from property 'user' which is declared here on type 'Partial<Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>>'
+
+FAIL src/test/controllers/monitoring.controller.test.ts
+  ● Test suite failed to run
+
+    [96msrc/test/controllers/monitoring.controller.test.ts[0m:[93m33[0m:[93m7[0m - [91merror[0m[90m TS2740: [0mType '{ role: "ADMIN"; permissions: never[]; }' is missing the following properties from type 'IUser': name, email, password, isActive, and 60 more.
+
+    [7m33[0m       user: { role: 'ADMIN', permissions: [] },
+    [7m  [0m [91m      ~~~~[0m
+
+      [96msrc/middleware/auth.middleware.ts[0m:[93m13[0m:[93m7[0m
+        [7m13[0m       user?: IUser;
+        [7m  [0m [96m      ~~~~[0m
+        The expected type comes from property 'user' which is declared here on type 'Partial<Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>>'
+
+FAIL src/test/controllers/calendarIntegration.controller.test.ts
+  ● Test suite failed to run
+
+    [96msrc/test/controllers/calendarIntegration.controller.test.ts[0m:[93m46[0m:[93m28[0m - [91merror[0m[90m TS2322: [0mType 'string' is not assignable to type 'ObjectId'.
+
+    [7m46[0m       user: { id: 'user1', _id: 'user1', role: 'ADMIN' },
+    [7m  [0m [91m                           ~~~[0m
+
+FAIL src/test/controllers/siteImage.controller.test.ts
+  ● Test suite failed to run
+
+    [96msrc/test/controllers/siteImage.controller.test.ts[0m:[93m31[0m:[93m7[0m - [91merror[0m[90m TS2740: [0mType '{ _id: ObjectId; }' is missing the following properties from type 'IUser': name, email, password, role, and 60 more.
+
+    [7m31[0m       user: { _id: new mongoose.Types.ObjectId() },
+    [7m  [0m [91m      ~~~~[0m
+
+      [96msrc/middleware/auth.middleware.ts[0m:[93m13[0m:[93m7[0m
+        [7m13[0m       user?: IUser;
+        [7m  [0m [96m      ~~~~[0m
+        The expected type comes from property 'user' which is declared here on type 'Partial<Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>>'
+
+Test Suites: 5 failed, 7 passed, 12 total
+Tests:       6 failed, 54 passed, 60 total
+Snapshots:   0 total
+Time:        6.169 s, estimated 14 s
+Ran all test suites.

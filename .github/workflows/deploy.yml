@@ -9,7 +9,43 @@ on:
 
 jobs:
   on-success:
+    name: Build, Lint and Test
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Server Dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Install Client Dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Typecheck Server
+        working-directory: ./server
+        run: npm run build
+
+      - name: Typecheck Client
+        working-directory: ./client
+        run: npm run build
+
+      - name: Lint Server
+        working-directory: ./server
+        run: npm run lint
+
+      - name: Test Server
+        working-directory: ./server
+        run: npm test
+
+      - name: Test Client
+        working-directory: ./client
+        run: npm test
   # ============================================
   # STAGING DEPLOYMENT
   # ============================================

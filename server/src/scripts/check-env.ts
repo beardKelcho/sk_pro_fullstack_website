@@ -106,17 +106,21 @@ const checkMongoConnection = async (): Promise<CheckResult> => {
       message: 'Bağlantı başarılı',
       details: `Host: ${host}, Database: ${dbName}`,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     let errorMessage = 'Bağlantı hatası';
-    let details = error.message || String(error);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let details = (error as any).message || String((error as any));
     
-    if (error.message?.includes('IP') || error.message?.includes('whitelist')) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((error as any).message?.includes('IP') || (error as any).message?.includes('whitelist')) {
       errorMessage = 'IP Whitelist hatası';
       details = 'MongoDB Atlas Network Access ayarlarını kontrol edin';
-    } else if (error.message?.includes('authentication')) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } else if ((error as any).message?.includes('authentication')) {
       errorMessage = 'Kimlik doğrulama hatası';
       details = 'Kullanıcı adı ve şifreyi kontrol edin';
-    } else if (error.message?.includes('ENOTFOUND') || error.message?.includes('getaddrinfo')) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } else if ((error as any).message?.includes('ENOTFOUND') || (error as any).message?.includes('getaddrinfo')) {
       errorMessage = 'Sunucu bulunamadı';
       details = 'Connection string\'i ve internet bağlantınızı kontrol edin';
     }

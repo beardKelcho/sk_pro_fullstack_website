@@ -1,6 +1,6 @@
 import express from 'express';
 import scanController from '../controllers/scan.controller';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = express.Router();
 

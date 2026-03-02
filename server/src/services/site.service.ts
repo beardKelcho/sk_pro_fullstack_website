@@ -74,11 +74,11 @@ class SiteService {
             collectId(fixedContent.image, 'image');
 
             if (Array.isArray(fixedContent.availableVideos)) {
-                fixedContent.availableVideos.forEach((video: any) => collectId(video?.url, 'video'));
+                fixedContent.availableVideos.forEach((video: Record<string, unknown>) => collectId(video?.url, 'video'));
             }
 
             if (Array.isArray(fixedContent.services)) {
-                fixedContent.services.forEach((service: any) => collectId(service?.icon, 'image'));
+                fixedContent.services.forEach((service: Record<string, unknown>) => collectId(service?.icon, 'image'));
             }
 
             // Fetch resolving images
@@ -170,16 +170,16 @@ class SiteService {
         return this.buildStrictUrl(undefined, inputUrl, type);
     }
 
-    private applyUrlFixes(content: any, imageMap: Map<string, { filename: string, url: string }>): any {
-        if (content.backgroundVideo) content.backgroundVideo = this.resolveUrl(content.backgroundVideo, undefined, 'video', imageMap);
-        if (content.backgroundImage) content.backgroundImage = this.resolveUrl(content.backgroundImage, undefined, 'image', imageMap);
-        if (content.selectedVideo) content.selectedVideo = this.resolveUrl(content.selectedVideo, undefined, 'video', imageMap);
-        if (content.image) content.image = this.resolveUrl(content.image, undefined, 'image', imageMap);
+    private applyUrlFixes(content: Record<string, unknown>, imageMap: Map<string, { filename: string, url: string }>): Record<string, unknown> {
+        if (content.backgroundVideo) content.backgroundVideo = this.resolveUrl(content.backgroundVideo as string, undefined, 'video', imageMap);
+        if (content.backgroundImage) content.backgroundImage = this.resolveUrl(content.backgroundImage as string, undefined, 'image', imageMap);
+        if (content.selectedVideo) content.selectedVideo = this.resolveUrl(content.selectedVideo as string, undefined, 'video', imageMap);
+        if (content.image) content.image = this.resolveUrl(content.image as string, undefined, 'image', imageMap);
 
         if (Array.isArray(content.availableVideos)) {
-            content.availableVideos = content.availableVideos.map((video: any) => {
-                let filename = video.filename;
-                let url = video.url;
+            content.availableVideos = content.availableVideos.map((video: Record<string, unknown>) => {
+                let filename = video.filename as string | undefined;
+                let url = video.url as string | undefined;
 
                 if (url && !url.includes('cloudinary.com')) {
                     const id = url.replace(/^\/?api\/site-images\//, '').replace(/^\/?uploads\//, '').replace(/^\//, '');
@@ -199,9 +199,9 @@ class SiteService {
         }
 
         if (Array.isArray(content.services)) {
-            content.services = content.services.map((service: any) => ({
+            content.services = content.services.map((service: Record<string, unknown>) => ({
                 ...service,
-                icon: this.resolveUrl(service.icon, undefined, 'image', imageMap) || service.icon
+                icon: this.resolveUrl(service.icon as string | undefined, undefined, 'image', imageMap) || service.icon
             }));
         }
 
@@ -211,7 +211,7 @@ class SiteService {
     /**
      * Fix Image Object Helper (Public)
      */
-    fixImageUrls(imagePlainObj: any): any {
+    fixImageUrls(imagePlainObj: Record<string, unknown>): Record<string, unknown> {
         if (!imagePlainObj) return imagePlainObj;
 
         const fix = (filename: string | undefined, existingUrl: string | undefined, category: string) => {
@@ -245,7 +245,7 @@ class SiteService {
 
         const fixed = { ...imagePlainObj }; // Shallow copy
         if (fixed.filename || fixed.url) {
-            fixed.url = fix(fixed.filename, fixed.url, fixed.category || 'gallery');
+            fixed.url = fix(fixed.filename as string | undefined, fixed.url as string | undefined, (fixed.category as string) || 'gallery');
         }
         return fixed;
     }
@@ -253,7 +253,7 @@ class SiteService {
 
     /* --- Content Methods --- */
 
-    async listContents(section?: string, isActive?: boolean): Promise<any[]> {
+    async listContents(section?: string, isActive?: boolean): Promise<Record<string, unknown>[]> {
         const cacheKey = `site:contents:${section || 'all'}:${isActive ?? 'all'}`;
         const redisClient = getRedisClient();
 
@@ -266,17 +266,17 @@ class SiteService {
             }
         }
 
-        const filters: any = {};
+        const filters: Record<string, unknown> = {};
         if (section) filters.section = section;
         if (isActive !== undefined) filters.isActive = isActive;
 
         // NOTE: 'order' field removed from schema, removed sort by order
         const contents = await SiteContent.find(filters).select('-__v').sort({ createdAt: -1 }).lean();
 
-        const result = await Promise.all(contents.map(async (doc: any) => {
-            const docObj = { ...doc };
+        const result = await Promise.all(contents.map(async (doc: unknown) => {
+            const docObj = { ...(doc as Record<string, unknown>) };
             // Use 'data' instead of 'content'
-            docObj.data = await this.fixContentUrls(docObj.data) as any;
+            docObj.data = await this.fixContentUrls(docObj.data);
             return docObj;
         }));
 
@@ -292,7 +292,7 @@ class SiteService {
         return result;
     }
 
-    async getContentBySection(section: string): Promise<any | null> {
+    async getContentBySection(section: string): Promise<Record<string, unknown> | null> {
         const normalized = section.toLowerCase().trim();
         const cacheKey = `site:content:${normalized}`;
         const redisClient = getRedisClient();
@@ -310,8 +310,8 @@ class SiteService {
 
         if (!content) return null;
 
-        const docObj = { ...content };
-        docObj.data = await this.fixContentUrls((docObj as any).data) as any;
+        const docObj = { ...(content as Record<string, unknown>) };
+        docObj.data = await this.fixContentUrls(docObj.data);
 
         if (redisClient) {
             try {
@@ -324,12 +324,11 @@ class SiteService {
         return docObj;
     }
 
-    async createOrUpdateContent(section: string, contentData: any, order?: number, isActive?: boolean): Promise<any> {
+    async createOrUpdateContent(section: string, contentData: Record<string, unknown>, order?: number, isActive?: boolean): Promise<Record<string, unknown>> {
         // EĞER HERO VİDEOSU VARSA URL'İ DÜZELT
-        if (contentData && (contentData as any).videoUrl) {
-            const data = contentData as any;
-            if (!data.videoUrl.startsWith('http')) {
-                data.videoUrl = `https://res.cloudinary.com/dmeviky6f/video/upload/${data.videoUrl}`;
+        if (contentData && typeof contentData.videoUrl === 'string') {
+            if (!contentData.videoUrl.startsWith('http')) {
+                contentData.videoUrl = `https://res.cloudinary.com/dmeviky6f/video/upload/${contentData.videoUrl}`;
             }
         }
 
@@ -352,22 +351,22 @@ class SiteService {
             });
         }
 
-        const docObj = siteContent.toObject();
-        docObj.data = await this.fixContentUrls(docObj.data) as any;
+        const docObj = siteContent.toObject() as unknown as Record<string, unknown>;
+        docObj.data = await this.fixContentUrls(docObj.data);
 
         await this.invalidateCache('site:content*');
 
         return docObj;
     }
 
-    async updateContentById(id: string, data: { content?: any, order?: number, isActive?: boolean }): Promise<any> {
+    async updateContentById(id: string, data: { content?: Record<string, unknown>, order?: number, isActive?: boolean }): Promise<Record<string, unknown>> {
         if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError('Geçersiz ID', 400);
 
         // Compatibility mapping: if 'content' passed, treat as 'data'
         const inputData = data.content || {};
 
         // EĞER HERO VİDEOSU VARSA URL'İ DÜZELT
-        if (inputData && inputData.videoUrl) {
+        if (inputData && typeof inputData.videoUrl === 'string') {
             if (!inputData.videoUrl.startsWith('http')) {
                 inputData.videoUrl = `https://res.cloudinary.com/dmeviky6f/video/upload/${inputData.videoUrl}`;
             }
@@ -384,9 +383,9 @@ class SiteService {
         siteContent.markModified('data');
         await siteContent.save();
 
-        const docObj = siteContent.toObject();
+        const docObj = siteContent.toObject() as unknown as Record<string, unknown>;
         console.log('SITE_CONTENT_SAVED:', docObj.data);
-        docObj.data = await this.fixContentUrls(docObj.data) as any;
+        docObj.data = await this.fixContentUrls(docObj.data);
 
         await this.invalidateCache('site:content*');
 
@@ -401,7 +400,7 @@ class SiteService {
 
     /* --- Image Methods --- */
 
-    async listImages(category?: string, isActive?: boolean): Promise<any[]> {
+    async listImages(category?: string, isActive?: boolean): Promise<Record<string, unknown>[]> {
         const cacheKey = `site:images:${category || 'all'}:${isActive ?? 'all'}`;
         const redisClient = getRedisClient();
 
@@ -414,12 +413,12 @@ class SiteService {
             }
         }
 
-        const filters: any = {};
+        const filters: Record<string, unknown> = {};
         if (category) filters.category = category;
         if (isActive !== undefined) filters.isActive = isActive;
 
         const images = await SiteImage.find(filters).select('-__v').sort({ category: 1, order: 1, createdAt: -1 }).lean();
-        const result = images.map((img: any) => this.fixImageUrls(img));
+        const result = images.map((img: unknown) => this.fixImageUrls(img as Record<string, unknown>));
 
         if (redisClient) {
             try {
@@ -432,32 +431,32 @@ class SiteService {
         return result;
     }
 
-    async getImageById(id: string): Promise<any> {
+    async getImageById(id: string): Promise<Record<string, unknown>> {
         if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError('Geçersiz ID', 400);
         const image = await SiteImage.findById(id).select('-__v').lean();
         if (!image) throw new AppError('Resim bulunamadı', 404);
-        return this.fixImageUrls(image as any);
+        return this.fixImageUrls(image as Record<string, unknown>);
     }
 
-    async createImage(data: { filename: string, originalName: string, path: string, url: string, category?: string, order?: number }): Promise<any> {
+    async createImage(data: { filename: string, originalName: string, path: string, url: string, category?: string, order?: number }): Promise<Record<string, unknown>> {
         const image = await SiteImage.create({
             ...data,
-            category: (data.category || 'gallery') as any,
+            category: data.category || 'gallery',
             order: data.order || 0,
             isActive: true
         });
 
         await this.invalidateCache('site:images*');
 
-        return image;
+        return image as unknown as Record<string, unknown>;
     }
 
-    async updateImage(id: string, data: { category?: string, order?: number, isActive?: boolean }): Promise<any> {
+    async updateImage(id: string, data: { category?: string, order?: number, isActive?: boolean }): Promise<Record<string, unknown>> {
         if (!mongoose.Types.ObjectId.isValid(id)) throw new AppError('Geçersiz ID', 400);
         const image = await SiteImage.findById(id);
         if (!image) throw new AppError('Resim bulunamadı', 404);
 
-        if (data.category) image.category = data.category as any;
+        if (data.category) image.category = data.category as "video" | "project" | "gallery" | "hero" | "about" | "other";
         if (data.order !== undefined) image.order = data.order;
         if (data.isActive !== undefined) image.isActive = data.isActive;
 
@@ -465,7 +464,7 @@ class SiteService {
 
         await this.invalidateCache('site:images*');
 
-        return image;
+        return image as unknown as Record<string, unknown>;
     }
 
     async deleteImage(id: string): Promise<void> {

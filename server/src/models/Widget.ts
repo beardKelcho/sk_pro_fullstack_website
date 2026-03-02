@@ -11,7 +11,7 @@ export interface IWidget extends Document {
     h: number;
   };
   settings: {
-    [key: string]: any;
+    [key: string]: unknown;
   };
   isVisible: boolean;
   order: number;

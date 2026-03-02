@@ -30,7 +30,7 @@ describe('Calendar Controller', () => {
     jest.clearAllMocks();
     mockRequest = {
       query: {},
-      user: { role: 'ADMIN', permissions: [] },
+      user: { role: 'ADMIN', permissions: [] } as unknown,
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),
@@ -112,7 +112,7 @@ END:VCALENDAR`;
         buffer: Buffer.from(icsContent),
         originalname: 'test.ics',
         mimetype: 'text/calendar',
-      } as any;
+      } as unknown;
 
       (Project.find as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnThis(),
@@ -149,7 +149,7 @@ END:VCALENDAR`;
         buffer: Buffer.from('INVALID ICS CONTENT'),
         originalname: 'test.ics',
         mimetype: 'text/calendar',
-      } as any;
+      } as unknown;
 
       await importCalendarIcs(mockRequest as Request, mockResponse as Response);
 

@@ -13,14 +13,16 @@ import logger from './logger';
 export const explainQuery = async <T>(
   query: mongoose.Query<T, T>,
   label?: string
-): Promise<any> => {
+): Promise<unknown> => {
   try {
-    const explainResult = await query.explain('executionStats') as any;
+    const explainResult = await query.explain('executionStats') as unknown;
 
     if (process.env.NODE_ENV === 'development' && process.env.DEBUG_QUERIES === 'true') {
       logger.debug(`Query Explain (${label || 'unnamed'}):`, {
-        executionStats: explainResult?.executionStats,
-        queryPlanner: explainResult?.queryPlanner,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        executionStats: (explainResult as any)?.executionStats,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        queryPlanner: (explainResult as any)?.queryPlanner,
       });
     }
 
@@ -35,9 +37,7 @@ export const explainQuery = async <T>(
  * Index kullanımını kontrol et
  */
 export const checkIndexUsage = async (
-  collectionName: string,
-  query: any
-): Promise<boolean> => {
+  collectionName: string, query: unknown): Promise<boolean> => {
   try {
     if (!mongoose.connection.db) {
       return false;
@@ -45,10 +45,11 @@ export const checkIndexUsage = async (
 
     const explainResult = await mongoose.connection.db
       .collection(collectionName)
-      .find(query)
-      .explain('executionStats') as any;
+      .find(query as any)
+      .explain('executionStats') as unknown;
 
-    const executionStats = explainResult?.executionStats || explainResult?.queryPlanner?.winningPlan;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const executionStats = (explainResult as any)?.executionStats || (explainResult as any)?.queryPlanner?.winningPlan;
     const stage = executionStats?.stage || executionStats?.inputStage?.stage;
 
     // Index kullanıldı mı?
@@ -100,6 +101,7 @@ export const sortBy = (field: string, order: 'asc' | 'desc' = 'asc') => {
  * Lean query helper (faster, returns plain objects)
  */
 export const leanQuery = <T>(query: mongoose.Query<T, T>): mongoose.Query<any, any> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return query.lean() as any;
 };
 
@@ -110,13 +112,13 @@ export const leanQuery = <T>(query: mongoose.Query<T, T>): mongoose.Query<any, a
 export const batchProcess = async <T>(
   query: mongoose.Query<T[], T>,
   batchSize: number,
-  processor: (batch: any[]) => Promise<void>
+  processor: (batch: unknown[]) => Promise<void>
 ): Promise<void> => {
   let skip = 0;
   let hasMore = true;
 
   while (hasMore) {
-    const batch = await (query.skip(skip).limit(batchSize).lean().exec() as Promise<any[]>);
+    const batch = await (query.skip(skip).limit(batchSize).lean().exec() as Promise<unknown[]>);
 
     if (batch.length === 0) {
       hasMore = false;
@@ -135,7 +137,7 @@ export const batchProcess = async <T>(
 /**
  * Query cache helper (basit in-memory cache)
  */
-const queryCache = new Map<string, { data: any; timestamp: number }>();
+const queryCache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 dakika
 
 export const cachedQuery = async <T>(
@@ -146,7 +148,7 @@ export const cachedQuery = async <T>(
   const cached = queryCache.get(key);
 
   if (cached && Date.now() - cached.timestamp < ttl) {
-    return cached.data;
+    return cached.data as T;
   }
 
   const data = await queryFn();
@@ -177,20 +179,24 @@ export const clearQueryCache = (pattern?: string): void => {
 export const detectSlowQueries = (threshold: number = 1000) => {
   const originalExec = mongoose.Query.prototype.exec;
 
-  mongoose.Query.prototype.exec = function (this: any, ...args: any[]) {
+  mongoose.Query.prototype.exec = function (this: unknown, ...args: unknown[]) {
     const startTime = Date.now();
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const query = this;
 
     // Mongoose exec method signature override
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (originalExec.apply(this, args as any) as Promise<any>).then((result: any) => {
       const duration = Date.now() - startTime;
 
       if (duration > threshold) {
         logger.warn(`⚠️  Slow query detected (${duration}ms):`, {
-          model: query.model?.modelName,
-          op: query.op,
-          conditions: query._conditions,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          model: (query as any).model?.modelName,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          op: (query as any).op,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          conditions: (query as any)._conditions,
           duration,
         });
       }

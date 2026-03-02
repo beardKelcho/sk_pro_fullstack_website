@@ -40,9 +40,10 @@ export const getGoogleCalendarAuthUrl = async (req: Request, res: Response) => {
       });
     }
 
-    const user = req.user as any;
-    const state = `google:${user.id || user._id}`; // State ile user ID'yi gönder
-    
+    const user = req.user;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const state = `google:${(user as any).id || (user as any)._id}`; // State ile user ID'yi gönder
+
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -73,26 +74,26 @@ export const getGoogleCalendarAuthUrl = async (req: Request, res: Response) => {
 export const handleGoogleCalendarCallback = async (req: Request, res: Response) => {
   try {
     const { code, state } = req.query;
-    
+
     // State'den user ID'yi al (güvenlik için state kullanılabilir)
     // Şimdilik session veya token'dan alacağız
     // Production'da state ile user ID'yi encode edip decode etmek daha güvenli olur
     const userId = state ? (state as string).split(':')[1] : null;
-    
+
     if (!code) {
       return res.status(400).json({
         success: false,
         message: 'Authorization code bulunamadı',
       });
     }
-    
+
     if (!userId) {
       return res.status(400).json({
         success: false,
         message: 'Kullanıcı bilgisi bulunamadı',
       });
     }
-    
+
     const { User } = await import('../models');
     const user = await User.findById(userId);
     if (!user) {
@@ -127,9 +128,11 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
 
     // Calendar integration kaydet veya güncelle
     await CalendarIntegration.findOneAndUpdate(
-      { user: user.id, provider: 'google' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { user: (user as any).id, provider: 'google' },
       {
-        user: user.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        user: (user as any).id,
         provider: 'google',
         accessToken: access_token,
         refreshToken: refresh_token,
@@ -153,7 +156,7 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
 
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?success=true`);
   } catch (error: unknown) {
-      const appError = error as AppError;
+    const appError = error as AppError;
     logger.error('Google Calendar callback hatası:', error);
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?error=${encodeURIComponent(appError?.message || (error as Error)?.message || 'Entegrasyon başarısız')}`);
   }
@@ -176,9 +179,10 @@ export const getOutlookCalendarAuthUrl = async (req: Request, res: Response) => 
       });
     }
 
-    const user = req.user as any;
-    const state = `outlook:${user.id || user._id}`; // State ile user ID'yi gönder
-    
+    const user = req.user;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const state = `outlook:${(user as any).id || (user as any)._id}`; // State ile user ID'yi gönder
+
     const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?${new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -208,24 +212,24 @@ export const getOutlookCalendarAuthUrl = async (req: Request, res: Response) => 
 export const handleOutlookCalendarCallback = async (req: Request, res: Response) => {
   try {
     const { code, state } = req.query;
-    
+
     // State'den user ID'yi al
     const userId = state ? (state as string).split(':')[1] : null;
-    
+
     if (!code) {
       return res.status(400).json({
         success: false,
         message: 'Authorization code bulunamadı',
       });
     }
-    
+
     if (!userId) {
       return res.status(400).json({
         success: false,
         message: 'Kullanıcı bilgisi bulunamadı',
       });
     }
-    
+
     const { User } = await import('../models');
     const user = await User.findById(userId);
     if (!user) {
@@ -262,9 +266,11 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
 
     // Calendar integration kaydet veya güncelle
     await CalendarIntegration.findOneAndUpdate(
-      { user: user.id, provider: 'outlook' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { user: (user as any).id, provider: 'outlook' },
       {
-        user: user.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        user: (user as any).id,
         provider: 'outlook',
         accessToken: access_token,
         refreshToken: refresh_token,
@@ -276,7 +282,7 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
 
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?success=true`);
   } catch (error: unknown) {
-      const appError = error as AppError;
+    const appError = error as AppError;
     logger.error('Outlook Calendar callback hatası:', error);
     return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?error=${encodeURIComponent(appError?.message || (error as Error)?.message || 'Entegrasyon başarısız')}`);
   }
@@ -287,8 +293,9 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
  */
 export const listCalendarIntegrations = async (req: Request, res: Response) => {
   try {
-    const user = req.user as any;
-    const integrations = await CalendarIntegration.find({ user: user.id }).select('-accessToken -refreshToken');
+    const user = req.user;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const integrations = await CalendarIntegration.find({ user: (user as any).id }).select('-accessToken -refreshToken');
 
     return res.status(200).json({
       success: true,
@@ -309,9 +316,10 @@ export const listCalendarIntegrations = async (req: Request, res: Response) => {
 export const deleteCalendarIntegration = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const user = req.user as any;
+    const user = req.user;
 
-    const integration = await CalendarIntegration.findOne({ _id: id, user: user.id });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const integration = await CalendarIntegration.findOne({ _id: id, user: (user as any).id });
     if (!integration) {
       return res.status(404).json({
         success: false,
@@ -340,9 +348,10 @@ export const syncCalendarImport = async (req: Request, res: Response) => {
   try {
     const { integrationId } = req.params;
     const { startDate, endDate } = req.query;
-    const user = req.user as any;
+    const user = req.user;
 
-    const integration = await CalendarIntegration.findOne({ _id: integrationId, user: user.id });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const integration = await CalendarIntegration.findOne({ _id: integrationId, user: (user as any).id });
     if (!integration || !integration.syncEnabled) {
       return res.status(404).json({
         success: false,
@@ -392,7 +401,7 @@ export const syncCalendarImport = async (req: Request, res: Response) => {
     const timeMin = startDate ? new Date(startDate as string).toISOString() : new Date().toISOString();
     const timeMax = endDate ? new Date(endDate as string).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    let events: any[] = [];
+    let events: unknown[] = [];
     if (integration.provider === 'google') {
       const calendarEvents = await listGoogleCalendarEvents(accessToken, integration.calendarId || 'primary', timeMin, timeMax);
       events = calendarEvents.items || [];
@@ -405,25 +414,28 @@ export const syncCalendarImport = async (req: Request, res: Response) => {
       success: 0,
       failed: 0,
       errors: [] as string[],
-      projects: [] as any[],
+      projects: [] as unknown[],
     };
 
     for (const event of events) {
       try {
         let projectData;
         if (integration.provider === 'google') {
-          projectData = await googleEventToProject(event, user.id || user._id.toString(), defaultClient._id.toString());
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          projectData = await googleEventToProject(event as any, (user as any).id || (user as any)._id.toString(), defaultClient._id.toString());
         } else {
-          projectData = await outlookEventToProject(event, user.id || user._id.toString(), defaultClient._id.toString());
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          projectData = await outlookEventToProject(event as any, (user as any).id || (user as any)._id.toString(), defaultClient._id.toString());
         }
 
         const project = await Project.create(projectData);
-        result.projects.push(project);
+        result.projects.push(project as unknown);
         result.success++;
       } catch (error: unknown) {
-      const appError = error as AppError;
+        const appError = error as AppError;
         result.failed++;
-        result.errors.push(`${event.summary || event.subject}: ${appError?.message || (error as Error)?.message || 'Bilinmeyen hata'}`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        result.errors.push(`${(event as any).summary || (event as any).subject}: ${appError?.message || (error as Error)?.message || 'Bilinmeyen hata'}`);
         logger.error('Calendar event import hatası:', error);
       }
     }
@@ -437,7 +449,7 @@ export const syncCalendarImport = async (req: Request, res: Response) => {
       result,
     });
   } catch (error: unknown) {
-      const appError = error as AppError;
+    const appError = error as AppError;
     logger.error('Calendar import hatası:', error);
     return res.status(500).json({
       success: false,
@@ -453,9 +465,10 @@ export const syncCalendarExport = async (req: Request, res: Response) => {
   try {
     const { integrationId } = req.params;
     const { startDate, endDate } = req.query;
-    const user = req.user as any;
+    const user = req.user;
 
-    const integration = await CalendarIntegration.findOne({ _id: integrationId, user: user.id });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const integration = await CalendarIntegration.findOne({ _id: integrationId, user: (user as any).id });
     if (!integration || !integration.syncEnabled) {
       return res.status(404).json({
         success: false,
@@ -491,7 +504,7 @@ export const syncCalendarExport = async (req: Request, res: Response) => {
     }
 
     // Projeleri al
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (startDate) query.startDate = { $gte: new Date(startDate as string) };
     if (endDate) query.endDate = { $lte: new Date(endDate as string) };
 
@@ -501,24 +514,26 @@ export const syncCalendarExport = async (req: Request, res: Response) => {
       success: 0,
       failed: 0,
       errors: [] as string[],
-      events: [] as any[],
+      events: [] as unknown[],
     };
 
     for (const project of projects) {
       try {
         let event;
         if (integration.provider === 'google') {
-          event = projectToGoogleEvent(project);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          event = projectToGoogleEvent(project as any as any);
           const created = await createGoogleCalendarEvent(accessToken, integration.calendarId || 'primary', event);
           result.events.push(created);
         } else {
-          event = projectToOutlookEvent(project);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          event = projectToOutlookEvent(project as any as any);
           const created = await createOutlookCalendarEvent(accessToken, integration.calendarId || 'calendar', event);
           result.events.push(created);
         }
         result.success++;
       } catch (error: unknown) {
-      const appError = error as AppError;
+        const appError = error as AppError;
         result.failed++;
         result.errors.push(`${project.name}: ${appError?.message || (error as Error)?.message || 'Bilinmeyen hata'}`);
         logger.error('Calendar event export hatası:', error);
@@ -534,7 +549,7 @@ export const syncCalendarExport = async (req: Request, res: Response) => {
       result,
     });
   } catch (error: unknown) {
-      const appError = error as AppError;
+    const appError = error as AppError;
     logger.error('Calendar export hatası:', error);
     return res.status(500).json({
       success: false,

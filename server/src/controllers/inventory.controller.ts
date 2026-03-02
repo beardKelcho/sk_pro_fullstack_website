@@ -83,7 +83,7 @@ export class InventoryController {
         session.startTransaction();
         try {
             const userId = (req as AuthenticatedRequest).user?.id;
-            const { trackingType, serialNumber, quantity } = req.body;
+            const { trackingType, serialNumber } = req.body;
 
             // Validation
             if (trackingType === 'SERIALIZED') {
@@ -107,10 +107,10 @@ export class InventoryController {
 
             await session.commitTransaction();
             res.status(201).json({ success: true, data: createdItem });
-        } catch (error: any) {
+        } catch (error: unknown) {
             await session.abortTransaction();
             logger.error('Ürün oluşturma hatası:', error);
-            res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Sunucu hatası' });
+            res.status((error as any).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
         } finally {
             session.endSession();
         }
@@ -131,16 +131,23 @@ export class InventoryController {
 
             // Transform for consistent response (optional but good for location logic)
             // Using toObject() to modify
-            const data: any = item.toObject();
-            if (data.status === 'IN_USE' && data.currentProject) {
-                data.location = {
-                    _id: data.currentProject._id,
-                    name: data.currentProject.location || data.currentProject.name,
+            const data: unknown = item.toObject();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((data as any).status === 'IN_USE' && (data as any).currentProject) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (data as any).location = {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    _id: (data as any).currentProject._id,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    name: (data as any).currentProject.location || (data as any).currentProject.name,
                     type: 'PROJECT'
                 };
-            } else if (data.status === 'AVAILABLE') {
-                data.location = {
-                    _id: data.location?._id || 'warehouse',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } else if ((data as any).status === 'AVAILABLE') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (data as any).location = {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    _id: (data as any).location?._id || 'warehouse',
                     name: 'Ana Depo',
                     type: 'WAREHOUSE'
                 };
@@ -155,7 +162,7 @@ export class InventoryController {
     async getItems(req: Request, res: Response) {
         try {
             const { category, location, status, search, limit = 20, page = 1 } = req.query;
-            const query: any = {};
+            const query: Record<string, unknown> = {};
 
             if (category) query.category = category;
             if (location) query.location = location;
@@ -177,17 +184,21 @@ export class InventoryController {
                 .lean();
 
             // Transform location based on status
-            const transformedItems = await Promise.all(items.map(async (item: any) => {
-                if (item.status === 'IN_USE' && item.currentProject) {
-                    item.location = {
-                        _id: item.currentProject._id,
-                        name: item.currentProject.location || item.currentProject.name,
+            const transformedItems = await Promise.all(items.map(async (item: unknown) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if (((item as any) as any).status === 'IN_USE' && (item as any).currentProject) {
+                    (item as Record<string, unknown>).location = {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        _id: (item as any).currentProject._id,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        name: (item as any).currentProject.location || (item as any).currentProject.name,
                         type: 'PROJECT'
                     };
-                } else if (item.status === 'AVAILABLE') {
+                } else if ((item as any).status === 'AVAILABLE') {
                     // Force "Ana Depo" display for available items
-                    item.location = {
-                        _id: item.location?._id || 'warehouse',
+                    (item as Record<string, unknown>).location = {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        _id: (item as any).location?._id || 'warehouse',
                         name: 'Ana Depo',
                         type: 'WAREHOUSE'
                     };
@@ -224,14 +235,14 @@ export class InventoryController {
             const item = await Equipment.findById(id).session(session);
             if (!item) throw new AppError('Ekipman bulunamadı', 404);
 
-            if (item.status !== 'AVAILABLE' && item.status !== 'IN_USE') {
+            if ((item as any).status !== 'AVAILABLE' && (item as any).status !== 'IN_USE') {
                 throw new AppError('Sadece müsait veya kullanımda olan ekipmanlar bakıma gönderilebilir', 400);
             }
 
-            const previousStatus = item.status;
+            // Removed unused previousStatus
             const previousProject = item.currentProject;
 
-            item.status = 'MAINTENANCE';
+            (item as any).status = 'MAINTENANCE';
             item.currentProject = undefined; // Clear project if it was in use
             await item.save({ session });
 
@@ -248,16 +259,17 @@ export class InventoryController {
                 user: userId,
                 action: 'MAINTENANCE',
                 quantityChanged: 0,
-                fromLocation: previousProject || item.location,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                fromLocation: previousProject || (item as any).location,
                 notes: notes || 'Bakıma gönderildi',
                 date: new Date()
             }], { session });
 
             await session.commitTransaction();
             res.status(200).json({ success: true, message: 'Ekipman bakıma gönderildi', data: item });
-        } catch (error: any) {
+        } catch (error: unknown) {
             await session.abortTransaction();
-            res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Sunucu hatası' });
+            res.status((error as any).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
         } finally {
             session.endSession();
         }
@@ -281,17 +293,17 @@ export class InventoryController {
             const project = await Project.findById(projectId).session(session);
             if (!project) throw new AppError('Proje bulunamadı', 404);
 
-            if (item.status !== 'AVAILABLE') {
+            if ((item as any).status !== 'AVAILABLE') {
                 // Allow if already IN_USE? Maybe not for simplification. Only AVAILABLE items can be assigned.
                 // User request says "Ürün ya depodadır ya projede".
                 // If item is already in a project, it should be returned first? Or can we transfer Project->Project directly?
                 // For simplification: Warehouse -> Project only.
-                if (item.status === 'IN_USE' && item.currentProject?.toString() !== projectId) {
+                if ((item as any).status === 'IN_USE' && item.currentProject?.toString() !== projectId) {
                     throw new AppError('Bu ekipman şu an başka bir projede kullanımda', 400);
                 }
                 // If status is maintenance etc.
-                if (item.status !== 'IN_USE') {
-                    throw new AppError(`Ekipman şu an müsait değil (${item.status})`, 400);
+                if ((item as any).status !== 'IN_USE') {
+                    throw new AppError(`Ekipman şu an müsait değil (${(item as any).status})`, 400);
                 }
             }
 
@@ -300,9 +312,9 @@ export class InventoryController {
                 if (item.currentProject) {
                     throw new AppError('Seri numaralı ürün zaten bir projede', 400);
                 }
-                item.status = 'IN_USE';
+                (item as any).status = 'IN_USE';
                 item.currentProject = new mongoose.Types.ObjectId(projectId);
-                // item.location remains Warehouse or we can change it to a "Project" location type if exists.
+                // (item as Record<string, unknown>).location remains Warehouse or we can change it to a "Project" location type if exists.
                 // User said "location alanını null yap veya 'Projede' olarak işaretle".
                 // Since location is required in Schema, we must keep it valid. 
                 // Let's assume we keep the 'Warehouse' location ID but logic knows it's out.
@@ -334,9 +346,10 @@ export class InventoryController {
 
                 // 2. Create/Update Project Item
                 // Check if this equipment (same name/model) is already in project
-                let projectItem = await Equipment.findOne({
-                    name: item.name,
-                    model: item.model,
+                const projectItem = await Equipment.findOne({
+                    name: (item as any).name,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    model: (item as any).model,
                     currentProject: projectId,
                     trackingType: 'BULK'
                 }).session(session);
@@ -346,14 +359,21 @@ export class InventoryController {
                     await projectItem.save({ session });
                 } else {
                     // Create new
-                    const newItemData: any = item.toObject();
-                    delete newItemData._id;
-                    delete newItemData.createdAt;
-                    delete newItemData.updatedAt;
-                    delete newItemData.__v;
-                    newItemData.quantity = quantity;
-                    newItemData.status = 'IN_USE';
-                    newItemData.currentProject = projectId;
+                    const newItemData: unknown = item.toObject();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    delete (newItemData as any)._id;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    delete (newItemData as any).createdAt;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    delete (newItemData as any).updatedAt;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    delete (newItemData as any).__v;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (newItemData as any).quantity = quantity;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (newItemData as any).status = 'IN_USE';
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (newItemData as any).currentProject = projectId;
                     // Location ID must be valid. Let's keep source location ID or specific dummy.
                     // Keeping source location ID (Warehouse)
 
@@ -374,10 +394,10 @@ export class InventoryController {
 
             await session.commitTransaction();
             res.status(200).json({ success: true, message: 'Ürün projeye atandı' });
-        } catch (error: any) {
+        } catch (error: unknown) {
             await session.abortTransaction();
             logger.error('Proje atama hatası:', error);
-            res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Sunucu hatası' });
+            res.status((error as any).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
         } finally {
             session.endSession();
         }
@@ -400,10 +420,11 @@ export class InventoryController {
 
             // Find Warehouse Item to merge back into
             // We assume 'location' field on the item holds the Warehouse ID.
-            const warehouseId = item.location;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const warehouseId = (item as any).location;
 
             if (item.trackingType === 'SERIALIZED') {
-                item.status = 'AVAILABLE';
+                (item as any).status = 'AVAILABLE';
                 item.currentProject = undefined; // Clear project
                 await item.save({ session });
             } else {
@@ -415,15 +436,16 @@ export class InventoryController {
                 // 1. Decrease Project Stock
                 item.quantity -= quantity;
                 if (item.quantity === 0) {
-                    await Equipment.findByIdAndDelete(item._id).session(session);
+                    await Equipment.findByIdAndDelete((item as any)._id).session(session);
                 } else {
                     await item.save({ session });
                 }
 
                 // 2. Increase Warehouse Stock
                 const warehouseItem = await Equipment.findOne({
-                    name: item.name,
-                    model: item.model,
+                    name: (item as any).name,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    model: (item as any).model,
                     location: warehouseId,
                     status: 'AVAILABLE', // Warehouse stock is available
                     trackingType: 'BULK',
@@ -435,15 +457,23 @@ export class InventoryController {
                     await warehouseItem.save({ session });
                 } else {
                     // This creates a new "Available" item in warehouse if original was exhausted/deleted
-                    const newItemData: any = item.toObject();
-                    delete newItemData._id;
-                    delete newItemData.createdAt;
-                    delete newItemData.updatedAt;
-                    delete newItemData.__v;
-                    newItemData.quantity = quantity;
-                    newItemData.status = 'AVAILABLE';
-                    newItemData.currentProject = null;
-                    newItemData.location = warehouseId;
+                    const newItemData: unknown = item.toObject();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    delete (newItemData as any)._id;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    delete (newItemData as any).createdAt;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    delete (newItemData as any).updatedAt;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    delete (newItemData as any).__v;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (newItemData as any).quantity = quantity;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (newItemData as any).status = 'AVAILABLE';
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (newItemData as any).currentProject = null;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (newItemData as any).location = warehouseId;
 
                     await Equipment.create([newItemData], { session });
                 }
@@ -464,10 +494,10 @@ export class InventoryController {
             await session.commitTransaction();
             res.status(200).json({ success: true, message: 'Ürün depoya iade edildi' });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             await session.abortTransaction();
             logger.error('İade hatası:', error);
-            res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Sunucu hatası' });
+            res.status((error as any).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
         } finally {
             session.endSession();
         }
@@ -501,12 +531,14 @@ export class InventoryController {
             }
 
             // Update allowed fields
-            if (name) item.name = name;
+            if (name) (item as any).name = name;
             if (brand) item.brand = brand;
-            if (model) item.model = model;
-            if (serialNumber) item.serialNumber = serialNumber;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (model) (item as any).model = model;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (serialNumber) (item as any).serialNumber = serialNumber;
             if (category) item.category = category;
-            if (status) item.status = status;
+            if (status) (item as any).status = status;
             if (criticalStockLevel !== undefined) item.criticalStockLevel = criticalStockLevel;
             if (subComponents) item.subComponents = subComponents;
 

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Case from '../models/Case';
 import Equipment from '../models/Equipment';
 import Project from '../models/Project';
@@ -8,7 +9,7 @@ import logger from '../utils/logger';
 // Benzersiz Case QR Kodu oluşturucu
 const generateUniqueCaseQR = async (): Promise<string> => {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let qrPrefix = 'CASE-';
+    const qrPrefix = 'CASE-';
     let isUnique = false;
     let newQrCode = '';
 
@@ -177,10 +178,10 @@ export const processCaseQR = async (req: Request, res: Response) => {
         const userId = req.user?.id;
 
         for (const item of caseItem.items) {
-            const equip = await Equipment.findById(item.equipment);
+            const equip = await Equipment.findById((item as any).equipment);
 
             if (!equip) {
-                errors.push(`Ekipman bulunamadı (ID: ${item.equipment})`);
+                errors.push(`Ekipman bulunamadı (ID: ${(item as any).equipment})`);
                 continue;
             }
 
@@ -196,8 +197,8 @@ export const processCaseQR = async (req: Request, res: Response) => {
             // Projeye ekle (eğer daha önceden eklendiyse, burası sadece listeye equipment ID'yi ekler)
             // Varsayım olarak projede aynı equipment ID'nin birden fazla kez bulunmasına izin veriyoruz (veya quantity tutmuyoruz projede sadece ID array'i var).
             // Eğer projedeki equipment dizisi tekil tutulmak isteniyorsa kontrol eklenebilir.
-            if (!project.equipment.includes(equip._id as any)) {
-                project.equipment.push(equip._id as any);
+            if (!project.equipment.includes(equip._id as unknown as mongoose.Types.ObjectId)) {
+                project.equipment.push(equip._id as unknown as mongoose.Types.ObjectId);
             }
 
             // Envanter logu at

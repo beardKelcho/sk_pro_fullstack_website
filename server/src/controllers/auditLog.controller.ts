@@ -16,7 +16,7 @@ export const getAuditLogsController = async (req: Request, res: Response) => {
       limit = 50,
     } = req.query;
 
-    const filters: any = {};
+    const filters: Record<string, unknown> = {};
 
     if (user) {
       filters.user = user as string;
@@ -68,7 +68,7 @@ export const getResourceAuditHistory = async (req: Request, res: Response) => {
     const { page = 1, limit = 50 } = req.query;
 
     const result = await getAuditLogs({
-      resource: resource as any,
+      resource: resource as string,
       resourceId: resourceId,
       page: parseInt(page as string, 10),
       limit: parseInt(limit as string, 10),

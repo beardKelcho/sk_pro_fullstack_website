@@ -13,7 +13,7 @@ if (!fs.existsSync(uploadDir)) {
 const storage = createStorage();
 
 // File filter
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: unknown, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     // İzin verilen dosya tipleri
     const allowedTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|zip|rar|mp4|webm|mov|avi|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());

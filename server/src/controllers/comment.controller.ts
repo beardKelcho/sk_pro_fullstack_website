@@ -37,7 +37,7 @@ export const listComments = async (req: Request, res: Response) => {
 
 export const createComment = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Kullanıcı kimlik doğrulaması gerekli' });
     }
@@ -77,8 +77,8 @@ export const createComment = async (req: Request, res: Response) => {
 
     const mentionIds: mongoose.Types.ObjectId[] = Array.isArray(mentions)
       ? mentions
-          .filter((id: any) => mongoose.Types.ObjectId.isValid(String(id)))
-          .map((id: any) => new mongoose.Types.ObjectId(String(id)))
+        .filter((id: unknown) => mongoose.Types.ObjectId.isValid(String(id)))
+        .map((id: unknown) => new mongoose.Types.ObjectId(String(id)))
       : [];
 
     const comment = await Comment.create({
@@ -97,7 +97,8 @@ export const createComment = async (req: Request, res: Response) => {
         mentionIds.map((x) => x.toString()),
         'SYSTEM',
         'Yeni Yorum',
-        `${(req.user as any)?.name || 'Bir kullanıcı'} size bir yorumda bahsetti.`,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        `${(req.user as any as any)?.name || 'Bir kullanıcı'} size bir yorumda bahsetti.`,
         {
           resourceType,
           resourceId,
@@ -116,7 +117,7 @@ export const createComment = async (req: Request, res: Response) => {
 
 export const deleteComment = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Kullanıcı kimlik doğrulaması gerekli' });
     }
@@ -132,7 +133,8 @@ export const deleteComment = async (req: Request, res: Response) => {
     }
 
     // Sadece author veya ADMIN/FIRMA_SAHIBI silebilir
-    const role = (req.user as any)?.role;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const role = (req.user as any as any)?.role;
     const isOwner = comment.author.toString() === String(userId);
     const isPrivileged = role === 'ADMIN' || role === 'FIRMA_SAHIBI';
     if (!isOwner && !isPrivileged) {

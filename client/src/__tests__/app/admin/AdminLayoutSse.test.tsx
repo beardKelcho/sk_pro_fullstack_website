@@ -5,10 +5,6 @@ const invalidateQueriesMock = jest.fn().mockResolvedValue(undefined);
 
 let capturedOnEvent: ((evt: { event: string; data: any }) => void) | null = null;
 
-jest.mock('next/font/google', () => ({
-  Inter: () => ({ className: 'font-inter' }),
-}));
-
 jest.mock('next/navigation', () => ({
   usePathname: () => '/admin/monitoring',
 }));

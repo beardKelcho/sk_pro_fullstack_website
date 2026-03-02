@@ -107,7 +107,7 @@ const createTestUser = async () => {
     logger.info('═══════════════════════════════════════════════════════════');
     
     process.exit(0);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('❌ Test kullanıcısı oluşturma hatası:', error);
     if (mongoose.connection.readyState === 1) {
       await mongoose.connection.close();

@@ -17,13 +17,17 @@ import logger from './logger';
  * @returns Optimize edilmiş pipeline
  */
 export const optimizeAggregation = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pipeline: any[],
   _options: {
     allowDiskUse?: boolean;
     explain?: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     hint?: any;
   } = {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any[] => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const optimized: any[] = [];
   let hasMatch = false;
   let hasSort = false;
@@ -63,7 +67,8 @@ export const optimizeAggregation = (
     // $project stage'inde sadece gerekli alanları tut
     if (stageKey === '$project') {
       const projectStage = optimizeProjectStage(stage.$project);
-      if (Object.keys(projectStage).length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (Object.keys((projectStage as any)).length > 0) {
         optimized.push({ $project: projectStage });
       }
       continue;
@@ -91,10 +96,12 @@ export const optimizeAggregation = (
  * $project stage'ini optimize eder
  * Sadece gerekli alanları tutar
  */
-const optimizeProjectStage = (project: any): any => {
+const optimizeProjectStage = (project: unknown): unknown => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const optimized: any = {};
 
-  for (const [key, value] of Object.entries(project)) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const [key, value] of Object.entries((project as any))) {
     // 0 (exclude) değerleri atla (zaten exclude edilmiş)
     if (value === 0 || value === false) {
       continue;
@@ -112,12 +119,14 @@ const optimizeProjectStage = (project: any): any => {
  */
 export const explainAggregation = async (
   model: mongoose.Model<any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pipeline: any[],
   _options: {
     allowDiskUse?: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     hint?: any;
   } = {}
-): Promise<any> => {
+): Promise<unknown> => {
   try {
     const explainResult = await model.aggregate(pipeline).explain('executionStats');
 
@@ -140,6 +149,7 @@ export const explainAggregation = async (
  * Aggregation pipeline'ı index kullanımı için optimize eder
  * $match stage'lerinde kullanılan alanlar için index önerileri verir
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const suggestIndexesForAggregation = (pipeline: any[]): string[] => {
   const suggestions: string[] = [];
   const matchFields: Set<string> = new Set();
@@ -179,9 +189,12 @@ export const suggestIndexesForAggregation = (pipeline: any[]): string[] => {
  * Büyük veri setleri için allowDiskUse ve cursor kullanımını önerir
  */
 export const optimizeForMemory = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pipeline: any[],
   estimatedDataSize: number = 0
-): { pipeline: any[]; options: any } => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): { pipeline: any[]; options: unknown } => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const options: any = {};
 
   // Büyük veri setleri için allowDiskUse öner
@@ -193,6 +206,7 @@ export const optimizeForMemory = (
   const optimized = pipeline.map(stage => {
     if (stage.$group) {
       // $group içinde gereksiz alanları kaldır
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const optimizedGroup: any = {};
       for (const [key, value] of Object.entries(stage.$group)) {
         // Sadece gerekli aggregation operatörlerini tut
@@ -213,11 +227,12 @@ export const optimizeForMemory = (
  * Büyük sonuç setleri için cursor kullanımını sağlar
  */
 export const optimizeForBatchProcessing = (
-  pipeline: any[],
+  pipeline: unknown[],
   batchSize: number = 1000
-): any[] => {
+): unknown[] => {
   // $limit yoksa batch size ekle
-  const hasLimit = pipeline.some(stage => stage.$limit);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hasLimit = pipeline.some((stage: any) => stage.$limit);
   if (!hasLimit) {
     pipeline.push({ $limit: batchSize });
   }

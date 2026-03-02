@@ -21,6 +21,7 @@ const clampRange = (start: Date, end: Date, maxDays = 365) => {
 
 const toDayKey = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const collectionName = (model: Model<any>, fallback: string) => {
   return model?.collection?.name || fallback;
 };

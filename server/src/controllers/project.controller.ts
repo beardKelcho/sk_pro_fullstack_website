@@ -60,7 +60,7 @@ export class ProjectController {
     session.startTransaction();
     try {
       const projectData = req.body;
-      const userId = (req as any).user?._id;
+      const userId = (req as { user?: { _id?: string } }).user?._id;
 
       // Pass request body + createdBy for logging
       const project = await projectService.createProject({
@@ -95,9 +95,9 @@ export class ProjectController {
         throw new AppError('Geçersiz proje ID', 400);
       }
 
-      const userId = (req as any).user?._id;
+      const userId = (req as { user?: { _id?: string } }).user?._id;
 
-      // Prevent updating immutable fields
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { _id, createdAt, updatedAt, createdBy, ...updateData } = req.body;
 
       const project = await projectService.updateProject(id, {

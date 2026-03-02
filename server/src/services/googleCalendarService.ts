@@ -35,7 +35,7 @@ export interface GoogleCalendarListResponse {
 /**
  * Google Calendar API'ye erişim için access token ile istek yap
  */
-const makeGoogleCalendarRequest = async <T = any>(
+const makeGoogleCalendarRequest = async <T = Record<string, unknown>>(
   accessToken: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   endpoint: string,
@@ -52,12 +52,13 @@ const makeGoogleCalendarRequest = async <T = any>(
       data,
     });
     return response.data as T;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number, data?: { error?: { message?: string } } }, message?: string };
     logger.error('Google Calendar API hatası:', {
       endpoint,
       method,
-      status: error.response?.status,
-      message: error.response?.data?.error?.message || error.message,
+      status: err.response?.status,
+      message: err.response?.data?.error?.message || err.message,
     });
     throw error;
   }
@@ -84,7 +85,7 @@ export const refreshGoogleAccessToken = async (
       accessToken: data.access_token,
       expiresIn: data.expires_in || 3600,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Google token refresh hatası:', error);
     throw error;
   }
@@ -172,9 +173,9 @@ export const googleEventToProject = (event: GoogleCalendarEvent, userId: string,
 /**
  * Projeyi Google Calendar event formatına çevir
  */
-export const projectToGoogleEvent = (project: Record<string, any>): GoogleCalendarEvent => {
-  const startDate = new Date(project.startDate);
-  const endDate = project.endDate ? new Date(project.endDate) : startDate;
+export const projectToGoogleEvent = (project: Record<string, unknown>): GoogleCalendarEvent => {
+  const startDate = new Date(project.startDate as string | number | Date);
+  const endDate = project.endDate ? new Date(project.endDate as string | number | Date) : startDate;
 
   return {
     summary: `[Proje] ${project.name}`,
@@ -185,7 +186,7 @@ export const projectToGoogleEvent = (project: Record<string, any>): GoogleCalend
     end: {
       date: endDate.toISOString().split('T')[0],
     },
-    location: project.location || '',
+    location: (project.location as string) || '',
     status: project.status === 'CANCELLED' ? 'cancelled' : 'confirmed',
   };
 };

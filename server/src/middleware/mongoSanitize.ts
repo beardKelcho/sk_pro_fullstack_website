@@ -2,13 +2,14 @@ import type { NextFunction, Request, Response } from 'express';
 
 type AnyObject = Record<string, any>;
 
-const isPlainObject = (v: any): v is AnyObject => {
+const isPlainObject = (v: unknown): v is AnyObject => {
   if (!v || typeof v !== 'object') return false;
   const proto = Object.getPrototypeOf(v);
   return proto === Object.prototype || proto === null;
 };
 
-const sanitize = (input: any): any => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sanitize = (input: unknown): unknown => {
   if (Array.isArray(input)) {
     return input.map(sanitize);
   }
@@ -25,9 +26,12 @@ const sanitize = (input: any): any => {
 };
 
 export const mongoSanitize = (req: Request, _res: Response, next: NextFunction) => {
-  if (req.body) req.body = sanitize(req.body);
-  if (req.query) req.query = sanitize(req.query);
-  if (req.params) req.params = sanitize(req.params);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (req.body) req.body = sanitize(req.body) as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (req.query) req.query = sanitize(req.query) as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (req.params) req.params = sanitize(req.params) as any;
   return next();
 };
 

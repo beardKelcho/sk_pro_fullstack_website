@@ -9,7 +9,7 @@ export const getMedia = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 20;
         const type = req.query.type as string;
 
-        const query: any = {};
+        const query: Record<string, unknown> = {};
         if (type) query.type = type;
 
         const total = await Media.countDocuments(query);

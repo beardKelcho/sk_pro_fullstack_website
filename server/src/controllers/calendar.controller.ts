@@ -37,7 +37,7 @@ export const getCalendarEvents = async (req: Request, res: Response) => {
     }
 
     // Permissions: project view şart; maintenance opsiyonel
-    const user = req.user as any;
+    const user = req.user;
     const role = user?.role as string;
     const userPermissions = (user?.permissions || []) as string[];
     const canViewMaintenance =
@@ -46,7 +46,7 @@ export const getCalendarEvents = async (req: Request, res: Response) => {
       hasPermission(role, Permission.MAINTENANCE_VIEW, userPermissions);
 
     // Proje filtreleri (tarih aralığı ile overlap)
-    const projectQuery: any = {
+    const projectQuery: Record<string, unknown> = {
       $or: [
         { startDate: { $gte: startDate, $lte: endDate } },
         { endDate: { $gte: startDate, $lte: endDate } },
@@ -76,21 +76,21 @@ export const getCalendarEvents = async (req: Request, res: Response) => {
       : [];
 
     const events = [
-      ...projects.map((p: any) => ({
-        id: p._id.toString(),
+      ...projects.map((p: unknown) => ({
+        id: (p as any)._id.toString(),
         type: 'project' as const,
-        name: p.name,
-        status: p.status,
-        startDate: p.startDate,
-        endDate: p.endDate || p.startDate,
+        name: (p as any).name,
+        status: (p as any).status,
+        startDate: (p as any).startDate,
+        endDate: (p as any).endDate || (p as any).startDate,
       })),
-      ...maintenances.map((m: any) => ({
-        id: m._id.toString(),
+      ...maintenances.map((m: unknown) => ({
+        id: (m as any)._id.toString(),
         type: 'maintenance' as const,
-        name: typeof m.equipment === 'object' && m.equipment ? m.equipment.name || 'Bakım' : 'Bakım',
+        name: typeof (m as any).equipment === 'object' && (m as any).equipment ? ((m as any).equipment as any).name || 'Bakım' : 'Bakım',
         status: 'PENDING_APPROVAL', // frontend renkleriyle uyumlu
-        startDate: m.scheduledDate,
-        endDate: m.scheduledDate,
+        startDate: (m as any).scheduledDate,
+        endDate: (m as any).scheduledDate,
       })),
     ];
 
@@ -151,7 +151,7 @@ export const exportCalendarIcs = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'startDate ve endDate parametreleri zorunludur' });
     }
 
-    const user = req.user as any;
+    const user = req.user;
     const role = user?.role as string;
     const userPermissions = (user?.permissions || []) as string[];
     const canViewMaintenance =
@@ -159,7 +159,7 @@ export const exportCalendarIcs = async (req: Request, res: Response) => {
       role === Role.FIRMA_SAHIBI ||
       hasPermission(role, Permission.MAINTENANCE_VIEW, userPermissions);
 
-    const projectQuery: any = {
+    const projectQuery: Record<string, unknown> = {
       $or: [
         { startDate: { $gte: startDate, $lte: endDate } },
         { endDate: { $gte: startDate, $lte: endDate } },
@@ -208,22 +208,25 @@ export const exportCalendarIcs = async (req: Request, res: Response) => {
       lines.push('END:VEVENT');
     };
 
-    projects.forEach((p: any) => {
-      const start = new Date(p.startDate);
-      const end = new Date(p.endDate || p.startDate);
+    projects.forEach((p: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const start = new Date((p as any).startDate as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const end = new Date(((p as any).endDate || (p as any).startDate) as any);
       addAllDayEvent(
-        `project-${p._id}@skpro`,
-        `[Proje] ${p.name}`,
+        `project-${(p as any)._id}@skpro`,
+        `[Proje] ${(p as any).name}`,
         start,
         end,
-        `Durum: ${p.status}`
+        `Durum: ${(p as any).status}`
       );
     });
 
-    maintenances.forEach((m: any) => {
-      const date = new Date(m.scheduledDate);
-      const eqName = typeof m.equipment === 'object' && m.equipment ? m.equipment.name || 'Ekipman' : 'Ekipman';
-      addAllDayEvent(`maintenance-${m._id}@skpro`, `[Bakım] ${eqName}`, date, date, `Tip: ${m.type || ''}`);
+    maintenances.forEach((m: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const date = new Date((m as any).scheduledDate as any);
+      const eqName = typeof (m as any).equipment === 'object' && (m as any).equipment ? ((m as any).equipment as any).name || 'Ekipman' : 'Ekipman';
+      addAllDayEvent(`maintenance-${(m as any)._id}@skpro`, `[Bakım] ${eqName}`, date, date, `Tip: ${(m as any).type || ''}`);
     });
 
     lines.push('END:VCALENDAR');
@@ -261,7 +264,7 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
       type?: 'project' | 'maintenance';
     }> = [];
 
-    let currentEvent: any = null;
+    let currentEvent: { summary?: string; startDate?: Date; endDate?: Date; description?: string; type?: 'project' | 'maintenance' } | null = null;
     let inEvent = false;
 
     for (let i = 0; i < lines.length; i++) {
@@ -274,24 +277,26 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
         if (currentEvent && currentEvent.summary && currentEvent.startDate) {
           // DTEND yoksa DTSTART + 1 gün
           if (!currentEvent.endDate) {
-            const start = new Date(currentEvent.startDate);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const start = new Date(currentEvent.startDate as any);
             start.setDate(start.getDate() + 1);
             currentEvent.endDate = start;
           }
 
-          // Proje mi bakım mı? SUMMARY'den anla
-          if (currentEvent.summary.includes('[Proje]') || currentEvent.summary.includes('[Project]')) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((currentEvent.summary as string).includes('[Proje]') || (currentEvent.summary as string).includes('[Project]')) {
             currentEvent.type = 'project';
-            currentEvent.summary = currentEvent.summary.replace(/\[Proje\]|\[Project\]/g, '').trim();
-          } else if (currentEvent.summary.includes('[Bakım]') || currentEvent.summary.includes('[Maintenance]')) {
+            currentEvent.summary = (currentEvent.summary as string).replace(/\[Proje\]|\[Project\]/g, '').trim();
+          } else if ((currentEvent.summary as string).includes('[Bakım]') || (currentEvent.summary as string).includes('[Maintenance]')) {
             currentEvent.type = 'maintenance';
-            currentEvent.summary = currentEvent.summary.replace(/\[Bakım\]|\[Maintenance\]/g, '').trim();
+            currentEvent.summary = (currentEvent.summary as string).replace(/\[Bakım\]|\[Maintenance\]/g, '').trim();
           } else {
             // Varsayılan olarak proje
             currentEvent.type = 'project';
           }
 
-          events.push(currentEvent);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          events.push(currentEvent as any);
         }
         inEvent = false;
         currentEvent = null;
@@ -326,7 +331,7 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
     }
 
     // Permissions kontrolü
-    const user = req.user as any;
+    const user = req.user;
     const role = user?.role as string;
     const userPermissions = (user?.permissions || []) as string[];
     const canCreateProject =
@@ -342,8 +347,8 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
       success: 0,
       failed: 0,
       errors: [] as string[],
-      projects: [] as any[],
-      maintenances: [] as any[],
+      projects: [] as unknown[],
+      maintenances: [] as unknown[],
     };
 
     // Client model'ini import et (proje oluşturmak için)
@@ -376,7 +381,7 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
             team: [],
             equipment: [],
           });
-          result.projects.push(project);
+          result.projects.push(project as unknown);
           result.success++;
         } else if (event.type === 'maintenance' && canCreateMaintenance) {
           // Bakım oluştur (ekipman bulunamazsa atlanır)
@@ -449,8 +454,8 @@ export const getGoogleAuthUrl = (req: Request, res: Response) => {
   try {
     const url = googleCalendarService.getAuthUrl();
     res.json({ url });
-  } catch (error: any) {
-    logger.error('Error generating Google Auth URL', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Error generating Google Auth URL', { error: (error as Error).message });
     res.status(500).json({ message: 'URL oluşturulamadı' });
   }
 };
@@ -459,8 +464,8 @@ export const getOutlookAuthUrl = (req: Request, res: Response) => {
   try {
     const url = outlookCalendarService.getAuthUrl();
     res.json({ url });
-  } catch (error: any) {
-    logger.error('Error generating Outlook Auth URL', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Error generating Outlook Auth URL', { error: (error as Error).message });
     res.status(500).json({ message: 'URL oluşturulamadı' });
   }
 };
@@ -468,7 +473,7 @@ export const getOutlookAuthUrl = (req: Request, res: Response) => {
 export const googleCallback = async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
-    const userId = (req as any).user?.id; // Assuming auth middleware
+    const userId = req.user!.id; // Assuming auth middleware
 
     if (!code || !userId) {
       return res.status(400).json({ message: 'Geçersiz istek' });
@@ -480,13 +485,13 @@ export const googleCallback = async (req: Request, res: Response) => {
       googleTokens: {
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
-        expiryDate: Date.now() + (tokens.expires_in * 1000)
+        expiryDate: Date.now() + ((tokens.expires_in as number) * 1000)
       }
     });
 
     res.json({ message: 'Google Takvim başarıyla bağlandı' });
-  } catch (error: any) {
-    logger.error('Google Callback Error', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Google Callback Error', { error: (error as Error).message });
     res.status(500).json({ message: 'Takvim bağlantısı başarısız' });
   }
 };
@@ -494,7 +499,7 @@ export const googleCallback = async (req: Request, res: Response) => {
 export const outlookCallback = async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = req.user!.id;
 
     if (!code || !userId) {
       return res.status(400).json({ message: 'Geçersiz istek' });
@@ -506,20 +511,20 @@ export const outlookCallback = async (req: Request, res: Response) => {
       outlookTokens: {
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
-        expiryDate: Date.now() + (tokens.expires_in * 1000)
+        expiryDate: Date.now() + ((tokens.expires_in as number) * 1000)
       }
     });
 
     res.json({ message: 'Outlook Takvim başarıyla bağlandı' });
-  } catch (error: any) {
-    logger.error('Outlook Callback Error', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Outlook Callback Error', { error: (error as Error).message });
     res.status(500).json({ message: 'Takvim bağlantısı başarısız' });
   }
 };
 
 export const getCalendarStatus = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user!.id;
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -533,8 +538,8 @@ export const getCalendarStatus = async (req: Request, res: Response) => {
       googleConnected: !!user.googleTokens?.refreshToken,
       outlookConnected: !!user.outlookTokens?.refreshToken
     });
-  } catch (error: any) {
-    logger.error('Status Error', { error: error.message });
+  } catch (error: unknown) {
+    logger.error('Status Error', { error: (error as Error).message });
     res.status(500).json({ message: 'Sunucu hatası' });
   }
 };

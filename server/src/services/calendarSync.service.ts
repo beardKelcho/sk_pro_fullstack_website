@@ -8,19 +8,19 @@ class CalendarSyncService {
      * Sycns a project event to all assigned team members.
      * This is an asynchronous fire-and-forget method.
      */
-    async syncProjectEvent(project: any, isUpdate: boolean = false): Promise<void> {
+    async syncProjectEvent(project: Record<string, unknown>, isUpdate: boolean = false): Promise<void> {
         try {
-            if (!project.team || project.team.length === 0) return;
+            if (!project.team || !Array.isArray(project.team) || project.team.length === 0) return;
 
-            const projectTeamIds = project.team.map((user: any) => user._id || user);
+            const projectTeamIds = (project.team as Array<{ _id?: unknown } | string>).map((user) => typeof user === 'string' ? user : String(user?._id || user));
             const users = await User.find({ _id: { $in: projectTeamIds } }).select('+googleTokens +outlookTokens').lean();
 
             const eventData = {
                 summary: `Proje: ${project.name}`,
                 description: `Açıklama: ${project.description || 'Belirtilmedi'}\nDurum: ${project.status}`,
-                location: project.location?.address || 'Belirtilmedi',
-                startDate: project.startDate,
-                endDate: project.endDate || project.startDate,
+                location: (project.location as { address?: string })?.address || 'Belirtilmedi',
+                startDate: new Date(project.startDate as string | number | Date),
+                endDate: new Date((project.endDate || project.startDate) as string | number | Date),
                 attendees: users.map(u => u.email)
             };
 
@@ -41,15 +41,15 @@ class CalendarSyncService {
 
                 // If isUpdate is true, we would call updateEvent with the stored event ID.
             }
-        } catch (error: any) {
-            logger.error('CalendarSyncService Error: Failed to sync project event', { error: error.message });
+        } catch (error: unknown) {
+            logger.error('CalendarSyncService Error: Failed to sync project event', { error: error instanceof Error ? error.message : String(error) });
         }
     }
 
     /**
      * Syncs project deletion
      */
-    async deleteProjectEvent(project: any): Promise<void> {
+    async deleteProjectEvent(project: Record<string, unknown>): Promise<void> {
         // Implementation would fetch the mapping of Project ID -> Event ID for each user and delete them.
         logger.info(`Calendar deletion hook triggered for project ${project._id}. Note: Skeleton method.`);
     }

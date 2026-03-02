@@ -1,8 +1,7 @@
 import BackgroundVideo from '@/components/layout/BackgroundVideo';
-import { Montserrat } from 'next/font/google';
 import './globals.css';
+import './fonts.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import FooterWrapper from '@/components/layout/FooterWrapper';
 import { Providers } from '@/components/providers';
 import { ToastContainer } from 'react-toastify';
@@ -16,21 +15,6 @@ import CommandPalette from '@/components/common/CommandPalette';
 import Script from 'next/script';
 import { errorTracker } from '@/utils/errorTracking';
 
-const montserrat = Montserrat({
-  subsets: ['latin'],
-  display: 'swap',
-  preload: false,
-  fallback: ['system-ui', 'arial'],
-  adjustFontFallback: true,
-});
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  preload: false,
-  fallback: ['system-ui', 'arial'],
-  adjustFontFallback: true,
-});
 
 export const metadata: Metadata = {
   title: {
@@ -130,7 +114,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${montserrat.className} antialiased min-h-screen bg-black`} suppressHydrationWarning>
+      <body className={`font-sans antialiased min-h-screen bg-black`} suppressHydrationWarning>
         <LocalizedErrorBoundary>
           <OfflineIndicator />
           {process.env.NEXT_PUBLIC_GA_ID && (

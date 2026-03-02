@@ -96,9 +96,11 @@ export const getMonitoringDashboard = async (req: Request, res: Response) => {
 
         totalSessions = sessions.length;
         activeUsers = new Set(sessions.map((s) => s.userId.toString())).size;
-        const durations = sessions.map((s: any) => {
-          const start = new Date(s.createdAt).getTime();
-          const end = new Date(s.lastActivity).getTime();
+        const durations = sessions.map((s: unknown) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const start = new Date((s as any).createdAt).getTime();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const end = new Date((s as any).lastActivity).getTime();
           return Math.max(0, (end - start) / 1000);
         });
         averageSessionDuration = avg(durations);

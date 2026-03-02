@@ -1,8 +1,8 @@
 import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { Project, Equipment, User } from '../models';
-import logger from '../utils/logger';
+import { Project, Equipment } from '../models';
+// Removed unused logger
 
 export class ReportService {
 
@@ -33,8 +33,8 @@ export class ReportService {
         items.forEach(item => {
             let categoryName = '-';
             if (item.category) {
-                if (typeof item.category === 'object' && (item.category as any).name) {
-                    categoryName = (item.category as any).name;
+                if (typeof item.category === 'object' && (item.category as unknown as Record<string, unknown>).name) {
+                    categoryName = (item.category as unknown as Record<string, unknown>).name as string;
                 } else {
                     categoryName = String(item.category);
                 }
@@ -55,7 +55,18 @@ export class ReportService {
     }
 
     public async generateProjectsExcel(): Promise<Buffer> {
-        const projects = await Project.find().populate('customer').lean() as any[];
+        const projects = (await Project.find().populate('customer').lean()) as unknown as Array<{
+            name: string;
+            startDate?: Date | string;
+            endDate?: Date | string;
+            status: string;
+            budget?: number;
+            budgetCurrency?: string;
+            customer?: {
+                name?: string;
+                companyName?: string;
+            };
+        }>;
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Projeler & Maliyetler');
@@ -75,7 +86,8 @@ export class ReportService {
         projects.forEach(project => {
             let customerName = '-';
             if (project.customer) {
-                customerName = (project.customer as any).name || (project.customer as any).companyName || '-';
+                const customer = project.customer;
+                customerName = customer.name || customer.companyName || '-';
             }
 
             worksheet.addRow({
@@ -106,8 +118,8 @@ export class ReportService {
         const tableData = items.map(item => {
             let categoryName = '-';
             if (item.category) {
-                if (typeof item.category === 'object' && (item.category as any).name) {
-                    categoryName = (item.category as any).name;
+                if (typeof item.category === 'object' && (item.category as unknown as Record<string, unknown>).name) {
+                    categoryName = (item.category as unknown as Record<string, unknown>).name as string;
                 } else {
                     categoryName = String(item.category);
                 }
@@ -122,7 +134,7 @@ export class ReportService {
             ];
         });
 
-        (doc as any).autoTable({
+        (doc as unknown as { autoTable: (options: Record<string, unknown>) => void }).autoTable({
             startY: 30,
             head: [['Ekipman Adı', 'Marka/Model', 'Kategori', 'Durum', 'Stok/Seri No']],
             body: tableData,
@@ -135,7 +147,18 @@ export class ReportService {
     }
 
     public async generateProjectsPDF(): Promise<Buffer> {
-        const projects = await Project.find().populate('customer').lean() as any[];
+        const projects = (await Project.find().populate('customer').lean()) as unknown as Array<{
+            name: string;
+            startDate?: Date | string;
+            endDate?: Date | string;
+            status: string;
+            budget?: number;
+            budgetCurrency?: string;
+            customer?: {
+                name?: string;
+                companyName?: string;
+            };
+        }>;
 
         const doc = new jsPDF();
         doc.text('Projeler & Maliyetler Raporu', 14, 15);
@@ -145,7 +168,8 @@ export class ReportService {
         const tableData = projects.map(project => {
             let customerName = '-';
             if (project.customer) {
-                customerName = (project.customer as any).name || (project.customer as any).companyName || '-';
+                const customer = project.customer;
+                customerName = customer.name || customer.companyName || '-';
             }
 
             return [
@@ -157,7 +181,7 @@ export class ReportService {
             ];
         });
 
-        (doc as any).autoTable({
+        (doc as unknown as { autoTable: (options: Record<string, unknown>) => void }).autoTable({
             startY: 30,
             head: [['Proje Adı', 'Müşteri', 'Başlangıç', 'Durum', 'Bütçe']],
             body: tableData,

@@ -34,7 +34,7 @@ export const getVapidPublicKey = async (req: Request, res: Response) => {
  */
 export const sendTestPushNotification = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = (req as { user?: { _id?: string } }).user?._id;
     if (!userId) {
       return res.status(401).json({
         success: false,

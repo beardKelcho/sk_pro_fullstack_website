@@ -60,31 +60,31 @@ export const authenticate = async (
     });
 
     // Session activity güncelle (background, hata patlatmaz)
-    updateSessionActivity(user._id.toString(), token).catch((err: any) =>
+    updateSessionActivity(user._id.toString(), token).catch((err: unknown) =>
       logger.error('Session activity güncelleme hatası:', err)
     );
 
     // Request'e kullanıcı bilgisini ekle
     req.user = user as IUser;
     next();
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMessage =
-      error.name === 'JsonWebTokenError'
+      error instanceof Error && error.name === 'JsonWebTokenError'
         ? 'Geçersiz token. Lütfen tekrar giriş yapın.'
-        : error.name === 'TokenExpiredError'
+        : error instanceof Error && error.name === 'TokenExpiredError'
           ? 'Token süresi dolmuş. Lütfen tekrar giriş yapın.'
           : 'Yetkilendirme başarısız';
 
     logger.error('Kimlik doğrulama hatası:', {
-      name: error.name,
-      message: error.message,
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message : 'Unknown error',
       path: req.path,
     });
 
     res.status(401).json({
       success: false,
       message: errorMessage,
-      name: error.name,
+      name: error instanceof Error ? error.name : 'Error',
     });
   }
 };

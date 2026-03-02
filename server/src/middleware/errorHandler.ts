@@ -42,6 +42,7 @@ export const errorHandler = (
   }
 
   // MongoDB duplicate key error
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (err.name === 'MongoError' && (err as any).code === 11000) {
     return res.status(409).json({
       success: false,
@@ -56,6 +57,7 @@ export const errorHandler = (
       success: false,
       status: 'fail',
       message: 'Validation error',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       errors: Object.values((err as any).errors).map((el: any) => el.message),
     });
   }
@@ -78,7 +80,7 @@ export const errorHandler = (
   }
 
   // Sentry Capture for 500 errors
-  if (!('statusCode' in err) || (err as any).statusCode === 500) {
+  if (!('statusCode' in err) || (err as Record<string, unknown>).statusCode === 500) {
     Sentry.captureException(err);
   }
 

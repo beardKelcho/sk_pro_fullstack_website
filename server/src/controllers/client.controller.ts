@@ -42,6 +42,7 @@ export const updateClient = async (req: Request, res: Response) => {
     }
 
     // Prevent updating immutable fields
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _id, createdAt, updatedAt, ...updateData } = req.body;
 
     const client = await Client.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });

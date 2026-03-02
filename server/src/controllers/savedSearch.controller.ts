@@ -9,10 +9,10 @@ import { logAction } from '../utils/auditLogger';
  */
 export const getSavedSearches = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     const { resource } = req.query;
 
-    const query: any = { userId };
+    const query: Record<string, unknown> = { userId };
     if (resource) {
       query.resource = resource;
     }
@@ -39,7 +39,7 @@ export const getSavedSearches = async (req: Request, res: Response) => {
  */
 export const createSavedSearch = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     const { name, resource, filters } = req.body;
 
     if (!name || !resource || !filters) {
@@ -77,7 +77,7 @@ export const createSavedSearch = async (req: Request, res: Response) => {
  */
 export const deleteSavedSearch = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     const { id } = req.params;
 
     const savedSearch = await SavedSearch.findOne({
@@ -114,7 +114,7 @@ export const deleteSavedSearch = async (req: Request, res: Response) => {
  */
 export const getSearchHistory = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     const limit = parseInt(req.query.limit as string) || 20;
 
     const history = await SearchHistory.find({ userId })
@@ -148,7 +148,7 @@ export const addToSearchHistory = async (
     await SearchHistory.create({
       userId,
       query,
-      resource: resource as any,
+      resource: resource as string,
       resultCount,
     });
   } catch (error) {
@@ -162,7 +162,7 @@ export const addToSearchHistory = async (
  */
 export const clearSearchHistory = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
 
     await SearchHistory.deleteMany({ userId });
 

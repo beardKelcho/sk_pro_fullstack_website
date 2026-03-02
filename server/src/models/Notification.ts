@@ -11,7 +11,7 @@ export interface INotification extends Document {
     equipmentId?: string;
     maintenanceId?: string;
     userId?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   read: boolean;
   readAt?: Date;

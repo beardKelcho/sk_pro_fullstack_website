@@ -62,10 +62,15 @@ function createWindow() {
     const mainWindow = new BrowserWindow({
         width: 1280,
         height: 800,
+        show: false,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
         },
+    });
+
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
     });
 
     if (isDev) {
@@ -99,7 +104,7 @@ function createWindow() {
                 }
             }
         } catch (error) {
-            log.error('Navigation error caught:', error);
+            log.error('Navigation error caught:', error instanceof Error ? error.message : String(error));
         }
     });
 }
@@ -126,7 +131,7 @@ autoUpdater.on('update-available', (info) => log.info('Güncelleme bulundu: ', i
 autoUpdater.on('update-not-available', (info) => log.info('Şu anki sürüm en günceli: ', info));
 autoUpdater.on('error', (err) => {
     log.error('Güncelleme hatası: ', err);
-    const errString = err == null ? 'unknown' : (err.stack || err).toString();
+    const errString = err instanceof Error ? (err.stack || err.message) : String(err);
     if (errString.includes('EPERM') || errString.includes('EBUSY')) {
         dialog.showErrorBox('Güncelleme Başarısız', 'Uygulama dosyaları meşgul olduğu veya izin eksikliği nedeniyle güncelleme kurulamadı. Lütfen uygulamayı tamamen kapatıp Yönetici olarak tekrar çalıştırın.');
     }

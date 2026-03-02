@@ -21,10 +21,10 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         const twoFaEmail = result.email || email;
         navigation.replace('TwoFactor', { email: twoFaEmail });
       } else {
-        navigation.replace('Dashboard');
+        navigation.replace('Main');
       }
-    } catch (e: any) {
-      Alert.alert('Giriş başarısız', e?.message || 'Bilinmeyen hata');
+    } catch (e: unknown) {
+      Alert.alert('Giriş başarısız', e instanceof Error ? e.message : 'Bilinmeyen hata');
     } finally {
       setLoading(false);
     }

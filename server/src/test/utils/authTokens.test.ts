@@ -50,21 +50,21 @@ describe('authTokens', () => {
       const tokens = generateTokenPair(mockUser as IUser);
       
       // Access token should be valid
-      const accessDecoded = jwt.verify(tokens.accessToken, JWT_SECRET) as any;
+      const accessDecoded = jwt.verify(tokens.accessToken, JWT_SECRET) as unknown;
       expect(accessDecoded.id).toBe(mockUser._id!.toString());
       expect(accessDecoded.email).toBe(mockUser.email);
       expect(accessDecoded.role).toBe(mockUser.role);
       
       // Refresh token should be valid
-      const refreshDecoded = jwt.verify(tokens.refreshToken, JWT_REFRESH_SECRET) as any;
+      const refreshDecoded = jwt.verify(tokens.refreshToken, JWT_REFRESH_SECRET) as unknown;
       expect(refreshDecoded.id).toBe(mockUser._id!.toString());
     });
 
     it('should generate tokens with correct expiration', () => {
       const tokens = generateTokenPair(mockUser as IUser);
       
-      const accessDecoded = jwt.decode(tokens.accessToken) as any;
-      const refreshDecoded = jwt.decode(tokens.refreshToken) as any;
+      const accessDecoded = jwt.decode(tokens.accessToken) as unknown;
+      const refreshDecoded = jwt.decode(tokens.refreshToken) as unknown;
       
       // Access token should expire in 1 hour
       const accessExp = accessDecoded.exp - accessDecoded.iat;

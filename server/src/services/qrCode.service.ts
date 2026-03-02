@@ -26,7 +26,7 @@ export interface ScanQRCodeData {
 class QrCodeService {
 
     async listQRCodes(page: number = 1, limit: number = 10, type?: string, isActive?: boolean, relatedType?: string) {
-        const filters: any = {};
+        const filters: Record<string, unknown> = {};
         if (type) filters.type = type;
         if (isActive !== undefined) filters.isActive = isActive;
         if (relatedType) filters.relatedType = relatedType;
@@ -110,7 +110,7 @@ class QrCodeService {
         if (data.userId) {
             // We can update lastScannedBy if schema allows? Schema populate suggests it exists.
             // Need to check schema but safe to assume based on populate call above.
-            (qrCode as any).lastScannedBy = data.userId;
+            (qrCode as unknown as Record<string, unknown>).lastScannedBy = data.userId;
         }
         await qrCode.save();
 

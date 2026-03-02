@@ -52,8 +52,9 @@ export const CalendarScreen: React.FC = () => {
       const { start, end } = getDateRange();
       const data = await getCalendarEvents(start, end);
       setEvents(data.events);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Takvim verileri yüklenemedi');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).response?.data?.message || (err instanceof Error ? err.message : 'Takvim verileri yüklenemedi'));
     } finally {
       setLoading(false);
       setRefreshing(false);

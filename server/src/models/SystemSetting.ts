@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISystemSetting extends Document {
     key: string;
-    value: any; // Can be boolean, string, number, object, array
+    value: unknown; // Can be boolean, string, number, object, array
     description?: string;
     updatedAt: Date;
     updatedBy?: mongoose.Types.ObjectId;

@@ -6,7 +6,8 @@ import logger from '../utils/logger';
 // Kullanıcının tüm bildirimlerini getir
 export const getUserNotifications = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req.user as any as any)?.id;
     
     if (!userId) {
       return res.status(401).json({
@@ -17,7 +18,7 @@ export const getUserNotifications = async (req: Request, res: Response) => {
     
     const { read, type, page = 1, limit = 20 } = req.query;
     
-    const filters: any = { userId };
+    const filters: Record<string, unknown> = { userId };
     
     if (read !== undefined) {
       filters.read = read === 'true';
@@ -62,7 +63,8 @@ export const getUserNotifications = async (req: Request, res: Response) => {
 export const markNotificationAsRead = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req.user as any)?.id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req.user as any as any)?.id;
     
     if (!userId) {
       return res.status(401).json({
@@ -107,7 +109,8 @@ export const markNotificationAsRead = async (req: Request, res: Response) => {
 // Tüm bildirimleri okundu olarak işaretle
 export const markAllNotificationsAsRead = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req.user as any as any)?.id;
     
     if (!userId) {
       return res.status(401).json({
@@ -139,7 +142,8 @@ export const markAllNotificationsAsRead = async (req: Request, res: Response) =>
 export const deleteNotification = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req.user as any)?.id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req.user as any as any)?.id;
     
     if (!userId) {
       return res.status(401).json({
@@ -180,7 +184,8 @@ export const deleteNotification = async (req: Request, res: Response) => {
 // Okunmamış bildirim sayısını getir
 export const getUnreadCount = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req.user as any as any)?.id;
     
     if (!userId) {
       return res.status(401).json({

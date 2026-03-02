@@ -7,12 +7,20 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["react", "react-native"],
+    "types": [
+      "react",
+      "react-native",
+      "node"
+    ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["App.tsx", "src/**/*"]
+  "include": [
+    "App.tsx",
+    "src/**/*"
+  ]
 }
-

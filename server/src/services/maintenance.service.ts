@@ -1,4 +1,4 @@
-import mongoose, { ClientSession } from 'mongoose';
+import { ClientSession } from 'mongoose';
 import { Maintenance, Equipment, InventoryLog } from '../models';
 import { IMaintenance } from '../models/Maintenance';
 import { AppError } from '../types/common';
@@ -77,7 +77,7 @@ class MaintenanceService {
             throw new AppError('Bakım bulunamadı', 404);
         }
 
-        const updateData: any = { ...data };
+        const updateData: Record<string, unknown> = { ...data };
         delete updateData.userId; // Don't save userId to maintenance doc
 
         // Complete date logic

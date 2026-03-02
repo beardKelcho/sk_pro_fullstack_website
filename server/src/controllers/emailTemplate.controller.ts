@@ -3,7 +3,7 @@ import EmailTemplate from '../models/EmailTemplate';
 import logger from '../utils/logger';
 import { renderInlineTemplate } from '../utils/emailTemplateRenderer';
 
-const isNonEmptyString = (v: any) => typeof v === 'string' && v.trim().length > 0;
+const isNonEmptyString = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
 
 export const listEmailTemplates = async (_req: Request, res: Response) => {
   try {
@@ -47,8 +47,8 @@ export const createEmailTemplate = async (req: Request, res: Response) => {
     });
 
     return res.status(201).json({ success: true, data: created });
-  } catch (e: any) {
-    if (e?.code === 11000) {
+  } catch (e: unknown) {
+    if ((e as { code?: number })?.code === 11000) {
       return res.status(409).json({ success: false, message: 'Bu key ile email template zaten var' });
     }
     logger.error('Email template create hatası:', e);
@@ -98,22 +98,24 @@ export const previewEmailTemplate = async (req: Request, res: Response) => {
   try {
     const { id, key, locale, variantName, data, template: inlineTemplate } = req.body || {};
 
-    let template: any = null;
+    let template: unknown | null = null;
     if (inlineTemplate && typeof inlineTemplate === 'object') {
-      template = inlineTemplate;
-      if (!template.key && isNonEmptyString(key)) template.key = String(key).trim();
+      template = inlineTemplate as unknown;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!(template as any).key && isNonEmptyString(key)) (template as any).key = String(key).trim();
     } else {
-      if (id) template = await EmailTemplate.findById(id).lean();
-      if (!template && isNonEmptyString(key)) template = await EmailTemplate.findOne({ key: String(key).trim() }).lean();
+      if (id) template = (await EmailTemplate.findById(id).lean()) as unknown | null;
+      if (!template && isNonEmptyString(key)) template = (await EmailTemplate.findOne({ key: String(key).trim() }).lean()) as unknown | null;
     }
     if (!template) return res.status(404).json({ success: false, message: 'Email template bulunamadı' });
 
-    const variants = Array.isArray(template.variants) ? template.variants : [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const variants = Array.isArray((template as any).variants) ? (template as any).variants : [];
     if (variants.length === 0) {
       return res.status(400).json({ success: false, message: 'Template variants boş' });
     }
 
-    const selected = variantName ? variants.find((v: any) => v.name === variantName) : variants[0];
+    const selected = variantName ? variants.find((v: { name?: string }) => v.name === variantName) : variants[0];
     const localeKeys = selected?.locales ? Object.keys(selected.locales) : [];
     const chosenLocale = locale && localeKeys.includes(locale) ? locale : localeKeys.includes('tr') ? 'tr' : localeKeys[0];
     const localized = selected?.locales?.[chosenLocale] || selected?.locales?.tr || selected?.locales?.[localeKeys[0]];
@@ -128,7 +130,7 @@ export const previewEmailTemplate = async (req: Request, res: Response) => {
         subject: rendered.subject,
         html: rendered.html,
         used: {
-          templateKey: template.key || String(key || ''),
+          templateKey: (template as any).key || String(key || ''),
           variantName: selected.name,
           locale: chosenLocale || 'tr',
         },

@@ -109,7 +109,7 @@ export class UploadController {
         } catch (error: unknown) {
             logger.error('Dosya silme hatası:', error);
 
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            const errorMessage = error instanceof Error ? (error as Error).message : 'Unknown error';
 
             if (errorMessage === 'File not found') {
                 return res.status(404).json({

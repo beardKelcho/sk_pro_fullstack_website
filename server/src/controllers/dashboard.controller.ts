@@ -232,23 +232,24 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
       charts: {
         activityData,
         equipmentStatus: equipmentStatus.map(item => ({
-          name: item._id,
+          name: (item as Record<string, unknown>)._id,
           value: item.count
         })),
         // Legacy normalize: PLANNING -> PENDING_APPROVAL (chart'ta Planlama görünmesin)
         projectStatus: projectStatus.map(item => ({
-          name: item._id === 'PLANNING' ? 'PENDING_APPROVAL' : item._id,
+          name: (item as Record<string, unknown>)._id === 'PLANNING' ? 'PENDING_APPROVAL' : (item as Record<string, unknown>)._id,
           value: item.count
         })),
         taskStatus: taskStatus.map(item => ({
-          name: item._id,
+          name: (item as Record<string, unknown>)._id,
           value: item.count
         })),
         taskCompletionTrend,
         taskCompletion, // Frontend uyumluluğu için
         monthlyActivity: activityData.map(item => ({
           date: item.date,
-          count: item.projects + item.tasks + item.equipment
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          count: item.projects + item.tasks + (item as any).equipment
         })),
         equipmentUsage
       }

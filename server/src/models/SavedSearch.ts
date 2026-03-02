@@ -5,7 +5,7 @@ export interface ISavedSearch extends Document {
   userId: mongoose.Types.ObjectId;
   resource: 'Equipment' | 'Project' | 'Task' | 'Client' | 'Maintenance' | 'All';
   filters: {
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt: Date;
   updatedAt: Date;

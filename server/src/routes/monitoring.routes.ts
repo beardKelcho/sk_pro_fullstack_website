@@ -1,7 +1,7 @@
 import express from 'express';
 import { Role } from "../config/permissions";
-import { authenticate, requirePermission, authorize } from '../middleware/auth.middleware';
-import { Permission } from '../config/permissions';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+// Removed unused Permission
 import { getMonitoringDashboard } from '../controllers/monitoring.controller';
 
 const router = express.Router();

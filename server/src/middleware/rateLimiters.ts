@@ -2,7 +2,7 @@ import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import type { Request } from 'express';
 
-const parseNumber = (raw: any, fallback: number) => {
+const parseNumber = (raw: unknown, fallback: number) => {
   const n = Number(raw);
   return Number.isFinite(n) && n > 0 ? n : fallback;
 };
@@ -19,8 +19,9 @@ const keyByUserOrIp = (req: Request): string => {
     if (token) {
       // Merkezi JWT_SECRET kullan
       const { JWT_SECRET } = require('../utils/authTokens');
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const userId = decoded?.id || decoded?._id || decoded?.userId;
+      const decoded = jwt.verify(token, JWT_SECRET) as unknown;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const userId = (decoded as any)?.id || (decoded as any)?._id || (decoded as any)?.userId;
       if (userId) return `user:${String(userId)}`;
     }
   } catch {
@@ -38,13 +39,13 @@ export const createRateLimiter = (opts: {
 }) => {
   const minutes = Math.ceil(opts.windowMs / (60 * 1000));
   const defaultMessage = opts.customMessage || `Çok fazla istek. Lütfen ${minutes} dakika sonra tekrar deneyin.`;
-  
+
   // Test ve development ortamında rate limiting'i tamamen devre dışı bırak
   // TestSprite gibi otomasyon testleri için gerekli
-  const isTestEnv = process.env.NODE_ENV === 'test' || 
-                    process.env.NODE_ENV === 'development' || 
-                    process.env.DISABLE_RATE_LIMIT === 'true';
-  
+  const isTestEnv = process.env.NODE_ENV === 'test' ||
+    process.env.NODE_ENV === 'development' ||
+    process.env.DISABLE_RATE_LIMIT === 'true';
+
   return rateLimit({
     windowMs: opts.windowMs,
     max: opts.max,
@@ -85,7 +86,7 @@ export const authLimiter = createRateLimiter({
 export const loginLimiter = createRateLimiter({
   windowMs: parseNumber(process.env.RATE_LIMIT_LOGIN_WINDOW_MS, 15 * 60 * 1000), // 15 dakika
   max: parseNumber(
-    process.env.RATE_LIMIT_LOGIN_MAX, 
+    process.env.RATE_LIMIT_LOGIN_MAX,
     process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development' ? 1000 : 15
   ), // Test ve development ortamında çok daha esnek
   keyStrategy: 'ip',

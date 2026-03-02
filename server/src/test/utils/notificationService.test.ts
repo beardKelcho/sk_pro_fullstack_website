@@ -1,35 +1,11 @@
 import { createNotification, CreateNotificationParams } from '../../utils/notificationService';
 import { Notification, User, NotificationSettings } from '../../models';
-import { sendEmail } from '../../utils/emailService';
-import { sendPushNotification } from '../../utils/pushNotificationService';
-import { sendToUser } from '../../utils/realtime/realtimeHub';
+import * as emailService from '../../utils/emailService';
+import * as pushNotificationService from '../../utils/pushNotificationService';
+import * as realtimeHub from '../../utils/realtime/realtimeHub';
 import mongoose from 'mongoose';
 
-// Mock dependencies
-jest.mock('../../models', () => ({
-  Notification: {
-    create: jest.fn(),
-  },
-  User: {
-    findById: jest.fn(),
-  },
-  NotificationSettings: {
-    findOne: jest.fn(),
-  },
-}));
-
-jest.mock('../../utils/emailService', () => ({
-  sendEmail: jest.fn(),
-}));
-
-jest.mock('../../utils/pushNotificationService', () => ({
-  sendPushNotification: jest.fn(),
-}));
-
-jest.mock('../../utils/realtime/realtimeHub', () => ({
-  sendToUser: jest.fn(),
-}));
-
+// Mock dependencies will be spied on instead of module mocked
 jest.mock('../../utils/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
@@ -43,6 +19,12 @@ describe('notificationService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(Notification, 'create').mockResolvedValue({} as unknown);
+    jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(null as unknown);
+    jest.spyOn(User, 'findById').mockResolvedValue(null as unknown);
+    jest.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined as unknown);
+    jest.spyOn(pushNotificationService, 'sendPushNotification').mockResolvedValue(undefined as unknown);
+    jest.spyOn(realtimeHub, 'sendToUser').mockImplementation(() => { });
   });
 
   describe('createNotification', () => {
@@ -65,7 +47,7 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
 
       const result = await createNotification(baseParams);
 
@@ -92,11 +74,11 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
 
       await createNotification(baseParams);
 
-      expect(sendToUser).toHaveBeenCalledWith(
+      expect(realtimeHub.sendToUser).toHaveBeenCalledWith(
         String(mockUserId),
         'notification:new',
         expect.objectContaining({
@@ -126,12 +108,12 @@ describe('notificationService', () => {
         pushTypes: {},
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
-      (NotificationSettings.findOne as jest.Mock).mockResolvedValue(mockSettings);
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as unknown);
 
       await createNotification(baseParams);
 
-      expect(sendPushNotification).toHaveBeenCalledWith(
+      expect(pushNotificationService.sendPushNotification).toHaveBeenCalledWith(
         String(mockUserId),
         expect.objectContaining({
           title: 'Test Notification',
@@ -162,12 +144,12 @@ describe('notificationService', () => {
         pushTypes: {},
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
-      (NotificationSettings.findOne as jest.Mock).mockResolvedValue(mockSettings);
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as unknown);
 
       await createNotification(baseParams);
 
-      expect(sendPushNotification).not.toHaveBeenCalled();
+      expect(pushNotificationService.sendPushNotification).not.toHaveBeenCalled();
     });
 
     it('should send email when sendEmail is true and settings allow', async () => {
@@ -194,9 +176,9 @@ describe('notificationService', () => {
         emailTypes: {},
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
-      (NotificationSettings.findOne as jest.Mock).mockResolvedValue(mockSettings);
-      (User.findById as jest.Mock).mockResolvedValue(mockUser);
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as unknown);
+      jest.spyOn(User, 'findById').mockResolvedValue(mockUser as unknown);
 
       await createNotification({
         ...baseParams,
@@ -204,7 +186,7 @@ describe('notificationService', () => {
         emailSubject: 'Test Subject',
       });
 
-      expect(sendEmail).toHaveBeenCalled();
+      expect(emailService.sendEmail).toHaveBeenCalled();
     });
 
     it('should not send email when sendEmail is false', async () => {
@@ -219,14 +201,14 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
 
       await createNotification({
         ...baseParams,
         sendEmail: false,
       });
 
-      expect(sendEmail).not.toHaveBeenCalled();
+      expect(emailService.sendEmail).not.toHaveBeenCalled();
     });
 
     it('should handle notification with custom data', async () => {
@@ -241,7 +223,7 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
 
       await createNotification({
         ...baseParams,
@@ -259,7 +241,7 @@ describe('notificationService', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      (Notification.create as jest.Mock).mockRejectedValue(new Error('Database error'));
+      jest.spyOn(Notification, 'create').mockRejectedValue(new Error('Database error'));
 
       await expect(createNotification(baseParams)).rejects.toThrow('Database error');
     });
@@ -276,8 +258,8 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
-      (sendToUser as jest.Mock).mockImplementation(() => {
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      jest.spyOn(realtimeHub, 'sendToUser').mockImplementation(() => {
         throw new Error('SSE error');
       });
 
@@ -304,9 +286,9 @@ describe('notificationService', () => {
         pushTypes: {},
       };
 
-      (Notification.create as jest.Mock).mockResolvedValue(mockNotification);
-      (NotificationSettings.findOne as jest.Mock).mockResolvedValue(mockSettings);
-      (sendPushNotification as jest.Mock).mockRejectedValue(new Error('Push error'));
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as unknown);
+      jest.spyOn(pushNotificationService, 'sendPushNotification').mockRejectedValue(new Error('Push error'));
 
       // Should not throw
       await expect(createNotification(baseParams)).resolves.toBeDefined();

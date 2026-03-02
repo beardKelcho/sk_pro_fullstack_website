@@ -1,7 +1,7 @@
 import express from 'express';
 import { authController } from '../controllers';
 import { authenticate } from '../middleware/auth.middleware';
-import { validateLogin, sanitizeInput } from '../middleware/inputValidation';
+import { sanitizeInput } from '../middleware/inputValidation';
 import { validate } from '../middleware/zod.middleware';
 import { loginSchema } from '../utils/zodSchemas';
 import { loginLimiter } from '../middleware/rateLimiters';

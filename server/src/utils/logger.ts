@@ -30,7 +30,7 @@ const logFormat = winston.format.combine(
   winston.format((info) => {
     const rid = getRequestId();
     if (rid) {
-      (info as any).requestId = rid;
+      (info as Record<string, unknown>).requestId = rid;
     }
     return info;
   })(),
@@ -45,9 +45,9 @@ const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.printf(({ timestamp, level, message, ...meta }) => {
-    const requestId = (meta as any).requestId ? ` rid=${(meta as any).requestId}` : '';
+    const requestId = (meta as Record<string, unknown>).requestId ? ` rid=${(meta as Record<string, unknown>).requestId}` : '';
     // requestId'yi meta içinden çıkartıp tekrar yazdırmayalım
-    if ((meta as any).requestId) delete (meta as any).requestId;
+    if ((meta as Record<string, unknown>).requestId) delete (meta as Record<string, unknown>).requestId;
     let msg = `${timestamp} [${level}]${requestId}: ${message}`;
     if (Object.keys(meta).length > 0) {
       msg += ` ${JSON.stringify(meta)}`;

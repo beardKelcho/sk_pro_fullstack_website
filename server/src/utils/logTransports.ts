@@ -26,12 +26,16 @@ export const createCloudWatchTransport = (): winston.transport | null => {
       awsRegion: process.env.AWS_REGION,
       awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
       awsSecretKey: process.env.AWS_SECRET_ACCESS_KEY,
-      messageFormatter: (info: any) => {
+      messageFormatter: (info: unknown) => {
         return JSON.stringify({
-          level: info.level,
-          message: info.message,
-          timestamp: info.timestamp,
-          ...info.metadata,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          level: (info as any).level,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          message: (info as any).message,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          timestamp: (info as any).timestamp,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ...(info as any).metadata,
         });
       },
       jsonMessage: true,
@@ -92,14 +96,20 @@ export const createElasticsearchTransport = (): winston.transport | null => {
           },
         },
       },
-      transformer: (logData: any) => {
+      transformer: (logData: unknown) => {
         return {
-          '@timestamp': logData.timestamp || new Date().toISOString(),
-          level: logData.level,
-          message: logData.message,
-          service: logData.metadata?.service || 'sk-production-api',
-          requestId: logData.metadata?.requestId,
-          ...logData.metadata,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          '@timestamp': (logData as any).timestamp || new Date().toISOString(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          level: (logData as any).level,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          message: (logData as any).message,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          service: (logData as any).metadata?.service || 'sk-production-api',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          requestId: (logData as any).metadata?.requestId,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ...(logData as any).metadata,
         };
       },
     });

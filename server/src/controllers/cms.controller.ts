@@ -42,11 +42,11 @@ export const getAbout = async (req: Request, res: Response) => {
             success: true,
             data: about
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         res.status(500).json({
             success: false,
             message: 'Hakkımızda bilgisi alınamadı',
-            error: error.message
+            error: error instanceof Error ? (error as Error).message : 'Bilinmeyen hata'
         });
     }
 };
@@ -76,11 +76,11 @@ export const updateAbout = async (req: Request, res: Response) => {
             message: 'Hakkımızda bölümü güncellendi',
             data: about
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         res.status(500).json({
             success: false,
             message: 'Güncelleme başarısız',
-            error: error.message
+            error: error instanceof Error ? (error as Error).message : 'Bilinmeyen hata'
         });
     }
 };
@@ -101,11 +101,11 @@ export const getContact = async (req: Request, res: Response) => {
             success: true,
             data: contact
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         res.status(500).json({
             success: false,
             message: 'İletişim bilgisi alınamadı',
-            error: error.message
+            error: error instanceof Error ? (error as Error).message : 'Bilinmeyen hata'
         });
     }
 };
@@ -141,11 +141,11 @@ export const updateContact = async (req: Request, res: Response) => {
             message: 'İletişim bilgileri güncellendi',
             data: contact
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         res.status(500).json({
             success: false,
             message: 'Güncelleme başarısız',
-            error: error.message
+            error: (error as Error).message
         });
     }
 };

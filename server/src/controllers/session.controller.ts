@@ -8,7 +8,7 @@ import { logAction } from '../utils/auditLogger';
  */
 export const getActiveSessions = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
 
     const sessions = await Session.find({
       userId,
@@ -20,12 +20,17 @@ export const getActiveSessions = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      sessions: sessions.map((session: any) => ({
-        _id: session._id,
-        deviceInfo: session.deviceInfo,
-        lastActivity: session.lastActivity,
-        createdAt: session.createdAt,
-        expiresAt: session.expiresAt,
+      sessions: sessions.map((session: unknown) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        _id: (session as any)._id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        deviceInfo: (session as any).deviceInfo,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        lastActivity: (session as any).lastActivity,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        createdAt: (session as any).createdAt,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expiresAt: (session as any).expiresAt,
       })),
     });
   } catch (error) {
@@ -42,7 +47,7 @@ export const getActiveSessions = async (req: Request, res: Response) => {
  */
 export const terminateSession = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     const { sessionId } = req.params;
 
     const session = await Session.findOne({
@@ -88,7 +93,7 @@ export const terminateSession = async (req: Request, res: Response) => {
  */
 export const terminateAllOtherSessions = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     
     // Token'ı hem header'dan hem cookie'den al
     let currentToken = req.headers.authorization?.split(' ')[1];
@@ -106,7 +111,7 @@ export const terminateAllOtherSessions = async (req: Request, res: Response) => 
     // Mevcut session ID'yi de kontrol et (test ortamı için)
     const currentSessionId = req.headers['x-session-id'] as string;
 
-    const query: any = {
+    const query: Record<string, unknown> = {
       userId,
       isActive: true,
     };
@@ -145,7 +150,7 @@ export const terminateAllOtherSessions = async (req: Request, res: Response) => 
     res.status(500).json({
       success: false,
       message: 'Oturumlar sonlandırılamadı',
-      ...(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' ? { error: error instanceof Error ? error.message : String(error) } : {}),
+      ...(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' ? { error: error instanceof Error ? (error as Error).message : String(error) } : {}),
     });
   }
 };

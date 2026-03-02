@@ -7,15 +7,15 @@ export interface IAuditLog extends Document {
   resourceId: mongoose.Types.ObjectId; // ID of the affected resource
   changes?: {
     field: string;
-    oldValue: any;
-    newValue: any;
+    oldValue: unknown;
+    newValue: unknown;
   }[]; // Detailed changes for UPDATE actions
   metadata?: {
     ipAddress?: string;
     userAgent?: string;
     method?: string; // HTTP method
     endpoint?: string; // API endpoint
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt: Date;
 }

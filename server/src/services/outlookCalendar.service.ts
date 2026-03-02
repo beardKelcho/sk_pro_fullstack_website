@@ -18,7 +18,7 @@ export class OutlookCalendarService {
     /**
      * Exchange code for tokens
      */
-    async getTokens(code: string): Promise<any> {
+    async getTokens(code: string): Promise<Record<string, unknown>> {
         try {
             const params = new URLSearchParams();
             params.append('client_id', this.clientId);
@@ -31,9 +31,10 @@ export class OutlookCalendarService {
             const { data } = await axios.post('https://login.microsoftonline.com/common/oauth2/v2.0/token', params.toString(), {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
-            return data;
-        } catch (error: any) {
-            logger.error('Outlook Calendar Error: Failed to get tokens', { error: error.response?.data || error.message });
+            return data as Record<string, unknown>;
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: unknown }, message?: string };
+            logger.error('Outlook Calendar Error: Failed to get tokens', { error: err.response?.data || err.message });
             throw new Error('Outlook OAuth failed');
         }
     }
@@ -53,9 +54,10 @@ export class OutlookCalendarService {
             }, {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
-            return (response.data as any).id;
-        } catch (error: any) {
-            logger.error('Outlook Calendar Error: Failed to create event', { error: error.response?.data || error.message });
+            return (response.data as { id: string }).id;
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: unknown }, message?: string };
+            logger.error('Outlook Calendar Error: Failed to create event', { error: err.response?.data || err.message });
             return null;
         }
     }
@@ -76,8 +78,9 @@ export class OutlookCalendarService {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
             return true;
-        } catch (error: any) {
-            logger.error('Outlook Calendar Error: Failed to update event', { error: error.response?.data || error.message });
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: unknown }, message?: string };
+            logger.error('Outlook Calendar Error: Failed to update event', { error: err.response?.data || err.message });
             return false;
         }
     }
@@ -91,8 +94,9 @@ export class OutlookCalendarService {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
             return true;
-        } catch (error: any) {
-            logger.error('Outlook Calendar Error: Failed to delete event', { error: error.response?.data || error.message });
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: unknown }, message?: string };
+            logger.error('Outlook Calendar Error: Failed to delete event', { error: err.response?.data || err.message });
             return false;
         }
     }

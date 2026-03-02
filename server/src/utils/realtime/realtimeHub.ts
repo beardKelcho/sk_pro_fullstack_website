@@ -13,7 +13,7 @@ const clientsById = new Map<string, RealtimeClient>();
 const clientIdsByUser = new Map<string, Set<string>>();
 const clientIdsByRole = new Map<string, Set<string>>();
 
-const writeSse = (res: Response, event: string, data: any) => {
+const writeSse = (res: Response, event: string, data: unknown) => {
   try {
     // NOTE: SSE format: event + data; data must be single line, so JSON.stringify
     // Chunked encoding sorununu önlemek için her yazma işleminden önce kontrol et
@@ -29,7 +29,7 @@ const writeSse = (res: Response, event: string, data: any) => {
   }
 };
 
-const safeWrite = (client: RealtimeClient, event: string, data: any) => {
+const safeWrite = (client: RealtimeClient, event: string, data: unknown) => {
   try {
     // Connection durumunu kontrol et
     if (client.res.destroyed || client.res.closed) {
@@ -84,7 +84,7 @@ export const unregisterClient = (clientId: string) => {
   broadcastPresence();
 };
 
-export const sendToUser = (userId: string, event: string, data: any) => {
+export const sendToUser = (userId: string, event: string, data: unknown) => {
   const set = clientIdsByUser.get(userId);
   if (!set) return;
   for (const id of set) {
@@ -93,7 +93,7 @@ export const sendToUser = (userId: string, event: string, data: any) => {
   }
 };
 
-export const sendToRole = (role: string, event: string, data: any) => {
+export const sendToRole = (role: string, event: string, data: unknown) => {
   const set = clientIdsByRole.get(role);
   if (!set) return;
   for (const id of set) {
@@ -102,7 +102,7 @@ export const sendToRole = (role: string, event: string, data: any) => {
   }
 };
 
-export const broadcast = (event: string, data: any) => {
+export const broadcast = (event: string, data: unknown) => {
   for (const c of clientsById.values()) {
     safeWrite(c, event, data);
   }

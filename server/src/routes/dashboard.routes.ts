@@ -12,6 +12,7 @@ router.get(
   cacheMiddleware({
     ttl: 300, // 5 dakika
     keyPrefix: 'dashboard',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     generateKey: (req: any) => `dashboard:stats:${req.user?.id || 'public'}`,
   }),
   dashboardController.getDashboardStats
@@ -24,6 +25,7 @@ router.get(
   cacheMiddleware({
     ttl: 300, // 5 dakika
     keyPrefix: 'dashboard',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     generateKey: (req: any) => `dashboard:charts:${req.query.period || '30'}:${req.user?.id || 'public'}`,
   }),
   dashboardController.getDashboardCharts

@@ -16,8 +16,9 @@ export const DashboardScreen: React.FC = () => {
       setError(null);
       const data = await getDashboardStats();
       setStats(data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Dashboard verileri yüklenemedi');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).response?.data?.message || (err instanceof Error ? err.message : 'Dashboard verileri yüklenemedi'));
     } finally {
       setLoading(false);
       setRefreshing(false);

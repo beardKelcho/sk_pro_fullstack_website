@@ -10,37 +10,38 @@ import { emitWebhookEvent } from '../services/webhook.service';
 export const getAllTasks = async (req: Request, res: Response) => {
   try {
     const { status, priority, project, assignedTo, sort = '-createdAt', page = 1, limit = 10 } = req.query;
-    
-    const filters: any = {};
-    
+
+    const filters: Record<string, unknown> = {};
+
     if (status) {
       filters.status = status;
     }
-    
+
     if (priority) {
       filters.priority = priority;
     }
-    
+
     if (project) {
       filters.project = project;
     }
-    
+
     if (assignedTo) {
       filters.assignedTo = assignedTo;
     }
-    
+
     const pageNumber = parseInt(page as string, 10);
     const limitNumber = parseInt(limit as string, 10);
     const skip = (pageNumber - 1) * limitNumber;
-    
-    const sortField = (sort as string).startsWith('-') 
-      ? (sort as string).substring(1) 
+
+    const sortField = (sort as string).startsWith('-')
+      ? (sort as string).substring(1)
       : (sort as string);
     const sortOrder = (sort as string).startsWith('-') ? -1 : 1;
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sortOptions: any = {};
     sortOptions[sortField] = sortOrder;
-    
+
     const [tasks, total] = await Promise.all([
       Task.find(filters)
         .sort(sortOptions)
@@ -50,7 +51,7 @@ export const getAllTasks = async (req: Request, res: Response) => {
         .populate('assignedTo', 'name email role'),
       Task.countDocuments(filters)
     ]);
-    
+
     res.status(200).json({
       success: true,
       count: tasks.length,
@@ -72,25 +73,25 @@ export const getAllTasks = async (req: Request, res: Response) => {
 export const getTaskById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz görev ID',
       });
     }
-    
+
     const task = await Task.findById(id)
       .populate('project', 'name status startDate endDate')
       .populate('assignedTo', 'name email role');
-    
+
     if (!task) {
       return res.status(404).json({
         success: false,
         message: 'Görev bulunamadı',
       });
     }
-    
+
     res.status(200).json({
       success: true,
       task,
@@ -108,28 +109,28 @@ export const getTaskById = async (req: Request, res: Response) => {
 export const createTask = async (req: Request, res: Response) => {
   try {
     const { title, description, project, assignedTo, status, priority, dueDate } = req.body;
-    
+
     if (!title || !assignedTo) {
       return res.status(400).json({
         success: false,
         message: 'Görev başlığı ve atanan kişi gereklidir',
       });
     }
-    
+
     if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz kullanıcı ID',
       });
     }
-    
+
     if (project && !mongoose.Types.ObjectId.isValid(project)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz proje ID',
       });
     }
-    
+
     const task = await Task.create({
       title,
       description,
@@ -139,27 +140,30 @@ export const createTask = async (req: Request, res: Response) => {
       priority: priority || 'MEDIUM',
       dueDate,
     });
-    
+
     const populatedTask = await Task.findById(task._id)
       .populate('project', 'name status')
       .populate('assignedTo', 'name email');
-    
+
     // Email ve bildirim gönder (async, hata olsa bile devam et)
     if (populatedTask?.assignedTo && typeof populatedTask.assignedTo === 'object') {
-      const assignedUser = populatedTask.assignedTo as any;
-      
+      const assignedUser = populatedTask.assignedTo as unknown as unknown;
+
       // Email gönder
       sendTaskAssignedEmail(
-        assignedUser.email,
-        assignedUser.name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (assignedUser as any).email,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (assignedUser as any).name,
         populatedTask.title,
         populatedTask.description || '',
         populatedTask.dueDate
       ).catch(err => logger.error('Email gönderme hatası:', err));
-      
+
       // Bildirim gönder
       notifyUser(
-        assignedUser._id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (assignedUser as any)._id,
         'TASK_ASSIGNED',
         'Yeni Görev Atandı',
         `Size "${populatedTask.title}" görevi atandı.`,
@@ -174,15 +178,17 @@ export const createTask = async (req: Request, res: Response) => {
       {
         taskId: populatedTask?._id?.toString(),
         title: populatedTask?.title,
-        assignedTo: (populatedTask?.assignedTo as any)?._id?.toString?.() || assignedTo,
-        projectId: (populatedTask?.project as any)?._id?.toString?.() || project,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        assignedTo: (populatedTask?.assignedTo as any as any)?._id?.toString?.() || assignedTo,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        projectId: (populatedTask?.project as any as any)?._id?.toString?.() || project,
         status: populatedTask?.status,
         priority: populatedTask?.priority,
         dueDate: populatedTask?.dueDate,
       },
       { source: 'api' }
     ).catch((err) => logger.error('Webhook emit hatası (TASK_ASSIGNED):', err));
-    
+
     res.status(201).json({
       success: true,
       task: populatedTask,
@@ -201,18 +207,18 @@ export const updateTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { title, description, project, assignedTo, status, priority, dueDate, completedDate } = req.body;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz görev ID',
       });
     }
-    
+
     // Eski görevi al (değişiklik takibi için)
     const oldTask = await Task.findById(id);
-    
-    const updateData: any = {};
+
+    const updateData: Record<string, unknown> = {};
     if (title) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (project) updateData.project = project;
@@ -221,12 +227,12 @@ export const updateTask = async (req: Request, res: Response) => {
     if (priority) updateData.priority = priority;
     if (dueDate) updateData.dueDate = dueDate;
     if (completedDate) updateData.completedDate = completedDate;
-    
+
     // Eğer status COMPLETED ise ve completedDate yoksa, şimdiki zamanı ayarla
     if (status === 'COMPLETED' && !completedDate) {
       updateData.completedDate = new Date();
     }
-    
+
     const updatedTask = await Task.findByIdAndUpdate(
       id,
       updateData,
@@ -234,19 +240,20 @@ export const updateTask = async (req: Request, res: Response) => {
     )
       .populate('project', 'name status')
       .populate('assignedTo', 'name email');
-    
+
     if (!updatedTask) {
       return res.status(404).json({
         success: false,
         message: 'Görev bulunamadı',
       });
     }
-    
+
     // Değişiklikleri tespit et ve bildirim gönder
     if (oldTask && updatedTask.assignedTo && typeof updatedTask.assignedTo === 'object') {
-      const assignedUser = updatedTask.assignedTo as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const assignedUser = updatedTask.assignedTo as any as any;
       const changes: { field: string; oldValue: string; newValue: string }[] = [];
-      
+
       if (oldTask.status !== updatedTask.status) {
         changes.push({
           field: 'Durum',
@@ -254,7 +261,7 @@ export const updateTask = async (req: Request, res: Response) => {
           newValue: updatedTask.status
         });
       }
-      
+
       if (oldTask.priority !== updatedTask.priority) {
         changes.push({
           field: 'Öncelik',
@@ -262,7 +269,7 @@ export const updateTask = async (req: Request, res: Response) => {
           newValue: updatedTask.priority || 'Belirtilmemiş'
         });
       }
-      
+
       if (oldTask.dueDate?.toString() !== updatedTask.dueDate?.toString()) {
         changes.push({
           field: 'Son Tarih',
@@ -270,18 +277,20 @@ export const updateTask = async (req: Request, res: Response) => {
           newValue: updatedTask.dueDate ? new Date(updatedTask.dueDate).toLocaleDateString('tr-TR') : 'Belirtilmemiş'
         });
       }
-      
+
       // Değişiklik varsa email ve bildirim gönder
-      if (changes.length > 0 && assignedUser.email) {
+      if (changes.length > 0 && (assignedUser as Record<string, unknown>).email) {
         sendTaskUpdatedEmail(
-          assignedUser.email,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (assignedUser as any).email,
           assignedUser.name,
           updatedTask.title,
           changes
         ).catch(err => logger.error('Görev güncelleme email gönderme hatası:', err));
-        
+
         notifyUser(
-          assignedUser._id,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (assignedUser as any)._id,
           'TASK_UPDATED',
           'Görev Güncellendi',
           `"${updatedTask.title}" görevi güncellendi.`,
@@ -295,8 +304,9 @@ export const updateTask = async (req: Request, res: Response) => {
           {
             taskId: updatedTask._id?.toString(),
             title: updatedTask.title,
-            assignedTo: assignedUser._id?.toString?.(),
-            projectId: (updatedTask.project as any)?._id?.toString?.(),
+            assignedTo: (assignedUser as Record<string, unknown>)._id?.toString?.(),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            projectId: (updatedTask.project as any as any)?._id?.toString?.(),
             changes,
             status: updatedTask.status,
             priority: updatedTask.priority,
@@ -306,7 +316,7 @@ export const updateTask = async (req: Request, res: Response) => {
         ).catch((err) => logger.error('Webhook emit hatası (TASK_UPDATED):', err));
       }
     }
-    
+
     res.status(200).json({
       success: true,
       task: updatedTask,
@@ -324,25 +334,25 @@ export const updateTask = async (req: Request, res: Response) => {
 export const deleteTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz görev ID',
       });
     }
-    
+
     const task = await Task.findById(id);
-    
+
     if (!task) {
       return res.status(404).json({
         success: false,
         message: 'Görev bulunamadı',
       });
     }
-    
+
     await task.deleteOne();
-    
+
     res.status(200).json({
       success: true,
       message: 'Görev başarıyla silindi',

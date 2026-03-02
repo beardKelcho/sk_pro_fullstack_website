@@ -6,7 +6,7 @@ export interface CacheMiddlewareOptions {
   ttl?: number; // Time to live in seconds (default: 300 = 5 minutes)
   keyPrefix?: string; // Cache key prefix
   skipCache?: (req: Request) => boolean; // Cache'i atlamak için koşul
-  generateKey?: (req: Request & { user?: any }) => string; // Özel cache key oluşturma fonksiyonu
+  generateKey?: (req: Request) => string; // Özel cache key oluşturma fonksiyonu
 }
 
 /**
@@ -21,7 +21,7 @@ export const cacheMiddleware = (options: CacheMiddlewareOptions = {}) => {
     generateKey,
   } = options;
 
-  return async (req: Request & { user?: any }, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     // Sadece GET isteklerini cache'le
     if (req.method !== 'GET') {
       return next();
@@ -52,7 +52,7 @@ export const cacheMiddleware = (options: CacheMiddlewareOptions = {}) => {
 
       // Cache'de yoksa, response'u yakala ve cache'le
       const originalJson = res.json.bind(res);
-      res.json = function (body: any) {
+      res.json = function (body: unknown) {
         // Başarılı response'ları cache'le
         if (res.statusCode === 200 && body) {
           setCache(cacheKey, body, ttl).catch((error) => {

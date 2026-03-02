@@ -34,8 +34,9 @@ export const TasksScreen: React.FC = () => {
         setTasks(data.tasks);
       }
       setHasMore(data.page < data.totalPages);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Görevler yüklenemedi');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).response?.data?.message || (err instanceof Error ? err.message : 'Görevler yüklenemedi'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -61,8 +62,9 @@ export const TasksScreen: React.FC = () => {
       const response = await getTaskById(taskId);
       setSelectedTask(response.task);
       setModalVisible(true);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Görev detayları yüklenemedi');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).response?.data?.message || (err instanceof Error ? err.message : 'Görev detayları yüklenemedi'));
     }
   };
 
@@ -75,8 +77,9 @@ export const TasksScreen: React.FC = () => {
         setSelectedTask({ ...selectedTask, status: newStatus });
       }
       setModalVisible(false);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Görev güncellenemedi');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).response?.data?.message || (err instanceof Error ? err.message : 'Görev güncellenemedi'));
     } finally {
       setUpdating(false);
     }

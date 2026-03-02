@@ -17,10 +17,10 @@ export const streamRealtime = async (req: Request, res: Response) => {
 
   if (typeof res.flushHeaders === 'function') res.flushHeaders();
 
-  const user = req.user as any;
+  const user = req.user;
   const userId = String(user?._id || user?.id || '');
   const role = String(user?.role || '');
-  const permissions = Array.isArray(user?.permissions) ? (user.permissions as string[]) : [];
+  const permissions = Array.isArray(user?.permissions) ? (user?.permissions as string[]) : [];
 
   if (!userId) {
     return res.end();

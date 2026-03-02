@@ -13,8 +13,8 @@ const getBackoffMs = (attempt: number) => {
   return schedule[Math.min(attempt - 1, schedule.length - 1)];
 };
 
-export const emitWebhookEvent = async (event: WebhookEventType, payload: any, options: EmitOptions = {}) => {
-  const enabledWebhooks = await Webhook.find({ enabled: true, events: event }).lean();
+export const emitWebhookEvent = async (event: WebhookEventType, payload: Record<string, unknown>, options: EmitOptions = {}) => {
+  const enabledWebhooks = (await Webhook.find({ enabled: true, events: event }).lean()) as unknown as Array<{ _id: unknown }>;
   if (!enabledWebhooks.length) return;
 
   const now = new Date();
@@ -26,7 +26,7 @@ export const emitWebhookEvent = async (event: WebhookEventType, payload: any, op
   };
 
   await WebhookDelivery.insertMany(
-    enabledWebhooks.map((wh: any) => ({
+    enabledWebhooks.map(wh => ({
       webhook: wh._id,
       event,
       payload: basePayload,
@@ -56,7 +56,7 @@ export const deliverPendingWebhooks = async (limit = 50) => {
     .exec();
 
   for (const delivery of deliveries) {
-    const webhook: any = (delivery as any).webhook;
+    const webhook = (delivery as unknown as { webhook: { _id: unknown; enabled: boolean; maxAttempts?: number; secret?: string; timeoutMs?: number; url: string } }).webhook;
     if (!webhook || !webhook.enabled) {
       delivery.status = 'FAILED';
       delivery.lastError = 'Webhook disabled or missing';
@@ -114,12 +114,13 @@ export const deliverPendingWebhooks = async (limit = 50) => {
         delivery.nextAttemptAt = new Date(Date.now() + getBackoffMs(attemptNo));
         await delivery.save();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       delivery.attempts = attemptNo;
       delivery.lastAttemptAt = new Date();
       delivery.lastStatusCode = undefined;
       delivery.status = attemptNo >= (webhook.maxAttempts || 10) ? 'FAILED' : 'RETRYING';
-      delivery.lastError = err?.name === 'AbortError' ? `Timeout (${timeoutMs}ms)` : String(err?.message || err);
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      delivery.lastError = isAbort ? `Timeout (${timeoutMs}ms)` : (err instanceof Error ? err.message : String(err));
       delivery.nextAttemptAt = new Date(Date.now() + getBackoffMs(attemptNo));
       await delivery.save();
 
@@ -137,7 +138,7 @@ export const deliverPendingWebhooks = async (limit = 50) => {
 };
 
 export const sendTestWebhook = async (webhookId: string) => {
-  const wh: any = await Webhook.findById(webhookId);
+  const wh = (await Webhook.findById(webhookId)) as unknown as { secret?: string; timeoutMs?: number; url: string } | null;
   if (!wh) {
     return { ok: false, message: 'Webhook bulunamadı' as const };
   }

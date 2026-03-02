@@ -10,13 +10,13 @@ export interface CreateNotificationParams {
   type: 'TASK_ASSIGNED' | 'TASK_UPDATED' | 'PROJECT_STARTED' | 'PROJECT_UPDATED' | 'PROJECT_COMPLETED' | 'MAINTENANCE_REMINDER' | 'MAINTENANCE_DUE' | 'EQUIPMENT_ASSIGNED' | 'USER_INVITED' | 'SYSTEM';
   title: string;
   message: string;
-  data?: any;
+  data?: unknown;
   sendEmail?: boolean;
   emailSubject?: string;
 }
 
 // Bildirim oluştur ve gönder
-export const createNotification = async (params: CreateNotificationParams): Promise<any> => {
+export const createNotification = async (params: CreateNotificationParams): Promise<unknown> => {
   try {
     const notification = await Notification.create({
       userId: params.userId,
@@ -36,6 +36,7 @@ export const createNotification = async (params: CreateNotificationParams): Prom
         title: params.title,
         message: params.message,
         data: params.data || {},
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         createdAt: (notification as any)?.createdAt || new Date().toISOString(),
       });
     } catch {
@@ -57,7 +58,8 @@ export const createNotification = async (params: CreateNotificationParams): Prom
           data: {
             notificationId: notification._id.toString(),
             type: params.type,
-            ...params.data,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ...(params.data as any),
           },
           tag: params.type,
           requireInteraction: params.type === 'MAINTENANCE_DUE' || params.type === 'TASK_ASSIGNED',
@@ -131,9 +133,9 @@ export const notifyUser = async (
   type: CreateNotificationParams['type'],
   title: string,
   message: string,
-  data?: any,
+  data?: unknown,
   sendEmail = false
-): Promise<any> => {
+): Promise<unknown> => {
   return createNotification({
     userId,
     type,
@@ -150,9 +152,9 @@ export const notifyUsers = async (
   type: CreateNotificationParams['type'],
   title: string,
   message: string,
-  data?: any,
+  data?: unknown,
   sendEmail = false
-): Promise<any[]> => {
+): Promise<unknown[]> => {
   const notifications = await Promise.all(
     userIds.map(userId =>
       createNotification({
@@ -177,7 +179,7 @@ export const notifyProjectTeam = async (
   message: string,
   projectId?: string,
   sendEmail = false
-): Promise<any[]> => {
+): Promise<unknown[]> => {
   return notifyUsers(
     teamMemberIds,
     type,

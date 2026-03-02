@@ -5,7 +5,7 @@ type FakeRes = Pick<Response, 'write'>;
 const createRes = () => {
   const writes: string[] = [];
   const res: FakeRes = {
-    write: (chunk: any) => {
+    write: (chunk: unknown) => {
       writes.push(String(chunk));
       return true;
     },

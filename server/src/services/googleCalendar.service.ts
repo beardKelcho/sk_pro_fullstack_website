@@ -33,7 +33,7 @@ export class GoogleCalendarService {
     /**
      * Exchange code for tokens
      */
-    async getTokens(code: string): Promise<any> {
+    async getTokens(code: string): Promise<Record<string, unknown>> {
         try {
             const { data } = await axios.post('https://oauth2.googleapis.com/token', {
                 code,
@@ -42,9 +42,10 @@ export class GoogleCalendarService {
                 redirect_uri: this.redirectUri,
                 grant_type: 'authorization_code'
             });
-            return data;
-        } catch (error: any) {
-            logger.error('Google Calendar Error: Failed to get tokens', { error: error.response?.data || error.message });
+            return data as Record<string, unknown>;
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: unknown }, message?: string };
+            logger.error('Google Calendar Error: Failed to get tokens', { error: err.response?.data || err.message });
             throw new Error('Google OAuth failed');
         }
     }
@@ -64,9 +65,10 @@ export class GoogleCalendarService {
             }, {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
-            return (response.data as any).id;
-        } catch (error: any) {
-            logger.error('Google Calendar Error: Failed to create event', { error: error.response?.data || error.message });
+            return (response.data as { id: string }).id;
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: unknown }, message?: string };
+            logger.error('Google Calendar Error: Failed to create event', { error: err.response?.data || err.message });
             return null;
         }
     }
@@ -87,8 +89,9 @@ export class GoogleCalendarService {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
             return true;
-        } catch (error: any) {
-            logger.error('Google Calendar Error: Failed to update event', { error: error.response?.data || error.message });
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: unknown }, message?: string };
+            logger.error('Google Calendar Error: Failed to update event', { error: err.response?.data || err.message });
             return false;
         }
     }
@@ -102,8 +105,9 @@ export class GoogleCalendarService {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
             return true;
-        } catch (error: any) {
-            logger.error('Google Calendar Error: Failed to delete event', { error: error.response?.data || error.message });
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: unknown }, message?: string };
+            logger.error('Google Calendar Error: Failed to delete event', { error: err.response?.data || err.message });
             return false;
         }
     }

@@ -1,4 +1,4 @@
-import http from './http';
+import { http } from './http';
 
 export interface Task {
   _id: string;

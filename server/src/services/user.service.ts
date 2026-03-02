@@ -68,7 +68,7 @@ class UserService {
         const [users, total] = await Promise.all([
             User.find(filters)
                 .select('-password -__v')
-                .sort({ createdAt: -1 })
+                .sort({ [sortField]: sortOrder as 1 | -1 })
                 .skip(skip)
                 .limit(limit)
                 .lean() as unknown as IUser[],

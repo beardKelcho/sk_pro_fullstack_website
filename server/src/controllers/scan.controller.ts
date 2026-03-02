@@ -11,7 +11,8 @@ export class ScanController {
     async scanItem(req: Request, res: Response): Promise<void> {
         try {
             const { code } = req.params;
-            const userId = (req as any).user._id;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const userId = (req as any as any).user._id;
 
             // Search by ID first (assuming code might be ID)
             let equipment = null;
@@ -72,7 +73,7 @@ export class ScanController {
                 relatedItemType
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('Scan error:', error);
             const appError = error instanceof AppError ? error : new AppError('Tarama işlemi başarısız');
             res.status(appError.statusCode || 500).json({

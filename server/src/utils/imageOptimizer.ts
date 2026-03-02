@@ -45,7 +45,7 @@ export const optimizeImage = async (
 
   try {
     // Sharp kontrolü (opsiyonel)
-    let sharp: any;
+    let sharp: unknown;
     try {
       sharp = require('sharp');
     } catch (error) {
@@ -78,7 +78,8 @@ export const optimizeImage = async (
     const optimizedPath = filePath.replace(/(\.[^.]+)$/, `-optimized.${format}`);
 
     // Sharp ile optimize et
-    await sharp(filePath)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (sharp as any)(filePath)
       .resize(maxWidth, maxHeight, {
         fit: 'inside',
         withoutEnlargement: true,

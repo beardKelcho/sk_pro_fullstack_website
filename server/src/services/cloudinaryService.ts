@@ -23,7 +23,7 @@ export interface CloudinaryUploadOptions {
   public_id?: string;
   overwrite?: boolean;
   invalidate?: boolean;
-  transformation?: any[];
+  transformation?: Record<string, unknown>[];
   format?: string;
   quality?: string | number;
 }

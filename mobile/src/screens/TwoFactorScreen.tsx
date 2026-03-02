@@ -21,9 +21,9 @@ export const TwoFactorScreen: React.FC<Props> = ({ route, navigation }) => {
         token: token.trim() || undefined,
         backupCode: backupCode.trim() || undefined
       });
-      navigation.replace('Dashboard');
-    } catch (e: any) {
-      Alert.alert('2FA başarısız', e?.message || 'Bilinmeyen hata');
+      navigation.replace('Main');
+    } catch (e: unknown) {
+      Alert.alert('2FA başarısız', e instanceof Error ? e.message : 'Bilinmeyen hata');
     } finally {
       setLoading(false);
     }

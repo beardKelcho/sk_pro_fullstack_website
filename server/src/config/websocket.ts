@@ -28,7 +28,8 @@ export const initWebSocket = (httpServer: HttpServer): SocketIOServer => {
   });
 
   // Authentication middleware
-  io.use(authenticateSocket);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  io.use(authenticateSocket as any);
 
   interface AuthenticatedSocket extends Socket {
     user?: {
@@ -64,7 +65,7 @@ export const initWebSocket = (httpServer: HttpServer): SocketIOServer => {
     });
 
     // Collaborative editing events
-    socket.on('project:edit', (data: { projectId: string; changes: any }) => {
+    socket.on('project:edit', (data: { projectId: string; changes: unknown }) => {
       // Diğer kullanıcılara broadcast et
       socket.to(`project:${data.projectId}`).emit('project:update', {
         userId,
@@ -93,7 +94,7 @@ export const getWebSocketServer = (): SocketIOServer | null => {
 /**
  * Belirli bir role mesaj gönder
  */
-export const sendToRole = (role: string, event: string, data: any) => {
+export const sendToRole = (role: string, event: string, data: unknown) => {
   if (io) {
     io.to(`role:${role}`).emit(event, data);
   }
@@ -102,7 +103,7 @@ export const sendToRole = (role: string, event: string, data: any) => {
 /**
  * Belirli bir kullanıcıya mesaj gönder
  */
-export const sendToUser = (userId: string, event: string, data: any) => {
+export const sendToUser = (userId: string, event: string, data: unknown) => {
   if (io) {
     io.to(`user:${userId}`).emit(event, data);
   }
@@ -111,7 +112,7 @@ export const sendToUser = (userId: string, event: string, data: any) => {
 /**
  * Tüm kullanıcılara broadcast et
  */
-export const broadcast = (event: string, data: any) => {
+export const broadcast = (event: string, data: unknown) => {
   if (io) {
     io.emit(event, data);
   }
@@ -120,7 +121,7 @@ export const broadcast = (event: string, data: any) => {
 /**
  * Belirli bir room'a mesaj gönder
  */
-export const sendToRoom = (room: string, event: string, data: any) => {
+export const sendToRoom = (room: string, event: string, data: unknown) => {
   if (io) {
     io.to(room).emit(event, data);
   }

@@ -58,6 +58,7 @@ const getDataByType = async (type: string) => {
 };
 
 // Helper: Generate CSV
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const generateCSV = (data: any[], headers: string[], fields: string[]): string => {
   const csvRows = [headers.join(',')];
   data.forEach((item) => {
@@ -71,6 +72,7 @@ const generateCSV = (data: any[], headers: string[], fields: string[]): string =
 };
 
 // Helper: Generate Excel
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const generateExcel = async (data: any[], headers: string[], fields: string[], res: Response) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Export');
@@ -93,6 +95,7 @@ const generateExcel = async (data: any[], headers: string[], fields: string[], r
 };
 
 // Helper: Generate PDF
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const generatePDF = (data: any[], headers: string[], fields: string[], title: string, res: Response) => {
   const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
   res.setHeader('Content-Type', 'application/pdf');
@@ -145,6 +148,7 @@ export const exportData = async (req: Request, res: Response) => {
     const exportFormat = (format as string)?.toLowerCase() || 'csv';
 
     // Map type to Entity Name for Audit Log
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const entityMap: Record<string, any> = {
       'inventory': 'Equipment',
       'equipment': 'Equipment',
@@ -189,11 +193,12 @@ export const exportData = async (req: Request, res: Response) => {
 
     logger.info(`Data exported (${type} - ${exportFormat}) by user ${req.user?.id}`);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Export Error:', error);
-    res.status(error.statusCode || 500).json({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    res.status((error as any).statusCode || 500).json({
       success: false,
-      message: error.message || 'Export işlemi sırasında hata oluştu'
+      message: (error as Error).message || 'Export işlemi sırasında hata oluştu'
     });
   }
 };

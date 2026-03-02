@@ -25,7 +25,7 @@ import fs from 'fs';
 import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
 import { detectSlowQueries } from './utils/queryOptimizer';
-import { legacyFileHandler } from './middleware/legacyFileHandler';
+// Removed unused legacyFileHandler
 
 import { setupExpressErrorHandler } from '@sentry/node';
 import { initSentry } from './config/sentry';
@@ -77,12 +77,7 @@ const allowedOrigins = [
 ].filter(Boolean); // undefined/null değerleri filtrele
 
 // Development modunda local network IP'lerine izin ver
-const isLocalNetworkOrigin = (origin: string | undefined): boolean => {
-  if (!origin) return false;
-  // localhost ve local network IP'leri (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-  return /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(origin);
-};
-
+// Removed unused isLocalNetworkOrigin
 
 
 // Security Middleware

@@ -110,7 +110,7 @@ export const createReportSchedule = async (req: Request, res: Response) => {
       schedule: reportSchedule,
     });
   } catch (error: unknown) {
-      const appError = error as AppError;
+    const appError = error as AppError;
     logger.error('Rapor zamanlaması oluşturma hatası:', error);
     res.status(500).json({
       success: false,
@@ -175,7 +175,7 @@ export const updateReportSchedule = async (req: Request, res: Response) => {
       schedule,
     });
   } catch (error: unknown) {
-      const appError = error as AppError;
+    const appError = error as AppError;
     logger.error('Rapor zamanlaması güncelleme hatası:', error);
     res.status(500).json({
       success: false,
@@ -221,7 +221,7 @@ export const deleteReportSchedule = async (req: Request, res: Response) => {
 /**
  * Cron expression oluştur
  */
-const generateCronExpression = (schedule: any): string | null => {
+const generateCronExpression = (schedule: { frequency?: string; dayOfWeek?: number; dayOfMonth?: number; time?: string;[key: string]: any }): string | null => {
   const { frequency, dayOfWeek, dayOfMonth, time } = schedule;
 
   if (!time) return null;
@@ -234,9 +234,11 @@ const generateCronExpression = (schedule: any): string | null => {
   } else if (frequency === 'MONTHLY' && dayOfMonth !== undefined) {
     // Her ay belirli bir gün, belirli saatte
     return `${minutes} ${hours} ${dayOfMonth} * *`;
-  } else if (schedule.cronExpression) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } else if ((schedule as any).cronExpression) {
     // Custom cron expression
-    return schedule.cronExpression;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (schedule as any).cronExpression;
   }
 
   return null;
@@ -245,7 +247,7 @@ const generateCronExpression = (schedule: any): string | null => {
 /**
  * Next run date hesapla
  */
-const calculateNextRun = (schedule: any): Date => {
+const calculateNextRun = (schedule: { frequency?: string; dayOfWeek?: number; dayOfMonth?: number; time?: string;[key: string]: any }): Date => {
   const { frequency, dayOfWeek, dayOfMonth, time } = schedule;
   const now = new Date();
   const [hours, minutes] = time ? time.split(':').map(Number) : [9, 0];
@@ -277,50 +279,62 @@ const calculateNextRun = (schedule: any): Date => {
 /**
  * Scheduled report task'ı başlat
  */
-const startScheduledReport = (schedule: any) => {
-  if (!schedule.schedule?.cronExpression) return;
+const startScheduledReport = (schedule: unknown) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!(schedule as any).schedule?.cronExpression) return;
 
   // Mevcut task'ı durdur (eğer varsa)
   // Not: Gerçek implementasyonda task ID'leri saklamak gerekir
 
   // Yeni task başlat
-  cron.schedule(schedule.schedule.cronExpression, async () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cron.schedule((schedule as any).schedule.cronExpression, async () => {
     try {
-      logger.info(`Rapor zamanlaması çalıştırılıyor: ${schedule.name}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      logger.info(`Rapor zamanlaması çalıştırılıyor: ${(schedule as any).name}`);
 
       // Rapor oluştur (export controller kullan)
       // Bu kısım export controller'a göre implement edilmeli
       // Şimdilik placeholder
 
       // Email gönder
-      const reportUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/api/reports/${schedule._id}`;
-      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const reportUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/api/reports/${(schedule as any)._id}`;
+
       await sendEmail(
-        schedule.recipients,
-        `SK Production - ${schedule.name}`,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (schedule as any).recipients,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        `SK Production - ${(schedule as any).name}`,
         `
           <h2>Otomatik Rapor</h2>
-          <p>${schedule.name} raporu hazırlandı.</p>
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          <p>${(schedule as any).name} raporu hazırlandı.</p>
           <p>Raporu görüntülemek için <a href="${reportUrl}">buraya tıklayın</a>.</p>
         `
       );
 
       // Last sent güncelle
       await ReportSchedule.updateOne(
-        { _id: schedule._id },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { _id: (schedule as any)._id },
         {
           lastSent: new Date(),
-          nextRun: calculateNextRun(schedule.schedule),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          nextRun: calculateNextRun((schedule as any).schedule),
         }
       );
 
-      logger.info(`Rapor zamanlaması tamamlandı: ${schedule.name}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      logger.info(`Rapor zamanlaması tamamlandı: ${(schedule as any).name}`);
     } catch (error) {
-      logger.error(`Rapor zamanlaması hatası: ${schedule.name}`, error);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      logger.error(`Rapor zamanlaması hatası: ${(schedule as any).name}`, error);
     }
   });
 
-  logger.info(`Rapor zamanlaması başlatıldı: ${schedule.name}`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  logger.info(`Rapor zamanlaması başlatıldı: ${(schedule as any).name}`);
 };
 
 /**

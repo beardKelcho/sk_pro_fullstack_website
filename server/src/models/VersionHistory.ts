@@ -4,11 +4,11 @@ export interface IVersionHistory extends Document {
   resource: 'Equipment' | 'Project' | 'Task' | 'Client' | 'Maintenance';
   resourceId: mongoose.Types.ObjectId;
   version: number;
-  data: any; // Tam veri snapshot'ı
+  data: unknown; // Tam veri snapshot'ı
   changes: Array<{
     field: string;
-    oldValue: any;
-    newValue: any;
+    oldValue: unknown;
+    newValue: unknown;
   }>;
   changedBy: mongoose.Types.ObjectId;
   changedAt: Date;

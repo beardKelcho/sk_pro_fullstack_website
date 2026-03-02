@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import mongoose from 'mongoose';
+// Removed unused mongoose
 import { SiteContent } from '../models/SiteContent';
 import logger from '../utils/logger';
 import connectDB from '../config/database';

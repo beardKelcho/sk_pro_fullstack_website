@@ -6,7 +6,7 @@ export type WebhookDeliveryStatus = 'PENDING' | 'RETRYING' | 'SUCCESS' | 'FAILED
 export interface IWebhookDelivery extends Document {
   webhook: mongoose.Types.ObjectId;
   event: WebhookEventType;
-  payload: any;
+  payload: unknown;
   status: WebhookDeliveryStatus;
   attempts: number;
   nextAttemptAt: Date;

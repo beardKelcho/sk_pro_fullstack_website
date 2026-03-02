@@ -35,7 +35,7 @@ export interface PushNotificationPayload {
   body: string;
   icon?: string;
   badge?: string;
-  data?: any;
+  data?: unknown;
   tag?: string;
   requireInteraction?: boolean;
   actions?: Array<{
@@ -91,9 +91,10 @@ export const sendPushNotification = async (
             notificationPayload
           );
           return true;
-        } catch (error: any) {
+        } catch (error: unknown) {
           // Subscription geçersizse sil
-          if (error.statusCode === 410 || error.statusCode === 404) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((error as any).statusCode === 410 || (error as any).statusCode === 404) {
             logger.info(`Geçersiz subscription siliniyor: ${subscription._id}`);
             await PushSubscription.findByIdAndDelete(subscription._id);
           } else {
@@ -174,9 +175,10 @@ export const broadcastPushNotification = async (
             notificationPayload
           );
           return true;
-        } catch (error: any) {
+        } catch (error: unknown) {
           // Subscription geçersizse sil
-          if (error.statusCode === 410 || error.statusCode === 404) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((error as any).statusCode === 410 || (error as any).statusCode === 404) {
             logger.info(`Geçersiz subscription siliniyor: ${subscription._id}`);
             await PushSubscription.findByIdAndDelete(subscription._id);
           } else {

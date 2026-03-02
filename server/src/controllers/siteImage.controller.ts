@@ -2,8 +2,7 @@ import { Request, Response } from 'express';
 import siteService from '../services/site.service';
 import logger from '../utils/logger';
 import { AppError } from '../types/common';
-import path from 'path';
-import fs from 'fs';
+// Removed unused path and fs
 // Direct model access only for serveImageById logic if needed, or move serve logic to service?
 
 // For serveImageById, which deals with FS directly, it might be better to verify it still works.
@@ -59,7 +58,7 @@ export const serveImageById = async (req: Request, res: Response) => {
 
     if (image.url) {
       // Redirect to Cloudinary or external URL
-      return res.redirect(image.url);
+      return res.redirect(image.url as string);
     }
 
     // Fallback for very old local images if any (this part mostly won't work on Vercel but keeps type safety)

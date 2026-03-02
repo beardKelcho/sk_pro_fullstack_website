@@ -48,9 +48,9 @@ export const sendMessage = async (req: Request, res: Response) => {
             } else {
                 logger.warn('Email transporter not available. Message saved to DB only.');
             }
-        } catch (emailError: any) {
+        } catch (emailError: unknown) {
             // Email failed, but DB save was successful
-            logger.error('Email sending failed', { error: emailError.message });
+            logger.error('Email sending failed', { error: (emailError as Error).message });
             logger.info('Message still saved to database. Email notification skipped.');
         }
 
@@ -65,22 +65,22 @@ export const sendMessage = async (req: Request, res: Response) => {
             }
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         logger.error('Contact message error', { error });
 
         // Check if it's a validation error
-        if (error.name === 'ValidationError') {
+        if (error instanceof Error && (error as Error).name === 'ValidationError') {
             return res.status(400).json({
                 success: false,
                 message: 'Geçersiz veri formatı',
-                error: error.message
+                error: (error as Error).message
             });
         }
 
         res.status(500).json({
             success: false,
             message: 'Mesaj gönderilirken bir hata oluştu',
-            error: error.message
+            error: error instanceof Error ? (error as Error).message : 'Bilinmeyen hata'
         });
     }
 };
@@ -97,11 +97,11 @@ export const getAllMessages = async (req: Request, res: Response) => {
             count: messages.length,
             data: messages
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         res.status(500).json({
             success: false,
             message: 'Mesajlar alınamadı',
-            error: error.message
+            error: error instanceof Error ? (error as Error).message : 'Bilinmeyen hata'
         });
     }
 };
@@ -129,11 +129,11 @@ export const markAsRead = async (req: Request, res: Response) => {
             message: 'Mesaj okundu olarak işaretlendi',
             data: message
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         res.status(500).json({
             success: false,
             message: 'İşlem başarısız',
-            error: error.message
+            error: error instanceof Error ? (error as Error).message : 'Bilinmeyen hata'
         });
     }
 };

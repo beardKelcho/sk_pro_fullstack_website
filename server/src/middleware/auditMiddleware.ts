@@ -15,11 +15,12 @@ export const auditMiddleware = (
     const originalJson = res.json.bind(res);
 
     // Override json method to capture response
-    res.json = function (body: any) {
+    res.json = function (body: unknown) {
       // Extract resource ID from response or params
-      let resourceId = req.params.id || req.params.equipmentId || req.params.projectId || 
-                       req.params.taskId || req.params.userId || req.params.clientId || 
-                       req.params.maintenanceId || body?._id || body?.id || 'unknown';
+      let resourceId = req.params.id || req.params.equipmentId || req.params.projectId ||
+        req.params.taskId || req.params.userId || req.params.clientId ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        req.params.maintenanceId || (body as any)?._id || (body as any)?.id || 'any';
 
       // Convert to string if it's an object
       if (typeof resourceId === 'object' && resourceId !== null) {

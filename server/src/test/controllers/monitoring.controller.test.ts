@@ -30,7 +30,7 @@ describe('Monitoring Controller', () => {
 
     mockRequest = {
       query: { timeRange: '1h' },
-      user: { role: 'ADMIN', permissions: [] },
+      user: { role: 'ADMIN', permissions: [] } as unknown,
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),
@@ -39,7 +39,7 @@ describe('Monitoring Controller', () => {
   });
 
   it('metriklerle dashboard verisini üretmeli', async () => {
-    (mongoose.connection as any).readyState = 1;
+    (mongoose.connection as Record<string, unknown>).readyState = 1;
 
     (Session.find as jest.Mock).mockResolvedValue([
       {
@@ -94,7 +94,7 @@ describe('Monitoring Controller', () => {
   });
 
   it('hiç metrik yokken 200 dönmeli ve oranlar default olmalı', async () => {
-    (mongoose.connection as any).readyState = 0;
+    (mongoose.connection as Record<string, unknown>).readyState = 0;
     (Session.find as jest.Mock).mockResolvedValue([]);
 
     await getMonitoringDashboard(mockRequest as Request, mockResponse as Response);
@@ -109,7 +109,7 @@ describe('Monitoring Controller', () => {
   });
 
   it('sadece rate limit (429) metrikleri varken rateLimiting toplamını doğru hesaplamalı', async () => {
-    (mongoose.connection as any).readyState = 0;
+    (mongoose.connection as Record<string, unknown>).readyState = 0;
     (Session.find as jest.Mock).mockResolvedValue([]);
 
     recordApiMetric({
@@ -136,7 +136,7 @@ describe('Monitoring Controller', () => {
   });
 
   it('DB disconnected iken Session.find çağırmamalı', async () => {
-    (mongoose.connection as any).readyState = 0;
+    (mongoose.connection as Record<string, unknown>).readyState = 0;
     (Session.find as jest.Mock).mockResolvedValue([]);
 
     await getMonitoringDashboard(mockRequest as Request, mockResponse as Response);

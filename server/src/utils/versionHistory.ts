@@ -17,8 +17,8 @@ import logger from './logger';
 export const createVersionHistory = async (
   resource: 'Equipment' | 'Project' | 'Task' | 'Client' | 'Maintenance',
   resourceId: mongoose.Types.ObjectId,
-  oldData: any,
-  newData: any,
+  oldData: unknown,
+  newData: unknown,
   changedBy: mongoose.Types.ObjectId,
   comment?: string
 ): Promise<void> => {
@@ -58,8 +58,8 @@ export const createVersionHistory = async (
 /**
  * İki objeyi karşılaştır ve değişiklikleri çıkar
  */
-const extractChanges = (oldData: any, newData: any): Array<{ field: string; oldValue: any; newValue: any }> => {
-  const changes: Array<{ field: string; oldValue: any; newValue: any }> = [];
+const extractChanges = (oldData: unknown, newData: unknown): Array<{ field: string; oldValue: unknown; newValue: unknown }> => {
+  const changes: Array<{ field: string; oldValue: unknown; newValue: unknown }> = [];
 
   if (!oldData || !newData) {
     return changes;
@@ -73,8 +73,10 @@ const extractChanges = (oldData: any, newData: any): Array<{ field: string; oldV
       return;
     }
 
-    const oldValue = oldData[key];
-    const newValue = newData[key];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const oldValue = (oldData as any)[key];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newValue = (newData as any)[key];
 
     // Deep comparison
     if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
@@ -120,7 +122,7 @@ export const rollbackToVersion = async (
     }
 
     // Resource model'ini bul
-    let Model: any;
+    let Model: unknown;
     switch (resource) {
       case 'Equipment':
         Model = Equipment;
@@ -133,16 +135,19 @@ export const rollbackToVersion = async (
     }
 
     // Mevcut veriyi al
-    const currentData = await Model.findById(resourceId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentData = await (Model as any).findById(resourceId);
     if (!currentData) {
       throw new Error('Resource bulunamadı');
     }
 
     // Versiyon verisini uygula (sadece değişen alanlar)
     const versionData = versionHistory.data;
-    Object.keys(versionData).forEach((key) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Object.keys((versionData as any)).forEach((key) => {
       if (!['_id', '__v', 'createdAt', 'updatedAt'].includes(key)) {
-        (currentData as any)[key] = versionData[key];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (currentData as any)[key] = (versionData as any)[key];
       }
     });
 

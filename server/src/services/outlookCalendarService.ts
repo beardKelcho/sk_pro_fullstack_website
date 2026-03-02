@@ -39,12 +39,12 @@ export interface OutlookCalendarListResponse {
 /**
  * Microsoft Graph API'ye erişim için access token ile istek yap
  */
-const makeGraphRequest = async (
+const makeGraphRequest = async <T = Record<string, unknown>>(
   accessToken: string,
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   endpoint: string,
-  data?: any
-) => {
+  data?: Record<string, unknown>
+): Promise<T> => {
   try {
     const response = await axios({
       method,
@@ -55,13 +55,14 @@ const makeGraphRequest = async (
       },
       data,
     });
-    return response.data;
-  } catch (error: any) {
+    return response.data as T;
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number, data?: { error?: { message?: string } } }, message?: string };
     logger.error('Microsoft Graph API hatası:', {
       endpoint,
       method,
-      status: error.response?.status,
-      message: error.response?.data?.error?.message || error.message,
+      status: err.response?.status,
+      message: err.response?.data?.error?.message || err.message,
     });
     throw error;
   }
@@ -90,7 +91,7 @@ export const refreshOutlookAccessToken = async (
       accessToken: data.access_token,
       expiresIn: data.expires_in || 3600,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error('Outlook token refresh hatası:', error);
     throw error;
   }
@@ -100,7 +101,7 @@ export const refreshOutlookAccessToken = async (
  * Kullanıcının takvimlerini listele
  */
 export const listOutlookCalendars = async (accessToken: string): Promise<OutlookCalendarListResponse> => {
-  return makeGraphRequest(accessToken, 'GET', '/me/calendars');
+  return makeGraphRequest<OutlookCalendarListResponse>(accessToken, 'GET', '/me/calendars');
 };
 
 /**
@@ -119,7 +120,7 @@ export const listOutlookCalendarEvents = async (
   params.append('$orderby', 'start/dateTime');
   if (params.toString()) endpoint += `?${params.toString()}`;
 
-  return makeGraphRequest(accessToken, 'GET', endpoint);
+  return makeGraphRequest<{ value: OutlookCalendarEvent[] }>(accessToken, 'GET', endpoint);
 };
 
 /**
@@ -130,7 +131,7 @@ export const createOutlookCalendarEvent = async (
   calendarId: string = 'calendar',
   event: OutlookCalendarEvent
 ): Promise<OutlookCalendarEvent> => {
-  return makeGraphRequest(accessToken, 'POST', `/me/calendars/${calendarId}/events`, event);
+  return makeGraphRequest<OutlookCalendarEvent>(accessToken, 'POST', `/me/calendars/${calendarId}/events`, event as unknown as Record<string, unknown>);
 };
 
 /**
@@ -142,7 +143,7 @@ export const updateOutlookCalendarEvent = async (
   eventId: string,
   event: Partial<OutlookCalendarEvent>
 ): Promise<OutlookCalendarEvent> => {
-  return makeGraphRequest(accessToken, 'PATCH', `/me/calendars/${calendarId}/events/${eventId}`, event);
+  return makeGraphRequest<OutlookCalendarEvent>(accessToken, 'PATCH', `/me/calendars/${calendarId}/events/${eventId}`, event as unknown as Record<string, unknown>);
 };
 
 /**
@@ -153,13 +154,13 @@ export const deleteOutlookCalendarEvent = async (
   calendarId: string = 'calendar',
   eventId: string
 ): Promise<void> => {
-  return makeGraphRequest(accessToken, 'DELETE', `/me/calendars/${calendarId}/events/${eventId}`);
+  return makeGraphRequest<void>(accessToken, 'DELETE', `/me/calendars/${calendarId}/events/${eventId}`);
 };
 
 /**
  * Outlook Calendar event'ini proje formatına çevir
  */
-export const outlookEventToProject = async (event: OutlookCalendarEvent, userId: string, clientId: string): Promise<any> => {
+export const outlookEventToProject = async (event: OutlookCalendarEvent, userId: string, clientId: string): Promise<Record<string, unknown>> => {
   const startDate = event.isAllDay
     ? event.start.dateTime.split('T')[0]
     : new Date(event.start.dateTime).toISOString().split('T')[0];
@@ -184,9 +185,9 @@ export const outlookEventToProject = async (event: OutlookCalendarEvent, userId:
 /**
  * Projeyi Outlook Calendar event formatına çevir
  */
-export const projectToOutlookEvent = (project: any): OutlookCalendarEvent => {
-  const startDate = new Date(project.startDate);
-  const endDate = project.endDate ? new Date(project.endDate) : startDate;
+export const projectToOutlookEvent = (project: Record<string, unknown>): OutlookCalendarEvent => {
+  const startDate = new Date(project.startDate as string | number | Date);
+  const endDate = project.endDate ? new Date(project.endDate as string | number | Date) : startDate;
 
   return {
     subject: `[Proje] ${project.name}`,
@@ -204,8 +205,8 @@ export const projectToOutlookEvent = (project: any): OutlookCalendarEvent => {
     },
     location: project.location
       ? {
-          displayName: project.location,
-        }
+        displayName: project.location as string,
+      }
       : undefined,
     isAllDay: true,
     showAs: project.status === 'CANCELLED' ? 'free' : 'busy',

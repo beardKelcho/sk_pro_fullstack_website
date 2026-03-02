@@ -11,7 +11,7 @@ export const getAllPublicContent = async (req: Request, res: Response) => {
         const content = await SiteContent.find({ isActive: true }).select('-__v');
 
         // Transform to key-value format for easier frontend consumption
-        const contentMap: Record<string, any> = {};
+        const contentMap: Record<string, unknown> = {};
         content.forEach((item) => {
             contentMap[item.section] = item.data;
         });

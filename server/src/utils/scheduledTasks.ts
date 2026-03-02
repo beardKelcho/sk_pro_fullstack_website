@@ -62,14 +62,18 @@ export const scheduleMaintenanceReminders = () => {
       // Her bakım için email gönder
       for (const maintenance of upcomingMaintenances) {
         if (maintenance.assignedTo && typeof maintenance.assignedTo === 'object') {
-          const assignedUser = maintenance.assignedTo as any;
-          const equipment = maintenance.equipment as any;
+          const assignedUser = maintenance.assignedTo as unknown;
+          const equipment = maintenance.equipment as unknown;
 
-          if (assignedUser.email && equipment) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((assignedUser as any).email && equipment) {
             await sendMaintenanceReminderEmail(
-              assignedUser.email,
-              assignedUser.name,
-              equipment.name || 'Ekipman',
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (assignedUser as any).email,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (assignedUser as any).name,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (equipment as any).name || 'Ekipman',
               maintenance.scheduledDate
             );
           }
@@ -152,6 +156,7 @@ export const scheduleOverdueEquipmentCheck = () => {
         if (overdueEquipment.length > 0) {
           totalOverdue += overdueEquipment.length;
           // Ekip üyelerine bildirim gönder
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const teamIds = (project.team as any[]).map(t => t._id);
           if (teamIds.length > 0) {
             await NotificationService.notifyProjectTeam(
@@ -197,7 +202,9 @@ export const scheduleAutoCompleteDueTasks = () => {
       );
 
       // Mongoose 6/7 uyumluluğu: modifiedCount vs nModified
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const modified = (result as any).modifiedCount ?? (result as any).nModified ?? 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const matched = (result as any).matchedCount ?? (result as any).n ?? 0;
 
       if (modified > 0) {
@@ -236,6 +243,7 @@ export const scheduleAutoUpdateProjectStatus = () => {
         }
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const approvedToActiveCount = (approvedToActiveResult as any).modifiedCount ?? (approvedToActiveResult as any).nModified ?? 0;
 
       // 2. ACTIVE -> COMPLETED: Bitiş tarihi bugünden önce olan projeler
@@ -251,6 +259,7 @@ export const scheduleAutoUpdateProjectStatus = () => {
         }
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const activeToCompletedCount = (activeToCompletedResult as any).modifiedCount ?? (activeToCompletedResult as any).nModified ?? 0;
 
       if (approvedToActiveCount > 0 || activeToCompletedCount > 0) {

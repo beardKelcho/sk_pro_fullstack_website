@@ -7,11 +7,13 @@ export const initMongooseQueryMonitor = () => {
   if (isInitialized) return;
   isInitialized = true;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Query: any = (mongoose as any).Query;
   if (!Query || !Query.prototype || typeof Query.prototype.exec !== 'function') return;
 
   const originalExec = Query.prototype.exec;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Query.prototype.exec = async function patchedExec(this: any, ...args: any[]) {
     const start = process.hrtime.bigint();
     try {

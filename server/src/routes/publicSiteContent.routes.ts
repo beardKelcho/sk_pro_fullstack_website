@@ -1,7 +1,7 @@
 import express from 'express';
 import * as siteContentController from '../controllers/siteContentV2.controller';
-import { authenticate, requirePermission } from '../middleware/auth.middleware';
-import { Permission } from '../config/permissions';
+// Removed unused authenticate and requirePermission
+// Removed unused Permission
 
 const router = express.Router();
 

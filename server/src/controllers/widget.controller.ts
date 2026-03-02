@@ -9,7 +9,7 @@ import { logAction, extractChanges } from '../utils/auditLogger';
  */
 export const getUserWidgets = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -40,7 +40,7 @@ export const getUserWidgets = async (req: Request, res: Response) => {
 export const getWidgetById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -79,7 +79,7 @@ export const getWidgetById = async (req: Request, res: Response) => {
  */
 export const createWidget = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -145,7 +145,7 @@ export const createWidget = async (req: Request, res: Response) => {
 export const updateWidget = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -168,7 +168,7 @@ export const updateWidget = async (req: Request, res: Response) => {
 
     const { title, position, settings, isVisible, order } = req.body;
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (title !== undefined) updateData.title = title;
     if (position !== undefined) updateData.position = position;
     if (settings !== undefined) updateData.settings = settings;
@@ -203,7 +203,7 @@ export const updateWidget = async (req: Request, res: Response) => {
 export const deleteWidget = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -244,7 +244,7 @@ export const deleteWidget = async (req: Request, res: Response) => {
  */
 export const updateWidgetsBulk = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -261,14 +261,15 @@ export const updateWidgetsBulk = async (req: Request, res: Response) => {
       });
     }
 
-    const updatePromises = widgets.map((widgetData: any) => {
-      const { id, position, order, isVisible } = widgetData;
-      
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+    const updatePromises = widgets.map((widgetData: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { id, position, order, isVisible } = widgetData as any;
+
+      if (!mongoose.Types.ObjectId.isValid(id as string)) {
         return null;
       }
 
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       if (position !== undefined) updateData.position = position;
       if (order !== undefined) updateData.order = order;
       if (isVisible !== undefined) updateData.isVisible = isVisible;
@@ -304,7 +305,7 @@ export const updateWidgetsBulk = async (req: Request, res: Response) => {
  */
 export const createDefaultWidgets = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({
         success: false,

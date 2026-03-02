@@ -82,9 +82,9 @@ class AuthService {
      */
     async refreshToken(refreshTokenRaw: string): Promise<RefreshResult> {
         // Verify token
-        let decoded: any;
+        let decoded: jwt.JwtPayload;
         try {
-            decoded = jwt.verify(refreshTokenRaw, JWT_REFRESH_SECRET);
+            decoded = jwt.verify(refreshTokenRaw, JWT_REFRESH_SECRET) as jwt.JwtPayload;
         } catch (error: unknown) {
             // Token expired or invalid signature
             throw new AppError('Geçersiz veya süresi dolmuş token', 401);

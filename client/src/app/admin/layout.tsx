@@ -1,6 +1,5 @@
 'use client';
 
-import { Inter } from 'next/font/google';
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
@@ -14,8 +13,6 @@ import ErrorBoundary from '@/components/common/ErrorBoundary';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
 import Breadcrumb from '@/components/admin/Breadcrumb';
 import { connectSse } from '@/utils/sseClient';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export default function AdminLayout({
   children,
@@ -112,7 +109,7 @@ export default function AdminLayout({
   // Login sayfası için farklı layout gösterme - ProtectedRoute kullanma
   if (pathname === '/admin/login' || pathname === '/admin') {
     return (
-      <main className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${inter.className}`}>
+      <main className={`min-h-screen bg-gray-50 dark:bg-gray-900 font-sans`}>
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
@@ -125,7 +122,7 @@ export default function AdminLayout({
     <ProtectedRoute>
       <ErrorBoundary>
         <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-cyan-50/20 
-          dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 ${inter.className} relative overflow-hidden`}>
+          dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 font-sans relative overflow-hidden`}>
           {/* Animated background */}
           <div className="fixed inset-0 gradient-animated opacity-5 dark:opacity-10 pointer-events-none" />
 

@@ -90,7 +90,7 @@ export class AuthController {
       });
 
     } catch (error: unknown) {
-      const appError = error instanceof AppError ? error : new AppError(error instanceof Error ? error.message : 'Unknown error');
+      const appError = error instanceof AppError ? error : new AppError(error instanceof Error ? (error as Error).message : 'Unknown error');
 
       logger.error('Login hatası:', {
         requestId,
@@ -164,7 +164,7 @@ export class AuthController {
 
     } catch (error: unknown) {
       logger.error('Token yenileme hatası:', error);
-      const message = error instanceof Error ? error.message : 'Geçersiz token';
+      const message = error instanceof Error ? (error as Error).message : 'Geçersiz token';
       return res.status(401).json({ success: false, message });
     }
   }
@@ -221,7 +221,7 @@ export class AuthController {
 
     } catch (error: unknown) {
       logger.error('Şifre değiştirme hatası:', error);
-      const appError = error instanceof AppError ? error : new AppError(error instanceof Error ? error.message : 'Hata oluştu');
+      const appError = error instanceof AppError ? error : new AppError(error instanceof Error ? (error as Error).message : 'Hata oluştu');
       return res.status(appError.statusCode || 500).json({ success: false, message: appError.message });
     }
   }

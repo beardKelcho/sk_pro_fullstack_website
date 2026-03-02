@@ -18,7 +18,7 @@ type RenderOutput = {
   };
 };
 
-const escapeHtml = (value: any): string => {
+const escapeHtml = (value: unknown): string => {
   const str = value === null || value === undefined ? '' : String(value);
   return str
     .replace(/&/g, '&amp;')
@@ -28,13 +28,14 @@ const escapeHtml = (value: any): string => {
     .replace(/'/g, '&#39;');
 };
 
-const getByPath = (obj: any, path: string): any => {
+const getByPath = (obj: unknown, path: string): unknown => {
   if (!obj || typeof obj !== 'object') return undefined;
   const parts = path.split('.').filter(Boolean);
-  let cur: any = obj;
+  let cur: unknown = obj;
   for (const p of parts) {
     if (cur && typeof cur === 'object' && p in cur) {
-      cur = cur[p];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      cur = (cur as any)[p];
     } else {
       return undefined;
     }
@@ -97,6 +98,7 @@ export const renderEmailTemplate = async (input: RenderInput): Promise<RenderOut
     if (!Array.isArray(template.variants) || template.variants.length === 0) return null;
 
     const chosenVariantName = pickVariant(template.variants, input.variantName);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const variant = template.variants.find((v: any) => v.name === chosenVariantName) || template.variants[0];
     const localeKeys = variant?.locales ? Object.keys(variant.locales) : [];
     const chosenLocale = pickLocale(localeKeys, input.locale);

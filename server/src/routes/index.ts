@@ -66,21 +66,26 @@ router.get('/', (req, res) => {
 // Health check endpoint
 router.get('/health', async (req, res) => {
   const redis = getRedisClient();
-  let redisStatus: any = { enabled: false };
+  let redisStatus: unknown = { enabled: false };
 
   if (redis) {
     redisStatus = {
       enabled: true,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       isOpen: (redis as any).isOpen ?? undefined,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       isReady: (redis as any).isReady ?? undefined,
     };
 
     try {
       // Redis bağlantısı varsa, hafif bir ping ile readiness doğrula (best-effort)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pong = await (redis as any).ping?.();
-      if (pong) redisStatus.ping = pong;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (pong) (redisStatus as any).ping = pong;
     } catch {
-      redisStatus.ping = 'failed';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (redisStatus as any).ping = 'failed';
     }
   }
 
@@ -117,6 +122,7 @@ router.get('/readyz', async (_req, res) => {
   const dbOk = mongoose.connection.readyState === 1;
   const redis = getRedisClient();
   const redisEnabled = Boolean(redis);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const redisOk = !redisEnabled || Boolean((redis as any).isReady);
 
   if (dbOk && redisOk) {

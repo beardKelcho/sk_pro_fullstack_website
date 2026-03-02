@@ -1,28 +1,15 @@
 import { Request, Response } from 'express';
 import * as exportController from '../../controllers/export.controller';
-import { Equipment, Project } from '../../models';
+import { Equipment, Project, Client } from '../../models';
 
 // Mock models
 jest.mock('../../models', () => ({
-  Equipment: {
-    find: jest.fn(),
-    countDocuments: jest.fn(),
-  },
-  Project: {
-    find: jest.fn(),
-    countDocuments: jest.fn(),
-  },
-  Task: {
-    find: jest.fn(),
-    countDocuments: jest.fn(),
-  },
-  Client: {
-    find: jest.fn(),
-    countDocuments: jest.fn(),
-  },
-  Maintenance: {
-    find: jest.fn(),
-  },
+  Equipment: { find: jest.fn(), countDocuments: jest.fn() },
+  Project: { find: jest.fn(), countDocuments: jest.fn() },
+  Task: { find: jest.fn(), countDocuments: jest.fn() },
+  Client: { find: jest.fn(), countDocuments: jest.fn() },
+  Maintenance: { find: jest.fn() },
+  User: { find: jest.fn() }
 }));
 
 // Mock ExcelJS
@@ -33,18 +20,10 @@ jest.mock('exceljs', () => {
       Workbook: jest.fn().mockImplementation(() => ({
         addWorksheet: jest.fn().mockReturnValue({
           addRow: jest.fn(),
-          getRow: jest.fn().mockReturnValue({
-            font: {},
-            fill: {},
-            alignment: {},
-          }),
-          getColumn: jest.fn().mockReturnValue({
-            width: 0,
-          }),
+          getRow: jest.fn().mockReturnValue({ font: {}, fill: {}, alignment: {} }),
+          getColumn: jest.fn().mockReturnValue({ width: 0 }),
         }),
-        xlsx: {
-          write: jest.fn().mockResolvedValue(undefined),
-        },
+        xlsx: { write: jest.fn().mockResolvedValue(undefined) },
       })),
     },
   };
@@ -62,10 +41,19 @@ jest.mock('pdfkit', () => {
     font: jest.fn().mockReturnThis(),
     addPage: jest.fn().mockReturnThis(),
     end: jest.fn(),
+    y: 0,
+    page: { width: 500, height: 800 },
+    moveTo: jest.fn().mockReturnThis(),
+    lineTo: jest.fn().mockReturnThis()
   }));
 });
 
-describe('Export Controller', () => {
+// Mock Audit Logger
+jest.mock('../../utils/auditLogger', () => ({
+  logAction: jest.fn()
+}));
+
+describe('Export Controller (Generic)', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let mockJson: jest.Mock;
@@ -82,15 +70,11 @@ describe('Export Controller', () => {
     mockWrite = jest.fn();
 
     mockRequest = {
-      user: { id: 'test-user-id' },
+      user: { id: 'test-user-id' } as unknown,
+      query: {},
       ip: '127.0.0.1',
-      socket: {
-        remoteAddress: '127.0.0.1',
-      } as Partial<import('net').Socket> as any,
+      socket: { remoteAddress: '127.0.0.1' } as unknown,
       get: jest.fn().mockReturnValue('Mozilla/5.0'),
-      method: 'GET',
-      originalUrl: '/api/export/equipment',
-      url: '/api/export/equipment',
     };
 
     mockResponse = {
@@ -104,243 +88,101 @@ describe('Export Controller', () => {
     jest.clearAllMocks();
   });
 
-  describe('exportEquipment (CSV)', () => {
-    it('should export equipment as CSV successfully', async () => {
-      const mockEquipment = [
-        {
-          name: 'Test Equipment',
-          type: 'VideoSwitcher',
-          model: 'Test Model',
-          serialNumber: 'SN123',
-          status: 'AVAILABLE',
-          location: 'Depo',
-          responsibleUser: { name: 'Test User' },
-          notes: 'Test notes',
-        },
-      ];
+  describe('CSV Export', () => {
+    it('should export equipment as CSV by default', async () => {
+      mockRequest.query = { type: 'equipment' };
+      const mockEquipment = [{ name: 'Test Eq', type: 'Test Type' }];
 
       (Equipment.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue(mockEquipment),
-        }),
+        lean: jest.fn().mockResolvedValue(mockEquipment)
       });
 
-      await exportController.exportEquipment(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+      await exportController.exportData(mockRequest as Request, mockResponse as Response);
 
       expect(Equipment.find).toHaveBeenCalled();
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Type',
-        'text/csv; charset=utf-8'
-      );
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Disposition',
-        'attachment; filename=equipment-export.csv'
-      );
+      expect(mockSetHeader).toHaveBeenCalledWith('Content-Type', 'text/csv; charset=utf-8');
+      expect(mockSetHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename=equipment-export.csv');
       expect(mockWrite).toHaveBeenCalledWith('\ufeff');
       expect(mockEnd).toHaveBeenCalled();
     });
-
-    it('should handle errors when exporting equipment', async () => {
-      (Equipment.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          lean: jest.fn().mockRejectedValue(new Error('Database error')),
-        }),
-      });
-
-      await exportController.exportEquipment(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(mockStatus).toHaveBeenCalledWith(500);
-      expect(mockJson).toHaveBeenCalledWith({
-        success: false,
-        message: 'Export işlemi sırasında bir hata oluştu',
-      });
-    });
   });
 
-  describe('exportEquipmentExcel', () => {
-    it('should export equipment as Excel successfully', async () => {
-      const mockEquipment = [
-        {
-          name: 'Test Equipment',
-          type: 'VideoSwitcher',
-          model: 'Test Model',
-          serialNumber: 'SN123',
-          status: 'AVAILABLE',
-          location: 'Depo',
-          responsibleUser: { name: 'Test User' },
-          notes: 'Test notes',
-        },
-      ];
+  describe('Excel Export', () => {
+    it('should export projects as Excel', async () => {
+      mockRequest.query = { type: 'projects', format: 'excel' };
+      const mockProjects = [{ name: 'Test Project' }];
 
-      (Equipment.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue(mockEquipment),
-        }),
-      });
-
-      await exportController.exportEquipmentExcel(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(Equipment.find).toHaveBeenCalled();
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      );
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Disposition',
-        'attachment; filename=equipment-export.xlsx'
-      );
-    });
-
-    it('should handle errors when exporting equipment as Excel', async () => {
-      (Equipment.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          lean: jest.fn().mockRejectedValue(new Error('Database error')),
-        }),
-      });
-
-      await exportController.exportEquipmentExcel(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(mockStatus).toHaveBeenCalledWith(500);
-      expect(mockJson).toHaveBeenCalledWith({
-        success: false,
-        message: 'Export işlemi sırasında bir hata oluştu',
-      });
-    });
-  });
-
-  describe('exportEquipmentPDF', () => {
-    it('should export equipment as PDF successfully', async () => {
-      const mockEquipment = [
-        {
-          name: 'Test Equipment',
-          type: 'VideoSwitcher',
-          model: 'Test Model',
-          serialNumber: 'SN123',
-          status: 'AVAILABLE',
-          location: 'Depo',
-          responsibleUser: { name: 'Test User' },
-        },
-      ];
-
-      (Equipment.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue(mockEquipment),
-        }),
-      });
-
-      await exportController.exportEquipmentPDF(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(Equipment.find).toHaveBeenCalled();
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Type',
-        'application/pdf'
-      );
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Disposition',
-        'attachment; filename=Ekipman-Listesi-export.pdf'
-      );
-    });
-  });
-
-  describe('exportProjectsExcel', () => {
-    it('should export projects as Excel successfully', async () => {
-      const mockProjects = [
-        {
-          name: 'Test Project',
-          description: 'Test Description',
-          client: { name: 'Test Client' },
-          startDate: '2024-01-01',
-          endDate: '2024-01-31',
-          status: 'ACTIVE',
-          location: 'Istanbul',
-        },
-      ];
-
-      (Project.find as jest.Mock).mockReturnValue({
+      const pFind = jest.fn().mockReturnValue({
         populate: jest.fn().mockReturnValue({
           populate: jest.fn().mockReturnValue({
-            lean: jest.fn().mockResolvedValue(mockProjects),
-          }),
-        }),
+            lean: jest.fn().mockResolvedValue(mockProjects)
+          })
+        })
       });
+      (Project.find as unknown as jest.Mock) = pFind;
 
-      await exportController.exportProjectsExcel(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+      await exportController.exportData(mockRequest as Request, mockResponse as Response);
 
-      expect(Project.find).toHaveBeenCalled();
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      );
+      expect(pFind).toHaveBeenCalled();
+      expect(mockSetHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename=projects-export.xlsx');
     });
   });
 
-  describe('exportDashboardPDF', () => {
-    it('should export dashboard report as PDF successfully', async () => {
-      (Equipment.countDocuments as jest.Mock)
-        .mockResolvedValueOnce(10) // totalEquipment
-        .mockResolvedValueOnce(5) // availableEquipment
-        .mockResolvedValueOnce(3); // inUseEquipment
+  describe('PDF Export', () => {
+    it('should export clients as PDF', async () => {
+      mockRequest.query = { type: 'clients', format: 'pdf' };
+      const mockClients = [{ name: 'Client A' }];
 
-      (Project.countDocuments as jest.Mock)
-        .mockResolvedValueOnce(8) // totalProjects
-        .mockResolvedValueOnce(4) // activeProjects
-        .mockResolvedValueOnce(2); // completedProjects
+      (Client.find as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockResolvedValue(mockClients)
+      });
 
-      const { Task } = require('../../models');
-      (Task.countDocuments as jest.Mock)
-        .mockResolvedValueOnce(15) // totalTasks
-        .mockResolvedValueOnce(8) // openTasks
-        .mockResolvedValueOnce(7); // completedTasks
+      await exportController.exportData(mockRequest as Request, mockResponse as Response);
 
-      await exportController.exportDashboardPDF(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+      expect(Client.find).toHaveBeenCalled();
+      expect(mockSetHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename=clients-export.pdf');
+    });
+  });
 
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Type',
-        'application/pdf'
-      );
-      expect(mockSetHeader).toHaveBeenCalledWith(
-        'Content-Disposition',
-        'attachment; filename=dashboard-report.pdf'
-      );
+  describe('Error Handling', () => {
+    it('should handle missing type parameter', async () => {
+      mockRequest.query = { format: 'csv' };
+
+      await exportController.exportData(mockRequest as Request, mockResponse as Response);
+
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith({
+        success: false,
+        message: 'Veri tipi (type) gereklidir'
+      });
     });
 
-    it('should handle errors when exporting dashboard PDF', async () => {
-      (Equipment.countDocuments as jest.Mock).mockRejectedValue(
-        new Error('Database error')
-      );
+    it('should handle invalid type parameter', async () => {
+      mockRequest.query = { type: 'invalid_type' };
 
-      await exportController.exportDashboardPDF(
-        mockRequest as Request,
-        mockResponse as Response
-      );
+      await exportController.exportData(mockRequest as Request, mockResponse as Response);
+
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith({
+        success: false,
+        message: 'Geçersiz veri tipi'
+      });
+    });
+
+    it('should handle database errors', async () => {
+      mockRequest.query = { type: 'equipment' };
+
+      (Equipment.find as jest.Mock).mockReturnValue({
+        lean: jest.fn().mockRejectedValue(new Error('Database error'))
+      });
+
+      await exportController.exportData(mockRequest as Request, mockResponse as Response);
 
       expect(mockStatus).toHaveBeenCalledWith(500);
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
-        message: 'Export işlemi sırasında bir hata oluştu',
+        message: 'Database error'
       });
     });
   });
 });
-

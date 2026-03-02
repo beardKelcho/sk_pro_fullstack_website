@@ -37,7 +37,7 @@ function decryptSecret(encryptedSecret: string): string {
  */
 export const setup2FA = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     const user = await User.findById(userId);
 
     if (!user) {
@@ -81,7 +81,7 @@ export const setup2FA = async (req: Request, res: Response) => {
     user.backupCodes = hashedBackupCodes;
     await user.save();
 
-    await logAction(req, 'UPDATE', 'User', userId, [
+    await logAction(req, 'UPDATE', 'User', userId as unknown as string, [
       { field: '2FA Setup', oldValue: 'disabled', newValue: 'setup initiated' },
     ]);
 
@@ -108,7 +108,7 @@ export const setup2FA = async (req: Request, res: Response) => {
 export const verify2FA = async (req: Request, res: Response) => {
   try {
     const { token, backupCode } = req.body;
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     
     const user = await User.findById(userId).select('+twoFactorSecret +backupCodes');
 
@@ -172,7 +172,7 @@ export const verify2FA = async (req: Request, res: Response) => {
     user.twoFactorSecret = undefined;
     await user.save();
 
-    await logAction(req, 'UPDATE', 'User', userId, [
+    await logAction(req, 'UPDATE', 'User', userId as unknown as string, [
       { field: '2FA Status', oldValue: 'disabled', newValue: 'enabled' },
     ]);
 
@@ -196,7 +196,7 @@ export const verify2FA = async (req: Request, res: Response) => {
 export const disable2FA = async (req: Request, res: Response) => {
   try {
     const { password, token, backupCode } = req.body;
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     
     const user = await User.findById(userId).select('+twoFactorSecretHash +backupCodes');
 
@@ -259,7 +259,7 @@ export const disable2FA = async (req: Request, res: Response) => {
       user.backupCodes = [];
       await user.save();
 
-      await logAction(req, 'UPDATE', 'User', userId, [
+      await logAction(req, 'UPDATE', 'User', userId as unknown as string, [
         { field: '2FA Status', oldValue: 'enabled', newValue: 'disabled' },
       ]);
 
@@ -288,7 +288,7 @@ export const disable2FA = async (req: Request, res: Response) => {
  */
 export const get2FAStatus = async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     const user = await User.findById(userId);
 
     if (!user) {
@@ -385,7 +385,8 @@ export const verify2FALogin = async (req: Request, res: Response) => {
     }
 
     // Token üret (2FA login tamamlandı)
-    const { accessToken, refreshToken } = generateTokenPair(user as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { accessToken, refreshToken } = generateTokenPair(user as any as any);
 
     // Session oluştur
     try {

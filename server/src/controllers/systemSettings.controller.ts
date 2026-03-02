@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { SystemSetting } from '../models/SystemSetting';
 import { AppError } from '../middleware/errorHandler';
-import mongoose from 'mongoose';
+// Removed unused mongoose
 
 /**
  * Get maintenance mode status (Public endpoint - fast check)

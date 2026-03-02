@@ -27,7 +27,8 @@ export const bulkDelete = async (req: Request, res: Response) => {
     }
 
     let deletedCount = 0;
-    let Model: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let Model: mongoose.Model<any>;
 
     // Model seçimi
     switch (resource.toLowerCase()) {
@@ -59,7 +60,7 @@ export const bulkDelete = async (req: Request, res: Response) => {
 
     // Audit log
     for (const id of validIds) {
-      await logAction(req, 'DELETE', resource as any, id);
+      await logAction(req, 'DELETE', resource as 'Widget' | 'Equipment' | 'Project' | 'Task' | 'User' | 'Client' | 'Maintenance' | 'SiteImage' | 'SiteContent' | 'QRCode' | 'Notification' | 'PushSubscription' | 'NotificationSettings' | 'System' | 'ReportSchedule' | 'SavedSearch' | 'Session', id);
     }
 
     res.status(200).json({
@@ -98,7 +99,8 @@ export const bulkUpdateStatus = async (req: Request, res: Response) => {
       });
     }
 
-    let Model: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let Model: mongoose.Model<any>;
     let statusField = 'status';
 
     // Model seçimi
@@ -127,7 +129,7 @@ export const bulkUpdateStatus = async (req: Request, res: Response) => {
     }
 
     // User için özel durum (isActive boolean)
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (resource.toLowerCase() === 'user') {
       updateData.isActive = status === 'active' || status === true;
     } else {
@@ -144,7 +146,7 @@ export const bulkUpdateStatus = async (req: Request, res: Response) => {
 
     // Audit log
     for (const id of validIds) {
-      await logAction(req, 'UPDATE', resource as any, id, [
+      await logAction(req, 'UPDATE', resource as 'Widget' | 'Equipment' | 'Project' | 'Task' | 'User' | 'Client' | 'Maintenance' | 'SiteImage' | 'SiteContent' | 'QRCode' | 'Notification' | 'PushSubscription' | 'NotificationSettings' | 'System' | 'ReportSchedule' | 'SavedSearch' | 'Session', id, [
         {
           field: statusField,
           oldValue: 'unknown',

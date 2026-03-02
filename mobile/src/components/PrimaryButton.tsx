@@ -1,11 +1,11 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 
 export const PrimaryButton: React.FC<{
   label: string;
   onPress: () => void;
   disabled?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }> = ({ label, onPress, disabled, style }) => {
   return (
     <Pressable

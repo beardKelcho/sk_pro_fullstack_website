@@ -64,8 +64,9 @@ export class UserController {
         inviterName
       });
 
-      const userObject = user.toObject() as Record<string, unknown>;
-      delete userObject.password;
+      const userObject = user.toObject() as unknown;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (userObject as any).password;
 
       res.status(201).json({ success: true, user: userObject });
     } catch (error: unknown) {
@@ -84,8 +85,9 @@ export class UserController {
       const { id } = req.params;
       const user = await userService.updateUser(id, req.body);
 
-      const userObject = user.toObject() as Record<string, unknown>;
-      delete userObject.password;
+      const userObject = user.toObject() as unknown;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (userObject as any).password;
 
       res.status(200).json({ success: true, user: userObject });
     } catch (error: unknown) {

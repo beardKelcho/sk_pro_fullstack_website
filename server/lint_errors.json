@@ -1,0 +1,135 @@
+[
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/case.controller.ts",
+    "messages": [
+      "prefer-const: 'qrPrefix' is never reassigned. Use 'const' instead. at 11:9"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/client.controller.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: '_id' is assigned a value but never used. at 45:13",
+      "@typescript-eslint/no-unused-vars: 'createdAt' is assigned a value but never used. at 45:18",
+      "@typescript-eslint/no-unused-vars: 'updatedAt' is assigned a value but never used. at 45:29"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/import.controller.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'AppError' is defined but never used. at 2:10",
+      "@typescript-eslint/no-unused-vars: 'Task' is defined but never used. at 4:38",
+      "@typescript-eslint/no-unused-vars: 'Maintenance' is defined but never used. at 4:44",
+      "@typescript-eslint/no-unused-vars: 'User' is defined but never used. at 4:57"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/inventory.controller.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'quantity' is assigned a value but never used. at 86:49",
+      "@typescript-eslint/no-unused-vars: 'previousStatus' is assigned a value but never used. at 231:19",
+      "prefer-const: 'projectItem' is never reassigned. Use 'const' instead. at 337:21"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/maintenance.controller.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'AppError' is defined but never used. at 6:10"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/project.controller.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: '_id' is assigned a value but never used. at 101:15",
+      "@typescript-eslint/no-unused-vars: 'createdAt' is assigned a value but never used. at 101:20",
+      "@typescript-eslint/no-unused-vars: 'updatedAt' is assigned a value but never used. at 101:31",
+      "@typescript-eslint/no-unused-vars: 'createdBy' is assigned a value but never used. at 101:42"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/siteImage.controller.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'path' is defined but never used. at 5:8",
+      "@typescript-eslint/no-unused-vars: 'fs' is defined but never used. at 6:8"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/controllers/systemSettings.controller.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'mongoose' is defined but never used. at 4:8"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/index.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'legacyFileHandler' is defined but never used. at 28:10",
+      "@typescript-eslint/no-unused-vars: 'isLocalNetworkOrigin' is assigned a value but never used. at 80:7"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/routes/auth.routes.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'validateLogin' is defined but never used. at 4:10"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/routes/monitoring.routes.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'requirePermission' is defined but never used. at 3:24",
+      "@typescript-eslint/no-unused-vars: 'Permission' is defined but never used. at 4:10"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/routes/publicSiteContent.routes.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'authenticate' is defined but never used. at 3:10",
+      "@typescript-eslint/no-unused-vars: 'requirePermission' is defined but never used. at 3:24",
+      "@typescript-eslint/no-unused-vars: 'Permission' is defined but never used. at 4:10"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/routes/scan.routes.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'authorize' is defined but never used. at 3:24"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/scripts/reset-and-seed.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'mongoose' is defined but never used. at 2:8"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/services/maintenance.service.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'mongoose' is defined but never used. at 1:8"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/services/report.service.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'User' is defined but never used. at 4:30",
+      "@typescript-eslint/no-unused-vars: 'logger' is defined but never used. at 5:8"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/services/user.service.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'sortOrder' is assigned a value but never used. at 65:15",
+      "@typescript-eslint/no-unused-vars: 'sortField' is assigned a value but never used. at 66:15"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/test/controllers/export.controller.test.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'Task' is defined but never used. at 3:30",
+      "@typescript-eslint/no-unused-vars: 'Maintenance' is defined but never used. at 3:44",
+      "@typescript-eslint/no-unused-vars: 'User' is defined but never used. at 3:57"
+    ]
+  },
+  {
+    "path": "/Users/skkaan/Desktop/yazılımsal/SKpro_V13.1/server/src/test/controllers/siteImage.controller.test.ts",
+    "messages": [
+      "@typescript-eslint/no-unused-vars: 'fs' is defined but never used. at 12:8"
+    ]
+  }
+]

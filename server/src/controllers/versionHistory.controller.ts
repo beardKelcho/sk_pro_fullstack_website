@@ -109,7 +109,7 @@ export const rollbackVersion = async (req: Request, res: Response) => {
       });
     }
 
-    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -121,9 +121,11 @@ export const rollbackVersion = async (req: Request, res: Response) => {
       resource as 'Equipment' | 'Project' | 'Task' | 'Client' | 'Maintenance',
       new mongoose.Types.ObjectId(resourceId),
       versionNumber,
-      userId
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      userId as any
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await logAction(req, 'UPDATE', resource as any, resourceId, [
       {
         field: 'rollback',

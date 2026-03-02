@@ -40,8 +40,9 @@ export const EquipmentScreen: React.FC = () => {
         setEquipment(data.equipment);
       }
       setHasMore(data.page < data.totalPages);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Ekipmanlar yüklenemedi');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).response?.data?.message || (err instanceof Error ? err.message : 'Ekipmanlar yüklenemedi'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -72,8 +73,9 @@ export const EquipmentScreen: React.FC = () => {
       const response = await getEquipmentById(equipmentId);
       setSelectedEquipment(response.equipment);
       setModalVisible(true);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Ekipman detayları yüklenemedi');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).response?.data?.message || (err instanceof Error ? err.message : 'Ekipman detayları yüklenemedi'));
     }
   };
 
@@ -86,8 +88,9 @@ export const EquipmentScreen: React.FC = () => {
         setSelectedEquipment({ ...selectedEquipment, status: newStatus });
       }
       setModalVisible(false);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Ekipman güncellenemedi');
+    } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).response?.data?.message || (err instanceof Error ? err.message : 'Ekipman güncellenemedi'));
     } finally {
       setUpdating(false);
     }

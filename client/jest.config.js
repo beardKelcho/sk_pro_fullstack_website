@@ -17,7 +17,6 @@ const customJestConfig = {
     '^@styles/(.*)$': '<rootDir>/src/styles/$1',
     '^@context/(.*)$': '<rootDir>/src/context/$1',
     '^next-intl$': '<rootDir>/__mocks__/next-intl.ts',
-    '^next/font/google$': '<rootDir>/__mocks__/nextFontGoogle.ts',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {

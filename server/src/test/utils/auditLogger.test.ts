@@ -15,7 +15,7 @@ describe('auditLogger', () => {
 
   beforeEach(() => {
     // AuditLog.create'i spy'la
-    mockCreate = jest.spyOn(AuditLog, 'create').mockResolvedValue({} as any);
+    mockCreate = jest.spyOn(AuditLog, 'create').mockResolvedValue({} as unknown);
     // Logger'ı spy'la
     mockWarn = jest.spyOn(logger, 'warn').mockImplementation(() => logger);
     mockError = jest.spyOn(logger, 'error').mockImplementation(() => logger);

@@ -148,7 +148,7 @@ class ProjectService {
         }
 
         const skip = (page - 1) * limit;
-        const sortOptions: any = {};
+        const sortOptions: Record<string, 1 | -1 | { $meta: 'textScore' }> = {};
 
         if (search && sort === 'relevance') {
             sortOptions.score = { $meta: 'textScore' };
@@ -347,7 +347,7 @@ class ProjectService {
         await this.invalidateCache('projects:*');
 
         // Fire-and-forget calendar sync
-        calendarSyncService.syncProjectEvent(project as unknown as IProjectPopulated).catch(err => {
+        calendarSyncService.syncProjectEvent(project as unknown as Record<string, unknown>).catch(err => {
             logger.error('Calendar sync error during project creation', { error: String(err) });
         });
 
@@ -410,7 +410,7 @@ class ProjectService {
         }
 
         // Check for new team members
-        const oldTeamIds = (project.team as any[]).map(t => t.toString());
+        const oldTeamIds = (project.team as Array<{ toString(): string }>).map(t => t.toString());
         const newTeamIds = data.team || [];
         const addedTeamMembers = newTeamIds.filter(id => !oldTeamIds.includes(id));
 
@@ -487,12 +487,12 @@ class ProjectService {
         // Equipment Logic
         const EquipmentModel = mongoose.model('Equipment');
         const InventoryLogModel = mongoose.model('InventoryLog');
-        const userId = (data as any).userId;
+        const userId = data.userId;
 
         // 1. Check if Status Changed to COMPLETED or CANCELLED
         if ((project.status === 'COMPLETED' || project.status === 'CANCELLED') && oldProject.status !== project.status) {
             if (project.equipment && project.equipment.length > 0) {
-                const eqIds = project.equipment.map((e: any) => e._id || e);
+                const eqIds = project.equipment.map(e => { const obj = e as { _id?: unknown }; return obj?._id || e; });
 
                 await EquipmentModel.updateMany(
                     { _id: { $in: eqIds } },
@@ -501,7 +501,7 @@ class ProjectService {
                 );
 
                 if (userId) {
-                    const logs = eqIds.map((eqId: any) => ({
+                    const logs = eqIds.map((eqId: unknown) => ({
                         equipment: eqId,
                         user: userId,
                         action: 'CHECK_IN',
@@ -516,8 +516,8 @@ class ProjectService {
         }
         // 2. If Project is Active/Pending, handle equipment changes
         else if (data.equipment) { // If equipment was updated
-            const oldEqIds = oldProject.equipment.map((e: any) => e.toString());
-            const newEqIds = project.equipment.map((e: any) => e.toString());
+            const oldEqIds = (oldProject.equipment as Array<{ toString(): string }>).map(e => e.toString());
+            const newEqIds = (project.equipment as Array<{ toString(): string }>).map(e => e.toString());
 
             const added = newEqIds.filter(id => !oldEqIds.includes(id));
             const removed = oldEqIds.filter(id => !newEqIds.includes(id));
@@ -570,7 +570,7 @@ class ProjectService {
         const updatedProject = await this.getProjectById(id);
 
         // Fire-and-forget calendar sync update
-        calendarSyncService.syncProjectEvent(updatedProject, true).catch(err => {
+        calendarSyncService.syncProjectEvent(updatedProject as unknown as Record<string, unknown>, true).catch(err => {
             logger.error('Calendar sync error during project update', { error: String(err) });
         });
 
@@ -603,7 +603,7 @@ class ProjectService {
 
         await this.invalidateCache('projects:*');
 
-        calendarSyncService.deleteProjectEvent(project as unknown as IProjectPopulated).catch(err => {
+        calendarSyncService.deleteProjectEvent(project as unknown as Record<string, unknown>).catch(err => {
             logger.error('Calendar sync error during project deletion', { error: String(err) });
         });
     }
@@ -611,7 +611,7 @@ class ProjectService {
     /**
      * Get Stats
      */
-    async getStats(): Promise<any> {
+    async getStats(): Promise<Record<string, number>> {
         const cacheKey = `projects:stats`;
         const redisClient = getRedisClient();
 

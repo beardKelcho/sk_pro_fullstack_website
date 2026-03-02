@@ -10,15 +10,15 @@ export interface AuditLogData {
   resourceId: string;
   changes?: Array<{
     field: string;
-    oldValue: any;
-    newValue: any;
+    oldValue: unknown;
+    newValue: unknown;
   }>;
   metadata?: {
     ipAddress?: string;
     userAgent?: string;
     method?: string;
     endpoint?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -51,6 +51,7 @@ export const createAuditLog = async (data: AuditLogData): Promise<void> => {
         } else {
           userObjectId = new mongoose.Types.ObjectId(data.user);
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } else if (typeof data.user === 'object' && mongoose.Types.ObjectId.isValid(data.user as any)) {
         userObjectId = data.user as unknown as mongoose.Types.ObjectId;
       }
@@ -121,7 +122,7 @@ export const logAction = async (
 ): Promise<void> => {
   try {
     // User ID'yi al, yoksa null kullan (system actions için)
-    const userId = (req.user as any)?.id || (req.user as any)?._id?.toString() || null;
+    const userId = req.user?.id || req.user?._id?.toString() || null;
     
     // userId'nin geçerli bir ObjectId olup olmadığını kontrol et
     let validUserId: string | null = null;
@@ -157,7 +158,7 @@ export const logAction = async (
  * const changes = extractChanges(oldEquipment, newEquipment);
  * // [{ field: 'name', oldValue: 'Old Name', newValue: 'New Name' }]
  */
-export const extractChanges = (oldData: any, newData: any): AuditLogData['changes'] => {
+export const extractChanges = (oldData: unknown, newData: unknown): AuditLogData['changes'] => {
   const changes: AuditLogData['changes'] = [];
   
   if (!oldData || !newData) {
@@ -172,8 +173,10 @@ export const extractChanges = (oldData: any, newData: any): AuditLogData['change
       return;
     }
 
-    const oldValue = oldData[key];
-    const newValue = newData[key];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const oldValue = (oldData as any)[key];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newValue = (newData as any)[key];
 
     // Deep comparison for objects
     if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
@@ -213,7 +216,7 @@ export const getAuditLogs = async (filters: {
   page?: number;
   limit?: number;
 }) => {
-  const query: any = {};
+  const query: Record<string, unknown> = {};
 
   if (filters.user) {
     query.user = filters.user;
@@ -234,10 +237,12 @@ export const getAuditLogs = async (filters: {
   if (filters.startDate || filters.endDate) {
     query.createdAt = {};
     if (filters.startDate) {
-      query.createdAt.$gte = filters.startDate;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (query.createdAt as any).$gte = filters.startDate;
     }
     if (filters.endDate) {
-      query.createdAt.$lte = filters.endDate;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (query.createdAt as any).$lte = filters.endDate;
     }
   }
 

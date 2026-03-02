@@ -36,7 +36,7 @@ document.createElement = jest.fn((tagName: string) => {
 describe('ExportMenu Component', () => {
   const mockApiClient = apiClient as jest.Mocked<typeof apiClient>;
   const defaultProps = {
-    baseEndpoint: '/api/export/equipment',
+    type: 'equipment',
     baseFilename: 'equipment',
     label: 'Dışa Aktar',
   };
@@ -79,7 +79,7 @@ describe('ExportMenu Component', () => {
 
     await waitFor(() => {
       expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/api/export/equipment/csv',
+        '/export?type=equipment&format=csv',
         { responseType: 'blob' }
       );
       expect(toast.success).toHaveBeenCalledWith('CSV formatında dışa aktarma başarılı');
@@ -103,7 +103,7 @@ describe('ExportMenu Component', () => {
 
     await waitFor(() => {
       expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/api/export/equipment/excel',
+        '/export?type=equipment&format=excel',
         { responseType: 'blob' }
       );
       expect(toast.success).toHaveBeenCalledWith('EXCEL formatında dışa aktarma başarılı');
@@ -127,7 +127,7 @@ describe('ExportMenu Component', () => {
 
     await waitFor(() => {
       expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/api/export/equipment/pdf',
+        '/export?type=equipment&format=pdf',
         { responseType: 'blob' }
       );
       expect(toast.success).toHaveBeenCalledWith('PDF formatında dışa aktarma başarılı');
@@ -207,7 +207,7 @@ describe('ExportMenu Component', () => {
   });
 
   it('should use custom label when provided', () => {
-    render(<ExportMenu type="inventory" baseFilename="test-file" />);
+    render(<ExportMenu type="inventory" baseFilename="test-file" label="Export Data" />);
     expect(screen.getByText('Export Data')).toBeInTheDocument();
   });
 });

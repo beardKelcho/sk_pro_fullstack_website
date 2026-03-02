@@ -42,17 +42,15 @@ describe('API Integration Testleri', () => {
       const mockResponse = {
         data: {
           content: {
-            content: {
-              title: 'Test Title',
-              description: 'Test Description',
-            },
+            title: 'Test Title',
+            description: 'Test Description',
           },
         },
       };
 
       (apiClient.get as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await siteContentService.getContentBySection('hero');
+      const result = await siteContentService.getSiteContent('hero');
 
       expect(result.content.title).toBe('Test Title');
     });

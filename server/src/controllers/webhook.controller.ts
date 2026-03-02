@@ -72,7 +72,7 @@ export const updateWebhook = async (req: Request, res: Response) => {
     }
 
     const { name, url, events, enabled, secret, maxAttempts, timeoutMs } = req.body || {};
-    const update: any = {};
+    const update: Record<string, unknown> = {};
 
     if (name !== undefined) update.name = name;
     if (url !== undefined) {
@@ -149,7 +149,7 @@ export const listDeliveries = async (req: Request, res: Response) => {
   }
 
   const { status, limit = '50' } = req.query;
-  const filters: any = { webhook: new mongoose.Types.ObjectId(id) };
+  const filters: Record<string, unknown> = { webhook: new mongoose.Types.ObjectId(id) };
   if (status) filters.status = status;
 
   const deliveries = await WebhookDelivery.find(filters)

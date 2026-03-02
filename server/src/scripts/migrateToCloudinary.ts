@@ -37,18 +37,18 @@ const migrateFile = async (
     // Dosyayı oku
     const buffer = fs.readFileSync(filePath);
     const filename = path.basename(filePath);
-    
+
     // Path'den type'ı çıkar (örn: "site-images/image.jpg" -> "site-images")
     const type = relativePath.split('/')[0] || 'general';
-    
+
     // Cloudinary'ye upload et
     const result = await uploadToCloudinary(buffer, filename, {
       folder: type,
       resource_type: 'auto',
     });
-    
+
     logger.info(`✅ Uploaded: ${relativePath} -> ${result.secure_url}`);
-    
+
     // Veritabanındaki ilgili kayıtları güncelle
     const updateResult = await SiteImage.updateMany(
       {
@@ -68,17 +68,18 @@ const migrateFile = async (
         },
       }
     );
-    
+
     if (updateResult.modifiedCount > 0) {
       logger.info(`📝 Updated ${updateResult.modifiedCount} database record(s) for ${relativePath}`);
     }
-    
+
     stats.success++;
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error(`❌ Failed to migrate ${relativePath}:`, error);
     stats.errors.push({
       file: relativePath,
-      error: error.message || String(error),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      error: (error as any).message || String((error as any)),
     });
     stats.failed++;
   }
@@ -93,11 +94,11 @@ const migrateDirectory = async (
   stats: MigrationStats
 ): Promise<void> => {
   const items = fs.readdirSync(dir, { withFileTypes: true });
-  
+
   for (const item of items) {
     const fullPath = path.join(dir, item.name);
     const relativePath = basePath ? `${basePath}/${item.name}` : item.name;
-    
+
     if (item.isDirectory()) {
       // Recursive olarak alt klasörleri tara
       await migrateDirectory(fullPath, relativePath, stats);
@@ -105,7 +106,7 @@ const migrateDirectory = async (
       // Dosya ise migrate et
       stats.total++;
       await migrateFile(fullPath, relativePath, stats);
-      
+
       // Rate limiting için kısa bir bekleme
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -123,33 +124,33 @@ const migrateToCloudinary = async () => {
       logger.info('💡 Set STORAGE_TYPE=cloudinary in your .env file');
       process.exit(1);
     }
-    
+
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
       logger.error('❌ Cloudinary credentials not found');
       logger.info('💡 Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env file');
       process.exit(1);
     }
-    
+
     // MongoDB bağlantısı
     await connectDB();
     logger.info('✅ Connected to MongoDB');
-    
+
     // Uploads klasörünü kontrol et
     const uploadsDir = path.join(process.cwd(), 'uploads');
     if (!fs.existsSync(uploadsDir)) {
       logger.error(`❌ Uploads directory not found: ${uploadsDir}`);
       process.exit(1);
     }
-    
+
     logger.info(`📁 Starting migration from: ${uploadsDir}`);
     logger.info('⚠️  This will upload all files to Cloudinary and update database records');
-    
+
     // Kullanıcı onayı (opsiyonel - production'da kaldırılabilir)
     if (process.env.NODE_ENV !== 'production') {
       logger.info('⏳ Starting migration in 3 seconds... (Ctrl+C to cancel)');
       await new Promise(resolve => setTimeout(resolve, 3000));
     }
-    
+
     const stats: MigrationStats = {
       total: 0,
       success: 0,
@@ -157,13 +158,13 @@ const migrateToCloudinary = async () => {
       skipped: 0,
       errors: [],
     };
-    
+
     // Migration başlat
     const startTime = Date.now();
     await migrateDirectory(uploadsDir, '', stats);
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
-    
+
     // Sonuçları göster
     logger.info('\n📊 Migration Summary:');
     logger.info(`   Total files: ${stats.total}`);
@@ -171,7 +172,7 @@ const migrateToCloudinary = async () => {
     logger.info(`   ❌ Failed: ${stats.failed}`);
     logger.info(`   ⏭️  Skipped: ${stats.skipped}`);
     logger.info(`   ⏱️  Duration: ${duration}s`);
-    
+
     if (stats.errors.length > 0) {
       logger.warn('\n❌ Errors:');
       stats.errors.slice(0, 10).forEach(({ file, error }) => {
@@ -181,11 +182,11 @@ const migrateToCloudinary = async () => {
         logger.warn(`   ... and ${stats.errors.length - 10} more errors`);
       }
     }
-    
+
     // Veritabanı bağlantısını kapat
     await mongoose.connection.close();
     logger.info('✅ Migration completed');
-    
+
   } catch (error) {
     logger.error('❌ Migration failed:', error);
     process.exit(1);

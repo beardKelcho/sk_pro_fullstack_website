@@ -178,10 +178,12 @@ export const processCaseQR = async (req: Request, res: Response) => {
         const userId = req.user?.id;
 
         for (const item of caseItem.items) {
-            const equip = await Equipment.findById((item as unknown).equipment);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const equip = await Equipment.findById((item as any).equipment);
 
             if (!equip) {
-                errors.push(`Ekipman bulunamadı (ID: ${(item as unknown).equipment})`);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                errors.push(`Ekipman bulunamadı (ID: ${(item as any).equipment})`);
                 continue;
             }
 

@@ -174,7 +174,7 @@ export const reorderProjects = async (req: Request, res: Response) => {
         // Prepare bulk write operations
         const bulkOps = items.map((item: { _id: string; order: number }) => ({
             updateOne: {
-                filter: { _id: (item as unknown)._id },
+                filter: { _id: (item as Record<string, unknown>)._id },
                 update: { $set: { order: item.order } },
             },
         }));

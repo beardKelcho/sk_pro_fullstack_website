@@ -110,7 +110,8 @@ export class InventoryController {
         } catch (error: unknown) {
             await session.abortTransaction();
             logger.error('Ürün oluşturma hatası:', error);
-            res.status((error as unknown).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            res.status((error as any).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
         } finally {
             session.endSession();
         }
@@ -187,16 +188,19 @@ export class InventoryController {
             const transformedItems = await Promise.all(items.map(async (item: unknown) => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if (((item as any) as any).status === 'IN_USE' && (item as any).currentProject) {
-                    (item as Record<string, unknown>).location = {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (item as any).location = {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         _id: (item as any).currentProject._id,
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         name: (item as any).currentProject.location || (item as any).currentProject.name,
                         type: 'PROJECT'
                     };
-                } else if ((item as unknown).status === 'AVAILABLE') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } else if ((item as any).status === 'AVAILABLE') {
                     // Force "Ana Depo" display for available items
-                    (item as Record<string, unknown>).location = {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (item as any).location = {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         _id: (item as any).location?._id || 'warehouse',
                         name: 'Ana Depo',
@@ -236,14 +240,15 @@ export class InventoryController {
             if (!item) throw new AppError('Ekipman bulunamadı', 404);
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if ((item as unknown).status !== 'AVAILABLE' && (item as unknown).status !== 'IN_USE') {
+            if ((item as any).status !== 'AVAILABLE' && (item as any).status !== 'IN_USE') {
                 throw new AppError('Sadece müsait veya kullanımda olan ekipmanlar bakıma gönderilebilir', 400);
             }
 
             // Removed unused previousStatus
             const previousProject = item.currentProject;
 
-            (item as unknown).status = 'MAINTENANCE';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (item as any).status = 'MAINTENANCE';
             item.currentProject = undefined; // Clear project if it was in use
             await item.save({ session });
 
@@ -270,7 +275,8 @@ export class InventoryController {
             res.status(200).json({ success: true, message: 'Ekipman bakıma gönderildi', data: item });
         } catch (error: unknown) {
             await session.abortTransaction();
-            res.status((error as unknown).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            res.status((error as any).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
         } finally {
             session.endSession();
         }
@@ -294,17 +300,21 @@ export class InventoryController {
             const project = await Project.findById(projectId).session(session);
             if (!project) throw new AppError('Proje bulunamadı', 404);
 
-            if ((item as unknown).status !== 'AVAILABLE') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((item as any).status !== 'AVAILABLE') {
                 // Allow if already IN_USE? Maybe not for simplification. Only AVAILABLE items can be assigned.
                 // User request says "Ürün ya depodadır ya projede".
                 // If item is already in a project, it should be returned first? Or can we transfer Project->Project directly?
                 // For simplification: Warehouse -> Project only.
-                if ((item as unknown).status === 'IN_USE' && item.currentProject?.toString() !== projectId) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if ((item as any).status === 'IN_USE' && item.currentProject?.toString() !== projectId) {
                     throw new AppError('Bu ekipman şu an başka bir projede kullanımda', 400);
                 }
                 // If status is maintenance etc.
-                if ((item as unknown).status !== 'IN_USE') {
-                    throw new AppError(`Ekipman şu an müsait değil (${(item as unknown).status})`, 400);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if ((item as any).status !== 'IN_USE') {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    throw new AppError(`Ekipman şu an müsait değil (${(item as any).status})`, 400);
                 }
             }
 
@@ -313,9 +323,11 @@ export class InventoryController {
                 if (item.currentProject) {
                     throw new AppError('Seri numaralı ürün zaten bir projede', 400);
                 }
-                (item as unknown).status = 'IN_USE';
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (item as any).status = 'IN_USE';
                 item.currentProject = new mongoose.Types.ObjectId(projectId);
-                // (item as Record<string, unknown>).location remains Warehouse or we can change it to a "Project" location type if exists.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // (item as any).location remains Warehouse or we can change it to a "Project" location type if exists.
                 // User said "location alanını null yap veya 'Projede' olarak işaretle".
                 // Since location is required in Schema, we must keep it valid. 
                 // Let's assume we keep the 'Warehouse' location ID but logic knows it's out.
@@ -348,7 +360,8 @@ export class InventoryController {
                 // 2. Create/Update Project Item
                 // Check if this equipment (same name/model) is already in project
                 const projectItem = await Equipment.findOne({
-                    name: (item as unknown).name,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    name: (item as any).name,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     model: (item as any).model,
                     currentProject: projectId,
@@ -398,7 +411,8 @@ export class InventoryController {
         } catch (error: unknown) {
             await session.abortTransaction();
             logger.error('Proje atama hatası:', error);
-            res.status((error as unknown).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            res.status((error as any).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
         } finally {
             session.endSession();
         }
@@ -425,7 +439,8 @@ export class InventoryController {
             const warehouseId = (item as any).location;
 
             if (item.trackingType === 'SERIALIZED') {
-                (item as unknown).status = 'AVAILABLE';
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (item as any).status = 'AVAILABLE';
                 item.currentProject = undefined; // Clear project
                 await item.save({ session });
             } else {
@@ -437,14 +452,16 @@ export class InventoryController {
                 // 1. Decrease Project Stock
                 item.quantity -= quantity;
                 if (item.quantity === 0) {
-                    await Equipment.findByIdAndDelete((item as unknown)._id).session(session);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await Equipment.findByIdAndDelete((item as any)._id).session(session);
                 } else {
                     await item.save({ session });
                 }
 
                 // 2. Increase Warehouse Stock
                 const warehouseItem = await Equipment.findOne({
-                    name: (item as unknown).name,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    name: (item as any).name,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     model: (item as any).model,
                     location: warehouseId,
@@ -498,7 +515,8 @@ export class InventoryController {
         } catch (error: unknown) {
             await session.abortTransaction();
             logger.error('İade hatası:', error);
-            res.status((error as unknown).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            res.status((error as any).statusCode || 500).json({ success: false, message: (error as Error).message || 'Sunucu hatası' });
         } finally {
             session.endSession();
         }
@@ -532,14 +550,16 @@ export class InventoryController {
             }
 
             // Update allowed fields
-            if (name) (item as unknown).name = name;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (name) (item as any).name = name;
             if (brand) item.brand = brand;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (model) (item as any).model = model;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (serialNumber) (item as any).serialNumber = serialNumber;
             if (category) item.category = category;
-            if (status) (item as unknown).status = status;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if (status) (item as any).status = status;
             if (criticalStockLevel !== undefined) item.criticalStockLevel = criticalStockLevel;
             if (subComponents) item.subComponents = subComponents;
 

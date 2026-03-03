@@ -120,12 +120,17 @@ export const globalSearch = async (req: Request, res: Response) => {
     equipmentResults.forEach((item: unknown) => {
       results.push({
         type: 'equipment',
-        id: (item as unknown)._id.toString(),
-        title: (item as unknown).name,
-        description: `${(item as unknown).type} - ${(item as Record<string, unknown>).model || ''} ${(item as Record<string, unknown>).serialNumber ? `(${(item as Record<string, unknown>).serialNumber})` : ''}`.trim(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: (item as any)._id.toString(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        title: (item as any).name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        description: `${(item as any).type} - ${(item as any).model || ''} ${(item as any).serialNumber ? `(${(item as any).serialNumber})` : ''}`.trim(),
         metadata: {
-          status: (item as unknown).status,
-          location: (item as Record<string, unknown>).location,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          status: (item as any).status,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          location: (item as any).location,
         },
       });
     });
@@ -133,15 +138,19 @@ export const globalSearch = async (req: Request, res: Response) => {
     projectResults.forEach((item: unknown) => {
       results.push({
         type: 'project',
-        id: (item as unknown)._id.toString(),
-        title: (item as unknown).name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: (item as any)._id.toString(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        title: (item as any).name,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         description: (item as any).description || (item as any).location || '',
         metadata: {
-          status: (item as unknown).status,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          status: (item as any).status,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           client: (item as any).client?.name || '',
-          startDate: (item as unknown).startDate,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          startDate: (item as any).startDate,
         },
       });
     });
@@ -149,14 +158,17 @@ export const globalSearch = async (req: Request, res: Response) => {
     taskResults.forEach((item: unknown) => {
       results.push({
         type: 'task',
-        id: (item as unknown)._id.toString(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: (item as any)._id.toString(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         title: (item as any).title,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         description: (item as any).description || '',
         metadata: {
-          status: (item as unknown).status,
-          priority: (item as Record<string, unknown>).priority,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          status: (item as any).status,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          priority: (item as any).priority,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           assignedTo: (item as any).assignedTo?.name || '',
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,14 +180,19 @@ export const globalSearch = async (req: Request, res: Response) => {
     clientResults.forEach((item: unknown) => {
       results.push({
         type: 'client',
-        id: (item as unknown)._id.toString(),
-        title: (item as unknown).name || (item as Record<string, unknown>).companyName,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: (item as any)._id.toString(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        title: (item as any).name || (item as any).companyName,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         description: (item as any).email || (item as any).phone || (item as any).address || '',
         metadata: {
-          companyName: (item as Record<string, unknown>).companyName,
-          email: (item as Record<string, unknown>).email,
-          phone: (item as Record<string, unknown>).phone,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          companyName: (item as any).companyName,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          email: (item as any).email,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          phone: (item as any).phone,
         },
       });
     });
@@ -183,14 +200,19 @@ export const globalSearch = async (req: Request, res: Response) => {
     userResults.forEach((item: unknown) => {
       results.push({
         type: 'user',
-        id: (item as unknown)._id.toString(),
-        title: (item as unknown).name,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: (item as any)._id.toString(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        title: (item as any).name,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         description: (item as any).email || (item as any).role || '',
         metadata: {
-          role: (item as Record<string, unknown>).role,
-          department: (item as Record<string, unknown>).department,
-          email: (item as Record<string, unknown>).email,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          role: (item as any).role,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          department: (item as any).department,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          email: (item as any).email,
         },
       });
     });
@@ -198,14 +220,19 @@ export const globalSearch = async (req: Request, res: Response) => {
     maintenanceResults.forEach((item: unknown) => {
       results.push({
         type: 'maintenance',
-        id: (item as unknown)._id.toString(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        id: (item as any)._id.toString(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         title: (item as any).description || `${((item as any).equipment as any)?.name || ''} Bakımı`.trim(),
-        description: (item as unknown).type || '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        description: (item as any).type || '',
         metadata: {
-          status: (item as unknown).status,
-          priority: (item as Record<string, unknown>).priority,
-          scheduledDate: (item as unknown).scheduledDate,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          status: (item as any).status,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          priority: (item as any).priority,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          scheduledDate: (item as any).scheduledDate,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           equipment: ((item as any).equipment as any)?.name || '',
         },
@@ -286,21 +313,26 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
     const suggestions: string[] = [];
 
     equipmentNames.forEach((item: unknown) => {
-      if (!suggestions.includes((item as unknown).name)) {
-        suggestions.push((item as unknown).name);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!suggestions.includes((item as any).name)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        suggestions.push((item as any).name);
       }
     });
 
     projectNames.forEach((item: unknown) => {
-      if (!suggestions.includes((item as unknown).name)) {
-        suggestions.push((item as unknown).name);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (!suggestions.includes((item as any).name)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        suggestions.push((item as any).name);
       }
     });
 
     clientNames.forEach((item: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((item as unknown).name && !suggestions.includes((item as unknown).name)) {
-        suggestions.push((item as unknown).name);
+      if ((item as any).name && !suggestions.includes((item as any).name)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        suggestions.push((item as any).name);
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((item as any).companyName && !suggestions.includes((item as any).companyName)) {

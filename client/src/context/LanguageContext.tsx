@@ -79,7 +79,7 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     if (!key || typeof key !== 'string') {
       return key || '';
     }
-    
+
     const keys = key.split('.');
     let value: any = translations[language];
 
@@ -106,9 +106,6 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     return value;
   };
 
-  if (isLoading) {
-    return <>{children}</>;
-  }
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>

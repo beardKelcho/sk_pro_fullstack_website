@@ -39,7 +39,7 @@ export default function StageExperience({ children, className = '' }: StageExper
             style={{
               background: `radial-gradient(circle, rgba(0,102,204,0.4) 0%, transparent 70%)`,
               left: `${i * 25}%`,
-              top: `${Math.random() * 100}%`,
+              top: `${(i * 37) % 80 + 10}%`,
             }}
             animate={{
               scale: [1, 1.5, 1],
@@ -89,7 +89,7 @@ export function StageSectionTitle({
       // Random bir kelime seç
       const randomIndex = Math.floor(Math.random() * words.length);
       setHighlightedIndex(randomIndex);
-      
+
       // 1.5 saniye sonra highlight'ı kaldır
       setTimeout(() => {
         setHighlightedIndex(null);
@@ -117,7 +117,7 @@ export function StageSectionTitle({
           <motion.span
             key={i}
             className="inline-block"
-            style={{ 
+            style={{
               marginRight: '2rem',
               padding: highlightedIndex === i ? '0.5rem' : '0.5rem',
               transformOrigin: 'center center',
@@ -129,20 +129,20 @@ export function StageSectionTitle({
             animate={
               isInView
                 ? {
-                    opacity: 1,
-                    y: 0,
-                    ...(highlightedIndex === i
-                      ? {
-                          scale: 1.1,
-                          color: '#0066CC',
-                          rotateY: 360,
-                        }
-                      : {
-                          scale: 1,
-                          color: '#ffffff',
-                          rotateY: 0,
-                        }),
-                  }
+                  opacity: 1,
+                  y: 0,
+                  ...(highlightedIndex === i
+                    ? {
+                      scale: 1.1,
+                      color: '#0066CC',
+                      rotateY: 360,
+                    }
+                    : {
+                      scale: 1,
+                      color: '#ffffff',
+                      rotateY: 0,
+                    }),
+                }
                 : {}
             }
             transition={{

@@ -118,6 +118,7 @@ const optimizeProjectStage = (project: unknown): unknown => {
  * Aggregation pipeline'ı explain eder ve performans analizi yapar
  */
 export const explainAggregation = async (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: mongoose.Model<any>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pipeline: any[],

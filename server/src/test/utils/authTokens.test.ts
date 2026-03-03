@@ -8,7 +8,7 @@ describe('authTokens', () => {
     it('should create a SHA256 hash of the token', () => {
       const token = 'test-token-123';
       const hash = createTokenHash(token);
-      
+
       expect(hash).toBeDefined();
       expect(typeof hash).toBe('string');
       expect(hash.length).toBe(64); // SHA256 produces 64 hex characters
@@ -18,14 +18,14 @@ describe('authTokens', () => {
       const token = 'test-token-123';
       const hash1 = createTokenHash(token);
       const hash2 = createTokenHash(token);
-      
+
       expect(hash1).toBe(hash2);
     });
 
     it('should produce different hashes for different tokens', () => {
       const hash1 = createTokenHash('token-1');
       const hash2 = createTokenHash('token-2');
-      
+
       expect(hash1).not.toBe(hash2);
     });
   });
@@ -39,7 +39,7 @@ describe('authTokens', () => {
 
     it('should generate access and refresh tokens', () => {
       const tokens = generateTokenPair(mockUser as IUser);
-      
+
       expect(tokens).toHaveProperty('accessToken');
       expect(tokens).toHaveProperty('refreshToken');
       expect(typeof tokens.accessToken).toBe('string');
@@ -48,30 +48,34 @@ describe('authTokens', () => {
 
     it('should generate valid JWT tokens', () => {
       const tokens = generateTokenPair(mockUser as IUser);
-      
+
       // Access token should be valid
-      const accessDecoded = jwt.verify(tokens.accessToken, JWT_SECRET) as unknown;
+      const accessDecoded = jwt.verify(tokens.accessToken, JWT_SECRET) as jwt.JwtPayload & { id: string, email: string, role: string };
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(accessDecoded.id).toBe(mockUser._id!.toString());
       expect(accessDecoded.email).toBe(mockUser.email);
       expect(accessDecoded.role).toBe(mockUser.role);
-      
+
       // Refresh token should be valid
-      const refreshDecoded = jwt.verify(tokens.refreshToken, JWT_REFRESH_SECRET) as unknown;
+      const refreshDecoded = jwt.verify(tokens.refreshToken, JWT_REFRESH_SECRET) as jwt.JwtPayload & { id: string };
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       expect(refreshDecoded.id).toBe(mockUser._id!.toString());
     });
 
     it('should generate tokens with correct expiration', () => {
       const tokens = generateTokenPair(mockUser as IUser);
-      
-      const accessDecoded = jwt.decode(tokens.accessToken) as unknown;
-      const refreshDecoded = jwt.decode(tokens.refreshToken) as unknown;
-      
+
+      const accessDecoded = jwt.decode(tokens.accessToken) as jwt.JwtPayload;
+      const refreshDecoded = jwt.decode(tokens.refreshToken) as jwt.JwtPayload;
+
       // Access token should expire in 1 hour
-      const accessExp = accessDecoded.exp - accessDecoded.iat;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const accessExp = accessDecoded.exp! - accessDecoded.iat!;
       expect(accessExp).toBe(3600); // 1 hour in seconds
-      
+
       // Refresh token should expire in 7 days
-      const refreshExp = refreshDecoded.exp - refreshDecoded.iat;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const refreshExp = refreshDecoded.exp! - refreshDecoded.iat!;
       expect(refreshExp).toBe(604800); // 7 days in seconds
     });
 
@@ -86,10 +90,10 @@ describe('authTokens', () => {
         email: 'user2@example.com',
         role: 'TEKNISYEN',
       };
-      
+
       const tokens1 = generateTokenPair(user1 as IUser);
       const tokens2 = generateTokenPair(user2 as IUser);
-      
+
       expect(tokens1.accessToken).not.toBe(tokens2.accessToken);
       expect(tokens1.refreshToken).not.toBe(tokens2.refreshToken);
     });
@@ -102,7 +106,7 @@ describe('authTokens', () => {
           'x-client': 'mobile',
         },
       };
-      
+
       expect(isMobileClient(req)).toBe(true);
     });
 
@@ -112,7 +116,7 @@ describe('authTokens', () => {
           'x-client': 'expo',
         },
       };
-      
+
       expect(isMobileClient(req)).toBe(true);
     });
 
@@ -122,7 +126,7 @@ describe('authTokens', () => {
           'x-client': 'react-native',
         },
       };
-      
+
       expect(isMobileClient(req)).toBe(true);
     });
 
@@ -132,7 +136,7 @@ describe('authTokens', () => {
           'x-client-platform': 'mobile',
         },
       };
-      
+
       expect(isMobileClient(req)).toBe(true);
     });
 
@@ -142,7 +146,7 @@ describe('authTokens', () => {
           'x-client': 'web',
         },
       };
-      
+
       expect(isMobileClient(req)).toBe(false);
     });
 
@@ -150,7 +154,7 @@ describe('authTokens', () => {
       const req = {
         headers: {},
       };
-      
+
       expect(isMobileClient(req)).toBe(false);
     });
 
@@ -170,7 +174,7 @@ describe('authTokens', () => {
           'x-client': 'mObIlE',
         },
       };
-      
+
       expect(isMobileClient(req1)).toBe(true);
       expect(isMobileClient(req2)).toBe(true);
       expect(isMobileClient(req3)).toBe(true);
@@ -182,13 +186,13 @@ describe('authTokens', () => {
           'x-client': '  mobile  ',
         },
       };
-      
+
       expect(isMobileClient(req)).toBe(true);
     });
 
     it('should handle missing headers object', () => {
       const req = {};
-      
+
       expect(isMobileClient(req)).toBe(false);
     });
   });

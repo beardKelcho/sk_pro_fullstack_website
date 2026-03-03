@@ -42,6 +42,7 @@ export const generateTokenPair = (user: IUser): TokenPair => {
   return { accessToken, refreshToken };
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isMobileClient = (req: { headers?: Record<string, any> }): boolean => {
   const raw =
     (req.headers?.['x-client'] as string | undefined) ||

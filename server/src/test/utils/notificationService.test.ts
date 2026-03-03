@@ -19,11 +19,17 @@ describe('notificationService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(Notification, 'create').mockResolvedValue({} as unknown);
-    jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(null as unknown);
-    jest.spyOn(User, 'findById').mockResolvedValue(null as unknown);
-    jest.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined as unknown);
-    jest.spyOn(pushNotificationService, 'sendPushNotification').mockResolvedValue(undefined as unknown);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jest.spyOn(Notification, 'create').mockResolvedValue({} as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(null as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jest.spyOn(User, 'findById').mockResolvedValue(null as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jest.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    jest.spyOn(pushNotificationService, 'sendPushNotification').mockResolvedValue(undefined as any);
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     jest.spyOn(realtimeHub, 'sendToUser').mockImplementation(() => { });
   });
 
@@ -47,7 +53,8 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
 
       const result = await createNotification(baseParams);
 
@@ -74,7 +81,8 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
 
       await createNotification(baseParams);
 
@@ -108,8 +116,10 @@ describe('notificationService', () => {
         pushTypes: {},
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
-      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as any);
 
       await createNotification(baseParams);
 
@@ -144,8 +154,10 @@ describe('notificationService', () => {
         pushTypes: {},
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
-      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as any);
 
       await createNotification(baseParams);
 
@@ -176,9 +188,12 @@ describe('notificationService', () => {
         emailTypes: {},
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
-      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as unknown);
-      jest.spyOn(User, 'findById').mockResolvedValue(mockUser as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(User, 'findById').mockResolvedValue(mockUser as any);
 
       await createNotification({
         ...baseParams,
@@ -201,7 +216,8 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
 
       await createNotification({
         ...baseParams,
@@ -223,7 +239,8 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
 
       await createNotification({
         ...baseParams,
@@ -258,7 +275,8 @@ describe('notificationService', () => {
         createdAt: new Date(),
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
       jest.spyOn(realtimeHub, 'sendToUser').mockImplementation(() => {
         throw new Error('SSE error');
       });
@@ -286,8 +304,10 @@ describe('notificationService', () => {
         pushTypes: {},
       };
 
-      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as unknown);
-      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as unknown);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(Notification, 'create').mockResolvedValue(mockNotification as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jest.spyOn(NotificationSettings, 'findOne').mockResolvedValue(mockSettings as any);
       jest.spyOn(pushNotificationService, 'sendPushNotification').mockRejectedValue(new Error('Push error'));
 
       // Should not throw

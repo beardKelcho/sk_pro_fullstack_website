@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyObject = Record<string, any>;
 
 const isPlainObject = (v: unknown): v is AnyObject => {

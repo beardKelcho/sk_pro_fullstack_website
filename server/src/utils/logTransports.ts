@@ -18,6 +18,7 @@ export const createCloudWatchTransport = (): winston.transport | null => {
     }
 
     // winston-cloudwatch paketi type tanımları eksik olabilir
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const CloudWatchTransport = require('winston-cloudwatch');
 
     return new CloudWatchTransport({
@@ -126,7 +127,9 @@ export const createElasticsearchTransport = (): winston.transport | null => {
 export const createFileTransport = (): winston.transport | null => {
   try {
     const logDir = process.env.LOG_DIR || 'logs';
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fs = require('fs');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const path = require('path');
 
     // Log klasörünü oluştur

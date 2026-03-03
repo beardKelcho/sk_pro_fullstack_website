@@ -8,6 +8,7 @@ import { logAction } from '../utils/auditLogger';
  */
 export const getActiveSessions = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
     const sessions = await Session.find({
@@ -47,6 +48,7 @@ export const getActiveSessions = async (req: Request, res: Response) => {
  */
 export const terminateSession = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     const { sessionId } = req.params;
 
@@ -93,6 +95,7 @@ export const terminateSession = async (req: Request, res: Response) => {
  */
 export const terminateAllOtherSessions = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     
     // Token'ı hem header'dan hem cookie'den al
@@ -104,6 +107,7 @@ export const terminateAllOtherSessions = async (req: Request, res: Response) => 
     // Eğer hala token yoksa, mevcut session ID'yi kullan
     let currentTokenHash: string | null = null;
     if (currentToken) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const crypto = require('crypto');
       currentTokenHash = crypto.createHash('sha256').update(currentToken).digest('hex');
     }
@@ -160,6 +164,7 @@ export const terminateAllOtherSessions = async (req: Request, res: Response) => 
  */
 export const updateSessionActivity = async (userId: string, token: string): Promise<void> => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const crypto = require('crypto');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 

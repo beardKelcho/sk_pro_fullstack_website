@@ -15,7 +15,8 @@ describe('auditLogger', () => {
 
   beforeEach(() => {
     // AuditLog.create'i spy'la
-    mockCreate = jest.spyOn(AuditLog, 'create').mockResolvedValue({} as unknown);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockCreate = jest.spyOn(AuditLog, 'create').mockResolvedValue({} as any);
     // Logger'ı spy'la
     mockWarn = jest.spyOn(logger, 'warn').mockImplementation(() => logger);
     mockError = jest.spyOn(logger, 'error').mockImplementation(() => logger);

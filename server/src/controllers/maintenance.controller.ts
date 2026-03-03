@@ -119,6 +119,7 @@ export const createMaintenance = async (req: Request, res: Response) => {
   session.startTransaction();
   try {
     const { equipment, type, description, scheduledDate, status, assignedTo, cost, notes } = req.body;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
     if (!equipment || !type || !description || !scheduledDate || !assignedTo) {
@@ -202,6 +203,7 @@ export const updateMaintenance = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { equipment, type, description, scheduledDate, completedDate, status, assignedTo, cost, notes } = req.body;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {

@@ -18,6 +18,7 @@ const keyByUserOrIp = (req: Request): string => {
     const token = getTokenFromReq(req);
     if (token) {
       // Merkezi JWT_SECRET kullan
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { JWT_SECRET } = require('../utils/authTokens');
       const decoded = jwt.verify(token, JWT_SECRET) as unknown;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

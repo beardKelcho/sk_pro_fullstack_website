@@ -22,6 +22,7 @@ const migrateProjectTypes = async () => {
             throw new Error('MONGO_URI or MONGODB_URI environment variable is not set');
         }
         await mongoose.connect(mongoUri);
+        // eslint-disable-next-line no-console
         console.log('Connected to MongoDB');
 
         // Find all projects without a type field
@@ -32,6 +33,7 @@ const migrateProjectTypes = async () => {
             ]
         });
 
+        // eslint-disable-next-line no-console
         console.log(`Found ${projectsWithoutType.length} projects without type field`);
 
         let photoCount = 0;
@@ -57,15 +59,21 @@ const migrateProjectTypes = async () => {
                 videoCount++;
             }
 
+            // eslint-disable-next-line no-console
             console.log(`✓ Updated: ${project.title} -> ${type}`);
         }
 
+        // eslint-disable-next-line no-console
         console.log(`\n✅ Migration completed!`);
+        // eslint-disable-next-line no-console
         console.log(`   Photo projects: ${photoCount}`);
+        // eslint-disable-next-line no-console
         console.log(`   Video projects: ${videoCount}`);
+        // eslint-disable-next-line no-console
         console.log(`   Total migrated: ${projectsWithoutType.length}`);
 
         await mongoose.disconnect();
+        // eslint-disable-next-line no-console
         console.log('\nDisconnected from MongoDB');
 
     } catch (error) {

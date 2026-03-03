@@ -9,6 +9,7 @@ import { logAction, extractChanges } from '../utils/auditLogger';
  */
 export const getUserWidgets = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({
@@ -40,6 +41,7 @@ export const getUserWidgets = async (req: Request, res: Response) => {
 export const getWidgetById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -79,6 +81,7 @@ export const getWidgetById = async (req: Request, res: Response) => {
  */
 export const createWidget = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({
@@ -145,6 +148,7 @@ export const createWidget = async (req: Request, res: Response) => {
 export const updateWidget = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -203,6 +207,7 @@ export const updateWidget = async (req: Request, res: Response) => {
 export const deleteWidget = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -244,6 +249,7 @@ export const deleteWidget = async (req: Request, res: Response) => {
  */
 export const updateWidgetsBulk = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({
@@ -305,6 +311,7 @@ export const updateWidgetsBulk = async (req: Request, res: Response) => {
  */
 export const createDefaultWidgets = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({

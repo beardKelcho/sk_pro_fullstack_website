@@ -221,7 +221,7 @@ export const deleteReportSchedule = async (req: Request, res: Response) => {
 /**
  * Cron expression oluştur
  */
-const generateCronExpression = (schedule: { frequency?: string; dayOfWeek?: number; dayOfMonth?: number; time?: string;[key: string]: any }): string | null => {
+const generateCronExpression = (schedule: { frequency?: string; dayOfWeek?: number; dayOfMonth?: number; time?: string;[key: string]: unknown }): string | null => {
   const { frequency, dayOfWeek, dayOfMonth, time } = schedule;
 
   if (!time) return null;
@@ -247,7 +247,7 @@ const generateCronExpression = (schedule: { frequency?: string; dayOfWeek?: numb
 /**
  * Next run date hesapla
  */
-const calculateNextRun = (schedule: { frequency?: string; dayOfWeek?: number; dayOfMonth?: number; time?: string;[key: string]: any }): Date => {
+const calculateNextRun = (schedule: { frequency?: string; dayOfWeek?: number; dayOfMonth?: number; time?: string;[key: string]: unknown }): Date => {
   const { frequency, dayOfWeek, dayOfMonth, time } = schedule;
   const now = new Date();
   const [hours, minutes] = time ? time.split(':').map(Number) : [9, 0];
@@ -309,7 +309,7 @@ const startScheduledReport = (schedule: unknown) => {
         `
           <h2>Otomatik Rapor</h2>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          <p>${(schedule as any).name} raporu hazırlandı.</p>
+          <p>${(schedule as Record<string, unknown>).name} raporu hazırlandı.</p>
           <p>Raporu görüntülemek için <a href="${reportUrl}">buraya tıklayın</a>.</p>
         `
       );

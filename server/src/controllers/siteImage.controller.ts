@@ -82,6 +82,7 @@ export const createImage = async (req: Request, res: Response) => {
 
     // Eğer dosya yüklendiyse, uploadService ile işle ve veriyi hazırla
     if (req.file) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const uploadService = require('../services/upload.service').default;
       // Allow specific categories like 'hero', 'about', 'project' to be used as folders
       // If category is 'video', it puts it in 'video' folder. If 'hero', in 'hero' folder.
@@ -131,6 +132,7 @@ export const updateImage = async (req: Request, res: Response) => {
 
     // Eğer yeni dosya yüklendiyse
     if (req.file) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const uploadService = require('../services/upload.service').default;
 
       // 1. Önce eski resmi bul ve sil
@@ -179,6 +181,7 @@ export const deleteImage = async (req: Request, res: Response) => {
     // Not: image.path genellikle Cloudinary public_id'si veya local path'idir.
     // Ancak uploadService'imiz filename veya public_id üzerinden çalışıyor.
     // Cloudinary için path veya filename'i public_id olarak kullanabiliriz.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const uploadService = require('../services/upload.service').default;
 
     // image.path: "project/xyz123" (Cloudinary public_id) veya "project/file.jpg" (Local)
@@ -228,6 +231,7 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
     if (!Array.isArray(ids)) return res.status(400).json({ success: false });
 
     // Her bir resmi bul ve dosyasını sil
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const uploadService = require('../services/upload.service').default;
 
     // Paralel işlem yapma, tek tek güvenli gitsin

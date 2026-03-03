@@ -156,6 +156,7 @@ class SiteService {
                 .replace(/^\//, '');
 
             if (mongoose.Types.ObjectId.isValid(idCandidate)) {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const data = imageMap.get(idCandidate!);
                 if (data) {
                     return this.buildStrictUrl(data.filename, data.url, type);
@@ -184,6 +185,7 @@ class SiteService {
                 if (url && !url.includes('cloudinary.com')) {
                     const id = url.replace(/^\/?api\/site-images\//, '').replace(/^\/?uploads\//, '').replace(/^\//, '');
                     if (imageMap.has(id)) {
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         const data = imageMap.get(id)!;
                         filename = data.filename;
                         url = data.url;
@@ -230,6 +232,7 @@ class SiteService {
                 const ext = cleanFilename.split('.').pop()?.toLowerCase();
                 const hasExt = ext && (ext.length === 3 || ext.length === 4);
 
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 if (category === 'video' || (hasExt && ['mp4', 'webm', 'mov', 'avi'].includes(ext!))) {
                     resourceType = 'video';
                 }
@@ -339,6 +342,7 @@ class SiteService {
             siteContent.data = contentData;
             // 'order' removed from schema, ignoring parameter
             if (isActive !== undefined) siteContent.isActive = isActive;
+            // eslint-disable-next-line no-console
             console.log('Modified content for section (createOrUpdate):', section);
             siteContent.markModified('data');
             await siteContent.save();
@@ -379,11 +383,13 @@ class SiteService {
         // if (data.order !== undefined) siteContent.order = data.order; // removed
         if (data.isActive !== undefined) siteContent.isActive = data.isActive;
 
+        // eslint-disable-next-line no-console
         console.log('Modified content (updateContentById) for id:', id);
         siteContent.markModified('data');
         await siteContent.save();
 
         const docObj = siteContent.toObject() as unknown as Record<string, unknown>;
+        // eslint-disable-next-line no-console
         console.log('SITE_CONTENT_SAVED:', docObj.data);
         docObj.data = await this.fixContentUrls(docObj.data);
 

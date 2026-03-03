@@ -70,10 +70,10 @@ describe('Export Controller (Generic)', () => {
     mockWrite = jest.fn();
 
     mockRequest = {
-      user: { id: 'test-user-id' } as unknown,
+      user: { id: 'test-user-id' } as unknown as import('../../models/User').IUser,
       query: {},
       ip: '127.0.0.1',
-      socket: { remoteAddress: '127.0.0.1' } as unknown,
+      socket: { remoteAddress: '127.0.0.1' } as unknown as import('net').Socket,
       get: jest.fn().mockReturnValue('Mozilla/5.0'),
     };
 

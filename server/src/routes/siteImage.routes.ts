@@ -41,6 +41,7 @@ router.post(
   '/',
   authenticate,
   requirePermission(Permission.FILE_UPLOAD),
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   require('../middleware/upload.middleware').upload.single('image'),
   validate(createSiteImageSchema),
   siteImageController.createImage

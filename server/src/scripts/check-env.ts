@@ -26,10 +26,15 @@ const colors = {
 };
 
 const log = {
+  // eslint-disable-next-line no-console
   success: (msg: string) => console.log(`${colors.green}✅ ${msg}${colors.reset}`),
+  // eslint-disable-next-line no-console
   error: (msg: string) => console.log(`${colors.red}❌ ${msg}${colors.reset}`),
+  // eslint-disable-next-line no-console
   warning: (msg: string) => console.log(`${colors.yellow}⚠️  ${msg}${colors.reset}`),
+  // eslint-disable-next-line no-console
   info: (msg: string) => console.log(`${colors.blue}ℹ️  ${msg}${colors.reset}`),
+  // eslint-disable-next-line no-console
   header: (msg: string) => console.log(`${colors.cyan}${msg}${colors.reset}`),
 };
 

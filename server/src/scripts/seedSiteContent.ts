@@ -21,11 +21,14 @@ if (!process.env.MONGO_URI) {
 
 const seedSiteContent = async () => {
     try {
+        // eslint-disable-next-line no-console
         console.log('Connecting to MongoDB...');
         await mongoose.connect(process.env.MONGO_URI as string);
+        // eslint-disable-next-line no-console
         console.log('Connected to MongoDB');
 
         // 1. HERO CONTENT
+        // eslint-disable-next-line no-console
         console.log('Upserting Hero content...');
         await SiteContent.findOneAndUpdate(
             { section: 'hero' },
@@ -51,6 +54,7 @@ const seedSiteContent = async () => {
         );
 
         // 2. SERVICES & EQUIPMENT (Unified Section)
+        // eslint-disable-next-line no-console
         console.log('Upserting Services & Equipment content...');
         await SiteContent.findOneAndUpdate(
             { section: 'services-equipment' },
@@ -97,6 +101,7 @@ const seedSiteContent = async () => {
         );
 
         // 3. ABOUT (Using 'about' key)
+        // eslint-disable-next-line no-console
         console.log('Upserting About content...');
         await SiteContent.findOneAndUpdate(
             { section: 'about' },
@@ -117,6 +122,7 @@ const seedSiteContent = async () => {
         );
 
         // 4. CONTACT
+        // eslint-disable-next-line no-console
         console.log('Upserting Contact content...');
         await SiteContent.findOneAndUpdate(
             { section: 'contact' },
@@ -135,6 +141,7 @@ const seedSiteContent = async () => {
             { upsert: true, new: true }
         );
 
+        // eslint-disable-next-line no-console
         console.log('Seeding completed successfully');
         process.exit(0);
     } catch (error) {

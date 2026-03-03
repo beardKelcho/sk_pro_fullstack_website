@@ -17,12 +17,11 @@ export const explainQuery = async <T>(
   try {
     const explainResult = await query.explain('executionStats') as unknown;
 
+    const resultObj = explainResult as Record<string, unknown>;
     if (process.env.NODE_ENV === 'development' && process.env.DEBUG_QUERIES === 'true') {
       logger.debug(`Query Explain (${label || 'unnamed'}):`, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        executionStats: (explainResult as any)?.executionStats,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        queryPlanner: (explainResult as any)?.queryPlanner,
+        executionStats: resultObj?.executionStats,
+        queryPlanner: resultObj?.queryPlanner,
       });
     }
 
@@ -45,15 +44,15 @@ export const checkIndexUsage = async (
 
     const explainResult = await mongoose.connection.db
       .collection(collectionName)
-      .find(query as any)
+      .find(query as Record<string, unknown>)
       .explain('executionStats') as unknown;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const executionStats = (explainResult as any)?.executionStats || (explainResult as any)?.queryPlanner?.winningPlan;
-    const stage = executionStats?.stage || executionStats?.inputStage?.stage;
+    const resultObj = explainResult as Record<string, unknown>;
+    const executionStats = (resultObj?.executionStats as Record<string, unknown>) || ((resultObj?.queryPlanner as Record<string, unknown>)?.winningPlan as Record<string, unknown>);
+    const stage = executionStats?.stage || (executionStats?.inputStage as Record<string, unknown>)?.stage;
 
     // Index kullanıldı mı?
-    const usesIndex = stage === 'IXSCAN' || stage === 'FETCH' || executionStats?.totalDocsExamined < executionStats?.totalDocsReturned;
+    const usesIndex = stage === 'IXSCAN' || stage === 'FETCH' || ((executionStats?.totalDocsExamined as number) < (executionStats?.totalDocsReturned as number));
 
     if (!usesIndex && process.env.NODE_ENV === 'development') {
       logger.warn(`⚠️  Query on ${collectionName} may not be using an index:`, {
@@ -73,7 +72,7 @@ export const checkIndexUsage = async (
 /**
  * Select only needed fields (projection)
  */
-export const selectFields = <T extends Record<string, any>>(
+export const selectFields = <T>(
   fields: (keyof T)[]
 ): Record<string, 1> => {
   return fields.reduce((acc, field) => {
@@ -100,9 +99,8 @@ export const sortBy = (field: string, order: 'asc' | 'desc' = 'asc') => {
 /**
  * Lean query helper (faster, returns plain objects)
  */
-export const leanQuery = <T>(query: mongoose.Query<T, T>): mongoose.Query<any, any> => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return query.lean() as any;
+export const leanQuery = <T, U = unknown>(query: mongoose.Query<T, T>): mongoose.Query<U, U> => {
+  return query.lean() as unknown as mongoose.Query<U, U>;
 };
 
 /**

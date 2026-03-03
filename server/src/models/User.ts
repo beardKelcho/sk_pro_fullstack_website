@@ -113,9 +113,7 @@ UserSchema.pre('save', async function (next) {
     this.password = await bcrypt.hash(this.password as string, salt);
     next();
   } catch (error: unknown) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    next(error as any);
-    next(error as any);
+    next(error as mongoose.CallbackError);
   }
 });
 

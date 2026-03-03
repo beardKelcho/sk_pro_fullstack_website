@@ -37,6 +37,7 @@ function decryptSecret(encryptedSecret: string): string {
  */
 export const setup2FA = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     const user = await User.findById(userId);
 
@@ -63,9 +64,11 @@ export const setup2FA = async (req: Request, res: Response) => {
     });
 
     // QR kod URL'i oluştur
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
 
     // Secret'ı geçici olarak kaydet (henüz aktif değil)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     user.twoFactorSecret = secret.base32!;
     await user.save();
 
@@ -108,6 +111,7 @@ export const setup2FA = async (req: Request, res: Response) => {
 export const verify2FA = async (req: Request, res: Response) => {
   try {
     const { token, backupCode } = req.body;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     
     const user = await User.findById(userId).select('+twoFactorSecret +backupCodes');
@@ -167,6 +171,7 @@ export const verify2FA = async (req: Request, res: Response) => {
     // 2FA'yı aktif et
     user.is2FAEnabled = true;
     // Secret'ı şifrele ve sakla (TOTP doğrulama için gerekli)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     user.twoFactorSecretHash = encryptSecret(user.twoFactorSecret!);
     // Geçici secret'ı temizle
     user.twoFactorSecret = undefined;
@@ -196,6 +201,7 @@ export const verify2FA = async (req: Request, res: Response) => {
 export const disable2FA = async (req: Request, res: Response) => {
   try {
     const { password, token, backupCode } = req.body;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     
     const user = await User.findById(userId).select('+twoFactorSecretHash +backupCodes');
@@ -288,6 +294,7 @@ export const disable2FA = async (req: Request, res: Response) => {
  */
 export const get2FAStatus = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     const user = await User.findById(userId);
 

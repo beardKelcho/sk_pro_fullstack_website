@@ -26,9 +26,10 @@ export const getCache = async <T>(key: string): Promise<T | null> => {
       return JSON.parse(cached) as T;
     }
     return null;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
     // "The client is closed" hatasını sessizce handle et
-    if (error?.message?.includes('closed') || error?.code === 'ECONNREFUSED') {
+    if ((typeof err?.message === 'string' && err.message.includes('closed')) || err?.code === 'ECONNREFUSED') {
       return null; // Redis kapalıysa null döndür, hata loglama
     }
     logger.error(`Cache get error for key ${key}:`, error);
@@ -58,9 +59,10 @@ export const setCache = async (
     const serialized = JSON.stringify(value);
     await client.setEx(key, ttl, serialized);
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
     // "The client is closed" hatasını sessizce handle et
-    if (error?.message?.includes('closed') || error?.code === 'ECONNREFUSED') {
+    if ((typeof err?.message === 'string' && err.message.includes('closed')) || err?.code === 'ECONNREFUSED') {
       return false; // Redis kapalıysa false döndür, hata loglama
     }
     logger.error(`Cache set error for key ${key}:`, error);
@@ -80,8 +82,9 @@ export const deleteCache = async (key: string): Promise<boolean> => {
 
     await client.del(key);
     return true;
-  } catch (error: any) {
-    if (error?.message?.includes('closed') || error?.code === 'ECONNREFUSED') {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if ((typeof err?.message === 'string' && err.message.includes('closed')) || err?.code === 'ECONNREFUSED') {
       return false;
     }
     logger.error(`Cache delete error for key ${key}:`, error);
@@ -104,8 +107,9 @@ export const deleteCachePattern = async (pattern: string): Promise<boolean> => {
       await client.del(keys);
     }
     return true;
-  } catch (error: any) {
-    if (error?.message?.includes('closed') || error?.code === 'ECONNREFUSED') {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if ((typeof err?.message === 'string' && err.message.includes('closed')) || err?.code === 'ECONNREFUSED') {
       return false;
     }
     logger.error(`Cache delete pattern error for ${pattern}:`, error);
@@ -136,8 +140,9 @@ export const clearCache = async (): Promise<boolean> => {
 
     await client.flushDb();
     return true;
-  } catch (error: any) {
-    if (error?.message?.includes('closed') || error?.code === 'ECONNREFUSED') {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if ((typeof err?.message === 'string' && err.message.includes('closed')) || err?.code === 'ECONNREFUSED') {
       return false;
     }
     logger.error('Cache clear error:', error);
@@ -165,8 +170,9 @@ export const getCacheStats = async (): Promise<{
       connected: true,
       keys,
     };
-  } catch (error: any) {
-    if (error?.message?.includes('closed') || error?.code === 'ECONNREFUSED') {
+  } catch (error: unknown) {
+    const err = error as Record<string, unknown>;
+    if ((typeof err?.message === 'string' && err.message.includes('closed')) || err?.code === 'ECONNREFUSED') {
       return { connected: false };
     }
     logger.error('Cache stats error:', error);

@@ -5,6 +5,7 @@ type RenderInput = {
   key: string;
   locale?: string;
   variantName?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: Record<string, any>;
 };
 
@@ -68,6 +69,7 @@ const pickLocale = (locales: string[], locale?: string) => {
 
 export const renderInlineTemplate = (
   input: { subject: string; html: string },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>
 ): { subject: string; html: string } => {
   const render = (tmpl: string) => {

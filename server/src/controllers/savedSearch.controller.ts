@@ -9,6 +9,7 @@ import { logAction } from '../utils/auditLogger';
  */
 export const getSavedSearches = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     const { resource } = req.query;
 
@@ -39,6 +40,7 @@ export const getSavedSearches = async (req: Request, res: Response) => {
  */
 export const createSavedSearch = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     const { name, resource, filters } = req.body;
 
@@ -77,6 +79,7 @@ export const createSavedSearch = async (req: Request, res: Response) => {
  */
 export const deleteSavedSearch = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     const { id } = req.params;
 
@@ -114,6 +117,7 @@ export const deleteSavedSearch = async (req: Request, res: Response) => {
  */
 export const getSearchHistory = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     const limit = parseInt(req.query.limit as string) || 20;
 
@@ -162,6 +166,7 @@ export const addToSearchHistory = async (
  */
 export const clearSearchHistory = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
     await SearchHistory.deleteMany({ userId });

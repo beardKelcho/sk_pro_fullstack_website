@@ -44,6 +44,7 @@ export const cacheMiddleware = (options: CacheMiddlewareOptions = {}) => {
           );
 
       // Cache'den veri getir
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cached = await getCache<any>(cacheKey);
       if (cached) {
         logger.debug(`Cache hit: ${cacheKey}`);

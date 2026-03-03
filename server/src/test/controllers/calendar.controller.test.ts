@@ -30,7 +30,7 @@ describe('Calendar Controller', () => {
     jest.clearAllMocks();
     mockRequest = {
       query: {},
-      user: { role: 'ADMIN', permissions: [] } as unknown,
+      user: { role: 'ADMIN', permissions: [] } as unknown as import('../../models/User').IUser,
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),
@@ -112,7 +112,7 @@ END:VCALENDAR`;
         buffer: Buffer.from(icsContent),
         originalname: 'test.ics',
         mimetype: 'text/calendar',
-      } as unknown;
+      } as unknown as Express.Multer.File;
 
       (Project.find as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnThis(),
@@ -128,7 +128,9 @@ END:VCALENDAR`;
       });
 
       const mockClient = { _id: 'client1', name: 'iCal Import' };
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       (require('../../models').Client.findOne as jest.Mock).mockResolvedValue(mockClient);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       (require('../../models').Project.create as jest.Mock).mockResolvedValue({
         _id: 'project1',
         name: 'Test Proje',
@@ -149,7 +151,7 @@ END:VCALENDAR`;
         buffer: Buffer.from('INVALID ICS CONTENT'),
         originalname: 'test.ics',
         mimetype: 'text/calendar',
-      } as unknown;
+      } as unknown as Express.Multer.File;
 
       await importCalendarIcs(mockRequest as Request, mockResponse as Response);
 

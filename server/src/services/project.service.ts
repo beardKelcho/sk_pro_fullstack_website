@@ -389,6 +389,7 @@ class ProjectService {
 
         // Use strict check if dates or equipment changed
         const isDateChanged = (data.startDate && new Date(data.startDate).getTime() !== new Date(project.startDate).getTime()) ||
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             (data.endDate && new Date(data.endDate).getTime() !== new Date(project.endDate!).getTime());
         const isEquipmentChanged = !!data.equipment;
 

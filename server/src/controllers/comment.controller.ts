@@ -37,6 +37,7 @@ export const listComments = async (req: Request, res: Response) => {
 
 export const createComment = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Kullanıcı kimlik doğrulaması gerekli' });
@@ -117,6 +118,7 @@ export const createComment = async (req: Request, res: Response) => {
 
 export const deleteComment = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Kullanıcı kimlik doğrulaması gerekli' });

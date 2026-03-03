@@ -8,8 +8,8 @@ import siteImageRoutes from '../../routes/siteImage.routes';
 
 // Mock middleware
 jest.mock('../../middleware/auth.middleware', () => ({
-  authenticate: jest.fn((req, res, next) => next()),
-  requirePermission: jest.fn(() => (req: unknown, res: unknown, next: unknown) => next()),
+  authenticate: jest.fn((req: express.Request, res: express.Response, next: express.NextFunction) => next()),
+  requirePermission: jest.fn(() => (req: express.Request, res: express.Response, next: express.NextFunction) => next()),
 }));
 
 // Mock controller

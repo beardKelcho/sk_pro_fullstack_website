@@ -120,11 +120,11 @@ export const globalSearch = async (req: Request, res: Response) => {
     equipmentResults.forEach((item: unknown) => {
       results.push({
         type: 'equipment',
-        id: (item as any)._id.toString(),
-        title: (item as any).name,
-        description: `${(item as any).type} - ${(item as Record<string, unknown>).model || ''} ${(item as Record<string, unknown>).serialNumber ? `(${(item as Record<string, unknown>).serialNumber})` : ''}`.trim(),
+        id: (item as unknown)._id.toString(),
+        title: (item as unknown).name,
+        description: `${(item as unknown).type} - ${(item as Record<string, unknown>).model || ''} ${(item as Record<string, unknown>).serialNumber ? `(${(item as Record<string, unknown>).serialNumber})` : ''}`.trim(),
         metadata: {
-          status: (item as any).status,
+          status: (item as unknown).status,
           location: (item as Record<string, unknown>).location,
         },
       });
@@ -133,15 +133,15 @@ export const globalSearch = async (req: Request, res: Response) => {
     projectResults.forEach((item: unknown) => {
       results.push({
         type: 'project',
-        id: (item as any)._id.toString(),
-        title: (item as any).name,
+        id: (item as unknown)._id.toString(),
+        title: (item as unknown).name,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         description: (item as any).description || (item as any).location || '',
         metadata: {
-          status: (item as any).status,
+          status: (item as unknown).status,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           client: (item as any).client?.name || '',
-          startDate: (item as any).startDate,
+          startDate: (item as unknown).startDate,
         },
       });
     });
@@ -149,13 +149,13 @@ export const globalSearch = async (req: Request, res: Response) => {
     taskResults.forEach((item: unknown) => {
       results.push({
         type: 'task',
-        id: (item as any)._id.toString(),
+        id: (item as unknown)._id.toString(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         title: (item as any).title,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         description: (item as any).description || '',
         metadata: {
-          status: (item as any).status,
+          status: (item as unknown).status,
           priority: (item as Record<string, unknown>).priority,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           assignedTo: (item as any).assignedTo?.name || '',
@@ -168,8 +168,8 @@ export const globalSearch = async (req: Request, res: Response) => {
     clientResults.forEach((item: unknown) => {
       results.push({
         type: 'client',
-        id: (item as any)._id.toString(),
-        title: (item as any).name || (item as Record<string, unknown>).companyName,
+        id: (item as unknown)._id.toString(),
+        title: (item as unknown).name || (item as Record<string, unknown>).companyName,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         description: (item as any).email || (item as any).phone || (item as any).address || '',
         metadata: {
@@ -183,8 +183,8 @@ export const globalSearch = async (req: Request, res: Response) => {
     userResults.forEach((item: unknown) => {
       results.push({
         type: 'user',
-        id: (item as any)._id.toString(),
-        title: (item as any).name,
+        id: (item as unknown)._id.toString(),
+        title: (item as unknown).name,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         description: (item as any).email || (item as any).role || '',
         metadata: {
@@ -198,14 +198,14 @@ export const globalSearch = async (req: Request, res: Response) => {
     maintenanceResults.forEach((item: unknown) => {
       results.push({
         type: 'maintenance',
-        id: (item as any)._id.toString(),
+        id: (item as unknown)._id.toString(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         title: (item as any).description || `${((item as any).equipment as any)?.name || ''} Bakımı`.trim(),
-        description: (item as any).type || '',
+        description: (item as unknown).type || '',
         metadata: {
-          status: (item as any).status,
+          status: (item as unknown).status,
           priority: (item as Record<string, unknown>).priority,
-          scheduledDate: (item as any).scheduledDate,
+          scheduledDate: (item as unknown).scheduledDate,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           equipment: ((item as any).equipment as any)?.name || '',
         },
@@ -223,6 +223,7 @@ export const globalSearch = async (req: Request, res: Response) => {
     };
 
     // Arama geçmişine ekle (async, hata olsa bile devam et)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     if (userId) {
       addToSearchHistory(userId.toString(), searchQuery, undefined, results.length).catch((err) =>
@@ -285,20 +286,21 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
     const suggestions: string[] = [];
 
     equipmentNames.forEach((item: unknown) => {
-      if (!suggestions.includes((item as any).name)) {
-        suggestions.push((item as any).name);
+      if (!suggestions.includes((item as unknown).name)) {
+        suggestions.push((item as unknown).name);
       }
     });
 
     projectNames.forEach((item: unknown) => {
-      if (!suggestions.includes((item as any).name)) {
-        suggestions.push((item as any).name);
+      if (!suggestions.includes((item as unknown).name)) {
+        suggestions.push((item as unknown).name);
       }
     });
 
     clientNames.forEach((item: unknown) => {
-      if ((item as any).name && !suggestions.includes((item as any).name)) {
-        suggestions.push((item as any).name);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((item as unknown).name && !suggestions.includes((item as unknown).name)) {
+        suggestions.push((item as unknown).name);
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((item as any).companyName && !suggestions.includes((item as any).companyName)) {

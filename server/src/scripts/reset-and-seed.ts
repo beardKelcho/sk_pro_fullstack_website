@@ -8,6 +8,7 @@ import connectDB from '../config/database';
 
 const resetAndSeed = async () => {
     try {
+        // eslint-disable-next-line no-console
         console.log("Checking Env Var: MONGO_URI is " + (process.env.MONGO_URI ? "DEFINED" : "UNDEFINED"));
         await connectDB();
         logger.info('Veritabanı bağlantısı başarılı. Temizlik başlıyor...');

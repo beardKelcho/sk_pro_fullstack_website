@@ -4,8 +4,11 @@ import { v2 as cloudinary } from 'cloudinary';
 
 dotenv.config();
 
+// eslint-disable-next-line no-console
 console.log('Checking Cloudinary configuration...');
+// eslint-disable-next-line no-console
 console.log('Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME);
+// eslint-disable-next-line no-console
 console.log('API Key:', process.env.CLOUDINARY_API_KEY ? '******' + process.env.CLOUDINARY_API_KEY.slice(-4) : 'Not Set');
 
 cloudinary.config({
@@ -16,6 +19,7 @@ cloudinary.config({
 
 async function verify() {
     try {
+        // eslint-disable-next-line no-console
         console.log('Attempting upload...');
         // Create a simple 1x1 base64 png
         const base64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
@@ -25,13 +29,18 @@ async function verify() {
             resource_type: 'image',
         });
 
+        // eslint-disable-next-line no-console
         console.log('Upload successful!');
+        // eslint-disable-next-line no-console
         console.log('Public ID:', result.public_id);
+        // eslint-disable-next-line no-console
         console.log('URL:', result.secure_url);
 
         // Clean up
+        // eslint-disable-next-line no-console
         console.log('Cleaning up...');
         await cloudinary.uploader.destroy(result.public_id);
+        // eslint-disable-next-line no-console
         console.log('Cleanup successful.');
 
     } catch (error) {

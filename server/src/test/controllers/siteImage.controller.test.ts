@@ -165,6 +165,7 @@ describe('Site Image Controller Testleri', () => {
 
       (siteService.getImageById as jest.Mock).mockResolvedValue(mockImage);
       (siteService.deleteImage as jest.Mock).mockResolvedValue(undefined);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const uploadService = require('../../services/upload.service').default;
 
       await siteImageController.deleteImage(
@@ -191,6 +192,7 @@ describe('Site Image Controller Testleri', () => {
       );
       (siteService.deleteMultipleImages as jest.Mock).mockResolvedValue(undefined);
 
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const uploadService = require('../../services/upload.service').default;
 
       await siteImageController.deleteMultipleImages(

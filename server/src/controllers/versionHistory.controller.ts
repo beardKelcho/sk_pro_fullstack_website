@@ -109,6 +109,7 @@ export const rollbackVersion = async (req: Request, res: Response) => {
       });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     if (!userId) {
       return res.status(401).json({

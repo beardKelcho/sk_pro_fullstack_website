@@ -43,7 +43,7 @@ describe('Calendar Integration Controller', () => {
     process.env.CLIENT_URL = 'http://localhost:3000';
 
     mockRequest = {
-      user: { id: 'user1', _id: 'user1', role: 'ADMIN' } as unknown,
+      user: { id: 'user1', _id: 'user1', role: 'ADMIN' } as unknown as import('../../models/User').IUser,
     };
     mockResponse = {
       status: jest.fn().mockReturnThis(),

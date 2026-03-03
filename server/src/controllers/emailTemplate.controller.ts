@@ -130,7 +130,7 @@ export const previewEmailTemplate = async (req: Request, res: Response) => {
         subject: rendered.subject,
         html: rendered.html,
         used: {
-          templateKey: (template as any).key || String(key || ''),
+          templateKey: (template as Record<string, unknown>).key || String(key || ''),
           variantName: selected.name,
           locale: chosenLocale || 'tr',
         },

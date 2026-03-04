@@ -60,7 +60,7 @@ jobs:
       # Just trigger the hooks, no need to rebuild/retest if CI passed
       - name: Trigger Render deploy hook (staging)
         env:
-          DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }} # actionlint-disable-line
+          DEPLOY_HOOK: ${{ secrets['RENDER_STAGING_DEPLOY_HOOK_URL'] }} # actionlint-disable-line
         run: |
           if [ -n "$DEPLOY_HOOK" ]; then
             curl -X POST "$DEPLOY_HOOK"
@@ -68,7 +68,7 @@ jobs:
 
       - name: Trigger Vercel deploy hook (staging)
         env:
-          DEPLOY_HOOK: ${{ secrets.VERCEL_STAGING_DEPLOY_HOOK_URL }} # actionlint-disable-line
+          DEPLOY_HOOK: ${{ secrets['VERCEL_STAGING_DEPLOY_HOOK_URL'] }} # actionlint-disable-line
         run: |
           if [ -n "$DEPLOY_HOOK" ]; then
             curl -X POST "$DEPLOY_HOOK"
@@ -93,7 +93,7 @@ jobs:
 
       - name: Trigger Render deploy hook (production)
         env:
-          DEPLOY_HOOK: ${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK_URL }} # actionlint-disable-line
+          DEPLOY_HOOK: ${{ secrets['RENDER_PRODUCTION_DEPLOY_HOOK_URL'] }} # actionlint-disable-line
         run: |
           if [ -n "$DEPLOY_HOOK" ]; then
             curl -X POST "$DEPLOY_HOOK"
@@ -101,7 +101,7 @@ jobs:
 
       - name: Trigger Vercel deploy hook (production)
         env:
-          DEPLOY_HOOK: ${{ secrets.VERCEL_PRODUCTION_DEPLOY_HOOK_URL }} # actionlint-disable-line
+          DEPLOY_HOOK: ${{ secrets['VERCEL_PRODUCTION_DEPLOY_HOOK_URL'] }} # actionlint-disable-line
         run: |
           if [ -n "$DEPLOY_HOOK" ]; then
             curl -X POST "$DEPLOY_HOOK"

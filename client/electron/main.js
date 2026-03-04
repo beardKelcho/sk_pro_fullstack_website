@@ -154,27 +154,20 @@ autoUpdater.on('update-downloaded', (info) => {
 
     dialog.showMessageBox(dialogOpts).then((returnValue) => {
         if (returnValue.response === 0) {
-            log.info('Yol temizliği: Tüm süreçler zorla kapatılıyor ve dosya okumaları durduruluyor...');
+            log.info('Kullanıcı Yeniden Başlatmayı seçti. Update işlemi başlatılıyor...');
             isShuttingDown = true;
 
-            app.removeAllListeners('window-all-closed');
-            app.removeAllListeners('before-quit');
-
+            // Kurulumun (installer) sorunsuz başlayabilmesi için mevcut tüm pencereleri kapatıyoruz
             BrowserWindow.getAllWindows().forEach((w) => {
                 if (!w.isDestroyed()) w.close();
             });
 
+            // quitAndInstall(isSilent, isForceRunAfter)
+            // Windows (NSIS) ve Mac için kurulumu tetikler ve uygulamayı kapatır.
+            // process.exit(0) ÇAĞRILMAMALIDIR! Eğer çağrılırsa kurulum dosyası (setup.exe) başlayamadan iptal olur.
             setTimeout(() => {
-                log.info('Kurulum (Installer) tetikleniyor...');
-                autoUpdater.quitAndInstall(true, true);
-
-                // Kurulum programının (setup.exe) sistemi ele alması için zaman tanı
-                // Eğer uygulama 3 saniye sonra hala Zombie olarak yaşıyorsa vur:
-                setTimeout(() => {
-                    log.info('İşletim sistemi katmanında uygulama kökten bitiriliyor (Zombie kalkanı) ...');
-                    app.quit();
-                    process.exit(0);
-                }, 3000);
+                log.info('Kurulum tetikleniyor (quitAndInstall)...');
+                autoUpdater.quitAndInstall(false, true);
             }, 500);
         }
     });

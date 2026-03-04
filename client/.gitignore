@@ -43,6 +43,7 @@ next-env.d.ts
 # cypress
 cypress/screenshots
 cypress/videos
+cypress_*.txt
 
 # Exclude local desktop application builds
 /public/downloads/

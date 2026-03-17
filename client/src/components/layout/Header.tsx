@@ -90,7 +90,7 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav role="navigation" className="hidden md:flex items-center space-x-8">
             <Link href="/#projects" className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors">
               {MENU_ITEMS.projects}
             </Link>
@@ -135,7 +135,7 @@ const Header: React.FC = () => {
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <div className="md:hidden py-4">
-            <nav className="flex flex-col space-y-4">
+            <nav role="navigation" className="flex flex-col space-y-4">
               <Link href="/#projects" className="text-gray-600 dark:text-gray-300 hover:text-[#0066CC] dark:hover:text-primary-light transition-colors" onClick={closeMobileMenu}>
                 {MENU_ITEMS.projects}
               </Link>

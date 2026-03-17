@@ -153,6 +153,14 @@ jobs:
         run: |
           npx wait-on http://localhost:5001/api/health http://localhost:3000 --timeout 120000
 
+      - name: Seed E2E Test Data
+        run: |
+          cd server
+          node dist/scripts/seedTestUser.js
+        env:
+          MONGODB_URI: mongodb://localhost:27017/skproduction-test
+          NODE_ENV: test
+
       - name: Run Cypress
         uses: cypress-io/github-action@v6
         with:

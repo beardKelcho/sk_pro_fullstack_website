@@ -109,7 +109,7 @@ describe('Accessibility (axe-core)', () => {
         },
       },
       undefined,
-      false
+      false  // skipFailures: false → WCAG ihlalleri varsa test başarısız olur
     );
   });
 });

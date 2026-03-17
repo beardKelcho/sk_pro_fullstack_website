@@ -181,7 +181,7 @@ jobs:
           install: false
           # Servers are already started above
           wait-on: 'http://localhost:3000'
-          command: npx cypress run --reporter spec > ../cypress-output.txt 2>&1
+          command: npx cypress run --reporter spec | tee ../cypress-output.txt 2>&1
         env:
           CYPRESS_baseUrl: http://localhost:3000
           DEBUG: cypress:runner

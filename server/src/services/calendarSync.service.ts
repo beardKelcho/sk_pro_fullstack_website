@@ -3,6 +3,7 @@ import googleCalendarService from './googleCalendar.service';
 import outlookCalendarService from './outlookCalendar.service';
 import logger from '../utils/logger';
 import mongoose from 'mongoose';
+import axios from 'axios';
 
 class CalendarSyncService {
     /**
@@ -71,6 +72,7 @@ class CalendarSyncService {
     /**
      * Pulls changes from Google Calendar and updates local Project DB
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async syncFromGoogleCalendar(integration: any): Promise<void> {
         try {
             logger.info(`Starting sync from Google for user integration ${integration.user}`);
@@ -82,13 +84,6 @@ class CalendarSyncService {
                 return;
             }
 
-            // Google'dan eventleri çek (syncToken ile)
-            const { googleCalendarEventToProject, listGoogleCalendarEvents } = require('./googleCalendarService');
-
-            // Use the list events method, but we also pass syncToken
-            // Note: Our listGoogleCalendarEvents might need adapting or we make a direct axios call here
-            const axios = require('axios');
-
             // Parametreleri oluştur
             const params = new URLSearchParams();
             if (integration.syncToken) {
@@ -98,14 +93,16 @@ class CalendarSyncService {
                 params.append('timeMin', new Date().toISOString());
             }
 
-            let response;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let response: any;
             try {
                 response = await axios.get(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`, {
                     headers: { Authorization: `Bearer ${user.googleTokens.accessToken}` }
                 });
-            } catch (apiErr: any) {
+            } catch (apiErr: unknown) {
                 // Handle token expiration or invalidated syncToken (410 Gone)
-                if (apiErr.response?.status === 410) {
+                const err = apiErr as { response?: { status?: number } };
+                if (err.response?.status === 410) {
                     logger.warn(`syncToken invalidated for ${integration.user}, performing full sync`);
                     // Temizle ve yeniden dene (syncToken olmadan)
                     integration.syncToken = undefined;
@@ -138,7 +135,7 @@ class CalendarSyncService {
                 // Check if it's our own app's generated event (skip loop back if needed)
                 // Ama incremental sync ile geleni isleyelim
 
-                let existingProject = await Project.findOne({ googleCalendarEventId: event.id });
+                const existingProject = await Project.findOne({ googleCalendarEventId: event.id });
 
                 if (event.status === 'cancelled') {
                     if (existingProject) {
@@ -167,7 +164,7 @@ class CalendarSyncService {
                             endDate,
                             // _isFromSync true göndererek sonsuz döngüyü önle
                             isFromSync: true
-                        } as any);
+                        } as Record<string, unknown>);
                         logger.info(`Project ${existingProject._id} updated via Google Calendar sync.`);
                     } else {
                         // Create new project
@@ -185,8 +182,9 @@ class CalendarSyncService {
                             googleCalendarEventId: event.id,
                         });
 
-                        // isFromSync'i any ile setleyerek schema error bypass ediyoruz (schema strict=false degilse)
+                        // isFromSync'i bypass ediyoruz (schema strict=false degilse)
                         // veya pre-save hook varsa diye manuel kaydetmeden project objesine ekleyelim
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (newProject as any).isFromSync = true;
 
                         try {

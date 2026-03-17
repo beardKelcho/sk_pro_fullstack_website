@@ -267,7 +267,7 @@ class ProjectService {
             contactPerson: data.contactPerson,
             contactEmail: data.contactEmail,
             contactPhone: data.contactPhone,
-            googleCalendarEventId: (data as any).googleCalendarEventId, // Allow passing event ID from sync
+            googleCalendarEventId: (data as unknown as Record<string, unknown>).googleCalendarEventId as string, // Allow passing event ID from sync
             team: data.team || [],
             equipment: data.equipment || []
         }], { session });
@@ -444,7 +444,8 @@ class ProjectService {
         if (data.contactPerson) project.contactPerson = data.contactPerson;
         if (data.contactEmail) project.contactEmail = data.contactEmail;
         if (data.contactPhone) project.contactPhone = data.contactPhone;
-        if ((data as any).googleCalendarEventId) project.googleCalendarEventId = (data as any).googleCalendarEventId; // Internal use
+        const googleEventId = (data as unknown as Record<string, unknown>).googleCalendarEventId as string | undefined;
+        if (googleEventId) project.googleCalendarEventId = googleEventId; // Internal use
 
         await project.save({ session });
 

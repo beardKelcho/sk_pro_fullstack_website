@@ -10,7 +10,6 @@ export const handleGoogleCalendarWebhook = async (req: Request, res: Response) =
     try {
         const channelId = req.headers['x-goog-channel-id'] as string;
         const resourceState = req.headers['x-goog-resource-state'] as string;
-        const resourceId = req.headers['x-goog-resource-id'] as string;
 
         // Google sends 'sync' as the initial test
         if (resourceState === 'sync') {
@@ -48,8 +47,8 @@ export const handleGoogleCalendarWebhook = async (req: Request, res: Response) =
             logger.error(`Error processing Google Calendar sync for integration ${integration._id}`, err);
         });
 
-    } catch (error) {
-        logger.error('Google Calendar Webhook Error', error);
+    } catch (error: unknown) {
+        logger.error('Google Calendar Webhook Error', { error: error instanceof Error ? error.message : String(error) });
         if (!res.headersSent) {
             res.status(500).send('Internal Server Error');
         }

@@ -163,6 +163,7 @@ jobs:
         run: |
           cd client
           npm run build
+          ls -R out > ../out-structure.txt
           npx serve -l 3000 out &
         env:
           NEXT_PUBLIC_API_URL: http://localhost:5001/api
@@ -180,8 +181,21 @@ jobs:
           install: false
           # Servers are already started above
           wait-on: 'http://localhost:3000'
+          command: npx cypress run --reporter spec > ../cypress-output.txt 2>&1
         env:
           CYPRESS_baseUrl: http://localhost:3000
+          DEBUG: cypress:runner
+
+      - name: Upload Logs & Structure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-debug-info
+          path: |
+            cypress-output.txt
+            out-structure.txt
+            client/cypress/screenshots/
+            client/cypress/videos/
 
       - name: Upload Screenshots
         if: failure()

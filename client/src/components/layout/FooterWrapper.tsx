@@ -6,15 +6,6 @@ import Footer from './Footer';
 
 const FooterWrapper = () => {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
 
   const isAdminPage = pathname?.startsWith('/admin');
 

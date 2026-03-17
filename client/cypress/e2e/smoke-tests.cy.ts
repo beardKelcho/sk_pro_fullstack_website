@@ -11,7 +11,8 @@ describe('Smoke Tests - Kritik Fonksiyonlar', () => {
   });
 
   it('ana sayfa yüklenmeli', () => {
-    cy.contains(/SK Production|SKPRO|skproduction/i, { timeout: 15000 }).should('be.visible');
+    // fallbackData.ts içindeki title ile uyumlu hale getir
+    cy.contains(/SK Production/i, { timeout: 15000 }).should('be.visible');
   });
 
   it('navigasyon çalışmalı', () => {
@@ -36,7 +37,8 @@ describe('Smoke Tests - Kritik Fonksiyonlar', () => {
 
   it('404 sayfası çalışmalı', () => {
     cy.visit('/nonexistent-page', { failOnStatusCode: false });
-    cy.contains(/404|bulunamadı|not found/i).should('be.visible');
+    // Next.js default veya özel 404 sayfası içeriği
+    cy.get('body').should('contain.text', '404');
   });
 });
 

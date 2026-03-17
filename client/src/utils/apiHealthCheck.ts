@@ -11,7 +11,7 @@ import logger from '@/utils/logger';
 export const checkApiHealth = async (): Promise<boolean> => {
   try {
     // Use absolute URL to bypass missing rewrites on client side
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sk-pro-backend.onrender.com/api';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
     const apiUrl = `${backendUrl}/health`;
 
     const response = await fetch(apiUrl, {

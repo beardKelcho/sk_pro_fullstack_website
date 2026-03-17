@@ -36,7 +36,8 @@ const Projects = () => {
     const { data: projectsData, isLoading } = useQuery({
         queryKey: ['showcase-projects'],
         queryFn: async () => {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://sk-pro-backend.onrender.com/api'}/showcase-projects`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+            const res = await axios.get(`${apiUrl}/showcase-projects`);
             return res.data;
         },
     });

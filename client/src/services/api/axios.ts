@@ -8,17 +8,8 @@ const getApiUrl = () => {
   // Rewrites removed, so we MUST use absolute URL everywhere (Client & Server)
 
   // 1. Production / Staging Environment
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-
-  // 2. Production Fallback (Hardcoded to prevent 405 on Vercel)
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://sk-pro-backend.onrender.com/api';
-  }
-
-  // 3. Development Fallback
-  return 'http://localhost:5001/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+    return apiUrl;
 };
 
 const API_URL = getApiUrl();

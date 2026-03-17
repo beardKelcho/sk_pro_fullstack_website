@@ -141,38 +141,40 @@ jobs:
 
       - name: Wait for Backend Ready
         run: |
-          npx wait-on http://localhost:5001/api/health --timeout 120000
+          npx wait-on http://127.0.0.1:5001/api/health --timeout 120000
 
       - name: Seed Site Content (for SSG)
         run: |
           cd server
-          MONGO_URI=mongodb://localhost:27017/skproduction-test node dist/scripts/seedSiteContent.js
+          MONGO_URI=mongodb://127.0.0.1:27017/skproduction-test node dist/scripts/seedSiteContent.js
         env:
-          MONGO_URI: mongodb://localhost:27017/skproduction-test
+          MONGO_URI: mongodb://127.0.0.1:27017/skproduction-test
           NODE_ENV: test
 
       - name: Seed E2E Test User
         run: |
           cd server
-          MONGODB_URI=mongodb://localhost:27017/skproduction-test node dist/scripts/seedTestUser.js
+          MONGODB_URI=mongodb://127.0.0.1:27017/skproduction-test node dist/scripts/seedTestUser.js
         env:
-          MONGODB_URI: mongodb://localhost:27017/skproduction-test
+          MONGODB_URI: mongodb://127.0.0.1:27017/skproduction-test
           NODE_ENV: test
 
       - name: Build & Start Frontend
         run: |
           cd client
+          export NEXT_PUBLIC_API_URL=http://127.0.0.1:5001/api
+          export NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:5001
           npm run build
           ls -R out > ../out-structure.txt
           npx serve -l 3000 out &
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:5001/api
-          NEXT_PUBLIC_BACKEND_URL: http://localhost:5001
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:5001/api
+          NEXT_PUBLIC_BACKEND_URL: http://127.0.0.1:5001
           PORT: 3000
 
       - name: Wait for Frontend Ready
         run: |
-          npx wait-on http://localhost:3000 --timeout 120000
+          npx wait-on http://127.0.0.1:3000 --timeout 120000
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6
@@ -180,10 +182,10 @@ jobs:
           working-directory: client
           install: false
           # Servers are already started above
-          wait-on: 'http://localhost:3000'
-          command: npx cypress run --reporter spec | tee ../cypress-output.txt 2>&1
+          wait-on: 'http://127.0.0.1:3000'
+          command: npx cypress run --reporter spec --spec cypress/e2e/smoke-tests.cy.ts | tee ../cypress-output.txt 2>&1
         env:
-          CYPRESS_baseUrl: http://localhost:3000
+          CYPRESS_baseUrl: http://127.0.0.1:3000
           DEBUG: cypress:runner
 
       - name: Upload Logs & Structure

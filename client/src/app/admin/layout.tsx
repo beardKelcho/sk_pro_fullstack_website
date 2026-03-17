@@ -57,7 +57,7 @@ export default function AdminLayout({
     const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     if (!token) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sk-pro-backend.onrender.com/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
     const disconnect = connectSse({
       url: `${apiUrl}/realtime/stream`,
       token,

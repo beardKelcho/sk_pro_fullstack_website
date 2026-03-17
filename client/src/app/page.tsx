@@ -11,8 +11,11 @@ export const revalidate = 60; // Revalidate at most every 60 seconds (for SSG up
 
 // Fetch site data helper
 async function getSiteData() {
-  // Fix: Prioritize API URL env vars, CLIENT_URL is usually frontend
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sk-pro-backend.onrender.com/api';
+  
+  // Debug log for CI/Build visibility
+  console.log(`[BUILD-DEBUG] Fetching data from: ${apiUrl}`);
+  console.log(`[BUILD-DEBUG] NEXT_PUBLIC_API_URL env: ${process.env.NEXT_PUBLIC_API_URL ? 'PRESENT' : 'MISSING'}`);
 
   try {
     // 1. Check Maintenance Mode

@@ -10,6 +10,9 @@ export interface ICalendarIntegration extends Document {
   syncEnabled: boolean;
   lastSyncAt?: Date;
   syncDirection: 'import' | 'export' | 'bidirectional';
+  syncToken?: string; // Google Calendar Incremental Sync Token
+  channelId?: string; // Google Push Webhook Channel ID
+  channelExpiration?: Date; // Google Push Webhook Channel Expiration Date
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,6 +58,19 @@ const CalendarIntegrationSchema: Schema = new Schema(
       type: String,
       enum: ['import', 'export', 'bidirectional'],
       default: 'bidirectional',
+    },
+    syncToken: {
+      type: String,
+      required: false,
+    },
+    channelId: {
+      type: String,
+      required: false,
+      index: true,
+    },
+    channelExpiration: {
+      type: Date,
+      required: false,
     },
   },
   {

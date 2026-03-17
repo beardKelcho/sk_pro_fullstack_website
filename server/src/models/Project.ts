@@ -15,6 +15,7 @@ export interface IProject extends Document {
   contactPerson?: string; // Added
   contactEmail?: string; // Added
   contactPhone?: string; // Added
+  googleCalendarEventId?: string; // Google Calendar Sync
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,6 +60,7 @@ const ProjectSchema: Schema = new Schema(
     contactPerson: { type: String },
     contactEmail: { type: String },
     contactPhone: { type: String },
+    googleCalendarEventId: { type: String, index: true }, // Added for Sync
     team: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

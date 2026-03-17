@@ -32,6 +32,7 @@ export interface CreateProjectData {
     team?: string[]; // Array of ObjectId strings
     equipment?: string[]; // Array of ObjectId strings
     createdBy?: string; // Added for logging
+    isFromSync?: boolean; // Added to prevent infinite loop from webhook
 }
 
 export interface UpdateProjectData {
@@ -50,6 +51,7 @@ export interface UpdateProjectData {
     team?: string[];
     equipment?: string[];
     userId?: string;
+    isFromSync?: boolean; // Added to prevent infinite loop from webhook
 }
 
 class ProjectService {
@@ -265,6 +267,7 @@ class ProjectService {
             contactPerson: data.contactPerson,
             contactEmail: data.contactEmail,
             contactPhone: data.contactPhone,
+            googleCalendarEventId: (data as any).googleCalendarEventId, // Allow passing event ID from sync
             team: data.team || [],
             equipment: data.equipment || []
         }], { session });
@@ -344,10 +347,17 @@ class ProjectService {
             await InventoryLogModel.insertMany(logs, { session });
         }
 
+        // Handle Auto-Tasks for NEW Team Members (if any logic needed here later)
+
         await this.invalidateCache('projects:*');
 
         // Fire-and-forget calendar sync
-        calendarSyncService.syncProjectEvent(project as unknown as Record<string, unknown>).catch(err => {
+        const syncData = {
+            ...project.toObject(),
+            _isFromSync: data.isFromSync
+        };
+
+        calendarSyncService.syncProjectEvent(syncData as Record<string, unknown>).catch(err => {
             logger.error('Calendar sync error during project creation', { error: String(err) });
         });
 
@@ -434,6 +444,7 @@ class ProjectService {
         if (data.contactPerson) project.contactPerson = data.contactPerson;
         if (data.contactEmail) project.contactEmail = data.contactEmail;
         if (data.contactPhone) project.contactPhone = data.contactPhone;
+        if ((data as any).googleCalendarEventId) project.googleCalendarEventId = (data as any).googleCalendarEventId; // Internal use
 
         await project.save({ session });
 
@@ -571,7 +582,11 @@ class ProjectService {
         const updatedProject = await this.getProjectById(id);
 
         // Fire-and-forget calendar sync update
-        calendarSyncService.syncProjectEvent(updatedProject as unknown as Record<string, unknown>, true).catch(err => {
+        const syncData = {
+            ...updatedProject,
+            _isFromSync: data.isFromSync
+        };
+        calendarSyncService.syncProjectEvent(syncData as Record<string, unknown>, true).catch(err => {
             logger.error('Calendar sync error during project update', { error: String(err) });
         });
 

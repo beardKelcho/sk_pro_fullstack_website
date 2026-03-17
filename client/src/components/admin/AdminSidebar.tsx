@@ -144,11 +144,18 @@ const initialMenuItems: MenuItem[] = [
     title: 'Envanter',
     path: '/admin/inventory',
     icon: <EquipmentIcon />,
-  },
-  {
-    title: 'Kasalar',
-    path: '/admin/cases',
-    icon: <CaseIcon />,
+    submenu: [
+      {
+        title: 'Ekipmanlar',
+        path: '/admin/inventory',
+        icon: <></>,
+      },
+      {
+        title: 'Case Yönetimi',
+        path: '/admin/cases',
+        icon: <></>,
+      },
+    ],
   },
   {
     title: 'Proje Yönetimi',

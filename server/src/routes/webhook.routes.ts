@@ -11,7 +11,13 @@ import {
   listDeliveries,
 } from '../controllers/webhook.controller';
 
+import { handleGoogleCalendarWebhook } from '../controllers/calendarWebhook.controller';
+
 const router = express.Router();
+
+// Google Calendar Webhook (Authentication/Middleware bypass for public Google requests)
+// Google sends push notifications here without our standard Bearer token
+router.post('/google-calendar', handleGoogleCalendarWebhook);
 
 router.use(authenticate);
 router.use(requirePermission(Permission.WEBHOOK_MANAGE));

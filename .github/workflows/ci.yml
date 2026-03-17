@@ -164,12 +164,14 @@ jobs:
           cd client
           export NEXT_PUBLIC_API_URL=http://127.0.0.1:5001/api
           export NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:5001
+          export NODE_TLS_REJECT_UNAUTHORIZED=0
           npm run build
           ls -R out > ../out-structure.txt
           npx serve -l 3000 out &
         env:
           NEXT_PUBLIC_API_URL: http://127.0.0.1:5001/api
           NEXT_PUBLIC_BACKEND_URL: http://127.0.0.1:5001
+          NODE_TLS_REJECT_UNAUTHORIZED: 0
           PORT: 3000
 
       - name: Wait for Frontend Ready

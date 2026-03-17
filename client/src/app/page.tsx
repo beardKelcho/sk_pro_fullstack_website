@@ -9,17 +9,20 @@ import StructuredData, { generateLocalBusinessSchema } from '@/components/common
 // Removed force-dynamic to support static export
 export const revalidate = 60; // Revalidate at most every 60 seconds (for SSG updates if supported, otherwise just static)
 
+import { fallbackContent } from '@/constants/fallbackData';
+
 // Fetch site data helper
 async function getSiteData() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sk-pro-backend.onrender.com/api';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
   
   // Debug log for CI/Build visibility
   console.log(`[BUILD-DEBUG] Fetching data from: ${apiUrl}`);
-  console.log(`[BUILD-DEBUG] NEXT_PUBLIC_API_URL env: ${process.env.NEXT_PUBLIC_API_URL ? 'PRESENT' : 'MISSING'}`);
 
   try {
     // 1. Check Maintenance Mode
-    const maintenanceRes = await fetch(`${apiUrl}/public/maintenance`);
+    const maintenanceRes = await fetch(`${apiUrl}/public/maintenance`, {
+      signal: AbortSignal.timeout(5000) // Build anında çok beklememesi için
+    });
 
     // Default to false if fetch fails
     let isMaintenanceMode = false;
@@ -29,53 +32,38 @@ async function getSiteData() {
     }
 
     if (isMaintenanceMode) {
-      return { isMaintenanceMode: true, content: {} };
+      return { isMaintenanceMode: true, content: fallbackContent };
     }
 
     // 2. Fetch Site Content
-    const contentRes = await fetch(`${apiUrl}/public/site-content`);
+    const contentRes = await fetch(`${apiUrl}/public/site-content`, {
+      signal: AbortSignal.timeout(5000)
+    });
 
     if (!contentRes.ok) {
-      logger.error('Failed to fetch site content');
-      return { isMaintenanceMode: false, content: {} };
+      logger.error('Failed to fetch site content, using fallback');
+      return { isMaintenanceMode: false, content: fallbackContent };
     }
 
     const responseJson = await contentRes.json();
 
     // Transform to SiteContent format
-    const contentMap: SiteContent = {};
-
-    // Backend'in döndürdüğü format: { success: true, data: { hero: {...}, about: {...} } }
-    // VEYA eski format: { data: [{ section: 'hero', data: {...} }] }
+    const contentMap: SiteContent = { ...fallbackContent }; // Start with fallback
 
     if (responseJson.data) {
-      // Yeni format: data obje mi?
       if (!Array.isArray(responseJson.data)) {
-        // Direkt obje formatı { hero: {...}, about: {...} }
         const dataObj = responseJson.data;
-
-        if (dataObj.hero) {
-          contentMap.hero = { data: dataObj.hero } as any;
-        }
-        if (dataObj.about) {
-          contentMap.about = dataObj.about;
-        }
-        if (dataObj.services) {
-          contentMap.services = dataObj.services;
-        }
-        if (dataObj.contact) {
-          contentMap.contact = dataObj.contact;
-        }
+        if (dataObj.hero) contentMap.hero = { data: dataObj.hero } as any;
+        if (dataObj.about) contentMap.about = dataObj.about;
+        if (dataObj.services) contentMap.services = dataObj.services;
+        if (dataObj.contact) contentMap.contact = dataObj.contact;
       } else {
-        // Eski array formatı [{ section: 'hero', data: {...} }]
         const items: any[] = responseJson.data;
         items.forEach((item: any) => {
           const payload = item.data || item.content;
           if (!payload) return;
 
-          if (item.section === 'hero') {
-            contentMap.hero = { data: payload } as any;
-          }
+          if (item.section === 'hero') contentMap.hero = { data: payload } as any;
           else if (item.section === 'about') contentMap.about = payload;
           else if (item.section === 'services' || item.section === 'services-equipment') contentMap.services = payload;
           else if (item.section === 'contact') contentMap.contact = payload;
@@ -83,13 +71,11 @@ async function getSiteData() {
       }
     }
 
-    logger.info('Processed ContentMap Keys:', Object.keys(contentMap)); // Server loglarında görmek için
-
     return { isMaintenanceMode: false, content: contentMap };
 
   } catch (error) {
-    logger.error('Error fetching site data:', error);
-    return { isMaintenanceMode: false, content: {} };
+    logger.error('Error fetching site data, returning fallback content:', error);
+    return { isMaintenanceMode: false, content: fallbackContent };
   }
 }
 

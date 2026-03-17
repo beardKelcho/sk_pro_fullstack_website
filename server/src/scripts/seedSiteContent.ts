@@ -34,7 +34,7 @@ const seedSiteContent = async () => {
             { section: 'hero' },
             {
                 section: 'hero',
-                content: {
+                data: {
                     title: 'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
                     subtitle: 'Profesyonel Görüntü ve Medya Çözümleri',
                     description: "2017'den beri sektörün en karmaşık projelerinde 'teknik beyin' olarak yer alıyoruz. Görüntü yönetimi, medya server çözümleri ve uzman ekip.",
@@ -57,10 +57,10 @@ const seedSiteContent = async () => {
         // eslint-disable-next-line no-console
         console.log('Upserting Services & Equipment content...');
         await SiteContent.findOneAndUpdate(
-            { section: 'services-equipment' },
+            { section: 'services' },
             {
-                section: 'services-equipment',
-                content: {
+                section: 'services',
+                data: {
                     title: 'Profesyonel Görüntü ve Medya Çözümleri',
                     subtitle: 'Etkinlikleriniz için dünya standartlarında medya sunucuları, görüntü işleme teknolojileri ve uzman reji hizmetleri sunuyoruz.',
                     services: [
@@ -107,7 +107,7 @@ const seedSiteContent = async () => {
             { section: 'about' },
             {
                 section: 'about',
-                content: {
+                data: {
                     title: 'Hakkımızda',
                     description: "SK Production olarak, görüntü teknolojileri alanında uçtan uca çözümler üreten, teknolojiyi sanatla buluşturan bir teknik prodüksiyon şirketiyiz.\n\n2017 yılında yola çıktığımız ilk günden beri, standartların ötesine geçmeyi hedefledik. Sadece ekipman kiralayan bir firma değil, projenizin 'teknik zekası' olmayı amaçlıyoruz.",
                     stats: [
@@ -128,7 +128,7 @@ const seedSiteContent = async () => {
             { section: 'contact' },
             {
                 section: 'contact',
-                content: {
+                data: {
                     address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
                     phone: '+90 555 555 55 55',
                     email: 'info@skproduction.com',

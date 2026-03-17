@@ -38,15 +38,14 @@ const seedTestUser = async () => {
         process.exit(0);
     }
 
-    const hashedPassword = await bcrypt.hash('Test123!', 10);
-
+    // Password will be hashed by the User model's pre-save hook
     await User.create({
         name: 'CI Test User',
         email: TEST_EMAIL,
-        password: hashedPassword,
+        password: 'Test123!',
         role: 'ADMIN',
         isActive: true,
-        twoFactorEnabled: false,
+        is2FAEnabled: false,
     });
 
     console.log(`[seedTestUser] ✅ Test user created: ${TEST_EMAIL}`);

@@ -139,6 +139,26 @@ jobs:
           NODE_ENV: test
           PORT: 5001
 
+      - name: Wait for Backend Ready
+        run: |
+          npx wait-on http://localhost:5001/api/health --timeout 120000
+
+      - name: Seed Site Content (for SSG)
+        run: |
+          cd server
+          MONGO_URI=mongodb://localhost:27017/skproduction-test node dist/scripts/seedSiteContent.js
+        env:
+          MONGO_URI: mongodb://localhost:27017/skproduction-test
+          NODE_ENV: test
+
+      - name: Seed E2E Test User
+        run: |
+          cd server
+          MONGODB_URI=mongodb://localhost:27017/skproduction-test node dist/scripts/seedTestUser.js
+        env:
+          MONGODB_URI: mongodb://localhost:27017/skproduction-test
+          NODE_ENV: test
+
       - name: Build & Start Frontend
         run: |
           cd client
@@ -149,17 +169,9 @@ jobs:
           NEXT_PUBLIC_BACKEND_URL: http://localhost:5001
           PORT: 3000
 
-      - name: Wait for Servers
+      - name: Wait for Frontend Ready
         run: |
-          npx wait-on http://localhost:5001/api/health http://localhost:3000 --timeout 120000
-
-      - name: Seed E2E Test Data
-        run: |
-          cd server
-          node dist/scripts/seedTestUser.js
-        env:
-          MONGODB_URI: mongodb://localhost:27017/skproduction-test
-          NODE_ENV: test
+          npx wait-on http://localhost:3000 --timeout 120000
 
       - name: Run Cypress
         uses: cypress-io/github-action@v6

@@ -12,7 +12,6 @@
  */
 
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -23,6 +22,7 @@ const seedTestUser = async () => {
         process.env.MONGO_URI ||
         'mongodb://localhost:27017/skproduction-test';
 
+    // eslint-disable-next-line no-console
     console.log(`[seedTestUser] Connecting to MongoDB: ${mongoUri}`);
     await mongoose.connect(mongoUri);
 
@@ -33,6 +33,7 @@ const seedTestUser = async () => {
 
     const existing = await User.findOne({ email: TEST_EMAIL });
     if (existing) {
+        // eslint-disable-next-line no-console
         console.log(`[seedTestUser] Test user already exists: ${TEST_EMAIL} — skipping.`);
         await mongoose.connection.close();
         process.exit(0);
@@ -48,12 +49,14 @@ const seedTestUser = async () => {
         is2FAEnabled: false,
     });
 
+    // eslint-disable-next-line no-console
     console.log(`[seedTestUser] ✅ Test user created: ${TEST_EMAIL}`);
     await mongoose.connection.close();
     process.exit(0);
 };
 
 seedTestUser().catch((err) => {
+    // eslint-disable-next-line no-console
     console.error('[seedTestUser] ❌ Error:', err);
     process.exit(1);
 });

@@ -1,42 +1,20 @@
 'use client';
 
-import logger from '@/utils/logger';
+
 
 import React, { useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from '@/services/api/axios';
 
 const DEFAULT_VIDEO = '/hero-video.mp4';
 
-const BackgroundVideo: React.FC = () => {
+interface BackgroundVideoProps {
+    videoUrl?: string;
+}
+
+const BackgroundVideo: React.FC<BackgroundVideoProps> = ({ videoUrl }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    // Fetch hero content to get video URL
-    const { data: heroData, isLoading } = useQuery({
-        queryKey: ['hero-video'],
-        queryFn: async () => {
-            try {
-                // Try fetching specifically hero section
-                const res = await axios.get('/public/site-content/hero');
-                return res.data;
-            } catch (error) {
-                logger.error('Failed to fetch hero video:', error);
-                return null;
-            }
-        },
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-        retry: 1
-    });
+    const videoSource = videoUrl || DEFAULT_VIDEO;
 
-    // Determine video URL
-    // API response structure might vary based on controller implementation
-    // It could be res.data.data.videoUrl or res.data.videoUrl
-    const apiVideoUrl = heroData?.data?.videoUrl || heroData?.videoUrl;
-
-    // Use API video if available, otherwise fallback to default
-    const videoSource = apiVideoUrl || DEFAULT_VIDEO;
-
-    // Ensure video plays when source changes
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.load();

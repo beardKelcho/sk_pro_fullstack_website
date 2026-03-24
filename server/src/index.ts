@@ -58,11 +58,12 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400 // Cache OPTIONS preflight requests for 24 hours
 }));
 
 // Enable Pre-Flight for all routes
-app.options('*', cors());
+app.options('*', cors({ maxAge: 86400 }));
 
 // HTTP server oluştur (WebSocket ve GraphQL için)
 const httpServer = createServer(app);

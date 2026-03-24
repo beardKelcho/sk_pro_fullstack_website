@@ -7,7 +7,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
-import GlobalSearch from '@/components/admin/GlobalSearch';
+import dynamic from 'next/dynamic';
+const GlobalSearch = dynamic(() => import('@/components/admin/GlobalSearch'), { ssr: false });
 import ProtectedRoute from '@/components/admin/ProtectedRoute';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import OfflineIndicator from '@/components/common/OfflineIndicator';
@@ -146,7 +147,9 @@ export default function AdminLayout({
               <AdminHeader onToggleSidebar={toggleSidebar} onSearchClick={() => setSearchOpen(true)} />
 
               {/* Global Search */}
-              <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+              {searchOpen && (
+                <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+              )}
 
               {/* Page content */}
               <main className="p-6">

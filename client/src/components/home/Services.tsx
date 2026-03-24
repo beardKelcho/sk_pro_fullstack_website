@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { Monitor, Server, Cpu, Layers, Activity } from 'lucide-react';
@@ -15,7 +14,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
     Activity,
 };
 
-interface Service {
+export interface Service {
     _id: string;
     title: string;
     category: string;
@@ -26,20 +25,15 @@ interface Service {
     isActive: boolean;
 }
 
-const Services: React.FC = () => {
-    // Fetch services from API
-    const { data: servicesData, isLoading } = useQuery({
-        queryKey: ['services-public'],
-        queryFn: async () => {
-            const res = await axios.get('/services');
-            return res.data;
-        },
-    });
+interface ServicesProps {
+    initialServices?: Service[];
+}
 
-    const services: Service[] = servicesData?.data || [];
+const Services: React.FC<ServicesProps> = ({ initialServices = [] }) => {
+    const services: Service[] = initialServices;
 
     // If no services, don't render the section
-    if (!isLoading && services.length === 0) {
+    if (services.length === 0) {
         return null;
     }
 
@@ -56,15 +50,8 @@ const Services: React.FC = () => {
                         subtitle="Video Engineering ve Teknik Prodüksiyon Sistemleri"
                     />
 
-                    {/* Loading State */}
-                    {isLoading && (
-                        <div className="flex items-center justify-center py-16">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
-                        </div>
-                    )}
-
                     {/* Services Grid */}
-                    {!isLoading && services.length > 0 && (
+                    {services.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
                             {services.map((service) => {
                                 // Get the icon component

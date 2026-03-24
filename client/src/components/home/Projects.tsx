@@ -2,8 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { Play, X, Loader2, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import NextImage from 'next/image';
@@ -26,23 +24,17 @@ interface LightboxState {
     title: string;
 }
 
-const Projects = () => {
+interface ProjectsProps {
+    initialProjects?: Project[];
+}
+
+const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
     const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
     const [lightbox, setLightbox] = useState<LightboxState | null>(null);
     const [selectedVideo, setSelectedVideo] = useState<{ url: string; title: string } | null>(null);
     const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
-    // Fetch projects from API
-    const { data: projectsData, isLoading } = useQuery({
-        queryKey: ['showcase-projects'],
-        queryFn: async () => {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-            const res = await axios.get(`${apiUrl}/showcase-projects`);
-            return res.data;
-        },
-    });
-
-    const projects: Project[] = projectsData?.data || [];
+    const projects: Project[] = initialProjects;
     const photoProjects = projects.filter(p => p.type === 'photo');
     const videoProjects = projects.filter(p => p.type === 'video');
 
@@ -149,15 +141,10 @@ const Projects = () => {
                         </button>
                     </div>
 
-                    {/* Loading State */}
-                    {isLoading && (
-                        <div className="flex items-center justify-center py-32">
-                            <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
-                        </div>
-                    )}
+
 
                     {/* Photo Tab */}
-                    {!isLoading && activeTab === 'photos' && (
+                    {activeTab === 'photos' && (
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key="photos"
@@ -240,7 +227,7 @@ const Projects = () => {
                     )}
 
                     {/* Video Tab */}
-                    {!isLoading && activeTab === 'videos' && (
+                    {activeTab === 'videos' && (
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key="videos"

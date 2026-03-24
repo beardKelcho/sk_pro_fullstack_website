@@ -41,19 +41,37 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
           return;
         }
 
-        // Profil bilgilerini kontrol et
-        const response = await authApi.getProfile();
+        // Profil bilgilerini cache'den al veya API'den çek
+        let user = null;
+        const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
 
-        if (!isMounted) return; // Component unmount olduysa devam etme
-
-        // Debug: Response'u logla
-        if (process.env.NODE_ENV === 'development') {
-          logger.info('ProtectedRoute - Profile response:', response.data);
+        if (storedUser) {
+          try {
+            user = JSON.parse(storedUser);
+          } catch (e) {
+            logger.warn('Stored user parse error', e);
+          }
         }
 
-        if (response.data && response.data.success && response.data.user) {
-          const user = response.data.user;
+        if (!user) {
+          const response = await authApi.getProfile();
+          
+          if (!isMounted) return; // Component unmount olduysa devam etme
+          
+          if (process.env.NODE_ENV === 'development') {
+            logger.info('ProtectedRoute - Profile fetched:', response.data);
+          }
 
+          if (response.data && response.data.success && response.data.user) {
+            user = response.data.user;
+            // Cache it
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+        }
+
+        if (!isMounted) return;
+
+        if (user) {
           // Rol kontrolü
           if (requiredRole) {
             const roleHierarchy: Record<string, number> = {

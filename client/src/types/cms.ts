@@ -14,6 +14,7 @@ export interface AboutContent {
     title?: string;
     description?: string;
     image?: string;
+    imageUrl?: string;
     stats?: Array<{ label: string; value: string; icon?: string }>;
 }
 
@@ -49,6 +50,10 @@ export interface ContactContent {
     longitude?: number;
     mapUrl?: string;
     workingHours?: string[];
+    socialLinks?: {
+        instagram?: string;
+        linkedin?: string;
+    };
 }
 
 export interface FooterContent {

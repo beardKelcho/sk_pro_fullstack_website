@@ -32,17 +32,33 @@ async function getSiteData() {
     }
 
     if (isMaintenanceMode) {
-      return { isMaintenanceMode: true, content: fallbackContent };
+      return { isMaintenanceMode: true, content: fallbackContent, services: [], projects: [] };
     }
 
-    // 2. Fetch Site Content
-    const contentRes = await fetch(`${apiUrl}/public/site-content`, {
-      signal: AbortSignal.timeout(5000)
-    });
+    // 2. Fetch Site Content, Services, and Projects concurrently
+    const [contentRes, servicesRes, projectsRes] = await Promise.all([
+      fetch(`${apiUrl}/public/site-content`, { signal: AbortSignal.timeout(5000) }).catch(() => null),
+      fetch(`${apiUrl}/services`, { signal: AbortSignal.timeout(5000) }).catch(() => null),
+      fetch(`${apiUrl}/showcase-projects`, { signal: AbortSignal.timeout(5000) }).catch(() => null)
+    ]);
 
-    if (!contentRes.ok) {
+    // Parse Services & Projects
+    let services = [];
+    let projects = [];
+    
+    if (servicesRes && servicesRes.ok) {
+        const servicesData = await servicesRes.json();
+        services = servicesData?.data || [];
+    }
+
+    if (projectsRes && projectsRes.ok) {
+        const projectsData = await projectsRes.json();
+        projects = projectsData?.data || [];
+    }
+
+    if (!contentRes || !contentRes.ok) {
       logger.error('Failed to fetch site content, using fallback');
-      return { isMaintenanceMode: false, content: fallbackContent };
+      return { isMaintenanceMode: false, content: fallbackContent, services, projects };
     }
 
     const responseJson = await contentRes.json();
@@ -71,11 +87,11 @@ async function getSiteData() {
       }
     }
 
-    return { isMaintenanceMode: false, content: contentMap };
+    return { isMaintenanceMode: false, content: contentMap, services, projects };
 
   } catch (error) {
     logger.error('Error fetching site data, returning fallback content:', error);
-    return { isMaintenanceMode: false, content: fallbackContent };
+    return { isMaintenanceMode: false, content: fallbackContent, services: [], projects: [] };
   }
 }
 
@@ -104,7 +120,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const { isMaintenanceMode, content } = await getSiteData();
+  const { isMaintenanceMode, content, services, projects } = await getSiteData();
 
   if (isMaintenanceMode) {
     return <MaintenancePage />;
@@ -113,7 +129,7 @@ export default async function Home() {
   return (
     <>
       <StructuredData data={generateLocalBusinessSchema()} />
-      <HomePage content={content as SiteContent} />
+      <HomePage content={content as SiteContent} services={services} projects={projects} />
     </>
   );
 }

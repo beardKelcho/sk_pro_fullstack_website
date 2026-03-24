@@ -1,4 +1,3 @@
-import BackgroundVideo from '@/components/layout/BackgroundVideo';
 import './globals.css';
 import './fonts.css';
 import type { Metadata } from 'next';
@@ -136,7 +135,6 @@ export default function RootLayout({
             </>
           )}
           <Providers>
-            <BackgroundVideo />
             <ErrorProvider>
               <div className="relative z-10">
                 <CommandPalette />

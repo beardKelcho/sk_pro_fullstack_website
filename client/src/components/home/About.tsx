@@ -4,29 +4,14 @@ import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { motion } from 'framer-motion';
 import LazyImage from '@/components/common/LazyImage';
-import { useQuery } from '@tanstack/react-query';
-import axios from '@/services/api/axios';
+import { AboutContent } from '@/types/cms';
 import { Loader2 } from 'lucide-react';
 
-const About: React.FC = () => {
-    // Fetch about data from CMS API
-    const { data, isLoading } = useQuery({
-        queryKey: ['about'],
-        queryFn: async () => {
-            const res = await axios.get('/cms/about');
-            return res.data;
-        },
-    });
+interface AboutProps {
+    content?: AboutContent;
+}
 
-    const content = data?.data;
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-32">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            </div>
-        );
-    }
+const About: React.FC<AboutProps> = ({ content }) => {
 
     if (!content) {
         return null;

@@ -123,25 +123,72 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Aylık aktivite verileri (son N gün)
+    // Zaman aralığını belirle
+    const rangeStart = new Date();
+    rangeStart.setDate(rangeStart.getDate() - days + 1);
+    rangeStart.setHours(0, 0, 0, 0);
+    const rangeEnd = new Date();
+    rangeEnd.setHours(23, 59, 59, 999);
+
+    const matchStage = { $match: { createdAt: { $gte: rangeStart, $lte: rangeEnd } } };
+    const groupStage = {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Europe/Istanbul" } },
+        count: { $sum: 1 }
+      }
+    };
+
+    const taskCompletionMatchStage = { 
+      $match: { 
+        status: 'COMPLETED',
+        completedDate: { $gte: rangeStart, $lte: rangeEnd } 
+      } 
+    };
+    const taskCompletionGroupStage = {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$completedDate", timezone: "Europe/Istanbul" } },
+        count: { $sum: 1 }
+      }
+    };
+
+    // Tüm datayı tek seferde aggregation ile çek (Günde 120+ sorgudan 4 sorguya indirildi)
+    const [projectsDaily, tasksDaily, equipmentDaily, taskCompletionDaily] = await Promise.all([
+      Project.aggregate([matchStage, groupStage]),
+      Task.aggregate([matchStage, groupStage]),
+      Equipment.aggregate([matchStage, groupStage]),
+      Task.aggregate([taskCompletionMatchStage, taskCompletionGroupStage])
+    ]);
+
+    const projectsMap = new Map(projectsDaily.map(item => [item._id, item.count]));
+    const tasksMap = new Map(tasksDaily.map(item => [item._id, item.count]));
+    const equipmentMap = new Map(equipmentDaily.map(item => [item._id, item.count]));
+    const taskCompMap = new Map(taskCompletionDaily.map(item => [item._id, item.count]));
+
     const activityData = [];
+    const taskCompletionTrend = [];
+
+    // Verileri frontend formatına hazırla (Boş günleri 0 ile doldur)
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dayStart = new Date(date.setHours(0, 0, 0, 0));
-      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+      
+      const pOffset = dayStart.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(dayStart.getTime() - pOffset)).toISOString().split('T')[0];
+      const dateKey = localISOTime;
 
-      const [projectsCreated, tasksCreated, equipmentAdded] = await Promise.all([
-        Project.countDocuments({ createdAt: { $gte: dayStart, $lte: dayEnd } }),
-        Task.countDocuments({ createdAt: { $gte: dayStart, $lte: dayEnd } }),
-        Equipment.countDocuments({ createdAt: { $gte: dayStart, $lte: dayEnd } })
-      ]);
+      const dateLabel = dayStart.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 
       activityData.push({
-        date: dayStart.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
-        projects: projectsCreated,
-        tasks: tasksCreated,
-        equipment: equipmentAdded
+        date: dateLabel,
+        projects: projectsMap.get(dateKey) || 0,
+        tasks: tasksMap.get(dateKey) || 0,
+        equipment: equipmentMap.get(dateKey) || 0
+      });
+
+      taskCompletionTrend.push({
+        date: dateLabel,
+        completed: taskCompMap.get(dateKey) || 0
       });
     }
 
@@ -177,25 +224,6 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
       }
     ]);
     const taskStatus = await Task.aggregate(taskStatusPipeline);
-
-    // Görev tamamlanma trendi (son N gün)
-    const taskCompletionTrend = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dayStart = new Date(date.setHours(0, 0, 0, 0));
-      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
-
-      const completed = await Task.countDocuments({
-        status: 'COMPLETED',
-        completedDate: { $gte: dayStart, $lte: dayEnd }
-      });
-
-      taskCompletionTrend.push({
-        date: dayStart.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
-        completed
-      });
-    }
 
     // Ekipman kullanım oranları (Miktar bazlı aggregate)
     const usageStatsResult = await Equipment.aggregate([

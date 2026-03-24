@@ -164,8 +164,7 @@ class ProjectService {
             Project.find(filters)
                 .select('-__v')
                 .populate('client', 'name company email phone')
-                .populate('team', 'name email role phone')
-                .populate('equipment', 'name brand model type serialNumber status quantity')
+                // .populate('team') and .populate('equipment') removed to optimize list view payload
                 .sort(sortOptions)
                 .skip(skip)
                 .limit(limit)

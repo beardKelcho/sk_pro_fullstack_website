@@ -4,31 +4,16 @@ import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import Icon from '@/components/common/Icon';
 import dynamic from 'next/dynamic';
-import { useQuery } from '@tanstack/react-query';
-import axios from '@/services/api/axios';
+import { ContactContent } from '@/types/cms';
 import { Loader2, Instagram, Linkedin } from 'lucide-react';
 
 const ContactForm = dynamic(() => import('@/components/common/ContactForm'), { ssr: false });
 
-const Contact: React.FC = () => {
-    // Fetch contact data from CMS API
-    const { data, isLoading } = useQuery({
-        queryKey: ['contact'],
-        queryFn: async () => {
-            const res = await axios.get('/cms/contact');
-            return res.data;
-        },
-    });
+interface ContactProps {
+    content?: ContactContent;
+}
 
-    const content = data?.data;
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-32">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            </div>
-        );
-    }
+const Contact: React.FC<ContactProps> = ({ content }) => {
 
     if (!content) {
         return null;

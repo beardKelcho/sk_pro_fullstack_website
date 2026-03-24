@@ -43,15 +43,12 @@ const Header: React.FC = () => {
       checkAuth();
     };
 
-    const interval = setInterval(checkAuth, 2000);
-
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('auth:login', handleAuthChange);
     window.addEventListener('auth:logout', handleAuthChange);
     window.addEventListener('focus', handleFocus);
 
     return () => {
-      clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('auth:login', handleAuthChange);
       window.removeEventListener('auth:logout', handleAuthChange);
@@ -85,6 +82,7 @@ const Header: React.FC = () => {
               alt="SK Production Logo"
               width={40}
               height={40}
+              priority
               className="w-10 h-10 object-contain"
             />
             <span className="text-xl font-bold text-[#0A1128] dark:text-white">SK Production</span>

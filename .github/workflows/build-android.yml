@@ -52,7 +52,10 @@ jobs:
         working-directory: ./client
         env:
           NEXT_PUBLIC_APP_URL: https://skpro.com.tr
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
         run: npm run build
+
 
       - name: Sync Capacitor Android
         working-directory: ./client

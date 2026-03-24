@@ -26,40 +26,49 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     ]);
     const eqStats = equipmentStatsResult[0] || { total: 0, available: 0, inUse: 0, maintenance: 0 };
 
+    // 8 sorgu yerine 5 paralel sorgu: Proje ve Görev sayımları tek aggregation'a indirildi
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+
     const [
-      totalProjects,
-      activeProjects,
-      completedProjects,
-      totalTasks,
-      openTasks,
-      completedTasks,
+      projectStatsResult,
+      taskStatsResult,
       totalClients,
-      activeClients,
       upcomingMaintenances,
       upcomingProjects
     ] = await Promise.all([
 
-      // Proje istatistikleri
-      Project.countDocuments(),
-      Project.countDocuments({ status: 'ACTIVE' }),
-      Project.countDocuments({ status: 'COMPLETED' }),
+      // Proje istatistikleri: 3 countDocuments → tek aggregation
+      Project.aggregate([{
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          active: { $sum: { $cond: [{ $eq: ['$status', 'ACTIVE'] }, 1, 0] } },
+          completed: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } }
+        }
+      }]),
 
-      // Görev istatistikleri
-      Task.countDocuments(),
-      Task.countDocuments({ status: { $in: ['TODO', 'IN_PROGRESS'] } }),
-      Task.countDocuments({ status: 'COMPLETED' }),
+      // Görev istatistikleri: 3 countDocuments → tek aggregation
+      Task.aggregate([{
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          open: {
+            $sum: {
+              $cond: [{ $in: ['$status', ['TODO', 'IN_PROGRESS']] }, 1, 0]
+            }
+          },
+          completed: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } }
+        }
+      }]),
 
-      // Müşteri istatistikleri
-      Client.countDocuments(),
+      // Müşteri sayısı: tek sorgu (activeClients = totalClients, filtre farkı yoktu)
       Client.countDocuments(),
 
       // Yaklaşan bakımlar (30 gün içinde)
       Maintenance.find({
         status: { $in: ['SCHEDULED', 'IN_PROGRESS'] },
-        scheduledDate: {
-          $gte: new Date(),
-          $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        }
+        scheduledDate: { $gte: now, $lte: thirtyDaysFromNow }
       })
         .populate('equipment', 'name type model')
         .populate('assignedTo', 'name email')
@@ -69,15 +78,22 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       // Yaklaşan projeler (30 gün içinde)
       Project.find({
         status: { $in: ['PLANNING', 'PENDING_APPROVAL', 'APPROVED', 'ACTIVE'] },
-        startDate: {
-          $gte: new Date(),
-          $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        }
+        startDate: { $gte: now, $lte: thirtyDaysFromNow }
       })
         .populate('client', 'name email')
         .sort({ startDate: 1 })
         .limit(5)
     ]);
+
+    const pStats = projectStatsResult[0] ?? { total: 0, active: 0, completed: 0 };
+    const tStats = taskStatsResult[0] ?? { total: 0, open: 0, completed: 0 };
+
+    const totalProjects = pStats.total;
+    const activeProjects = pStats.active;
+    const completedProjects = pStats.completed;
+    const totalTasks = tStats.total;
+    const openTasks = tStats.open;
+    const completedTasks = tStats.completed;
 
     res.status(200).json({
       success: true,
@@ -100,7 +116,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         },
         clients: {
           total: totalClients,
-          active: activeClients
+          active: totalClients
         }
       },
       upcomingMaintenances,
@@ -164,8 +180,8 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
     const equipmentMap = new Map(equipmentDaily.map(item => [item._id, item.count]));
     const taskCompMap = new Map(taskCompletionDaily.map(item => [item._id, item.count]));
 
-    const activityData = [];
-    const taskCompletionTrend = [];
+    const activityData: Array<{ date: string; projects: number; tasks: number; equipment: number }> = [];
+    const taskCompletionTrend: Array<{ date: string; completed: number }> = [];
 
     // Verileri frontend formatına hazırla (Boş günleri 0 ile doldur)
     for (let i = days - 1; i >= 0; i--) {
@@ -276,8 +292,7 @@ export const getDashboardCharts = async (req: Request, res: Response) => {
         taskCompletion, // Frontend uyumluluğu için
         monthlyActivity: activityData.map(item => ({
           date: item.date,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          count: item.projects + item.tasks + (item as any).equipment
+          count: item.projects + item.tasks + item.equipment
         })),
         equipmentUsage
       }

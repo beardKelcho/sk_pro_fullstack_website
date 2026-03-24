@@ -13,7 +13,7 @@ const AnalyticsCharts = dynamic(() => import('@/components/admin/AnalyticsCharts
 
 const toIsoDate = (d: Date) => d.toISOString().slice(0, 10);
 
-const downloadJson = (filename: string, data: any) => {
+const downloadJson = (filename: string, data: unknown) => {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

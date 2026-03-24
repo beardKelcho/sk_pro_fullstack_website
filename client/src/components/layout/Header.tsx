@@ -23,7 +23,8 @@ const Header: React.FC = () => {
   useEffect(() => {
     const checkAuth = () => {
       const user = getStoredUser();
-      setIsAuthenticated(!!user);
+      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      setIsAuthenticated(!!user && !!token);
     };
 
     checkAuth();

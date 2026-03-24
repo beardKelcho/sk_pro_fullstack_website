@@ -20,6 +20,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const normalizedPathname = pathname?.replace(/\/$/, '') || '';
   const shouldReduceMotion = useReducedMotion();
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -52,7 +53,7 @@ export default function AdminLayout({
   // Real-time (SSE): notifications/presence (admin panel)
   React.useEffect(() => {
     // Hook her render'da çalışmalı; login sayfalarında SSE'yi sadece no-op yapıyoruz
-    if (pathname === '/admin/login' || pathname === '/admin') return;
+    if (normalizedPathname === '/admin/login' || normalizedPathname === '/admin') return;
 
     const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     if (!token) return;
@@ -83,12 +84,12 @@ export default function AdminLayout({
     });
 
     return () => disconnect();
-  }, [queryClient, pathname]);
+  }, [queryClient, normalizedPathname]);
 
   // Admin paneli için minimal messages (locale hatası önlemek için)
   React.useEffect(() => {
     // Hook her render'da tanımlı olmalı; login sayfasında ekstra iş yapmayalım
-    if (pathname === '/admin/login' || pathname === '/admin') {
+    if (normalizedPathname === '/admin/login' || normalizedPathname === '/admin') {
       setAdminMessages({});
       return;
     }
@@ -104,10 +105,10 @@ export default function AdminLayout({
     };
 
     loadMessages();
-  }, [adminLocale, pathname]);
+  }, [adminLocale, normalizedPathname]);
 
   // Login sayfası için farklı layout gösterme - ProtectedRoute kullanma
-  if (pathname === '/admin/login' || pathname === '/admin') {
+  if (normalizedPathname === '/admin/login' || normalizedPathname === '/admin') {
     return (
       <main className={`min-h-screen bg-gray-50 dark:bg-gray-900 font-sans`}>
         <ErrorBoundary>

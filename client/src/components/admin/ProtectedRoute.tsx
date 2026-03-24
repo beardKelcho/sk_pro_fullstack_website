@@ -14,12 +14,13 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const normalizedPathname = pathname?.replace(/\/$/, '') || '';
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Login sayfalarında hiçbir kontrol yapma - direkt render et
-    if (pathname === '/admin' || pathname === '/admin/login') {
+    if (normalizedPathname === '/admin' || normalizedPathname === '/admin/login') {
       setIsLoading(false);
       setIsAuthenticated(null);
       return;
@@ -112,7 +113,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
         // Sadece bir kez yönlendir, döngüyü önle - replace kullan
         if (isMounted) {
           setIsAuthenticated(false);
-          if (pathname !== '/admin' && pathname !== '/admin/login') {
+          if (normalizedPathname !== '/admin' && normalizedPathname !== '/admin/login') {
             router.replace('/admin');
           }
           setIsLoading(false);
@@ -140,7 +141,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   }
 
   // Login sayfası için direkt render et
-  if (pathname === '/admin' || pathname === '/admin/login') {
+  if (normalizedPathname === '/admin' || normalizedPathname === '/admin/login') {
     return <>{children}</>;
   }
 

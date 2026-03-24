@@ -80,7 +80,8 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
         const isMonitoringPage = window.location.pathname.includes('/admin/monitoring');
-        const isLoginPage = window.location.pathname.includes('/admin/login') || window.location.pathname === '/admin';
+        const normalizedPathname = window.location.pathname.replace(/\/$/, '') || '';
+        const isLoginPage = normalizedPathname.includes('/admin/login') || normalizedPathname === '/admin';
 
         // Monitoring ve login sayfalarında isek kullanıcıyı tekrar login'e fırlatmıyoruz
         if (!isMonitoringPage && !isLoginPage) {

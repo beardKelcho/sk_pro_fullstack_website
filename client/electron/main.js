@@ -157,18 +157,19 @@ autoUpdater.on('update-downloaded', (info) => {
             log.info('Kullanıcı Yeniden Başlatmayı seçti. Update işlemi başlatılıyor...');
             isShuttingDown = true;
 
-            // Kurulumun (installer) sorunsuz başlayabilmesi için mevcut tüm pencereleri kapatıyoruz
+            // window-all-closed event'inin quitAndInstall'u engellemesini önle
+            app.removeAllListeners('window-all-closed');
+
+            // Tüm pencereleri kapat
             BrowserWindow.getAllWindows().forEach((w) => {
-                if (!w.isDestroyed()) w.close();
+                if (!w.isDestroyed()) w.destroy(); // .close() yerine .destroy() - dialog kutusu açılmasını önler
             });
 
-            // quitAndInstall(isSilent, isForceRunAfter)
-            // Windows (NSIS) ve Mac için kurulumu tetikler ve uygulamayı kapatır.
-            // process.exit(0) ÇAĞRILMAMALIDIR! Eğer çağrılırsa kurulum dosyası (setup.exe) başlayamadan iptal olur.
+            // app.quit() çağrısından SONRA quitAndInstall - her platformda çalışır
             setTimeout(() => {
                 log.info('Kurulum tetikleniyor (quitAndInstall)...');
                 autoUpdater.quitAndInstall(false, true);
-            }, 500);
+            }, 300);
         }
     });
 });
@@ -177,3 +178,4 @@ autoUpdater.on('update-downloaded', (info) => {
 app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') app.quit();
 });
+

@@ -1,7 +1,9 @@
 name: Build Android APK
 
 on:
-  # Kullanıcının manuel olarak Github Actions menüsünden başlatabilmesi için
+  push:
+    branches:
+      - develop
   workflow_dispatch:
 
 jobs:

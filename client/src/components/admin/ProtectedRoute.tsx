@@ -118,10 +118,11 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
             setIsLoading(false);
           }
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Hata durumunda sessizce login'e yönlendir (sürekli log spam'ini önle)
         if (process.env.NODE_ENV === 'development') {
-          logger.error('Auth check failed:', { error, responseData: error.response?.data });
+          const axiosErr = error as { response?: { data?: unknown } };
+          logger.error('Auth check failed:', { error, responseData: axiosErr.response?.data });
         }
         // Hem localStorage hem sessionStorage'dan temizle
         localStorage.removeItem('accessToken');
@@ -145,7 +146,7 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
     return () => {
       isMounted = false;
     };
-  }, [router, pathname, requiredRole]);
+  }, [router, pathname, normalizedPathname, requiredRole]);
 
   if (isLoading) {
     return (

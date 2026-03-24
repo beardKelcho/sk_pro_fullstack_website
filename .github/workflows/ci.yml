@@ -134,8 +134,9 @@ jobs:
           npm run build
           npm start &
         env:
-          MONGODB_URI: mongodb://localhost:27017/skproduction-test
-          JWT_SECRET: test-secret
+          MONGO_URI: mongodb://127.0.0.1:27017/skproduction-test
+          MONGODB_URI: mongodb://127.0.0.1:27017/skproduction-test
+          JWT_SECRET: test-secret-for-ci-only
           NODE_ENV: test
           PORT: 5001
 
@@ -185,10 +186,10 @@ jobs:
           install: false
           # Servers are already started above
           wait-on: 'http://127.0.0.1:3000'
-          command: npx cypress run --reporter spec --spec cypress/e2e/smoke-tests.cy.ts | tee ../cypress-output.txt 2>&1
+          # pipefail: tee pipe'ının Cypress hata kodunu maskelemesini önler
+          command: bash -o pipefail -c "npx cypress run --reporter spec --spec cypress/e2e/smoke-tests.cy.ts 2>&1 | tee ../cypress-output.txt"
         env:
           CYPRESS_baseUrl: http://127.0.0.1:3000
-          DEBUG: cypress:runner
 
       - name: Upload Logs & Structure
         if: always()

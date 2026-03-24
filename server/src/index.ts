@@ -48,38 +48,37 @@ const app = express();
 // Trust Proxy: Render/Vercel arkasında çalışırken IP ve protokolü doğru algılamak için gerekli
 app.set('trust proxy', 1);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // SECURITY EMERGENCY: Allow ALL origins to prevent blocked requests during debugging
-    // To support 'credentials: true', we must return the specific origin, not '*'
-    if (!origin) return callback(null, true);
-    // Always allow
-    callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400 // Cache OPTIONS preflight requests for 24 hours
-}));
-
-// Enable Pre-Flight for all routes
-app.options('*', cors({ maxAge: 86400 }));
-
-// HTTP server oluştur (WebSocket ve GraphQL için)
-const httpServer = createServer(app);
-
-// CORS Middleware (en önce - Helmet'ten önce)
-const allowedOrigins = [
+const corsAllowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:3000',
   process.env.CORS_ORIGIN,
   'https://skpro.com.tr',
   'https://www.skpro.com.tr',
-  'app://-' // Electron masaüstü uygulaması için izin verilen origin
-].filter(Boolean); // undefined/null değerleri filtrele
+  'app://-', // Electron masaüstü uygulaması
+].filter(Boolean) as string[];
 
-// Development modunda local network IP'lerine izin ver
-// Removed unused isLocalNetworkOrigin
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Aynı kaynak veya sunucular arası istekler (origin yok)
+    if (!origin) return callback(null, true);
+    if (corsAllowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    logger.warn(`CORS: İzinsiz origin engellendi: ${origin}`);
+    return callback(new Error(`CORS politikası: ${origin} kaynağına izin verilmiyor`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400,
+};
 
+app.use(cors(corsOptions));
+
+// Enable Pre-Flight for all routes
+app.options('*', cors(corsOptions));
+
+// HTTP server oluştur (WebSocket ve GraphQL için)
+const httpServer = createServer(app);
 
 // Security Middleware
 app.use(
@@ -123,7 +122,7 @@ app.use(requestIdMiddleware);
 // NoSQL injection'e karşı request temizliği
 app.use(mongoSanitize);
 // CSRF mitigasyonu: state-changing isteklerde origin allowlist kontrolü
-app.use(csrfOriginCheck(allowedOrigins as string[]));
+app.use(csrfOriginCheck(corsAllowedOrigins));
 
 // API versioning (header/accept tabanlı; default v1)
 app.use('/api', apiVersioning);

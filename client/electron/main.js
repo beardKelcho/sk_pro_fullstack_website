@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, protocol } = require('electron');
+const { app, BrowserWindow, dialog, protocol, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const log = require('electron-log');
@@ -64,8 +64,10 @@ function createWindow() {
         height: 800,
         show: false,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true,
+            preload: path.join(__dirname, 'preload.js'),
         },
     });
 
@@ -108,6 +110,9 @@ function createWindow() {
         }
     });
 }
+
+// IPC handlers (preload.js üzerinden expose edilen API'lar)
+ipcMain.handle('get-version', () => app.getVersion());
 
 app.whenReady().then(() => {
     // Protokolü ayağa kaldır

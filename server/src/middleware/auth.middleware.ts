@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models';
+import { User, Session } from '../models';
 import { Permission, hasPermission, hasRole, Role } from '../config/permissions';
 import logger from '../utils/logger';
-import { JWT_SECRET } from '../utils/authTokens';
+import { JWT_SECRET, createTokenHash } from '../utils/authTokens';
 import { IUser } from '../models/User';
 import { updateSessionActivity } from '../controllers/session.controller';
 
@@ -54,10 +54,25 @@ export const authenticate = async (
       });
     }
 
-    // Session check BYPASSED (acil kurtarma için kaldırıldı)
-    logger.info('Auth Check Bypassed - Session DB Check Removed', {
-      userId: user._id,
-    });
+    // Session geçerliliğini veritabanından doğrula (logout sonrası token invalidation)
+    try {
+      const tokenHash = createTokenHash(token);
+      const session = await Session.findOne({
+        userId: user._id,
+        token: tokenHash,
+        isActive: true,
+      });
+
+      if (!session) {
+        return res.status(401).json({
+          success: false,
+          message: 'Oturum geçersiz veya sonlandırılmış. Lütfen tekrar giriş yapın.',
+        });
+      }
+    } catch (sessionError) {
+      // DB hatası: güvenli tarafta kal, loglayıp devam et
+      logger.error('Session doğrulama DB hatası:', sessionError);
+    }
 
     // Session activity güncelle (background, hata patlatmaz)
     updateSessionActivity(user._id.toString(), token).catch((err: unknown) =>

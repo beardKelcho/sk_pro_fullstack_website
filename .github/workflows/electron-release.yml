@@ -32,6 +32,9 @@ jobs:
       - name: Next.js Projesini Derle
         working-directory: ./client
         run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
 
       - name: Electron Builder ile Windows (.exe) Paketle ve Yayınla
         working-directory: ./client
@@ -61,9 +64,13 @@ jobs:
       - name: Next.js Projesini Derle
         working-directory: ./client
         run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
 
       - name: Electron Builder ile macOS (.dmg) Paketle ve Yayınla
         working-directory: ./client
         run: npx electron-builder --mac --publish always
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

@@ -19,21 +19,38 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
 
       - name: Setup Java JDK (Android için)
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK Platform 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('client/android/**/*.gradle*', 'client/android/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-
 
       - name: Install Client Dependencies
         working-directory: ./client
-        run: npm install
+        run: npm ci
 
       - name: Build Next.js Application
         working-directory: ./client
         env:
-          # Next.js build sırasında çevre değişkenlerini devredışı bıraktığı için sahte değerler verebiliriz (gerekirse)
           NEXT_PUBLIC_APP_URL: https://skpro.com.tr
         run: npm run build
 
@@ -43,16 +60,7 @@ jobs:
 
       - name: Build APK File Using Gradle
         working-directory: ./client/android
-        run: |
-          ./gradlew assembleDebug > gradle_error.log 2>&1 || true
-          if [ ! -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
-            git config --global user.name 'github-actions[bot]'
-            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-            git add gradle_error.log
-            git commit -m "ci: Android Build Error Log [skip ci]"
-            git push origin HEAD
-            exit 1
-          fi
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Rename APK for Production
         working-directory: ./client/android/app/build/outputs/apk/debug
@@ -63,4 +71,4 @@ jobs:
         with:
           name: SK-Production-Android-APK
           path: client/android/app/build/outputs/apk/debug/SK-Production.apk
-          retention-days: 7
+          retention-days: 30

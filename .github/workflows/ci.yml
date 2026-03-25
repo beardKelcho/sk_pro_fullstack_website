@@ -173,6 +173,7 @@ jobs:
           NEXT_PUBLIC_API_URL: http://127.0.0.1:5001/api
           NEXT_PUBLIC_BACKEND_URL: http://127.0.0.1:5001
           NODE_TLS_REJECT_UNAUTHORIZED: 0
+          NEXT_PUBLIC_MAINTENANCE_MODE: false
           PORT: 3000
 
       - name: Wait for Frontend Ready
@@ -233,6 +234,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: https://api.skproduction.com/api # Placeholder for build
           NEXT_PUBLIC_BACKEND_URL: https://api.skproduction.com
+          NEXT_PUBLIC_MAINTENANCE_MODE: false
 
       - name: Build Server
         run: cd server && npm run build

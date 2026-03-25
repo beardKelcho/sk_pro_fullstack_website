@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { SiteContent } from '../models/SiteContent';
+import { SystemSetting } from '../models/SystemSetting';
 import path from 'path';
 
 // Load env vars
@@ -138,6 +139,15 @@ const seedSiteContent = async () => {
                 isActive: true,
                 order: 3
             },
+            { upsert: true, new: true }
+        );
+
+        // 5. MAINTENANCE MODE — always force OFF for CI/test seeding
+        // eslint-disable-next-line no-console
+        console.log('Ensuring maintenance mode is OFF...');
+        await SystemSetting.findOneAndUpdate(
+            { key: 'maintenance_mode' },
+            { key: 'maintenance_mode', value: { isMaintenanceMode: false }, description: 'Site genel bakım modu ayarı' },
             { upsert: true, new: true }
         );
 

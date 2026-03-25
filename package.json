@@ -1,6 +1,6 @@
 {
   "name": "skproduction",
-  "version": "22.1.1",
+  "version": "22.1.4",
   "private": true,
   "scripts": {
     "audit:ci": "npm run audit:root && npm run audit:client && npm run audit:server",

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import inventoryService, { Category, Location } from '@/services/inventoryService';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, X, Check, Loader2 } from 'lucide-react';
 
 interface AddItemModalProps {
     isOpen: boolean;
@@ -9,9 +10,10 @@ interface AddItemModalProps {
     onSuccess: () => void;
     categories: Category[];
     locations: Location[];
+    onCategoriesChange?: (categories: Category[]) => void;
 }
 
-const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess, categories, locations }) => {
+const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess, categories, locations, onCategoriesChange }) => {
     const [formData, setFormData] = useState({
         name: '',
         category: '',
@@ -28,6 +30,17 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
     const [subComponent, setSubComponent] = useState({ name: '', type: 'GPU', serialNumber: '', specs: '' });
     const [isSystemBuilderActive, setIsSystemBuilderActive] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    // Inline category creation
+    const [showNewCat, setShowNewCat] = useState(false);
+    const [newCatName, setNewCatName] = useState('');
+    const [savingCat, setSavingCat] = useState(false);
+    const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+
+    // Sync localCategories when prop changes
+    useEffect(() => {
+        setLocalCategories(categories);
+    }, [categories]);
 
     // Reset form when modal opens
     useEffect(() => {
@@ -47,8 +60,30 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
             });
             setSubComponent({ name: '', type: 'GPU', serialNumber: '', specs: '' });
             setIsSystemBuilderActive(false);
+            setShowNewCat(false);
+            setNewCatName('');
         }
     }, [isOpen, categories, locations]);
+
+    const handleCreateCategory = async () => {
+        if (!newCatName.trim()) return;
+        setSavingCat(true);
+        try {
+            const res = await inventoryService.createCategory({ name: newCatName.trim() });
+            const created: Category = res.data || res;
+            const updated = [...localCategories, created];
+            setLocalCategories(updated);
+            onCategoriesChange?.(updated);
+            setFormData(prev => ({ ...prev, category: created._id }));
+            setNewCatName('');
+            setShowNewCat(false);
+            toast.success(`"${created.name}" kategorisi oluşturuldu`);
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Kategori oluşturulamadı');
+        } finally {
+            setSavingCat(false);
+        }
+    };
 
     // Watch for "Custom PC" or similar categories
     useEffect(() => {
@@ -121,16 +156,55 @@ const AddItemModal: React.FC<AddItemModalProps> = ({ isOpen, onClose, onSuccess,
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori *</label>
-                                <select
-                                    className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                >
-                                    <option value="">Seçiniz</option>
-                                    {categories.map(cat => (
-                                        <option key={cat._id} value={cat._id}>{cat.name}</option>
-                                    ))}
-                                </select>
+                                {showNewCat ? (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            autoFocus
+                                            placeholder="Yeni kategori adı"
+                                            className="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                            value={newCatName}
+                                            onChange={e => setNewCatName(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleCreateCategory())}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleCreateCategory}
+                                            disabled={savingCat || !newCatName.trim()}
+                                            className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+                                        >
+                                            {savingCat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setShowNewCat(false); setNewCatName(''); }}
+                                            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <select
+                                            className="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                            value={formData.category}
+                                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                        >
+                                            <option value="">Seçiniz</option>
+                                            {localCategories.map(cat => (
+                                                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewCat(true)}
+                                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-300 dark:border-blue-700"
+                                            title="Yeni Kategori Ekle"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div>

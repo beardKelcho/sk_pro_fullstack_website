@@ -15,7 +15,8 @@ interface HomePageProps {
 }
 
 export default function HomePage({ content, services, projects }: HomePageProps) {
-    const videoUrl = content.hero?.videoUrl || content.hero?.backgroundVideo || undefined;
+    const heroData = (content.hero as any)?.data || content.hero;
+    const videoUrl = heroData?.videoUrl || heroData?.backgroundVideo || undefined;
 
     return (
         <MainLayout>

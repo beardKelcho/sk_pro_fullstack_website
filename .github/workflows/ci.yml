@@ -186,8 +186,7 @@ jobs:
           install: false
           # Servers are already started above
           wait-on: 'http://127.0.0.1:3000'
-          # pipefail: tee pipe'ının Cypress hata kodunu maskelemesini önler
-          command: bash -o pipefail -c "npx cypress run --reporter spec --spec cypress/e2e/smoke-tests.cy.ts 2>&1 | tee ../cypress-output.txt"
+          spec: cypress/e2e/smoke-tests.cy.ts
         env:
           CYPRESS_baseUrl: http://127.0.0.1:3000
 
@@ -197,7 +196,6 @@ jobs:
         with:
           name: ci-debug-info
           path: |
-            cypress-output.txt
             out-structure.txt
             client/cypress/screenshots/
             client/cypress/videos/

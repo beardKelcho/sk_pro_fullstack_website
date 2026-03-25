@@ -192,7 +192,7 @@ jobs:
 
       - name: Upload Logs & Structure
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ci-debug-info
           path: |
@@ -202,7 +202,7 @@ jobs:
 
       - name: Upload Screenshots
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cypress-screenshots
           path: client/cypress/screenshots

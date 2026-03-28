@@ -24,8 +24,17 @@ export const globalSearch = async (req: Request, res: Response) => {
       });
     }
 
+    if (searchQuery.length > 100) {
+      return res.status(400).json({
+        success: false,
+        message: 'Arama sorgusu en fazla 100 karakter olmalıdır',
+      });
+    }
+
     const searchLimit = Math.min(parseInt(limit as string, 10), 50);
-    const searchRegex = new RegExp(searchQuery, 'i');
+    // ReDoS koruması: kullanıcı inputundaki regex özel karakterleri escape ediliyor
+    const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escapedQuery, 'i');
 
     // Paralel aramalar
     const [
@@ -287,7 +296,16 @@ export const getSearchSuggestions = async (req: Request, res: Response) => {
       });
     }
 
-    const searchRegex = new RegExp(searchQuery, 'i');
+    if (searchQuery.length > 100) {
+      return res.status(200).json({
+        success: true,
+        suggestions: [],
+      });
+    }
+
+    // ReDoS koruması: kullanıcı inputundaki regex özel karakterleri escape ediliyor
+    const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escapedQuery, 'i');
     const limit = 5;
 
     const [equipmentNames, projectNames, clientNames] = await Promise.all([

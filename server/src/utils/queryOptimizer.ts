@@ -160,7 +160,9 @@ export const cachedQuery = async <T>(
  */
 export const clearQueryCache = (pattern?: string): void => {
   if (pattern) {
-    const regex = new RegExp(pattern);
+    // ReDoS koruması: pattern'deki regex özel karakterleri escape ediliyor
+    const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedPattern);
     for (const key of queryCache.keys()) {
       if (regex.test(key)) {
         queryCache.delete(key);

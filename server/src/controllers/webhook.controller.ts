@@ -5,10 +5,33 @@ import logger from '../utils/logger';
 import { Webhook, WebhookDelivery } from '../models';
 import { sendTestWebhook } from '../services/webhook.service';
 
+// SSRF koruması: private/internal IP aralıklarına istek engelleniyor
+const isPrivateOrInternalHost = (hostname: string): boolean => {
+  // localhost ve loopback
+  if (hostname === 'localhost' || hostname === '::1') return true;
+  // IPv4 private ranges
+  const ipv4Private = [
+    /^127\./,           // 127.0.0.0/8 loopback
+    /^10\./,            // 10.0.0.0/8 private
+    /^192\.168\./,      // 192.168.0.0/16 private
+    /^172\.(1[6-9]|2\d|3[01])\./,  // 172.16.0.0/12 private
+    /^169\.254\./,      // 169.254.0.0/16 link-local
+    /^0\./,             // 0.0.0.0/8
+  ];
+  if (ipv4Private.some(r => r.test(hostname))) return true;
+  // IPv6 private/link-local
+  if (/^(fc|fd)/i.test(hostname)) return true;  // fc00::/7 unique local
+  if (/^fe80:/i.test(hostname)) return true;      // fe80::/10 link-local
+  return false;
+};
+
 const isValidUrl = (value: string) => {
   try {
     const u = new URL(value);
-    return u.protocol === 'https:' || u.protocol === 'http:';
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    // SSRF: internal/private host'lara izin verme
+    if (isPrivateOrInternalHost(u.hostname)) return false;
+    return true;
   } catch {
     return false;
   }

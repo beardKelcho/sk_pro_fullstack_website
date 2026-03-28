@@ -16,13 +16,21 @@ export type TokenPair = {
 
 // JWT_SECRET'ları merkezi bir yerden al - tutarlılık için
 // TÜM yerlerde aynı secret kullanılması için export ediyoruz
-export const JWT_SECRET = process.env.JWT_SECRET || 'sk-production-secret';
-export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'sk-production-refresh-secret';
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('FATAL: JWT_SECRET environment variable is required in production');
+  }
+  if (!process.env.JWT_REFRESH_SECRET) {
+    throw new Error('FATAL: JWT_REFRESH_SECRET environment variable is required in production');
+  }
+}
 
-// Development modunda JWT_SECRET'ı logla (güvenlik için production'da loglanmaz)
+export const JWT_SECRET = process.env.JWT_SECRET || 'sk-dev-only-secret-not-for-production';
+export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'sk-dev-only-refresh-secret-not-for-production';
+
+// Development modunda JWT_SECRET durumunu logla (değeri loglanmaz)
 if (process.env.NODE_ENV === 'development') {
   logger.info('JWT_SECRET configured', { status: JWT_SECRET ? 'Yes (length: ' + JWT_SECRET.length + ')' : 'No (using default)' });
-  logger.info('JWT_SECRET value (first 10 chars)', { value: JWT_SECRET.substring(0, 10) + '...' });
 }
 
 export const createTokenHash = (token: string): string => {

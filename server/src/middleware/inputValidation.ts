@@ -70,8 +70,8 @@ export const validateLogin = [
       return v.replace(/[^\d+]/g, '');
     }),
   body('password')
-    .isLength({ min: 6 })
-    .withMessage('Şifre en az 6 karakter olmalıdır'),
+    .isLength({ min: 8 })
+    .withMessage('Şifre en az 8 karakter olmalıdır'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -88,8 +88,8 @@ export const validateRegister = [
     .normalizeEmail()
     .withMessage('Geçerli bir e-posta adresi giriniz'),
   body('password')
-    .isLength({ min: 6 })
-    .withMessage('Şifre en az 6 karakter olmalıdır')
+    .isLength({ min: 8 })
+    .withMessage('Şifre en az 8 karakter olmalıdır')
     .matches(/\d/)
     .withMessage('Şifre en az bir rakam içermelidir')
     .matches(/[a-z]/)
@@ -208,8 +208,8 @@ export const validateUser = [
     .withMessage('Geçersiz kullanıcı rolü'),
   body('password')
     .optional({ checkFalsy: true })
-    .isLength({ min: 6 })
-    .withMessage('Şifre en az 6 karakter olmalıdır'),
+    .isLength({ min: 8 })
+    .withMessage('Şifre en az 8 karakter olmalıdır'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -238,8 +238,8 @@ export const validateCreateUser = [
     .isIn(['ADMIN', 'FIRMA_SAHIBI', 'PROJE_YONETICISI', 'DEPO_SORUMLUSU', 'TEKNISYEN'])
     .withMessage('Geçersiz kullanıcı rolü'),
   body('password')
-    .isLength({ min: 6 })
-    .withMessage('Şifre en az 6 karakter olmalıdır'),
+    .isLength({ min: 8 })
+    .withMessage('Şifre en az 8 karakter olmalıdır'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

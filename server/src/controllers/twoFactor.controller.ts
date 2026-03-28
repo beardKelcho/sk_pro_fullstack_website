@@ -413,10 +413,12 @@ export const verify2FALogin = async (req: Request, res: Response) => {
       logger.warn('Session create failed (non-blocking):', sessionError);
     }
 
-    // Web için cookie refreshToken
+    // Web için cookie refreshToken (auth.controller.ts ile tutarlı: cross-domain Electron desteği)
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
+      sameSite: 'none',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 

@@ -106,6 +106,14 @@ export const exportLimiter = createRateLimiter({
   keyStrategy: 'user_or_ip',
 });
 
+// 2FA brute-force koruması: 15 dakikada max 10 deneme (production)
+export const twoFALimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: parseNumber(process.env.RATE_LIMIT_2FA_MAX, process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development' ? 1000 : 10),
+  keyStrategy: 'ip',
+  customMessage: 'Çok fazla 2FA denemesi yaptınız. Lütfen 15 dakika sonra tekrar deneyin.',
+});
+
 export const rateLimitConfig = () => ({
   windowMs: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, WINDOW_15M),
   generalMax: parseNumber(process.env.RATE_LIMIT_GENERAL_MAX, 500),

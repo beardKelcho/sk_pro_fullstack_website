@@ -137,10 +137,33 @@ interface MutationArgs {
   input: ProjectInput;
 }
 
+// GraphQL yetki yardımcıları
+const ADMIN_ROLES = new Set(['ADMIN', 'FIRMA_SAHIBI']);
+const MANAGER_ROLES = new Set(['ADMIN', 'FIRMA_SAHIBI', 'PROJE_YONETICISI']);
+
+const requireAuth = (context: GraphQLContext) => {
+  if (!context.user) throw new Error('Bu işlem için giriş yapmanız gerekiyor');
+};
+
+const requireAdminRole = (context: GraphQLContext) => {
+  requireAuth(context);
+  if (!ADMIN_ROLES.has(context.user!.role)) {
+    throw new Error('Bu işlem için yetkiniz bulunmuyor');
+  }
+};
+
+const requireManagerRole = (context: GraphQLContext) => {
+  requireAuth(context);
+  if (!MANAGER_ROLES.has(context.user!.role)) {
+    throw new Error('Bu işlem için yetkiniz bulunmuyor');
+  }
+};
+
 // GraphQL Resolvers
 const resolvers = {
   Query: {
-    projects: async (_: unknown, args: QueryArgs, _context: GraphQLContext) => {
+    projects: async (_: unknown, args: QueryArgs, context: GraphQLContext) => {
+      requireAuth(context);
       const { Project } = await import('../models');
       const query: Record<string, unknown> = {};
       if (args.status) query.status = args.status;
@@ -151,11 +174,13 @@ const resolvers = {
         .populate('team')
         .populate('equipment');
     },
-    project: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
+    project: async (_: unknown, args: { id: string }, context: GraphQLContext) => {
+      requireAuth(context);
       const { Project } = await import('../models');
       return Project.findById(args.id).populate('client').populate('team').populate('equipment');
     },
-    equipment: async (_: unknown, args: QueryArgs, _context: GraphQLContext) => {
+    equipment: async (_: unknown, args: QueryArgs, context: GraphQLContext) => {
+      requireAuth(context);
       const { Equipment } = await import('../models');
       const query: Record<string, unknown> = {};
       if (args.status) query.status = args.status;
@@ -164,11 +189,13 @@ const resolvers = {
         .skip(args.offset || 0)
         .populate('responsibleUser');
     },
-    equipmentItem: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
+    equipmentItem: async (_: unknown, args: { id: string }, context: GraphQLContext) => {
+      requireAuth(context);
       const { Equipment } = await import('../models');
       return Equipment.findById(args.id).populate('responsibleUser');
     },
-    tasks: async (_: unknown, args: QueryArgs, _context: GraphQLContext) => {
+    tasks: async (_: unknown, args: QueryArgs, context: GraphQLContext) => {
+      requireAuth(context);
       const { Task } = await import('../models');
       const query: Record<string, unknown> = {};
       if (args.status) query.status = args.status;
@@ -178,21 +205,25 @@ const resolvers = {
         .populate('assignedTo')
         .populate('project');
     },
-    task: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
+    task: async (_: unknown, args: { id: string }, context: GraphQLContext) => {
+      requireAuth(context);
       const { Task } = await import('../models');
       return Task.findById(args.id).populate('assignedTo').populate('project');
     },
-    clients: async (_: unknown, args: QueryArgs, _context: GraphQLContext) => {
+    clients: async (_: unknown, args: QueryArgs, context: GraphQLContext) => {
+      requireManagerRole(context);
       const { Client } = await import('../models');
       return Client.find().limit(args.limit || 10).skip(args.offset || 0);
     },
-    client: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
+    client: async (_: unknown, args: { id: string }, context: GraphQLContext) => {
+      requireManagerRole(context);
       const { Client } = await import('../models');
       return Client.findById(args.id);
     },
   },
   Mutation: {
-    createProject: async (_: unknown, args: { input: ProjectInput }, _context: GraphQLContext) => {
+    createProject: async (_: unknown, args: { input: ProjectInput }, context: GraphQLContext) => {
+      requireManagerRole(context);
       const { Project } = await import('../models');
       const project = await Project.create({
         ...args.input,
@@ -204,7 +235,8 @@ const resolvers = {
       const populated2 = await populated.populate('team');
       return await populated2.populate('equipment');
     },
-    updateProject: async (_: unknown, args: MutationArgs, _context: GraphQLContext) => {
+    updateProject: async (_: unknown, args: MutationArgs, context: GraphQLContext) => {
+      requireManagerRole(context);
       const { Project } = await import('../models');
       const updateData: Record<string, unknown> = { ...args.input };
       if (updateData.clientId) {
@@ -225,7 +257,8 @@ const resolvers = {
       const populated2 = await populated.populate('team');
       return await populated2.populate('equipment');
     },
-    deleteProject: async (_: unknown, args: { id: string }, _context: GraphQLContext) => {
+    deleteProject: async (_: unknown, args: { id: string }, context: GraphQLContext) => {
+      requireAdminRole(context);
       const { Project } = await import('../models');
       await Project.findByIdAndDelete(args.id);
       return true;

@@ -22,26 +22,31 @@ const resetAdminPassword = async () => {
       process.exit(1);
     }
 
-    // Şifreyi direkt olarak hash'le ve güncelle (pre-save hook'u bypass et)
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    // Şifreyi ADMIN_SEED_PASSWORD env var'dan al
+    const newPassword = process.env.ADMIN_SEED_PASSWORD;
+    if (!newPassword || newPassword.length < 8) {
+      logger.error('ADMIN_SEED_PASSWORD env var en az 8 karakter olmalıdır. Sıfırlama iptal edildi.');
+      await mongoose.connection.close();
+      process.exit(1);
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
     admin.password = hashedPassword;
     admin.isActive = true;
     admin.role = 'ADMIN';
-    
+
     // Pre-save hook'unu bypass etmek için direkt update
     await User.updateOne(
       { _id: admin._id },
-      { 
-        $set: { 
+      {
+        $set: {
           password: hashedPassword,
           isActive: true,
           role: 'ADMIN'
-        } 
+        }
       }
     );
 
     logger.info(`Admin şifresi sıfırlandı: ${admin.email}`);
-    logger.info('Yeni şifre: admin123');
 
     await mongoose.connection.close();
     process.exit(0);

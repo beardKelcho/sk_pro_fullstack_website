@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticate } from '../middleware/auth.middleware';
+import { twoFALimiter } from '../middleware/rateLimiters';
 import {
   setup2FA,
   verify2FA,
@@ -10,8 +11,8 @@ import {
 
 const router = express.Router();
 
-// Login sırasında 2FA doğrulama (authentication gerektirmez)
-router.post('/verify-login', verify2FALogin);
+// Login sırasında 2FA doğrulama (authentication gerektirmez, rate limit uygulanır)
+router.post('/verify-login', twoFALimiter, verify2FALogin);
 
 // Tüm diğer route'lar authentication gerektirir
 router.use(authenticate);

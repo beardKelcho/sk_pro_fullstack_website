@@ -70,8 +70,12 @@ export const authenticate = async (
         });
       }
     } catch (sessionError) {
-      // DB hatası: güvenli tarafta kal, loglayıp devam et
-      logger.error('Session doğrulama DB hatası:', sessionError);
+      // DB hatası: fail-closed — oturum doğrulanamıyorsa erişime izin verme
+      logger.error('Session doğrulama DB hatası (fail-closed):', sessionError);
+      return res.status(401).json({
+        success: false,
+        message: 'Oturum doğrulanamadı. Lütfen tekrar giriş yapın.',
+      });
     }
 
     // Session activity güncelle (background, hata patlatmaz)

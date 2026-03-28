@@ -326,6 +326,14 @@ const options: swaggerJsdoc.Options = {
 const specs = swaggerJsdoc(options);
 
 export const setupSwagger = (app: Express) => {
+  // Production'da Swagger UI kapalı — API keşfini engeller
+  if (process.env.NODE_ENV === 'production') {
+    app.get('/api-docs*', (_req, res) => {
+      res.status(404).json({ success: false, message: 'Not found' });
+    });
+    return;
+  }
+
   try {
     app.use(
       '/api-docs',

@@ -22,9 +22,15 @@ const seedAdmin = async () => {
       process.exit(0);
     }
 
-    // Admin kullanıcı oluştur
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    
+    // Admin kullanıcı oluştur — şifre ADMIN_SEED_PASSWORD env var'dan alınır
+    const seedPassword = process.env.ADMIN_SEED_PASSWORD;
+    if (!seedPassword || seedPassword.length < 8) {
+      logger.error('ADMIN_SEED_PASSWORD env var en az 8 karakter olmalıdır. Seed iptal edildi.');
+      await mongoose.connection.close();
+      process.exit(1);
+    }
+    const hashedPassword = await bcrypt.hash(seedPassword, 12);
+
     const admin = await User.create({
       name: 'Admin',
       email: 'admin@skproduction.com',
@@ -34,7 +40,6 @@ const seedAdmin = async () => {
     });
 
     logger.info(`Admin kullanıcı oluşturuldu: ${admin.email}`);
-    logger.info('Varsayılan şifre: admin123');
     logger.warn('⚠️  LÜTFEN İLK GİRİŞTEN SONRA ŞİFREYİ DEĞİŞTİRİN!');
 
     await mongoose.connection.close();

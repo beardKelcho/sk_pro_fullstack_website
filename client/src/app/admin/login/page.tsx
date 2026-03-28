@@ -151,36 +151,9 @@ export default function AdminLogin() {
           return;
         }
 
-        // Token'ı kaydet - "Beni hatırla" seçiliyse localStorage, değilse sessionStorage kullan
-        if (response.data.accessToken) {
-          // Token'ı temizle (boşluk, yeni satır, vs. kaldır)
-          const cleanToken = String(response.data.accessToken).trim();
-
-          if (!cleanToken || cleanToken.length < 10) {
-            logger.error('Invalid token format received');
-            setLoginError('Giriş başarısız: Geçersiz token formatı');
-            setLoading(false);
-            return;
-          }
-
-          if (formData.rememberMe) {
-            localStorage.setItem('accessToken', cleanToken);
-            if (process.env.NODE_ENV === 'development') {
-              logger.info('Token saved to localStorage');
-              logger.info('Token length:', cleanToken.length);
-              logger.info('Token (first 30 chars):', cleanToken.substring(0, 30) + '...');
-              logger.info('Token (last 10 chars):', '...' + cleanToken.substring(cleanToken.length - 10));
-            }
-          } else {
-            sessionStorage.setItem('accessToken', cleanToken);
-            if (process.env.NODE_ENV === 'development') {
-              logger.info('Token saved to sessionStorage');
-              logger.info('Token length:', cleanToken.length);
-              logger.info('Token (first 30 chars):', cleanToken.substring(0, 30) + '...');
-              logger.info('Token (last 10 chars):', '...' + cleanToken.substring(cleanToken.length - 10));
-            }
-          }
-        } else {
+        // Token sunucu tarafından httpOnly cookie olarak set ediliyor (XSS koruması için Web Storage kullanılmıyor)
+        // accessToken cookie'si axios withCredentials:true ile otomatik gönderilir
+        if (!response.data.accessToken && !response.data.success) {
           // Token yok - detaylı log
           if (process.env.NODE_ENV === 'development') {
             logger.error('=== TOKEN NOT FOUND IN RESPONSE ===');

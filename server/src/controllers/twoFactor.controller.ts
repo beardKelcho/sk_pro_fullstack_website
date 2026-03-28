@@ -11,7 +11,10 @@ import { Session } from '../models';
 import { createTokenHash, generateTokenPair, isMobileClient } from '../utils/authTokens';
 
 // Encryption/Decryption utilities for 2FA secrets
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
+if (process.env.NODE_ENV === 'production' && !process.env.ENCRYPTION_KEY) {
+  throw new Error('FATAL: ENCRYPTION_KEY environment variable is required in production');
+}
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'dev-only-encryption-key-32chars!!';
 const ALGORITHM = 'aes-256-cbc';
 
 function encryptSecret(secret: string): string {

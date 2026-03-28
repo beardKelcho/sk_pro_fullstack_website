@@ -30,13 +30,16 @@ export const createLocalStorage = (uploadDir: string): multer.StorageEngine => {
 
   return multer.diskStorage({
     destination: (req, file, cb) => {
-      const type = (req.body.type || req.query.type || 'general') as string;
+      // Path traversal koruması: sadece izin verilen klasörler kabul edilir
+      const ALLOWED_TYPES = new Set(['general', 'images', 'videos', 'documents', 'site-images', 'avatars']);
+      const rawType = (req.body.type || req.query.type || 'general') as string;
+      const type = ALLOWED_TYPES.has(rawType) ? rawType : 'general';
       const typeDir = path.join(uploadDir, type);
-      
+
       if (!fs.existsSync(typeDir)) {
         fs.mkdirSync(typeDir, { recursive: true });
       }
-      
+
       cb(null, typeDir);
     },
     filename: (req, file, cb) => {

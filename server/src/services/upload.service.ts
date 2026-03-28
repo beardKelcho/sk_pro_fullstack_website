@@ -81,11 +81,13 @@ export class UploadService {
         }
 
         // Local storage için dosya listesi
+        const ALLOWED_TYPES = new Set(['all', 'general', 'images', 'videos', 'documents', 'site-images', 'avatars']);
+        const safeType = ALLOWED_TYPES.has(fileType) ? fileType : 'general';
         const files: FileInfo[] = [];
-        const typeDir = fileType === 'all' ? uploadDir : path.join(uploadDir, fileType);
+        const typeDir = safeType === 'all' ? uploadDir : path.join(uploadDir, safeType);
 
         if (fs.existsSync(typeDir)) {
-            this.scanDirectory(typeDir, fileType === 'all' ? '' : fileType, files, searchTerm);
+            this.scanDirectory(typeDir, safeType === 'all' ? '' : safeType, files, searchTerm);
         }
 
         // Sıralama: en yeni önce
@@ -237,6 +239,10 @@ export class UploadService {
      * Dosya sil
      */
     async deleteFile(filename: string, type: string = 'general', userId?: string) {
+        // Path traversal koruması: type parametresi whitelist ile sınırlanıyor
+        const ALLOWED_TYPES = new Set(['general', 'images', 'videos', 'documents', 'site-images', 'avatars']);
+        const safeType = ALLOWED_TYPES.has(type) ? type : 'general';
+        type = safeType;
         logger.info(`🗑️  Delete request received:`, { filename, type, userId });
 
         if (isCloudStorage()) {
@@ -255,7 +261,12 @@ export class UploadService {
                 await deleteFromS3(key);
             }
         } else {
-            const filePath = path.join(uploadDir, type, filename);
+            const resolvedUploadDir = path.resolve(uploadDir);
+            const filePath = path.resolve(uploadDir, type, filename);
+            // Path traversal son hat koruması
+            if (!filePath.startsWith(resolvedUploadDir + path.sep)) {
+                throw new Error('Geçersiz dosya yolu');
+            }
 
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);

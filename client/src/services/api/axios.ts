@@ -39,15 +39,10 @@ const processQueue = (error: any, token: any = null) => {
   failedQueue = [];
 };
 
-// Request interceptor - Token ekleme
+// Request interceptor - Token cookie'den otomatik gönderilir (withCredentials:true)
+// Web Storage (localStorage/sessionStorage) kullanılmıyor — XSS koruması
 apiClient.interceptors.request.use(
   (config) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
     return config;
   },
   (error) => {
@@ -85,8 +80,6 @@ apiClient.interceptors.response.use(
 
         // Monitoring ve login sayfalarında isek kullanıcıyı tekrar login'e fırlatmıyoruz
         if (!isMonitoringPage && !isLoginPage) {
-          localStorage.removeItem('accessToken');
-          sessionStorage.removeItem('accessToken');
           window.location.href = '/admin/login';
           // Başka istek atmasını durdurmak için asılı promise
           return new Promise(() => { });

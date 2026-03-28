@@ -89,22 +89,26 @@ router.get('/health', async (req, res) => {
     }
   }
 
+  // Production'da hassas altyapı bilgileri gizlenir
+  const isProduction = process.env.NODE_ENV === 'production';
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    node: process.version,
-    commit:
-      process.env.RENDER_GIT_COMMIT ||
-      process.env.GITHUB_SHA ||
-      process.env.COMMIT_SHA ||
-      process.env.VERSION ||
-      undefined,
-    database: {
-      readyState: mongoose.connection.readyState,
-      status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    },
-    redis: redisStatus,
+    ...(isProduction ? {} : {
+      uptime: process.uptime(),
+      node: process.version,
+      commit:
+        process.env.RENDER_GIT_COMMIT ||
+        process.env.GITHUB_SHA ||
+        process.env.COMMIT_SHA ||
+        process.env.VERSION ||
+        undefined,
+      database: {
+        readyState: mongoose.connection.readyState,
+        status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      },
+      redis: redisStatus,
+    }),
   });
 });
 

@@ -1,36 +1,55 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
+import dns from 'dns';
+import { promisify } from 'util';
 import logger from '../utils/logger';
 import { Webhook, WebhookDelivery } from '../models';
 import { sendTestWebhook } from '../services/webhook.service';
 
+const dnsLookup = promisify(dns.lookup);
+
 // SSRF koruması: private/internal IP aralıklarına istek engelleniyor
-const isPrivateOrInternalHost = (hostname: string): boolean => {
+const isPrivateOrInternalIp = (ip: string): boolean => {
   // localhost ve loopback
-  if (hostname === 'localhost' || hostname === '::1') return true;
+  if (ip === 'localhost' || ip === '::1' || ip === '127.0.0.1') return true;
   // IPv4 private ranges
   const ipv4Private = [
-    /^127\./,           // 127.0.0.0/8 loopback
-    /^10\./,            // 10.0.0.0/8 private
-    /^192\.168\./,      // 192.168.0.0/16 private
-    /^172\.(1[6-9]|2\d|3[01])\./,  // 172.16.0.0/12 private
-    /^169\.254\./,      // 169.254.0.0/16 link-local
-    /^0\./,             // 0.0.0.0/8
+    /^127\./,                          // 127.0.0.0/8 loopback
+    /^10\./,                           // 10.0.0.0/8 private
+    /^192\.168\./,                     // 192.168.0.0/16 private
+    /^172\.(1[6-9]|2\d|3[01])\./,     // 172.16.0.0/12 private
+    /^169\.254\./,                     // 169.254.0.0/16 link-local
+    /^0\./,                            // 0.0.0.0/8
+    /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,  // 100.64.0.0/10 shared
   ];
-  if (ipv4Private.some(r => r.test(hostname))) return true;
+  if (ipv4Private.some(r => r.test(ip))) return true;
   // IPv6 private/link-local
-  if (/^(fc|fd)/i.test(hostname)) return true;  // fc00::/7 unique local
-  if (/^fe80:/i.test(hostname)) return true;      // fe80::/10 link-local
+  if (/^(fc|fd)/i.test(ip)) return true;  // fc00::/7 unique local
+  if (/^fe80:/i.test(ip)) return true;     // fe80::/10 link-local
+  if (ip === '::ffff:127.0.0.1') return true; // IPv4-mapped loopback
   return false;
 };
 
-const isValidUrl = (value: string) => {
+// DNS rebinding koruması: hostname'i resolve ederek gerçek IP'yi kontrol et
+const isValidUrl = async (value: string): Promise<boolean> => {
   try {
     const u = new URL(value);
     if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
-    // SSRF: internal/private host'lara izin verme
-    if (isPrivateOrInternalHost(u.hostname)) return false;
+    const hostname = u.hostname;
+    // Literal IP kontrolü
+    if (isPrivateOrInternalIp(hostname)) return false;
+    // DNS resolution — rebinding saldırılarına karşı gerçek IP'yi resolve et
+    try {
+      const result = await dnsLookup(hostname, { all: true });
+      const addresses = Array.isArray(result) ? result : [result];
+      for (const addr of addresses) {
+        if (isPrivateOrInternalIp(addr.address)) return false;
+      }
+    } catch {
+      // DNS resolution başarısız — güvenli tarafta kal, reddet
+      return false;
+    }
     return true;
   } catch {
     return false;
@@ -61,7 +80,7 @@ export const createWebhook = async (req: Request, res: Response) => {
     if (!name || typeof name !== 'string') {
       return res.status(400).json({ success: false, message: 'Webhook adı zorunludur' });
     }
-    if (!url || typeof url !== 'string' || !isValidUrl(url)) {
+    if (!url || typeof url !== 'string' || !(await isValidUrl(url))) {
       return res.status(400).json({ success: false, message: 'Geçerli bir URL zorunludur' });
     }
     if (!Array.isArray(events) || events.length === 0) {
@@ -99,7 +118,7 @@ export const updateWebhook = async (req: Request, res: Response) => {
 
     if (name !== undefined) update.name = name;
     if (url !== undefined) {
-      if (typeof url !== 'string' || !isValidUrl(url)) {
+      if (typeof url !== 'string' || !(await isValidUrl(url))) {
         return res.status(400).json({ success: false, message: 'Geçerli bir URL zorunludur' });
       }
       update.url = url;

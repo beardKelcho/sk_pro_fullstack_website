@@ -136,15 +136,26 @@ export default function AdminLogin() {
           return;
         }
 
-        // Token sunucu tarafından httpOnly cookie olarak set ediliyor
-        // localStorage/sessionStorage kullanılmıyor (XSS koruması)
-        if (process.env.NODE_ENV === 'development') {
-          logger.info('✅ Login başarılı, cookie set edildi, dashboard\'a yönlendiriliyor...');
+        // accessToken httpOnly cookie olarak set edildi (XSS koruması)
+        // Kullanıcı metadata'sı (token DEĞİL) UI için storage'a kaydediliyor
+        if (response.data.user) {
+          const userData = {
+            id: response.data.user.id || response.data.user._id,
+            _id: response.data.user.id || response.data.user._id,
+            name: response.data.user.name,
+            email: response.data.user.email,
+            role: response.data.user.role,
+            permissions: response.data.user.permissions || [],
+            isActive: response.data.user.isActive !== undefined ? response.data.user.isActive : true,
+          };
+          if (formData.rememberMe) {
+            localStorage.setItem('user', JSON.stringify(userData));
+          } else {
+            sessionStorage.setItem('user', JSON.stringify(userData));
+          }
         }
 
-        // Header'ı anında güncellemek için custom event dispatch et
         window.dispatchEvent(new CustomEvent('auth:login'));
-
         router.replace('/admin/dashboard');
         router.refresh();
       } else {
@@ -205,7 +216,23 @@ export default function AdminLogin() {
       });
 
       if (response.success) {
-        // Token sunucu tarafından httpOnly cookie olarak set ediliyor
+        // Kullanıcı metadata'sı UI için storage'a kaydediliyor
+        if (response.user) {
+          const userData = {
+            id: response.user.id || response.user._id,
+            _id: response.user.id || response.user._id,
+            name: response.user.name,
+            email: response.user.email,
+            role: response.user.role,
+            permissions: response.user.permissions || [],
+            isActive: response.user.isActive !== undefined ? response.user.isActive : true,
+          };
+          if (formData.rememberMe) {
+            localStorage.setItem('user', JSON.stringify(userData));
+          } else {
+            sessionStorage.setItem('user', JSON.stringify(userData));
+          }
+        }
         window.dispatchEvent(new CustomEvent('auth:login'));
         router.replace('/admin/dashboard');
         router.refresh();

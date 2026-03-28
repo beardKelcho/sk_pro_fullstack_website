@@ -80,6 +80,9 @@ apiClient.interceptors.response.use(
 
         // Monitoring ve login sayfalarında isek kullanıcıyı tekrar login'e fırlatmıyoruz
         if (!isMonitoringPage && !isLoginPage) {
+          // Kullanıcı metadata'sını temizle
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('user');
           window.location.href = '/admin/login';
           // Başka istek atmasını durdurmak için asılı promise
           return new Promise(() => { });

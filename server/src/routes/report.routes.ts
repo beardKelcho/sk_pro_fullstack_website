@@ -1,12 +1,12 @@
 import express from 'express';
 import { exportInventoryReport, exportProjectsReport } from '../controllers/report.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, requirePermission } from '../middleware/auth.middleware';
+import { Permission } from '../config/permissions';
 
 const router = express.Router();
 
-// Sadece oturumu açık kullanıcılar indirebilsin
-// Daha spesifik olmasını isterseniz requireRole(['Admin', 'Proje Yöneticisi']) eklenebilir.
-router.get('/inventory/export', authenticate, exportInventoryReport);
-router.get('/projects/export', authenticate, exportProjectsReport);
+// EXPORT_DATA izni olmayan roller (TEKNISYEN vb.) rapor indiremez
+router.get('/inventory/export', authenticate, requirePermission(Permission.EXPORT_DATA), exportInventoryReport);
+router.get('/projects/export', authenticate, requirePermission(Permission.EXPORT_DATA), exportProjectsReport);
 
 export default router;

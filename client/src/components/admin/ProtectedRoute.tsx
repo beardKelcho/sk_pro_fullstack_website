@@ -30,43 +30,19 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
     const checkAuth = async () => {
       try {
-        // Token kontrolü - hem localStorage hem sessionStorage'dan kontrol et
-        const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-        if (!token) {
-          if (isMounted) {
-            setIsAuthenticated(false);
-            router.replace('/admin'); // replace kullan, history'ye ekleme
-            setIsLoading(false);
-          }
-          return;
-        }
-
-        // Profil bilgilerini cache'den al veya API'den çek
+        // Auth durumu httpOnly cookie üzerinden API çağrısıyla belirlenir
+        // localStorage/sessionStorage kullanılmıyor (XSS koruması)
         let user = null;
-        const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+        const response = await authApi.getProfile();
 
-        if (storedUser) {
-          try {
-            user = JSON.parse(storedUser);
-          } catch (e) {
-            logger.warn('Stored user parse error', e);
-          }
+        if (!isMounted) return;
+
+        if (process.env.NODE_ENV === 'development') {
+          logger.info('ProtectedRoute - Profile fetched:', response.data);
         }
 
-        if (!user) {
-          const response = await authApi.getProfile();
-          
-          if (!isMounted) return; // Component unmount olduysa devam etme
-          
-          if (process.env.NODE_ENV === 'development') {
-            logger.info('ProtectedRoute - Profile fetched:', response.data);
-          }
-
-          if (response.data && response.data.success && response.data.user) {
-            user = response.data.user;
-            // Cache it
-            localStorage.setItem('user', JSON.stringify(user));
-          }
+        if (response.data && response.data.success && response.data.user) {
+          user = response.data.user;
         }
 
         if (!isMounted) return;
@@ -94,10 +70,6 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
           // Kullanıcı aktif değilse
           if (!user.isActive) {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('accessToken');
-            sessionStorage.removeItem('user');
             router.replace('/admin');
             setIsLoading(false);
             return;
@@ -107,29 +79,19 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
           setIsAuthenticated(true);
           setIsLoading(false); // CRITICAL: Loading'i false yap, yoksa sürekli loading'de kalır!
         } else {
-          // Token geçersiz, temizle ve login'e yönlendir
+          // Oturum geçersiz, login'e yönlendir
           if (isMounted) {
             setIsAuthenticated(false);
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            sessionStorage.removeItem('accessToken');
-            sessionStorage.removeItem('user');
             router.replace('/admin');
             setIsLoading(false);
           }
         }
       } catch (error: unknown) {
-        // Hata durumunda sessizce login'e yönlendir (sürekli log spam'ini önle)
+        // Hata durumunda sessizce login'e yönlendir
         if (process.env.NODE_ENV === 'development') {
           const axiosErr = error as { response?: { data?: unknown } };
           logger.error('Auth check failed:', { error, responseData: axiosErr.response?.data });
         }
-        // Hem localStorage hem sessionStorage'dan temizle
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
-        sessionStorage.removeItem('accessToken');
-        sessionStorage.removeItem('user');
-        // Sadece bir kez yönlendir, döngüyü önle - replace kullan
         if (isMounted) {
           setIsAuthenticated(false);
           if (normalizedPathname !== '/admin' && normalizedPathname !== '/admin/login') {

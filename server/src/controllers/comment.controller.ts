@@ -4,6 +4,13 @@ import logger from '../utils/logger';
 import { Comment } from '../models';
 import { notifyUsers } from '../utils/notificationService';
 import sanitizeHtml from 'sanitize-html';
+import { Permission, hasPermission, Role, hasRole } from '../config/permissions';
+
+const canViewUsers = (user: Express.Request['user']): boolean => {
+  if (!user) return false;
+  if (hasRole(user.role, Role.ADMIN, Role.FIRMA_SAHIBI)) return true;
+  return hasPermission(user.role as Role, Permission.USER_VIEW, user.permissions || []);
+};
 
 const normalizeResourceType = (raw: unknown) => {
   const v = String(raw || '').toUpperCase();
@@ -22,10 +29,12 @@ export const listComments = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'resourceType ve geçerli resourceId zorunludur' });
     }
 
+    // USER_VIEW izni olmayan roller için author'da sadece name döner (email/role gizlenir)
+    const authorFields = canViewUsers(req.user) ? 'name email role' : 'name';
     const comments = await Comment.find({ resourceType, resourceId })
       .sort({ createdAt: -1 })
       .limit(limit)
-      .populate('author', 'name email role')
+      .populate('author', authorFields)
       .lean();
 
     return res.status(200).json({ success: true, comments });

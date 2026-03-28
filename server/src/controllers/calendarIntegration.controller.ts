@@ -5,6 +5,7 @@
 
 import { Request, Response } from 'express';
 import { AppError } from '../types/common';
+import crypto from 'crypto';
 import axios from 'axios';
 import { CalendarIntegration } from '../models';
 import {
@@ -24,6 +25,32 @@ import {
 import { Project, Client } from '../models';
 import logger from '../utils/logger';
 
+// OAuth state CSRF koruması — state imzalama/doğrulama
+const OAUTH_STATE_SECRET = process.env.JWT_SECRET || 'dev-only-secret';
+
+const signOAuthState = (provider: string, userId: string): string => {
+  const ts = Date.now().toString();
+  const payload = `${provider}:${userId}:${ts}`;
+  const hmac = crypto.createHmac('sha256', OAUTH_STATE_SECRET).update(payload).digest('hex');
+  return Buffer.from(JSON.stringify({ provider, userId, ts, hmac })).toString('base64url');
+};
+
+const verifyOAuthState = (state: string): { provider: string; userId: string } | null => {
+  try {
+    const parsed = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
+    const { provider, userId, ts, hmac } = parsed;
+    // 10 dakikadan eski state'leri reddet
+    if (Date.now() - Number(ts) > 10 * 60 * 1000) return null;
+    const expected = crypto.createHmac('sha256', OAUTH_STATE_SECRET)
+      .update(`${provider}:${userId}:${ts}`)
+      .digest('hex');
+    if (!crypto.timingSafeEqual(Buffer.from(hmac, 'hex'), Buffer.from(expected, 'hex'))) return null;
+    return { provider, userId };
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Google Calendar OAuth2 callback URL'i oluştur
  */
@@ -42,7 +69,8 @@ export const getGoogleCalendarAuthUrl = async (req: Request, res: Response) => {
 
     const user = req.user;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const state = `google:${(user as any).id || (user as any)._id}`; // State ile user ID'yi gönder
+    const userId = String((user as any).id || (user as any)._id);
+    const state = signOAuthState('google', userId); // HMAC imzalı state — CSRF koruması
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
       client_id: clientId,
@@ -75,11 +103,6 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
   try {
     const { code, state } = req.query;
 
-    // State'den user ID'yi al (güvenlik için state kullanılabilir)
-    // Şimdilik session veya token'dan alacağız
-    // Production'da state ile user ID'yi encode edip decode etmek daha güvenli olur
-    const userId = state ? (state as string).split(':')[1] : null;
-
     if (!code) {
       return res.status(400).json({
         success: false,
@@ -87,12 +110,16 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
       });
     }
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Kullanıcı bilgisi bulunamadı',
-      });
+    if (!state) {
+      return res.status(400).json({ success: false, message: 'OAuth state eksik' });
     }
+
+    // CSRF koruması: state imzasını doğrula
+    const verified = verifyOAuthState(state as string);
+    if (!verified || verified.provider !== 'google') {
+      return res.status(403).json({ success: false, message: 'Geçersiz veya süresi dolmuş OAuth state' });
+    }
+    const userId = verified.userId;
 
     const { User } = await import('../models');
     const user = await User.findById(userId);
@@ -181,7 +208,8 @@ export const getOutlookCalendarAuthUrl = async (req: Request, res: Response) => 
 
     const user = req.user;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const state = `outlook:${(user as any).id || (user as any)._id}`; // State ile user ID'yi gönder
+    const userId = String((user as any).id || (user as any)._id);
+    const state = signOAuthState('outlook', userId); // HMAC imzalı state — CSRF koruması
 
     const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?${new URLSearchParams({
       client_id: clientId,
@@ -213,22 +241,20 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
   try {
     const { code, state } = req.query;
 
-    // State'den user ID'yi al
-    const userId = state ? (state as string).split(':')[1] : null;
-
     if (!code) {
-      return res.status(400).json({
-        success: false,
-        message: 'Authorization code bulunamadı',
-      });
+      return res.status(400).json({ success: false, message: 'Authorization code bulunamadı' });
     }
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Kullanıcı bilgisi bulunamadı',
-      });
+    if (!state) {
+      return res.status(400).json({ success: false, message: 'OAuth state eksik' });
     }
+
+    // CSRF koruması: state imzasını doğrula
+    const verified = verifyOAuthState(state as string);
+    if (!verified || verified.provider !== 'outlook') {
+      return res.status(403).json({ success: false, message: 'Geçersiz veya süresi dolmuş OAuth state' });
+    }
+    const userId = verified.userId;
 
     const { User } = await import('../models');
     const user = await User.findById(userId);

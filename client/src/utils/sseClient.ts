@@ -5,7 +5,7 @@ type SseEvent = {
 
 type ConnectSseOptions = {
   url: string;
-  token: string;
+  token?: string; // opsiyonel — httpOnly cookie kullanılıyorsa gerekli değil
   onEvent: (evt: SseEvent) => void;
   onError?: (err: any) => void;
 };
@@ -16,12 +16,13 @@ export const connectSse = ({ url, token, onEvent, onError }: ConnectSseOptions) 
 
   const start = async () => {
     try {
+      const headers: Record<string, string> = { Accept: 'text/event-stream' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch(url, {
         method: 'GET',
-        headers: {
-          Accept: 'text/event-stream',
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
+        credentials: 'include', // httpOnly cookie gönder
         signal: controller.signal,
       });
 

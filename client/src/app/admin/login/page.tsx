@@ -25,36 +25,21 @@ export default function AdminLogin() {
   const [twoFactorBackupCode, setTwoFactorBackupCode] = useState('');
   const verify2FAMutation = useVerify2FALogin();
 
-  // Sayfa yüklendiğinde mevcut token'ı kontrol et - geçerliyse dashboard'a yönlendir
+  // Sayfa yüklendiğinde mevcut oturumu cookie üzerinden kontrol et
   useEffect(() => {
     const checkExistingAuth = async () => {
-      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-
-      if (token) {
-        try {
-          // Token geçerli mi kontrol et
-          const response = await authApi.getProfile();
-          if (response.data && response.data.success && response.data.user) {
-            // Token geçerli, dashboard'a yönlendir
-            if (process.env.NODE_ENV === 'development') {
-              logger.info('Valid token found, redirecting to dashboard...');
-            }
-            router.replace('/admin/dashboard');
-            router.refresh();
-            return;
-          }
-        } catch (error) {
-          // Token geçersiz, temizle
+      try {
+        // Cookie tabanlı auth — localStorage kullanılmıyor (XSS koruması)
+        const response = await authApi.getProfile();
+        if (response.data && response.data.success && response.data.user) {
           if (process.env.NODE_ENV === 'development') {
-            logger.info('Invalid token found, clearing...');
+            logger.info('Active session found, redirecting to dashboard...');
           }
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('accessToken');
-          sessionStorage.removeItem('user');
-          // Header'ı anında güncellemek için custom event dispatch et
-          window.dispatchEvent(new CustomEvent('auth:logout'));
+          router.replace('/admin/dashboard');
+          router.refresh();
         }
+      } catch {
+        // Oturum yok veya geçersiz — login sayfasında kal
       }
     };
 

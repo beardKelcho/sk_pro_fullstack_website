@@ -2,6 +2,13 @@ import { Request, Response } from 'express';
 import { Equipment, Project, Task, Client, User, Maintenance } from '../models';
 import logger from '../utils/logger';
 import { addToSearchHistory } from './savedSearch.controller';
+import { Permission, hasPermission, Role, hasRole } from '../config/permissions';
+
+const userHasPermission = (user: Express.Request['user'], permission: Permission): boolean => {
+  if (!user) return false;
+  if (hasRole(user.role, Role.ADMIN, Role.FIRMA_SAHIBI)) return true;
+  return hasPermission(user.role as Role, permission, user.permissions || []);
+};
 
 interface SearchResult {
   type: 'equipment' | 'project' | 'task' | 'client' | 'user' | 'maintenance';
@@ -97,17 +104,19 @@ export const globalSearch = async (req: Request, res: Response) => {
         .limit(searchLimit)
         .lean(),
 
-      // Kullanıcı araması
-      User.find({
-        $or: [
-          { name: searchRegex },
-          { email: searchRegex },
-          { phone: searchRegex },
-        ],
-      })
-        .select('name email phone role department')
-        .limit(searchLimit)
-        .lean(),
+      // Kullanıcı araması — sadece USER_VIEW yetkisi olanlara açık
+      userHasPermission(req.user, Permission.USER_VIEW)
+        ? User.find({
+            $or: [
+              { name: searchRegex },
+              { email: searchRegex },
+              { phone: searchRegex },
+            ],
+          })
+            .select('name email phone role department')
+            .limit(searchLimit)
+            .lean()
+        : Promise.resolve([]),
 
       // Bakım araması
       Maintenance.find({

@@ -5,22 +5,24 @@ import {
     getCaseById,
     processCaseQR,
 } from '../controllers/case.controller';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { authenticate, authorize, requirePermission } from '../middleware/auth.middleware';
+import { Permission } from '../config/permissions';
 
 const router = Router();
 
 // Bütün route'lar login olmayı gerektirir
 router.use(authenticate);
 
-router.post('/process-qr', processCaseQR);
+// QR tarama: sadece QR_SCAN yetkisi olan roller (stok düşme + envanter log işlemi)
+router.post('/process-qr', requirePermission(Permission.QR_SCAN), processCaseQR);
 
 router
     .route('/')
-    .post(authorize('admin', 'owner', 'manager'), createCase)
-    .get(getCases);
+    .post(authorize('ADMIN', 'FIRMA_SAHIBI', 'PROJE_YONETICISI'), createCase)
+    .get(requirePermission(Permission.QR_VIEW), getCases);
 
 router
     .route('/:id')
-    .get(getCaseById);
+    .get(requirePermission(Permission.QR_VIEW), getCaseById);
 
 export default router;

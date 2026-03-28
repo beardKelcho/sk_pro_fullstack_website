@@ -56,13 +56,9 @@ export default function AdminLayout({
     // Hook her render'da çalışmalı; login sayfalarında SSE'yi sadece no-op yapıyoruz
     if (normalizedPathname === '/admin/login' || normalizedPathname === '/admin') return;
 
-    const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-    if (!token) return;
-
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
     const disconnect = connectSse({
       url: `${apiUrl}/realtime/stream`,
-      token,
       onEvent: (evt) => {
         if (evt.event === 'notification:new' && evt.data) {
           // Notification list/unreadCount refresh

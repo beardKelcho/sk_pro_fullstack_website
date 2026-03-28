@@ -136,161 +136,15 @@ export default function AdminLogin() {
           return;
         }
 
-        // Token sunucu tarafından httpOnly cookie olarak set ediliyor (XSS koruması için Web Storage kullanılmıyor)
-        // accessToken cookie'si axios withCredentials:true ile otomatik gönderilir
-        if (!response.data.accessToken && !response.data.success) {
-          // Token yok - detaylı log
-          if (process.env.NODE_ENV === 'development') {
-            logger.error('=== TOKEN NOT FOUND IN RESPONSE ===');
-            logger.error('Response data keys:', Object.keys(response.data || {}));
-            logger.error('Response data:', response.data);
-            logger.error('====================================');
-          }
-          logger.error('Login response does not contain accessToken', {
-            responseKeys: Object.keys(response.data || {}),
-            hasSuccess: !!response.data?.success,
-            hasUser: !!response.data?.user,
-            requires2FA: !!response.data?.requires2FA
-          });
-          setLoginError('Giriş başarısız: Token alınamadı. Lütfen tekrar deneyin.');
-          setLoading(false);
-          return;
-        }
-
-        // Kullanıcı bilgilerini kaydet
-        // Backend'den gelen user formatı: { id, name, email, role }
-        logger.info('🔍 Login Response:', {
-          hasUser: !!response.data.user,
-          user: response.data.user,
-          fullResponse: response.data
-        });
-
-        if (response.data.user) {
-          const userData = {
-            id: response.data.user.id || response.data.user._id,
-            _id: response.data.user.id || response.data.user._id,
-            name: response.data.user.name,
-            email: response.data.user.email,
-            role: response.data.user.role,
-            permissions: response.data.user.permissions || [],
-            isActive: response.data.user.isActive !== undefined ? response.data.user.isActive : true,
-          };
-
-          if (formData.rememberMe) {
-            localStorage.setItem('user', JSON.stringify(userData));
-            logger.info('✅ User saved to localStorage:', userData);
-            logger.info('✅ localStorage.getItem("user"):', localStorage.getItem('user'));
-          } else {
-            sessionStorage.setItem('user', JSON.stringify(userData));
-            logger.info('✅ User saved to sessionStorage:', userData);
-            logger.info('✅ sessionStorage.getItem("user"):', sessionStorage.getItem('user'));
-          }
-
-          // Header'ı anında güncellemek için custom event dispatch et
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('auth:login'));
-            logger.info('✅ auth:login event dispatched');
-          }, 100);
-        } else {
-          logger.error('❌ User data not found in response!', {
-            responseKeys: Object.keys(response.data || {}),
-            responseData: response.data
-          });
-
-          // User yoksa, token varsa getProfile ile user bilgisini al
-          if (response.data.accessToken) {
-            logger.info('⚠️ User not in response, trying to get profile...');
-            try {
-              const profileResponse = await authApi.getProfile();
-              if (profileResponse.data && profileResponse.data.success && profileResponse.data.user) {
-                const userData = {
-                  id: profileResponse.data.user.id || profileResponse.data.user._id,
-                  _id: profileResponse.data.user.id || profileResponse.data.user._id,
-                  name: profileResponse.data.user.name,
-                  email: profileResponse.data.user.email,
-                  role: profileResponse.data.user.role,
-                  permissions: profileResponse.data.user.permissions || [],
-                  isActive: profileResponse.data.user.isActive !== undefined ? profileResponse.data.user.isActive : true,
-                };
-
-                if (formData.rememberMe) {
-                  localStorage.setItem('user', JSON.stringify(userData));
-                  logger.info('✅ User saved to localStorage (from profile):', userData);
-                } else {
-                  sessionStorage.setItem('user', JSON.stringify(userData));
-                  logger.info('✅ User saved to sessionStorage (from profile):', userData);
-                }
-
-                setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('auth:login'));
-                  logger.info('✅ auth:login event dispatched (from profile)');
-                }, 100);
-              }
-            } catch (profileError) {
-              logger.error('❌ Failed to get profile:', profileError);
-            }
-          }
-        }
-
-        // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        // Token'ın gerçekten kaydedildiğini doğrula - hem localStorage hem sessionStorage'dan kontrol et
-        const savedTokenLocal = localStorage.getItem('accessToken');
-        const savedTokenSession = sessionStorage.getItem('accessToken');
-        const savedToken = formData.rememberMe ? savedTokenLocal : savedTokenSession;
-
+        // Token sunucu tarafından httpOnly cookie olarak set ediliyor
+        // localStorage/sessionStorage kullanılmıyor (XSS koruması)
         if (process.env.NODE_ENV === 'development') {
-          logger.info('Token verification after save:');
-          logger.info('Remember me:', formData.rememberMe);
-          logger.info('Token in localStorage', { exists: !!savedTokenLocal, info: savedTokenLocal ? savedTokenLocal.length + ' chars' : 'none' });
-          logger.info('Token in sessionStorage', { exists: !!savedTokenSession, info: savedTokenSession ? savedTokenSession.length + ' chars' : 'none' });
-          logger.info('Using token from:', formData.rememberMe ? 'localStorage' : 'sessionStorage');
+          logger.info('✅ Login başarılı, cookie set edildi, dashboard\'a yönlendiriliyor...');
         }
 
-        if (!savedToken) {
-          logger.error('Token was not saved properly', {
-            rememberMe: formData.rememberMe,
-            hasLocalStorage: !!savedTokenLocal,
-            hasSessionStorage: !!savedTokenSession
-          });
-          setLoginError('Token kaydedilemedi. Lütfen tekrar deneyin.');
-          setLoading(false);
-          return;
-        }
+        // Header'ı anında güncellemek için custom event dispatch et
+        window.dispatchEvent(new CustomEvent('auth:login'));
 
-        // Token formatını kontrol et
-        const tokenParts = savedToken.split('.');
-        if (tokenParts.length !== 3) {
-          logger.error('Invalid token format after save', {
-            parts: tokenParts.length,
-            tokenLength: savedToken.length,
-            firstChars: savedToken.substring(0, 20)
-          });
-          setLoginError('Geçersiz token formatı. Lütfen tekrar deneyin.');
-          setLoading(false);
-          return;
-        }
-
-        if (process.env.NODE_ENV === 'development') {
-          logger.info('Token saved successfully and format verified');
-          logger.info('Token (first 30 chars):', savedToken.substring(0, 30) + '...');
-          logger.info('Token (last 10 chars):', '...' + savedToken.substring(savedToken.length - 10));
-          logger.info('Token length:', savedToken.length);
-          logger.info('Token parts:', tokenParts.length);
-        }
-
-        // Token kaydedildi, direkt dashboard'a yönlendir
-        // getProfile çağrısı yapmıyoruz çünkü bu gereksiz ve hata kaynağı olabilir
-        // Token zaten backend'den geldi ve geçerli, bu yeterli
-        if (process.env.NODE_ENV === 'development') {
-          logger.info('✅ Login başarılı, token kaydedildi, dashboard\'a yönlendiriliyor...');
-        }
-
-        // Kısa bir delay ile redirect yap (storage'a yazılmasını garantile)
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Dashboard'a yönlendir - full page reload ile
         router.replace('/admin/dashboard');
         router.refresh();
       } else {
@@ -350,50 +204,9 @@ export default function AdminLogin() {
         backupCode: twoFactorBackupCode || undefined,
       });
 
-      if (response.success && response.accessToken) {
-        // Token'ı kaydet
-        if (formData.rememberMe) {
-          localStorage.setItem('accessToken', response.accessToken);
-          if (response.user) {
-            const userData = {
-              id: response.user.id || response.user._id,
-              _id: response.user.id || response.user._id,
-              name: response.user.name,
-              email: response.user.email,
-              role: response.user.role,
-              permissions: response.user.permissions || [],
-              isActive: response.user.isActive !== undefined ? response.user.isActive : true,
-            };
-            localStorage.setItem('user', JSON.stringify(userData));
-            logger.info('✅ User saved to localStorage (2FA):', userData);
-          }
-        } else {
-          sessionStorage.setItem('accessToken', response.accessToken);
-          if (response.user) {
-            const userData = {
-              id: response.user.id || response.user._id,
-              _id: response.user.id || response.user._id,
-              name: response.user.name,
-              email: response.user.email,
-              role: response.user.role,
-              permissions: response.user.permissions || [],
-              isActive: response.user.isActive !== undefined ? response.user.isActive : true,
-            };
-            sessionStorage.setItem('user', JSON.stringify(userData));
-            logger.info('✅ User saved to sessionStorage (2FA):', userData);
-          }
-        }
-        // Header'ı anında güncellemek için custom event dispatch et
-        if (response.user) {
-          // Kısa bir delay ile event dispatch et (storage'a yazılmasını garantile)
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('auth:login'));
-          }, 100);
-        }
-
-        // Token'ın storage'a yazılmasını garanti etmek için kısa bir delay
-        // Sonra dashboard'a yönlendir - window.location.href kullan (full page reload)
-        await new Promise(resolve => setTimeout(resolve, 100));
+      if (response.success) {
+        // Token sunucu tarafından httpOnly cookie olarak set ediliyor
+        window.dispatchEvent(new CustomEvent('auth:login'));
         router.replace('/admin/dashboard');
         router.refresh();
       } else {

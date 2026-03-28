@@ -369,7 +369,7 @@ git push origin develop
 
 #### Admin Güvenliği
 
-- [ ] **Admin şifresi değiştirildi** (varsayılan: `admin123`)
+- [ ] **Admin şifresi güçlü bir değerle oluşturuldu** (ADMIN_SEED_PASSWORD env var ile)
 - [ ] **2FA aktif edildi** (opsiyonel ama önerilir)
 
 ### Monitoring

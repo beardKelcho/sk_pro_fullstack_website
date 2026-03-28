@@ -8,10 +8,15 @@ import logger from '../utils/logger';
 // .env dosyasını yükle
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const TEST_USER_EMAIL = 'test@skpro.com.tr';
-const TEST_USER_PASSWORD = 'Test123!';
+const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@skpro.com.tr';
+const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD;
 const TEST_USER_NAME = 'Test User';
 const TEST_USER_ROLE = 'ADMIN';
+
+if (!TEST_USER_PASSWORD || TEST_USER_PASSWORD.length < 8) {
+  logger.error('TEST_USER_PASSWORD env var en az 8 karakter olmalıdır. Script iptal edildi.');
+  process.exit(1);
+}
 
 const createTestUser = async () => {
   try {

@@ -112,7 +112,7 @@ CORS_ORIGIN=https://yourdomain.com
 - [ ] JWT secrets güçlü ve rastgele (64 bytes)
 - [ ] MongoDB network access sadece backend IP'si
 - [ ] CORS ayarları sadece frontend domain'i
-- [ ] Admin şifresi değiştirildi (varsayılan: `admin123`)
+- [ ] Admin şifresi güçlü bir değerle oluşturuldu (ADMIN_SEED_PASSWORD env var ile)
 - [ ] 2FA aktif edildi (opsiyonel ama önerilir)
 
 ### Post-Deployment

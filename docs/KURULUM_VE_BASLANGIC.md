@@ -94,8 +94,8 @@ cp .env.example .env
 PORT=5001
 NODE_ENV=development
 MONGO_URI=<mongodb-atlas-connection-string>
-JWT_SECRET=super-secret-jwt-key-change-this-in-production
-JWT_REFRESH_SECRET=super-secret-refresh-key-change-this-in-production
+JWT_SECRET=<generate: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
+JWT_REFRESH_SECRET=<generate: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))">
 CLIENT_URL=<your-frontend-url>
 CORS_ORIGIN=<your-frontend-url>
 ```
@@ -133,9 +133,13 @@ npm run seed
 
 Bu komut varsayılan admin kullanıcısını oluşturur:
 - **Email**: `admin@skproduction.com`
-- **Şifre**: `admin123`
+- **Şifre**: `ADMIN_SEED_PASSWORD` env variable ile belirlenir
 
-**⚠️ Önemli:** Production'da mutlaka şifreyi değiştirin!
+```bash
+ADMIN_SEED_PASSWORD="GüçlüBirŞifre123!" npm run seed
+```
+
+**⚠️ Önemli:** Güçlü, tahmin edilemez bir şifre kullanın!
 
 ### 6. Projeyi Başlat
 
@@ -282,9 +286,9 @@ npm run seed
 Bu komut:
 - Varsayılan admin kullanıcısını oluşturur
 - Email: `admin@skproduction.com`
-- Şifre: `admin123`
+- Şifre: `ADMIN_SEED_PASSWORD` env variable ile belirlenir (zorunlu, min 8 karakter)
 
-**⚠️ Önemli:** Production'da mutlaka şifreyi değiştirin!
+**⚠️ Önemli:** Güçlü, tahmin edilemez bir şifre kullanın!
 
 ---
 

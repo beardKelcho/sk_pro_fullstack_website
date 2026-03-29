@@ -8,7 +8,7 @@ import { User } from '../models';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
 import { Session } from '../models';
-import { createTokenHash, generateTokenPair, isMobileClient } from '../utils/authTokens';
+import { createTokenHash, decode2FAChallenge, generateTokenPair, isMobileClient } from '../utils/authTokens';
 
 // Encryption/Decryption utilities for 2FA secrets
 if (process.env.NODE_ENV === 'production' && !process.env.ENCRYPTION_KEY) {
@@ -324,37 +324,51 @@ export const get2FAStatus = async (req: Request, res: Response) => {
 };
 
 /**
- * Login sırasında 2FA doğrulama
+ * Login sırasında 2FA doğrulama.
+ * Artık email değil; login sonrası alınan challengeToken ile çalışır.
+ * Bu token: imzalı JWT (5 dk), DB'de jti kayıtlı → replay korumalı, tek kullanımlık.
  */
 export const verify2FALogin = async (req: Request, res: Response) => {
   try {
-    const { email, token, backupCode } = req.body;
+    const { challengeToken, token, backupCode } = req.body;
 
-    if (!email || (!token && !backupCode)) {
+    if (!challengeToken || (!token && !backupCode)) {
       return res.status(400).json({
         success: false,
-        message: 'Email ve doğrulama kodu gereklidir',
+        message: 'challengeToken ve doğrulama kodu gereklidir',
       });
     }
 
-    const identifierRaw = typeof email === 'string' ? email.trim() : '';
-    const identifierIsEmail = identifierRaw.includes('@');
-    const identifierEmail = identifierIsEmail ? identifierRaw.toLowerCase() : '';
-    const identifierPhone = !identifierIsEmail ? identifierRaw.replace(/[^\d+]/g, '') : '';
+    // Challenge token'ı doğrula
+    const challenge = decode2FAChallenge(challengeToken);
+    if (!challenge) {
+      return res.status(401).json({
+        success: false,
+        message: 'Geçersiz veya süresi dolmuş 2FA challenge',
+      });
+    }
 
-    const user = await User.findOne({
-      $or: [
-        ...(identifierEmail ? [{ email: identifierEmail }] : []),
-        ...(identifierPhone ? [{ phone: identifierPhone }, { phone: identifierRaw }] : []),
-      ],
-    }).select('+twoFactorSecretHash +backupCodes');
+    // DB'den jti ve expiry kontrolü (replay protection)
+    const user = await User.findById(challenge.userId)
+      .select('+twoFactorSecretHash +backupCodes +pendingTwoFAChallenge');
 
     if (!user || !user.is2FAEnabled) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
         message: '2FA aktif değil veya kullanıcı bulunamadı',
       });
     }
+
+    const pending = user.pendingTwoFAChallenge;
+    if (!pending || pending.jti !== challenge.jti || pending.expiresAt < new Date()) {
+      return res.status(401).json({
+        success: false,
+        message: 'Challenge geçersiz veya zaten kullanılmış',
+      });
+    }
+
+    // Challenge'ı hemen geçersiz kıl (tek kullanımlık)
+    await User.updateOne({ _id: user._id }, { $unset: { pendingTwoFAChallenge: 1 } });
 
     let isValid = false;
 
@@ -416,14 +430,10 @@ export const verify2FALogin = async (req: Request, res: Response) => {
       logger.warn('Session create failed (non-blocking):', sessionError);
     }
 
-    // Web için cookie refreshToken (auth.controller.ts ile tutarlı: cross-domain Electron desteği)
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    // Web için HttpOnly cookie — token body'de sadece mobile'a dönüyor (auth.controller.ts ile tutarlı)
+    const cookieOpts = { httpOnly: true, secure: true, sameSite: 'none' as const, path: '/' };
+    res.cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('accessToken', accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 });
 
     const mobile = isMobileClient(req);
     res.status(200).json({

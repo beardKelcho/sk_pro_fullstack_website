@@ -28,15 +28,23 @@ export const handleGoogleCalendarWebhook = async (req: Request, res: Response) =
             return res.status(400).send('Missing channel ID');
         }
 
-        // Find the user integration by channelId
+        const channelToken = req.headers['x-goog-channel-token'] as string | undefined;
+
+        // channelToken ile doğrula — bilgi sızdırmamak için hatalarda da 200 dön
         const integration = await CalendarIntegration.findOne({
             provider: 'google',
             channelId
-        });
+        }).select('+channelToken');
 
         if (!integration) {
-            logger.warn(`Received webhook for unknown channel: ${channelId}`);
-            return res.status(404).send('Integration not found');
+            logger.warn(`Webhook: unknown channelId ${channelId}`);
+            return res.status(200).send('OK');
+        }
+
+        // Token kayıtlıysa istek token'ı ile eşleşmeli
+        if (integration.channelToken && integration.channelToken !== channelToken) {
+            logger.warn(`Webhook: invalid channelToken for channel ${channelId}`);
+            return res.status(200).send('OK');
         }
 
         // Acknowledge the webhook promptly per Google's requirements

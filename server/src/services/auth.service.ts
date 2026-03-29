@@ -2,13 +2,15 @@ import jwt from 'jsonwebtoken';
 import { Session, User } from '../models';
 import { IUser } from '../models/User';
 import { AppError } from '../types/common';
-import { createTokenHash, generateTokenPair, TokenPair, JWT_REFRESH_SECRET } from '../utils/authTokens';
+import { createTokenHash, generateTokenPair, generate2FAChallenge, TokenPair, JWT_REFRESH_SECRET } from '../utils/authTokens';
 import logger from '../utils/logger';
 
 export interface LoginResult {
     user: IUser;
     tokens?: TokenPair;
     requires2FA?: boolean;
+    /** Sadece requires2FA=true durumunda: 5 dk geçerli, tek kullanımlık challenge token */
+    twoFAChallengeToken?: string;
 }
 
 export interface RefreshResult {
@@ -47,9 +49,14 @@ class AuthService {
             throw new AppError('Geçersiz email ya da şifre', 401);
         }
 
-        // 2FA Check
+        // 2FA Check — challenge token üret, DB'e jti kaydet
         if (user.is2FAEnabled) {
-            return { user, requires2FA: true };
+            const { token: twoFAChallengeToken, jti } = generate2FAChallenge(user._id.toString());
+            await User.updateOne(
+                { _id: user._id },
+                { pendingTwoFAChallenge: { jti, expiresAt: new Date(Date.now() + 5 * 60 * 1000) } }
+            );
+            return { user, requires2FA: true, twoFAChallengeToken };
         }
 
         // Generate Tokens

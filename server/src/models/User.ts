@@ -15,6 +15,8 @@ export interface IUser extends Document {
   twoFactorSecret?: string; // TOTP secret (sadece setup sırasında gösterilir, sonra hash'lenir)
   twoFactorSecretHash?: string; // Hash'lenmiş secret
   backupCodes?: string[]; // Backup kodlar (hash'lenmiş)
+  /** Login sonrası 2FA doğrulaması için tek kullanımlık challenge (5 dk) */
+  pendingTwoFAChallenge?: { jti: string; expiresAt: Date };
   comparePassword(candidatePassword: string): Promise<boolean>;
   googleTokens?: {
     accessToken?: string;
@@ -88,6 +90,10 @@ const UserSchema: Schema = new Schema(
       type: String,
       select: false,
     }],
+    pendingTwoFAChallenge: {
+      jti: { type: String, select: false },
+      expiresAt: { type: Date, select: false },
+    },
     /** OAuth token'ları — select: false ile varsayılan sorgularda gizlenir */
     googleTokens: {
       accessToken: { type: String, select: false },

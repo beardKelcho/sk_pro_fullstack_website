@@ -30,13 +30,13 @@ export class AuthController {
 
       logger.info('LOGIN BASARILI, Token üretildi');
 
-      // 2FA Handling
+      // 2FA Handling — challenge token ile yanıt ver (email expose edilmez)
       if (result.requires2FA) {
         return res.status(200).json({
           success: true,
           requires2FA: true,
           message: '2FA doğrulaması gerekiyor',
-          email: result.user.email,
+          challengeToken: result.twoFAChallengeToken,
         });
       }
 

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import logger from '../utils/logger';
 import { Webhook, WebhookDelivery } from '../models';
 import type { WebhookEventType } from '../models/Webhook';
+import { isValidWebhookUrl } from '../utils/ssrfGuard';
 
 type EmitOptions = {
   source?: string;
@@ -73,6 +74,16 @@ export const deliverPendingWebhooks = async (limit = 50) => {
       continue;
     }
 
+    // DNS rebinding koruması: gönderim anında URL'yi yeniden doğrula
+    if (!(await isValidWebhookUrl(webhook.url))) {
+      delivery.status = 'FAILED';
+      delivery.lastError = 'SSRF protection: URL blocked at delivery time (DNS rebinding or private IP)';
+      delivery.lastAttemptAt = new Date();
+      await delivery.save();
+      logger.warn('Webhook delivery blocked by SSRF guard', { webhookId: webhook._id?.toString(), url: webhook.url });
+      continue;
+    }
+
     const attemptNo = delivery.attempts + 1;
     const timestamp = Date.now().toString();
     const body = JSON.stringify(delivery.payload);
@@ -141,6 +152,11 @@ export const sendTestWebhook = async (webhookId: string) => {
   const wh = (await Webhook.findById(webhookId)) as unknown as { secret?: string; timeoutMs?: number; url: string } | null;
   if (!wh) {
     return { ok: false, message: 'Webhook bulunamadı' as const };
+  }
+
+  // Gönderim anında SSRF kontrolü
+  if (!(await isValidWebhookUrl(wh.url))) {
+    return { ok: false, message: 'SSRF protection: URL blocked' as const };
   }
 
   const testPayload = {

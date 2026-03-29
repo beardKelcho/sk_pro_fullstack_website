@@ -54,7 +54,7 @@
     "dev:clean": "npm run clean:next && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint .",
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",

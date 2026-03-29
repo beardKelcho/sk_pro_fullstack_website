@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import { Comment } from '../models';
+import Project from '../models/Project';
+import Task from '../models/Task';
 import { notifyUsers } from '../utils/notificationService';
 import sanitizeHtml from 'sanitize-html';
 import { Permission, hasPermission, Role, hasRole } from '../config/permissions';
@@ -19,6 +21,38 @@ const normalizeResourceType = (raw: unknown) => {
   return null;
 };
 
+/**
+ * Kullanıcının belirtilen kaynağa erişim hakkı var mı?
+ * ADMIN ve FIRMA_SAHIBI her zaman erişebilir.
+ * Diğer roller: PROJECT için team üyesi olmalı, TASK için task'ın projesinde team üyesi olmalı.
+ */
+const canAccessResource = async (
+  user: Express.Request['user'],
+  resourceType: 'PROJECT' | 'TASK',
+  resourceId: string
+): Promise<boolean> => {
+  if (!user) return false;
+  if (hasRole(user.role, Role.ADMIN, Role.FIRMA_SAHIBI)) return true;
+
+  const userId = String((user as { _id?: unknown; id?: unknown })._id || (user as { id?: unknown }).id || '');
+
+  if (resourceType === 'PROJECT') {
+    const project = await Project.findById(resourceId).select('team').lean();
+    if (!project) return false;
+    return project.team.some((m: unknown) => String(m) === userId);
+  }
+
+  if (resourceType === 'TASK') {
+    const task = await Task.findById(resourceId).select('project').lean();
+    if (!task || !task.project) return false;
+    const project = await Project.findById(task.project).select('team').lean();
+    if (!project) return false;
+    return project.team.some((m: unknown) => String(m) === userId);
+  }
+
+  return false;
+};
+
 export const listComments = async (req: Request, res: Response) => {
   try {
     const resourceType = normalizeResourceType(req.query.resourceType);
@@ -27,6 +61,11 @@ export const listComments = async (req: Request, res: Response) => {
 
     if (!resourceType || !mongoose.Types.ObjectId.isValid(resourceId)) {
       return res.status(400).json({ success: false, message: 'resourceType ve geçerli resourceId zorunludur' });
+    }
+
+    // Kaynak erişim kontrolü
+    if (!(await canAccessResource(req.user, resourceType, resourceId))) {
+      return res.status(403).json({ success: false, message: 'Bu kaynağa erişim yetkiniz yok' });
     }
 
     // USER_VIEW izni olmayan roller için author'da sadece name döner (email/role gizlenir)
@@ -59,6 +98,12 @@ export const createComment = async (req: Request, res: Response) => {
     if (!resourceType || !mongoose.Types.ObjectId.isValid(resourceId)) {
       return res.status(400).json({ success: false, message: 'resourceType ve geçerli resourceId zorunludur' });
     }
+
+    // Kaynak erişim kontrolü
+    if (!(await canAccessResource(req.user, resourceType, resourceId))) {
+      return res.status(403).json({ success: false, message: 'Bu kaynağa yorum yazma yetkiniz yok' });
+    }
+
     if (!message || typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ success: false, message: 'message zorunludur' });
     }

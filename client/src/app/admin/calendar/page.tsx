@@ -792,12 +792,10 @@ export default function Calendar() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+      /** apiClient yerine native fetch — withCredentials cookie'yi otomatik gönderir */
       const response = await fetch('/api/calendar/import', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        credentials: 'include',
         body: formData,
       });
 

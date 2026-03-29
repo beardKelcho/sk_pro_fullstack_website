@@ -3,6 +3,7 @@ import { Equipment, Project, Task, User, Maintenance } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
+import { Permission, hasPermission } from '../config/permissions';
 
 // Toplu silme
 export const bulkDelete = async (req: Request, res: Response) => {
@@ -14,6 +15,24 @@ export const bulkDelete = async (req: Request, res: Response) => {
         success: false,
         message: 'Kaynak tipi ve ID listesi gereklidir',
       });
+    }
+
+    /** Resource bazlı yetki kontrolü — her kaynak tipi için ilgili DELETE permission gerekir */
+    const permissionMap: Record<string, string> = {
+      'equipment': Permission.EQUIPMENT_DELETE,
+      'project': Permission.PROJECT_DELETE,
+      'task': Permission.TASK_DELETE,
+      'user': Permission.USER_DELETE,
+      'maintenance': Permission.MAINTENANCE_DELETE,
+    };
+
+    const requiredPermission = permissionMap[resource.toLowerCase()];
+    if (!requiredPermission) {
+      return res.status(400).json({ success: false, message: 'Geçersiz kaynak tipi' });
+    }
+
+    if (!hasPermission(req.user!.role, requiredPermission as Permission, req.user!.permissions)) {
+      return res.status(403).json({ success: false, message: 'Bu işlem için yetkiniz yok' });
     }
 
     // Geçerli ID'leri filtrele
@@ -87,6 +106,24 @@ export const bulkUpdateStatus = async (req: Request, res: Response) => {
         success: false,
         message: 'Kaynak tipi, ID listesi ve yeni durum gereklidir',
       });
+    }
+
+    /** Resource bazlı yetki kontrolü — her kaynak tipi için ilgili UPDATE permission gerekir */
+    const permissionMap: Record<string, string> = {
+      'equipment': Permission.EQUIPMENT_UPDATE,
+      'project': Permission.PROJECT_UPDATE,
+      'task': Permission.TASK_UPDATE,
+      'user': Permission.USER_UPDATE,
+      'maintenance': Permission.MAINTENANCE_UPDATE,
+    };
+
+    const requiredPermission = permissionMap[resource.toLowerCase()];
+    if (!requiredPermission) {
+      return res.status(400).json({ success: false, message: 'Geçersiz kaynak tipi' });
+    }
+
+    if (!hasPermission(req.user!.role, requiredPermission as Permission, req.user!.permissions)) {
+      return res.status(403).json({ success: false, message: 'Bu işlem için yetkiniz yok' });
     }
 
     // Geçerli ID'leri filtrele

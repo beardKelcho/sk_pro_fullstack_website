@@ -21,10 +21,10 @@ const Header: React.FC = () => {
 
   // Kullanıcı giriş kontrolü
   useEffect(() => {
+    /** Oturum kontrolü — cookie-based auth kullanıldığı için sadece user metadata yeterli */
     const checkAuth = () => {
       const user = getStoredUser();
-      const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-      setIsAuthenticated(!!user && !!token);
+      setIsAuthenticated(!!user);
     };
 
     checkAuth();

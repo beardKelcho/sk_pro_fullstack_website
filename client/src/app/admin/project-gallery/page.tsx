@@ -82,12 +82,10 @@ export default function ProjectGalleryPage() {
         formData.append('files', file);
       });
 
-      // type'ı query param ile gönder (multipart field sırası yüzünden multer destination'da body type garanti değil)
+      /** Cookie-based auth — withCredentials ile token otomatik gönderilir, localStorage kullanılmaz */
       const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/upload/multiple?type=site-images`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken')}`,
-        },
+        credentials: 'include',
         body: formData,
       });
 

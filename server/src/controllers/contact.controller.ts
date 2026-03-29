@@ -6,7 +6,12 @@ import logger from '../utils/logger';
 // Send Contact Message
 export const sendMessage = async (req: Request, res: Response) => {
     try {
-        const { name, email, subject, message } = req.body;
+        const { name, email, subject, message, website } = req.body;
+
+        /** Honeypot alanı — botlar bu gizli alanı doldurur, gerçek kullanıcılar doldurmaz */
+        if (website) {
+            return res.status(200).json({ success: true, message: 'Mesajınız alındı.' });
+        }
 
         // Validation
         if (!name || !email || !subject || !message) {

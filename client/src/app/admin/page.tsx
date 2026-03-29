@@ -3,19 +3,19 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { getStoredUser } from '@/utils/authStorage';
 
 export default function AdminIndexPage() {
     const router = useRouter();
 
     useEffect(() => {
+        /** Kullanıcı oturum kontrolü — localStorage token yerine güvenli authStorage kullan */
         const checkAuth = () => {
-            const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+            const user = getStoredUser();
 
-            if (token) {
-                // Token varsa dashboard'a yönlendir
+            if (user) {
                 router.replace('/admin/dashboard');
             } else {
-                // Token yoksa login sayfasına yönlendir
                 router.replace('/admin/login');
             }
         };

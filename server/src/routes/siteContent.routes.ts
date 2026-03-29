@@ -1,11 +1,11 @@
 import express from 'express';
 import { siteContentController } from '../controllers';
-import { authenticate, requirePermission } from '../middleware/auth.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validate } from '../middleware/zod.middleware';
 import { createSiteContentSchema, updateSiteContentSchema } from '../utils/zodSchemas';
-import { Permission } from '../config/permissions';
-
 const router = express.Router();
+
+/** Admin-only yazma yetkisi kontrolü — sadece ADMIN ve FIRMA_SAHIBI rolleri site içeriği değiştirebilir */
 
 // Tüm içerikleri listele (public endpoint - anasayfa için)
 router.get(
@@ -23,7 +23,7 @@ router.get(
 router.get(
   '/',
   authenticate,
-  requirePermission(Permission.EQUIPMENT_VIEW),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   siteContentController.getAllContents
 );
 
@@ -39,37 +39,37 @@ router.get(
   siteContentController.getContentBySection
 );
 
-// Yeni içerik oluştur (Public değil, admin/editor)
+// Yeni içerik oluştur — sadece ADMIN ve FIRMA_SAHIBI
 router.post(
   '/',
   authenticate,
-  requirePermission(Permission.EQUIPMENT_UPDATE), // Fallback permission for content
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   validate(createSiteContentSchema),
   siteContentController.createContent
 );
 
-// İçerik güncelle
+// İçerik güncelle — sadece ADMIN ve FIRMA_SAHIBI
 router.put(
   '/:id',
   authenticate,
-  requirePermission(Permission.EQUIPMENT_UPDATE),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   validate(updateSiteContentSchema),
   siteContentController.updateContent
 );
 
-// Section'a göre içerik güncelle
+// Section'a göre içerik güncelle — sadece ADMIN ve FIRMA_SAHIBI
 router.put(
   '/section/:section',
   authenticate,
-  requirePermission(Permission.EQUIPMENT_UPDATE),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   siteContentController.updateContentBySection
 );
 
-// İçerik sil
+// İçerik sil — sadece ADMIN ve FIRMA_SAHIBI
 router.delete(
   '/:id',
   authenticate,
-  requirePermission(Permission.FILE_DELETE),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   siteContentController.deleteContent
 );
 

@@ -47,7 +47,8 @@ const getDataByType = async (type: string) => {
       };
     case 'users':
       return {
-        data: await User.find().select('-password').lean(),
+        /** Hassas alanları export'tan hariç tut */
+        data: await User.find().select('-password -googleTokens -outlookTokens -twoFactorSecretHash -backupCodes').lean(),
         headers: ['Ad', 'Email', 'Rol', 'Departman', 'Telefon', 'Durum'],
         fields: ['name', 'email', 'role', 'department', 'phone', 'status'],
         filename: 'users'

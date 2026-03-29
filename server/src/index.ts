@@ -53,7 +53,7 @@ const corsAllowedOrigins = [
   process.env.CORS_ORIGIN,
   'https://skpro.com.tr',
   'https://www.skpro.com.tr',
-  'app://-', // Electron masaüstü uygulaması
+  'app://.', // Electron masaüstü uygulaması (Electron'un standart app:// protokolü)
 ].filter(Boolean) as string[];
 
 const corsOptions: cors.CorsOptions = {
@@ -105,8 +105,19 @@ app.use(
       process.env.NODE_ENV === 'production'
         ? { maxAge: 31536000, includeSubDomains: true, preload: true }
         : false,
+    // Tarayıcı özelliklerini kısıtla (kamera, mikrofon, konum vb.)
+    permittedCrossDomainPolicies: { permittedPolicies: 'none' },
   })
 );
+
+// Permissions-Policy: Tarayıcı API'lerini kısıtla
+app.use((_req, res, next) => {
+  res.setHeader(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=()'
+  );
+  next();
+});
 
 // Rate limiting: endpoint bazlı limitler
 app.use('/api/auth', authLimiter);

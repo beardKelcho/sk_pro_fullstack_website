@@ -3,6 +3,9 @@ import { body, validationResult } from 'express-validator';
 // import sanitizeHtml from 'sanitize-html'; // Şimdilik kullanılmıyor
 import { FilterXSS } from 'xss';
 
+// Güvenli URL protokolleri - javascript:, data:, vb. engellenir
+const SAFE_URL_PROTOCOLS = /^(https?|mailto|tel):/i;
+
 // XSS koruması için özel filtre
 const xssFilter = new FilterXSS({
   whiteList: {
@@ -23,6 +26,16 @@ const xssFilter = new FilterXSS({
   },
   stripIgnoreTag: true,
   stripIgnoreTagBody: ['script'],
+  // href değerlerini doğrula: javascript:, data: gibi tehlikeli protokolleri engelle
+  onTagAttr: (tag, name, value) => {
+    if (tag === 'a' && name === 'href') {
+      const trimmed = value.trim();
+      if (!SAFE_URL_PROTOCOLS.test(trimmed)) {
+        return ''; // Tehlikeli protokolü kaldır
+      }
+    }
+    return undefined; // Diğer attribute'lar normal işlensin
+  },
 });
 
 // Genel input sanitizasyonu
@@ -88,14 +101,16 @@ export const validateRegister = [
     .normalizeEmail()
     .withMessage('Geçerli bir e-posta adresi giriniz'),
   body('password')
-    .isLength({ min: 8 })
-    .withMessage('Şifre en az 8 karakter olmalıdır')
+    .isLength({ min: 10 })
+    .withMessage('Şifre en az 10 karakter olmalıdır')
     .matches(/\d/)
     .withMessage('Şifre en az bir rakam içermelidir')
     .matches(/[a-z]/)
     .withMessage('Şifre en az bir küçük harf içermelidir')
     .matches(/[A-Z]/)
-    .withMessage('Şifre en az bir büyük harf içermelidir'),
+    .withMessage('Şifre en az bir büyük harf içermelidir')
+    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/)
+    .withMessage('Şifre en az bir özel karakter içermelidir (!@#$%^&* vb.)'),
   body('name')
     .trim()
     .isLength({ min: 2 })

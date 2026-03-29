@@ -114,6 +114,14 @@ export const twoFALimiter = createRateLimiter({
   customMessage: 'Çok fazla 2FA denemesi yaptınız. Lütfen 15 dakika sonra tekrar deneyin.',
 });
 
+/** Contact formu bot koruması — IP başına 60 dakikada max 5 mesaj */
+export const contactRateLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000, // 60 dakika
+  max: 5,
+  keyStrategy: 'ip',
+  customMessage: 'Çok fazla mesaj gönderdiniz. Lütfen daha sonra tekrar deneyin.',
+});
+
 export const rateLimitConfig = () => ({
   windowMs: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, WINDOW_15M),
   generalMax: parseNumber(process.env.RATE_LIMIT_GENERAL_MAX, 500),

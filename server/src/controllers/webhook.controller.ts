@@ -99,7 +99,9 @@ export const createWebhook = async (req: Request, res: Response) => {
       timeoutMs: timeoutMs ?? 10000,
     });
 
-    res.status(201).json({ success: true, webhook });
+    /** Secret'ı sadece oluşturulduğu anda maskelenmiş olarak döndür */
+    const responseWebhook = { ...webhook.toObject(), secret: `****${generatedSecret.slice(-4)}` };
+    res.status(201).json({ success: true, webhook: responseWebhook });
   } catch (error) {
     logger.error('Webhook create hatası:', error);
     res.status(500).json({ success: false, message: 'Webhook oluşturulamadı' });
@@ -138,7 +140,10 @@ export const updateWebhook = async (req: Request, res: Response) => {
     if (!webhook) {
       return res.status(404).json({ success: false, message: 'Webhook bulunamadı' });
     }
-    res.status(200).json({ success: true, webhook });
+    /** Secret alanını yanıttan çıkar — select: false olsa da findByIdAndUpdate ile gelebilir */
+    const webhookObj = webhook.toObject();
+    delete webhookObj.secret;
+    res.status(200).json({ success: true, webhook: webhookObj });
   } catch (error) {
     logger.error('Webhook update hatası:', error);
     res.status(500).json({ success: false, message: 'Webhook güncellenemedi' });

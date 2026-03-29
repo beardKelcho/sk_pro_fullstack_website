@@ -67,7 +67,7 @@ class UserService {
 
         const [users, total] = await Promise.all([
             User.find(filters)
-                .select('-password -__v')
+                .select('-password -__v -googleTokens -outlookTokens')
                 .sort({ [sortField]: sortOrder as 1 | -1 })
                 .skip(skip)
                 .limit(limit)
@@ -90,7 +90,7 @@ class UserService {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             throw new AppError('Geçersiz kullanıcı ID', 400);
         }
-        const user = await User.findById(id).select('-password -__v').lean() as unknown as IUser;
+        const user = await User.findById(id).select('-password -__v -googleTokens -outlookTokens').lean() as unknown as IUser;
         if (!user) throw new AppError('Kullanıcı bulunamadı', 404);
 
         return user;

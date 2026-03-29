@@ -1,6 +1,6 @@
 import express from 'express';
 import * as siteImageController from '../controllers/siteImage.controller';
-import { authenticate, requirePermission } from '../middleware/auth.middleware';
+import { authenticate, authorize, requirePermission } from '../middleware/auth.middleware';
 import { validate } from '../middleware/zod.middleware';
 import { createSiteImageSchema, updateSiteImageSchema } from '../utils/zodSchemas';
 import { Permission } from '../config/permissions';
@@ -36,11 +36,13 @@ router.get(
   siteImageController.getImageById
 );
 
+/** Site resim yazma/silme işlemleri — sadece ADMIN ve FIRMA_SAHIBI */
+
 // Yeni resim oluştur
 router.post(
   '/',
   authenticate,
-  requirePermission(Permission.FILE_UPLOAD),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   require('../middleware/upload.middleware').upload.single('image'),
   validate(createSiteImageSchema),
@@ -51,7 +53,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  requirePermission(Permission.FILE_UPLOAD),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   validate(updateSiteImageSchema),
   siteImageController.updateImage
 );
@@ -60,7 +62,7 @@ router.put(
 router.delete(
   '/:id',
   authenticate,
-  requirePermission(Permission.FILE_DELETE),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   siteImageController.deleteImage
 );
 
@@ -68,7 +70,7 @@ router.delete(
 router.delete(
   '/bulk/delete',
   authenticate,
-  requirePermission(Permission.FILE_DELETE),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   siteImageController.deleteMultipleImages
 );
 
@@ -76,7 +78,7 @@ router.delete(
 router.put(
   '/order/update',
   authenticate,
-  requirePermission(Permission.FILE_UPLOAD),
+  authorize('ADMIN', 'FIRMA_SAHIBI'),
   siteImageController.updateImageOrder
 );
 

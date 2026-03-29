@@ -88,15 +88,16 @@ const UserSchema: Schema = new Schema(
       type: String,
       select: false,
     }],
+    /** OAuth token'ları — select: false ile varsayılan sorgularda gizlenir */
     googleTokens: {
-      accessToken: String,
-      refreshToken: String,
-      expiryDate: Number,
+      accessToken: { type: String, select: false },
+      refreshToken: { type: String, select: false },
+      expiryDate: { type: Number, select: false },
     },
     outlookTokens: {
-      accessToken: String,
-      refreshToken: String,
-      expiryDate: Number,
+      accessToken: { type: String, select: false },
+      refreshToken: { type: String, select: false },
+      expiryDate: { type: Number, select: false },
     }
   },
   {

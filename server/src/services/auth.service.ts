@@ -171,7 +171,8 @@ class AuthService {
      * Get Profile
      */
     async getProfile(userId: string): Promise<IUser> {
-        const user = await User.findById(userId).select('-password');
+        /** OAuth token'larını profil yanıtından hariç tut */
+        const user = await User.findById(userId).select('-password -googleTokens -outlookTokens');
         if (!user) {
             throw new AppError('Kullanıcı bulunamadı', 404);
         }
@@ -190,7 +191,7 @@ class AuthService {
             userId,
             updateData,
             { new: true, runValidators: true }
-        ).select('-password');
+        ).select('-password -googleTokens -outlookTokens');
 
         if (!updatedUser) {
             throw new AppError('Kullanıcı bulunamadı', 404);

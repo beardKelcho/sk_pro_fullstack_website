@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getStoredUser } from '@/utils/authStorage';
 
 export default function AdminShortcut() {
     const router = useRouter();
@@ -12,10 +13,10 @@ export default function AdminShortcut() {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
 
-                // Auth check
-                const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+                /** Auth kontrolü — localStorage token yerine getStoredUser kullan */
+                const user = getStoredUser();
 
-                if (token) {
+                if (user) {
                     router.push('/admin/dashboard');
                 } else {
                     router.push('/admin/login');

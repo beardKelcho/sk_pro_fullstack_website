@@ -1,7 +1,6 @@
 import express from 'express';
 import * as systemSettingsController from '../controllers/systemSettings.controller';
-import { authenticate, requirePermission } from '../middleware/auth.middleware';
-import { Permission } from '../config/permissions';
+import { authenticate, authorize } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
@@ -17,7 +16,7 @@ router.use(authenticate);
  */
 router.get(
     '/',
-    requirePermission(Permission.EQUIPMENT_VIEW),
+    authorize('ADMIN', 'FIRMA_SAHIBI'),
     systemSettingsController.getAllSettings
 );
 
@@ -28,7 +27,7 @@ router.get(
  */
 router.get(
     '/:key',
-    requirePermission(Permission.EQUIPMENT_VIEW),
+    authorize('ADMIN', 'FIRMA_SAHIBI'),
     systemSettingsController.getSettingByKey
 );
 
@@ -39,7 +38,7 @@ router.get(
  */
 router.put(
     '/:key',
-    requirePermission(Permission.EQUIPMENT_UPDATE),
+    authorize('ADMIN', 'FIRMA_SAHIBI'),
     systemSettingsController.updateSetting
 );
 
@@ -50,7 +49,7 @@ router.put(
  */
 router.post(
     '/maintenance/toggle',
-    requirePermission(Permission.EQUIPMENT_UPDATE),
+    authorize('ADMIN', 'FIRMA_SAHIBI'),
     systemSettingsController.toggleMaintenanceMode
 );
 
@@ -61,7 +60,7 @@ router.post(
  */
 router.delete(
     '/:key',
-    requirePermission(Permission.EQUIPMENT_DELETE),
+    authorize('ADMIN', 'FIRMA_SAHIBI'),
     systemSettingsController.deleteSetting
 );
 

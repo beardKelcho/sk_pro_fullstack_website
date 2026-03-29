@@ -28,7 +28,8 @@ const WebhookSchema = new Schema<IWebhook>(
       enum: ['PROJECT_STATUS_CHANGED', 'TASK_ASSIGNED', 'TASK_UPDATED'],
       index: true,
     },
-    secret: { type: String, required: false },
+    /** Webhook HMAC secret — select: false ile varsayılan sorgularda gizlenir */
+    secret: { type: String, required: false, select: false },
     maxAttempts: { type: Number, default: 10, min: 1, max: 50 },
     timeoutMs: { type: Number, default: 10000, min: 1000, max: 60000 },
   },

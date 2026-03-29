@@ -154,7 +154,8 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
     const { access_token, refresh_token, expires_in } = tokenData;
 
     // Calendar integration kaydet veya güncelle
-    await CalendarIntegration.findOneAndUpdate(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const savedIntegration = await CalendarIntegration.findOneAndUpdate(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { user: (user as any).id, provider: 'google' },
       {
@@ -168,6 +169,44 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
       },
       { upsert: true, new: true }
     );
+
+    // Google Calendar Push Webhook (watch) kanalı oluştur
+    // channelToken üret → Google bunu X-Goog-Channel-Token header'ı ile geri yollar → webhook doğrulama
+    if (savedIntegration && process.env.CALENDAR_WEBHOOK_URL) {
+      try {
+        const channelId = crypto.randomUUID();
+        const channelToken = crypto.randomBytes(32).toString('hex');
+        const webhookExpiration = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 gün
+
+        const watchRes = await axios.post(
+          'https://www.googleapis.com/calendar/v3/calendars/primary/events/watch',
+          {
+            id: channelId,
+            type: 'web_hook',
+            address: process.env.CALENDAR_WEBHOOK_URL,
+            token: channelToken,
+            expiration: webhookExpiration.toString(),
+          },
+          { headers: { Authorization: `Bearer ${access_token}` } }
+        );
+
+        const watchData = watchRes.data as { id?: string; expiration?: string };
+        if (watchData?.id) {
+          await CalendarIntegration.updateOne(
+            { _id: savedIntegration._id },
+            {
+              channelId: watchData.id,
+              channelToken,
+              channelExpiration: new Date(Number(watchData.expiration || webhookExpiration)),
+            }
+          );
+          logger.info(`Google Calendar watch channel created: ${channelId}`);
+        }
+      } catch (watchErr) {
+        // Watch başarısız olursa entegrasyonu engelleme — push notification olmadan da çalışır
+        logger.warn('Google Calendar watch channel kurulumu başarısız (non-blocking):', watchErr instanceof Error ? watchErr.message : String(watchErr));
+      }
+    }
 
     // Varsayılan client bul veya oluştur
     let defaultClient = await Client.findOne({ name: 'Calendar Import' });

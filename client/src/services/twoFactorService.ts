@@ -53,9 +53,11 @@ export const disable2FA = async (data: { password: string; token?: string; backu
 };
 
 /**
- * Login sırasında 2FA doğrulama
+ * Login sırasında 2FA doğrulama.
+ * Backend artık email değil, login sonrası alınan challengeToken bekliyor.
  */
-export const verify2FALogin = async (data: { email: string; token?: string; backupCode?: string }): Promise<{ success: boolean; accessToken?: string; user?: any; message?: string }> => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const verify2FALogin = async (data: { challengeToken: string; token?: string; backupCode?: string }): Promise<{ success: boolean; accessToken?: string; user?: any; message?: string }> => {
   const res = await apiClient.post('/two-factor/verify-login', data);
   return res.data;
 };

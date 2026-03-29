@@ -21,6 +21,7 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [requires2FA, setRequires2FA] = useState(false);
+  const [twoFAChallengeToken, setTwoFAChallengeToken] = useState(''); // login sonrası backend'den gelen challenge
   const [twoFactorToken, setTwoFactorToken] = useState('');
   const [twoFactorBackupCode, setTwoFactorBackupCode] = useState('');
   const verify2FAMutation = useVerify2FALogin();
@@ -126,10 +127,9 @@ export default function AdminLogin() {
       if (response.data && response.data.success) {
         // 2FA kontrolü
         if (response.data.requires2FA) {
-          // Backend, 2FA için her zaman kullanıcının gerçek email'ini döndürüyor.
-          // Kullanıcı telefonla giriş yaptıysa bile verify-login aşamasında email ile doğrulama yapabilmek için formData'yı güncelle.
-          if (typeof response.data.email === 'string' && response.data.email.trim()) {
-            setFormData((prev) => ({ ...prev, email: response.data.email.trim() }));
+          // Backend artık email yerine challengeToken döndürüyor (5 dk geçerli, tek kullanımlık)
+          if (typeof response.data.challengeToken === 'string' && response.data.challengeToken) {
+            setTwoFAChallengeToken(response.data.challengeToken);
           }
           setRequires2FA(true);
           setLoading(false);
@@ -210,7 +210,7 @@ export default function AdminLogin() {
 
     try {
       const response = await verify2FAMutation.mutateAsync({
-        email: formData.email,
+        challengeToken: twoFAChallengeToken,
         token: twoFactorToken || undefined,
         backupCode: twoFactorBackupCode || undefined,
       });

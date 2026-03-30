@@ -6,7 +6,7 @@ describe('logger', () => {
 
     let loadedLogger: typeof import('@/utils/logger').default | undefined;
     jest.isolateModules(() => {
-      loadedLogger = require('@/utils/logger').default as typeof import('@/utils/logger').default;
+      loadedLogger = jest.requireActual('@/utils/logger').default as typeof import('@/utils/logger').default;
     });
 
     return loadedLogger as typeof import('@/utils/logger').default;

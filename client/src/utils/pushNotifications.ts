@@ -85,7 +85,7 @@ class PushNotificationService implements PushNotificationClient {
     try {
       const res = await apiClient.get('/push/vapid-key');
       this.vapidPublicKey = res.data?.publicKey || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null;
-    } catch (error) {
+    } catch {
       // Fallback: environment variable'dan al
       this.vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || null;
     }
@@ -203,7 +203,7 @@ class PushNotificationService implements PushNotificationClient {
       });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        process.env.NODE_ENV === 'development' && logger.error('Update subscription on server failed:', error);
+        logger.error('Update subscription on server failed:', error);
       }
     }
   }

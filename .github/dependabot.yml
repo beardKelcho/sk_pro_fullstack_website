@@ -10,9 +10,6 @@ updates:
       time: "02:00"
       timezone: "Europe/Istanbul"
     open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "npm"
     commit-message:
       prefix: "deps"
 
@@ -26,9 +23,6 @@ updates:
       time: "02:10"
       timezone: "Europe/Istanbul"
     open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "client"
     groups:
       nextjs:
         patterns:
@@ -56,9 +50,6 @@ updates:
       time: "02:20"
       timezone: "Europe/Istanbul"
     open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "server"
     commit-message:
       prefix: "deps"
 
@@ -72,9 +63,6 @@ updates:
       time: "02:25"
       timezone: "Europe/Istanbul"
     open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "mobile"
     commit-message:
       prefix: "deps"
 
@@ -88,8 +76,5 @@ updates:
       time: "02:30"
       timezone: "Europe/Istanbul"
     open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "github-actions"
     commit-message:
       prefix: "ci"

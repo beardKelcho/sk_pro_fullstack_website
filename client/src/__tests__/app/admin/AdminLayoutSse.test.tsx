@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, act } from '@testing-library/react';
+import { render, act, waitFor } from '@testing-library/react';
 
 const invalidateQueriesMock = jest.fn().mockResolvedValue(undefined);
 
@@ -93,8 +93,10 @@ describe('AdminLayout SSE', () => {
       </AdminLayout>
     );
 
-    // Effect connectSse ile onEvent register eder
-    expect(typeof capturedOnEvent).toBe('function');
+    // Effect async import ile connectSse register eder
+    await waitFor(() => {
+      expect(typeof capturedOnEvent).toBe('function');
+    });
 
     await act(async () => {
       capturedOnEvent?.({ event: 'monitoring:update', data: { ts: Date.now() } });
@@ -103,4 +105,3 @@ describe('AdminLayout SSE', () => {
     expect(invalidateQueriesMock).toHaveBeenCalledWith({ queryKey: ['monitoring'], exact: false });
   });
 });
-

@@ -135,7 +135,7 @@ app.use(requestIdMiddleware);
 // NoSQL injection'e karşı request temizliği
 app.use(mongoSanitize);
 // CSRF mitigasyonu: state-changing isteklerde origin allowlist kontrolü
-app.use(csrfOriginCheck(corsAllowedOrigins));
+app.use(csrfOriginCheck(corsAllowedOrigins, [VERCEL_ORIGIN_REGEX]));
 
 // API versioning (header/accept tabanlı; default v1)
 app.use('/api', apiVersioning);

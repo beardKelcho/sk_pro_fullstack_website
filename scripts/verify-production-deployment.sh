@@ -17,11 +17,18 @@ NC='\033[0m' # No Color
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-# Varsayılan URL'ler (environment variable'lardan alınabilir)
-BACKEND_URL="${BACKEND_URL:-https://sk-pro-backend.onrender.com}"
-FRONTEND_URL="${FRONTEND_URL:-https://www.skpro.com.tr}"
+# URL'ler environment variable'lardan gelmelidir
+BACKEND_URL="${BACKEND_URL:-}"
+FRONTEND_URL="${FRONTEND_URL:-}"
 API_BASE="${API_BASE:-${BACKEND_URL}/api}"
 CONTACT_PREFLIGHT_ORIGIN="${CONTACT_PREFLIGHT_ORIGIN:-$FRONTEND_URL}"
+
+if [ -z "$BACKEND_URL" ] || [ -z "$FRONTEND_URL" ]; then
+    echo -e "${RED}❌ BACKEND_URL ve FRONTEND_URL environment variable'lari zorunludur.${NC}"
+    echo -e "${YELLOW}Örnek:${NC}"
+    echo -e "  BACKEND_URL=https://api.example.com FRONTEND_URL=https://app.example.com npm run smoke:production"
+    exit 1
+fi
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}🔍 Production Deployment Verification${NC}"
@@ -199,5 +206,6 @@ else
     echo -e "   BACKEND_URL=$BACKEND_URL"
     echo -e "   FRONTEND_URL=$FRONTEND_URL"
     echo -e "   API_BASE=$API_BASE"
+    echo -e "   CONTACT_PREFLIGHT_ORIGIN=$CONTACT_PREFLIGHT_ORIGIN"
     exit 1
 fi

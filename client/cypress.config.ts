@@ -20,10 +20,10 @@ export default defineConfig({
     pageLoadTimeout: 30000, // 30 saniye
     env: {
       // Test kullanıcısı bilgileri (2FA kapalı)
-      TEST_USER_EMAIL: 'test@skpro.com.tr',
+      TEST_USER_EMAIL: 'test@example.com',
       TEST_USER_PASSWORD: 'Test123!',
       // Eski admin bilgileri (fallback)
-      ADMIN_EMAIL: 'admin@skpro.com.tr',
+      ADMIN_EMAIL: 'admin@example.com',
       ADMIN_PASSWORD: 'Admin123!',
     },
     setupNodeEvents(on, config) {
@@ -35,7 +35,7 @@ export default defineConfig({
         }
 
         const serverDir = path.resolve(__dirname, '../server');
-        const testUserEmail = config.env.TEST_USER_EMAIL || 'test@skpro.com.tr';
+        const testUserEmail = config.env.TEST_USER_EMAIL || 'test@example.com';
         const testUserPassword = config.env.TEST_USER_PASSWORD || 'Test123!';
 
         // eslint-disable-next-line no-console

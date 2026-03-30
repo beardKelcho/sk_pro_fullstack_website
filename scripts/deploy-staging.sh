@@ -42,7 +42,15 @@ git push origin develop
 
 echo ""
 echo "✅ Staging deployment tetiklendi!"
-echo "🔗 Frontend: https://skproduction-staging.vercel.app"
-echo "🔗 Backend: https://skproduction-api-staging.onrender.com"
+if [ -n "$STAGING_FRONTEND_URL" ]; then
+    echo "🔗 Frontend: $STAGING_FRONTEND_URL"
+else
+    echo "🔗 Frontend: hosting platform uzerinde tanimli staging URL"
+fi
+if [ -n "$STAGING_BACKEND_URL" ]; then
+    echo "🔗 Backend: $STAGING_BACKEND_URL"
+else
+    echo "🔗 Backend: hosting platform uzerinde tanimli staging API URL"
+fi
 echo ""
 echo "⏳ Deployment tamamlanması 2-5 dakika sürebilir..."

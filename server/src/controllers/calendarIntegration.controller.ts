@@ -213,7 +213,7 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
     if (!defaultClient) {
       defaultClient = await Client.create({
         name: 'Calendar Import',
-        email: 'calendar@skproduction.com',
+        email: 'calendar@example.com',
         phone: '',
         address: '',
         notes: 'Calendar entegrasyonu ile otomatik oluşturuldu',
@@ -456,7 +456,7 @@ export const syncCalendarImport = async (req: Request, res: Response) => {
     if (!defaultClient) {
       defaultClient = await Client.create({
         name: 'Calendar Import',
-        email: 'calendar@skproduction.com',
+        email: 'calendar@example.com',
         phone: '',
         address: '',
         notes: 'Calendar entegrasyonu ile otomatik oluşturuldu',

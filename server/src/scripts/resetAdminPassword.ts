@@ -6,6 +6,8 @@ import logger from '../utils/logger';
 
 dotenv.config();
 
+const ADMIN_SEED_EMAIL = process.env.ADMIN_SEED_EMAIL || 'admin@example.com';
+
 const resetAdminPassword = async () => {
   try {
     // MongoDB bağlantısı
@@ -14,7 +16,7 @@ const resetAdminPassword = async () => {
     logger.info('MongoDB bağlantısı başarılı');
 
     // Admin kullanıcıyı bul
-    const admin = await User.findOne({ email: 'admin@skproduction.com' });
+    const admin = await User.findOne({ email: ADMIN_SEED_EMAIL });
     
     if (!admin) {
       logger.error('Admin kullanıcı bulunamadı');
@@ -58,4 +60,3 @@ const resetAdminPassword = async () => {
 };
 
 resetAdminPassword();
-

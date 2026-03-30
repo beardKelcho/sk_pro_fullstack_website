@@ -373,7 +373,7 @@ export const importCalendarIcs = async (req: Request, res: Response) => {
     if (!defaultClient) {
       defaultClient = await Client.create({
         name: 'iCal Import',
-        email: 'import@skproduction.com',
+        email: 'import@example.com',
         phone: '',
         address: '',
         notes: 'iCal import ile otomatik oluşturuldu',

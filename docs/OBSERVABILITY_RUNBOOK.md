@@ -4,10 +4,10 @@
 
 ---
 
-## Canlı Uç Noktalar
+## Referans Uç Noktalar
 
-- Frontend: `https://www.skpro.com.tr`
-- Backend: `https://sk-pro-backend.onrender.com`
+- Frontend: `<your-frontend-url>`
+- Backend: `<your-backend-url>`
 - Günlük smoke komutu: `npm run smoke:production`
 
 ---
@@ -63,7 +63,7 @@ Minimum önerilen alert’ler:
 - **Performance degradation**: Lighthouse veya p95 trendinde belirgin düşüş
 
 Test:
-- `client/src/app/api/sentry-test/route.ts` üzerinden production’da doğrulama (token ile).
+- Uygulama içinden kontrollü bir test event'i üretin veya Sentry dashboard'da son release verisini doğrulayın.
 
 ---
 

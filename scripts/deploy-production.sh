@@ -102,12 +102,20 @@ git push origin --tags
 
 echo ""
 echo "✅ Production deployment tamamlandı!"
-echo "🔗 Frontend: https://skproduction.com"
-echo "🔗 Backend: https://api.skproduction.com"
+if [ -n "$PRODUCTION_FRONTEND_URL" ]; then
+    echo "🔗 Frontend: $PRODUCTION_FRONTEND_URL"
+else
+    echo "🔗 Frontend: hosting platform uzerinde tanimli production URL"
+fi
+if [ -n "$PRODUCTION_BACKEND_URL" ]; then
+    echo "🔗 Backend: $PRODUCTION_BACKEND_URL"
+else
+    echo "🔗 Backend: hosting platform uzerinde tanimli production API URL"
+fi
 echo "🏷️  Version: v$VERSION"
 echo ""
 echo "⏳ Deployment tamamlanması 3-7 dakika sürebilir..."
 echo ""
 echo "💡 Deployment sonrası doğrulama için:"
-echo "   npm run verify:deployment"
+echo "   BACKEND_URL=... FRONTEND_URL=... npm run smoke:production"
 echo ""

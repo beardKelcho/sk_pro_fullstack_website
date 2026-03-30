@@ -6,6 +6,9 @@ import logger from '../utils/logger';
 
 dotenv.config();
 
+const ADMIN_SEED_EMAIL = process.env.ADMIN_SEED_EMAIL || 'admin@example.com';
+const ADMIN_SEED_NAME = process.env.ADMIN_SEED_NAME || 'Seed Admin';
+
 const seedAdmin = async () => {
   try {
     // MongoDB bağlantısı
@@ -14,7 +17,7 @@ const seedAdmin = async () => {
     logger.info('MongoDB bağlantısı başarılı');
 
     // Mevcut admin kontrolü
-    const existingAdmin = await User.findOne({ email: 'admin@skproduction.com' });
+    const existingAdmin = await User.findOne({ email: ADMIN_SEED_EMAIL });
     
     if (existingAdmin) {
       logger.warn('Admin kullanıcı zaten mevcut');
@@ -32,8 +35,8 @@ const seedAdmin = async () => {
     const hashedPassword = await bcrypt.hash(seedPassword, 12);
 
     const admin = await User.create({
-      name: 'Admin',
-      email: 'admin@skproduction.com',
+      name: ADMIN_SEED_NAME,
+      email: ADMIN_SEED_EMAIL,
       password: hashedPassword,
       role: 'ADMIN',
       isActive: true,
@@ -52,4 +55,3 @@ const seedAdmin = async () => {
 };
 
 seedAdmin();
-

@@ -45,7 +45,7 @@
 1. Render dashboard → **New +** → **Web Service**
 2. GitHub repository'nizi bağlayın
 3. Ayarlar:
-   - **Name**: `sk-pro-backend`
+   - **Name**: `<backend-service-name>`
    - **Region**: Frankfurt (EU)
    - **Branch**: `main`
    - **Root Directory**: `server`
@@ -114,11 +114,11 @@ npm run deploy:production
 
 #### Web Service Oluşturma
 
-1. Render hesabınıza giriş yapın: https://render.com
+1. Render hesabınıza giriş yapın
 2. "New +" → "Web Service" seçin
 3. GitHub repository'nizi bağlayın
 4. Ayarlar:
-   - **Name:** `sk-pro-backend`
+   - **Name:** `<backend-service-name>`
    - **Region:** Frankfurt (EU) veya size en yakın
    - **Branch:** `main`
    - **Root Directory:** `server`
@@ -143,8 +143,8 @@ JWT_SECRET=<güçlü-random-string>
 JWT_REFRESH_SECRET=<güçlü-random-string>
 
 # Client URL (Frontend domain'i)
-CLIENT_URL=https://www.skpro.com.tr
-CORS_ORIGIN=https://www.skpro.com.tr
+CLIENT_URL=<your-frontend-url>
+CORS_ORIGIN=<your-frontend-url>
 
 # Opsiyonel
 LOG_LEVEL=info
@@ -163,7 +163,7 @@ npm run generate:secrets
 
 #### Proje Oluşturma
 
-1. Vercel hesabınıza giriş yapın: https://vercel.com
+1. Vercel hesabınıza giriş yapın
 2. "Add New..." → "Project" seçin
 3. GitHub repository'nizi import edin
 4. Ayarlar:
@@ -176,43 +176,26 @@ npm run generate:secrets
 
 ```env
 # Backend API URL (ZORUNLU)
-NEXT_PUBLIC_API_URL=https://sk-pro-backend.onrender.com/api
-NEXT_PUBLIC_BACKEND_URL=https://sk-pro-backend.onrender.com
-NEXT_PUBLIC_SITE_URL=https://www.skpro.com.tr
+NEXT_PUBLIC_API_URL=<your-backend-url>/api
+NEXT_PUBLIC_BACKEND_URL=<your-backend-url>
+NEXT_PUBLIC_SITE_URL=<your-frontend-url>
 
 # Opsiyonel
 NEXTAUTH_SECRET=<güçlü-random-string>
-NEXTAUTH_URL=https://www.skpro.com.tr
+NEXTAUTH_URL=<your-frontend-url>
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 NEXT_PUBLIC_SENTRY_DSN=<your-sentry-dsn>
 ```
-
-### GitHub Secrets (CI/CD için)
-
-CI/CD pipeline için deploy hook'ları ekleyin:
-
-1. **Render Deploy Hook**:
-   - Render dashboard → Service → Settings → **Manual Deploy Hook**
-   - Hook URL'i kopyalayın
-   - GitHub → Settings → Secrets → Actions → `RENDER_PRODUCTION_DEPLOY_HOOK_URL`
-
-2. **Vercel Deploy Hook**:
-   - Vercel dashboard → Project → Settings → **Deploy Hooks**
-   - **Create Hook** → Branch: `main`, Environment: `Production`
-   - Hook URL'i kopyalayın
-   - GitHub → Settings → Secrets → Actions → `VERCEL_PRODUCTION_DEPLOY_HOOK_URL`
-
-**Detaylı rehber**: [GitHub Secrets Rehberi](./GITHUB_SECRETS_REHBERI.md)
 
 ### Domain ve SSL
 
 #### Custom Domain Ekleme (Vercel)
 
 1. Vercel dashboard → Projeniz → "Settings" → "Domains"
-2. Domain'inizi ekleyin: `skpro.com.tr` ve `www.skpro.com.tr`
+2. Domain'inizi ekleyin: `<yourdomain.com>` ve `www.<yourdomain.com>`
 3. DNS kayıtlarını güncelleyin:
    - **A Record:** `@` → Vercel IP (otomatik verilir)
-   - **CNAME:** `www` → `cname.vercel-dns.com`
+   - **CNAME:** `www` → platformun verdiği DNS hedefi
 4. SSL otomatik olarak aktif olacak (Let's Encrypt)
 
 ---
@@ -371,8 +354,8 @@ git push origin develop
 
 #### Admin Güvenliği
 
-- [ ] **Admin şifresi güçlü bir değerle oluşturuldu** (ADMIN_SEED_PASSWORD env var ile)
-- [ ] **2FA aktif edildi** (opsiyonel ama önerilir)
+- [ ] Bootstrap admin hesabı güvenli şekilde oluşturuldu
+- [ ] 2FA aktif edildi (opsiyonel ama önerilir)
 
 ### Monitoring
 
@@ -449,10 +432,8 @@ git push origin develop
 ## 📚 İlgili Dokümanlar
 
 - **[Kurulum ve Başlangıç](./KURULUM_VE_BASLANGIC.md)** - Development ortamı kurulumu
-- **[Deployment Scripts Rehberi](./DEPLOYMENT_SCRIPTS_REHBERI.md)** - Deployment script'leri
-- **[Product Backlog](./PRODUCT_BACKLOG.md)** - Sıradaki iyileştirme ve ürün işleri
-- **[GitHub Secrets Rehberi](./GITHUB_SECRETS_REHBERI.md)** - GitHub Secrets yapılandırması
-- **[Domain Kurulumu](./SKPRO_DOMAIN_KURULUM.md)** - Domain/DNS yönlendirme
+- **[Güvenlik Rehberi](./GUVENLIK.md)** - Production güvenlik checklist'i
+- **[Observability Runbook](./OBSERVABILITY_RUNBOOK.md)** - Monitoring ve canlı sağlık kontrolleri
 
 ---
 

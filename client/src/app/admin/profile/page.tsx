@@ -238,7 +238,7 @@ export default function ProfilePage() {
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-black focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
                     errors.email ? 'border-red-500 dark:border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="ornek@skproduction.com"
+                  placeholder="ornek@example.com"
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>

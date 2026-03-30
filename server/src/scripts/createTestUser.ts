@@ -8,7 +8,7 @@ import logger from '../utils/logger';
 // .env dosyasını yükle
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@skpro.com.tr';
+const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com';
 const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || 'Test123!';
 const TEST_USER_NAME = 'Test User';
 const TEST_USER_ROLE = 'ADMIN';

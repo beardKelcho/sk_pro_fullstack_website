@@ -5,7 +5,7 @@
  * Yalnızca CI/CD pipeline'da E2E testlerinden önce çalıştırılmalıdır.
  *
  * Kullanıcı bilgileri (cypress.config.ts ile eşleşmelidir):
- *   Email: test@skpro.com.tr
+ *   Email: test@example.com
  *   Password: Test123!
  *   Role: ADMIN
  *   2FA: Disabled
@@ -30,7 +30,7 @@ const seedTestUser = async () => {
         process.env.MONGODB_URI ||
         process.env.MONGO_URI ||
         'mongodb://localhost:27017/skproduction-test';
-    const testEmail = process.env.TEST_USER_EMAIL || 'test@skpro.com.tr';
+    const testEmail = process.env.TEST_USER_EMAIL || 'test@example.com';
     const testPassword = process.env.TEST_USER_PASSWORD || 'Test123!';
 
     // eslint-disable-next-line no-console

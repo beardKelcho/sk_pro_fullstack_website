@@ -69,8 +69,8 @@ JWT_REFRESH_SECRET=<güçlü-random-string>
 MONGO_URI=<mongodb-atlas-connection-string>
 
 # CORS sadece frontend domain'i
-CLIENT_URL=https://www.skpro.com.tr
-CORS_ORIGIN=https://www.skpro.com.tr
+CLIENT_URL=<your-frontend-url>
+CORS_ORIGIN=<your-frontend-url>
 ```
 
 #### Security Headers (Helmet)
@@ -112,7 +112,7 @@ CORS_ORIGIN=https://www.skpro.com.tr
 - [ ] JWT secrets güçlü ve rastgele (64 bytes)
 - [ ] MongoDB network access sadece backend IP'si
 - [ ] CORS ayarları sadece frontend domain'i
-- [ ] Admin şifresi güçlü bir değerle oluşturuldu (ADMIN_SEED_PASSWORD env var ile)
+- [ ] Bootstrap admin hesabı güçlü bir şifre ile oluşturuldu
 - [ ] 2FA aktif edildi (opsiyonel ama önerilir)
 
 ### Post-Deployment

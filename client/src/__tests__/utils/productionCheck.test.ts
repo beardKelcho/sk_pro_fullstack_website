@@ -38,8 +38,8 @@ describe('Production Check Utility Testleri', () => {
     });
 
     it('tüm environment variables varsa pass döndürmeli', () => {
-      process.env.NEXT_PUBLIC_SITE_URL = 'https://skproduction.com';
-      process.env.NEXT_PUBLIC_API_URL = 'https://api.skproduction.com';
+      process.env.NEXT_PUBLIC_SITE_URL = 'https://app.example.com';
+      process.env.NEXT_PUBLIC_API_URL = 'https://api.example.com';
 
       const results = productionChecker.runChecks();
       const envCheck = results.find(r => r.name === 'Environment Variables');
@@ -69,7 +69,7 @@ describe('Production Check Utility Testleri', () => {
     });
 
     it('production API URL varsa pass döndürmeli', () => {
-      process.env.NEXT_PUBLIC_API_URL = 'https://api.skproduction.com';
+      process.env.NEXT_PUBLIC_API_URL = 'https://api.example.com';
 
       const results = productionChecker.runChecks();
       const apiCheck = results.find(r => r.name === 'API URL');
@@ -97,4 +97,3 @@ describe('Production Check Utility Testleri', () => {
     });
   });
 });
-

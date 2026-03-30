@@ -132,7 +132,7 @@ const seedSiteContent = async () => {
                 data: {
                     address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
                     phone: '+90 555 555 55 55',
-                    email: 'info@skproduction.com',
+                    email: process.env.CONTACT_FORM_TO_EMAIL || 'info@example.com',
                     latitude: 41.057984,
                     longitude: 28.987117
                 },

@@ -9,6 +9,9 @@ import logger from '../utils/logger';
 
 dotenv.config();
 
+const ADMIN_SEED_EMAIL = process.env.ADMIN_SEED_EMAIL || 'admin@example.com';
+const ADMIN_SEED_NAME = process.env.ADMIN_SEED_NAME || 'Seed Admin';
+
 const cleanupAndReseedAdmin = async () => {
   try {
     const mongoUri =
@@ -50,8 +53,8 @@ const cleanupAndReseedAdmin = async () => {
       }
       const hashedPassword = await bcrypt.hash(seedPassword, 12);
       const admin = await User.create({
-        name: 'Admin',
-        email: 'admin@skproduction.com',
+        name: ADMIN_SEED_NAME,
+        email: ADMIN_SEED_EMAIL,
         password: hashedPassword,
         role: 'ADMIN',
         isActive: true,

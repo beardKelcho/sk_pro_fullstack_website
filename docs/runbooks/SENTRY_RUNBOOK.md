@@ -17,9 +17,12 @@ NEXT_PUBLIC_SENTRY_DSN=<your-sentry-dsn>
 SENTRY_DSN=<your-sentry-dsn>
 SENTRY_ORG=<your-org-slug>
 SENTRY_PROJECT=<your-project-slug>
-SENTRY_AUTH_TOKEN=<your-auth-token>
 NEXT_PUBLIC_APP_VERSION=3.0.0
 ```
+
+Not:
+- `SENTRY_AUTH_TOKEN` yalnızca yönetim veya entegrasyon işlemleri için gerekir.
+- Bu token repoda tutulmamalı ve yalnızca platform secret store içinde saklanmalıdır.
 
 ---
 
@@ -29,16 +32,8 @@ Eğer sistemde beklenmeyen 500 hataları veya "Error Tracking Error" dönüşler
 
 ### 1- Bağlantı Testi (Health Check)
 ```bash
-# Sentry'nin Backend iletişimi için
-curl -X GET "https://<your-production-url>/api/sentry-test" \
-  -H "Authorization: Bearer <YOUR_SENTRY_TEST_TOKEN>"
-```
-
-Veya Browser konsolundan manuel log tetikleme (Frontend için):
-```javascript
-if (window.Sentry) {
-  window.Sentry.captureException(new Error('Sentry Manuel Tetikleme Testi'));
-}
+# Uygulama içinden kontrollü bir test event'i üretin
+# veya Sentry dashboard'dan son release ve issue akışını doğrulayın
 ```
 
 ### 2- Dashboard İncelemesi

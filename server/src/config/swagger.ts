@@ -12,7 +12,7 @@ const options: swaggerJsdoc.Options = {
       description: 'SK Production API Documentation - Equipment Management, Project Tracking, and Task Management System',
       contact: {
         name: 'SK Production',
-        email: 'info@skproduction.com',
+        email: 'info@example.com',
       },
       license: {
         name: 'ISC',
@@ -24,7 +24,7 @@ const options: swaggerJsdoc.Options = {
         description: 'Development server',
       },
       {
-        url: 'https://api.skproduction.com/api',
+        url: 'https://api.example.com/api',
         description: 'Production server',
       },
     ],

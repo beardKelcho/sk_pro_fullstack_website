@@ -53,7 +53,7 @@ declare global {
 
 Cypress.Commands.add('loginAsAdmin', () => {
   // Test kullanıcısı kullan (2FA kapalı, test için hazır)
-  const TEST_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@skpro.com.tr';
+  const TEST_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@example.com';
   const TEST_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
 
   const performLogin = (email: string, password: string) => {
@@ -176,7 +176,7 @@ Cypress.Commands.add('checkTestEnvironment', () => {
  * Güvenilir login - her test için kullanılabilir
  */
 Cypress.Commands.add('ensureLoggedIn', () => {
-  const TEST_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@skpro.com.tr';
+  const TEST_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@example.com';
   const TEST_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
 
   // Login sayfasına git

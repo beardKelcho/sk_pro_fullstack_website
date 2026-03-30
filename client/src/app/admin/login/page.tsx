@@ -366,7 +366,7 @@ export default function AdminLogin() {
                             ? 'border-red-500/50 focus:ring-red-500/20'
                             : 'border-white/10 focus:border-white/20 focus:ring-white/10'
                             }`}
-                          placeholder="ornek@skproduction.com veya +905xxxxxxxxx"
+                          placeholder="ornek@example.com veya +905xxxxxxxxx"
                           aria-invalid={Boolean(errors.email)}
                         />
                       </div>

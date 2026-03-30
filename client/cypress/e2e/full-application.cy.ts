@@ -11,7 +11,7 @@
 describe('SK Production - Kapsamlı E2E Testler', () => {
   const API_URL = Cypress.env('NEXT_PUBLIC_API_URL') || 'http://localhost:5001/api';
   // Test kullanıcısı kullan (2FA kapalı)
-  const ADMIN_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@skpro.com.tr';
+  const ADMIN_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@example.com';
   const ADMIN_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
 
   beforeEach(() => {
@@ -313,4 +313,3 @@ describe('SK Production - Kapsamlı E2E Testler', () => {
     });
   });
 });
-

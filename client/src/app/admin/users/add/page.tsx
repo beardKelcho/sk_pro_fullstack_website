@@ -247,7 +247,7 @@ export default function AddUser() {
                 value={formData.email}
                 onChange={handleChange}
                 className={`bg-gray-50 dark:bg-gray-900/50 border ${errors.email ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'} text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5`}
-                placeholder="ornek@skproduction.com"
+                placeholder="ornek@example.com"
               />
               {errors.email && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.email}</p>}
             </div>
@@ -509,4 +509,4 @@ export default function AddUser() {
       </form>
     </div>
   );
-} 
+}

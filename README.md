@@ -71,8 +71,6 @@ Detaylı kurulum rehberi için **[KURULUM_VE_BASLANGIC.md](./docs/KURULUM_VE_BAS
 
 Production'a almak ve yayındayken geliştirme yapmak için:
 - **[PRODUCTION_DEPLOYMENT.md](./docs/PRODUCTION_DEPLOYMENT.md)** ⚡ - Production deployment kapsamlı rehberi (ÖNERİLEN)
-- **[DEPLOYMENT_SCRIPTS_REHBERI.md](./docs/DEPLOYMENT_SCRIPTS_REHBERI.md)** - Deployment script'leri kullanım rehberi
-- **[GITHUB_SECRETS_REHBERI.md](./docs/GITHUB_SECRETS_REHBERI.md)** - GitHub Secrets yapılandırma rehberi
 
 ### Hızlı Başlangıç
 
@@ -226,16 +224,15 @@ Tüm dokümanların indeks listesi: **[docs/README.md](./docs/README.md)**
   - Günlük geliştirme akışı
   - Platform önerileri ve maliyetler
 
-- **[PROJE_DURUMU.md](./docs/PROJE_DURUMU.md)** - Proje durumu ve özellikler
-  - Genel bakış
-  - Tamamlanan özellikler
-  - Teknik stack
-  - Yol haritası
+- **[GUVENLIK.md](./docs/GUVENLIK.md)** - Güvenlik ve operasyon checklist'i
+  - Authentication ve authorization
+  - Production güvenlik checklist'i
+  - Security audit adımları
 
-- **[PROJE_GELISTIRME.md](./docs/PROJE_GELISTIRME.md)** - Geliştirme süreçleri ve teknik detaylar
-  - Test stratejisi
-  - Yetki sistemi
-  - Teknik mimari
+- **[docs/README.md](./docs/README.md)** - Güncel dokümantasyon indeksi
+  - Runbook'lar
+  - Kurulum ve deployment rehberleri
+  - Entegrasyon dökümanları
 
 ## 📝 Lisans
 

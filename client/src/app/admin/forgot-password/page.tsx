@@ -119,7 +119,7 @@ export default function ForgotPassword() {
                     }}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-black focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:text-white ${error ? 'border-red-500 dark:border-red-500' : 'border-gray-300'
                       }`}
-                    placeholder="ornek@skproduction.com"
+                    placeholder="ornek@example.com"
                     disabled={loading}
                   />
                 </div>
@@ -156,4 +156,3 @@ export default function ForgotPassword() {
     </div>
   );
 }
-

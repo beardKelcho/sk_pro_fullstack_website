@@ -43,7 +43,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
-          placeholder="ornek@skproduction.com"
+          placeholder="ornek@example.com"
           placeholderTextColor="#7E8AA2"
           style={styles.input}
         />
@@ -115,4 +115,3 @@ const styles = StyleSheet.create({
     fontSize: 12
   }
 });
-

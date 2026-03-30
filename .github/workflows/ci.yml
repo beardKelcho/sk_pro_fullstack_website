@@ -228,8 +228,8 @@ jobs:
       - name: Build Client
         run: cd client && npm run build
         env:
-          NEXT_PUBLIC_API_URL: https://api.skproduction.com/api # Placeholder for build
-          NEXT_PUBLIC_BACKEND_URL: https://api.skproduction.com
+          NEXT_PUBLIC_API_URL: https://api.example.com/api # Placeholder for build
+          NEXT_PUBLIC_BACKEND_URL: https://api.example.com
           NEXT_PUBLIC_MAINTENANCE_MODE: false
 
       - name: Build Server

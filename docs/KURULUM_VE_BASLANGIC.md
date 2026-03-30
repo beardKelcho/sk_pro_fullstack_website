@@ -132,11 +132,11 @@ npm run seed
 ```
 
 Bu komut varsayılan admin kullanıcısını oluşturur:
-- **Email**: `admin@skproduction.com`
-- **Şifre**: `ADMIN_SEED_PASSWORD` env variable ile belirlenir
+- Giriş bilgileri seed script ve environment değişkenleri ile belirlenir
+- Production ortamında varsayılan değerleri kullanmayın
 
 ```bash
-ADMIN_SEED_PASSWORD="GüçlüBirŞifre123!" npm run seed
+ADMIN_SEED_PASSWORD="<strong-admin-password>" npm run seed
 ```
 
 **⚠️ Önemli:** Güçlü, tahmin edilemez bir şifre kullanın!
@@ -156,7 +156,7 @@ Bu komut hem server hem client'ı başlatır:
 
 - **Web Sitesi**: <your-frontend-url>
 - **Admin Paneli**: <your-frontend-url>/admin/login
-- **API Docs**: <your-api-url>-docs
+- **API Docs**: <your-backend-url>/api-docs
 
 ---
 
@@ -285,8 +285,8 @@ npm run seed
 
 Bu komut:
 - Varsayılan admin kullanıcısını oluşturur
-- Email: `admin@skproduction.com`
-- Şifre: `ADMIN_SEED_PASSWORD` env variable ile belirlenir (zorunlu, min 8 karakter)
+- Giriş bilgileri seed script ve environment değişkenleri ile belirlenir
+- Şifre `ADMIN_SEED_PASSWORD` env variable ile belirlenir (zorunlu, min 8 karakter)
 
 **⚠️ Önemli:** Güçlü, tahmin edilemez bir şifre kullanın!
 
@@ -394,8 +394,8 @@ npm run test:coverage
 Kurulum tamamlandıktan sonra:
 
 1. **[Production Deployment Rehberi](./PRODUCTION_DEPLOYMENT.md)** - Production'a alma
-2. **[Deployment Scripts Rehberi](./DEPLOYMENT_SCRIPTS_REHBERI.md)** - Deployment script'leri
-3. **[Proje Geliştirme Rehberi](./PROJE_GELISTIRME.md)** - Geliştirme süreçleri
+2. **[Güvenlik Rehberi](./GUVENLIK.md)** - Production güvenlik checklist'i
+3. **[Dokümantasyon İndeksi](./README.md)** - Güncel rehber listesi
 
 ---
 

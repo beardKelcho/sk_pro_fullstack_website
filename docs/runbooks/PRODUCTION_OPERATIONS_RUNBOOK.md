@@ -4,11 +4,11 @@
 
 ---
 
-## Canlı Referansları
+## Referanslar
 
-- Frontend: `https://www.skpro.com.tr`
-- Backend: `https://sk-pro-backend.onrender.com`
-- Render health check path: `/api/readyz`
+- Frontend: `<your-frontend-url>`
+- Backend: `<your-backend-url>`
+- Health check path: `/api/readyz`
 - Smoke komutu: `npm run smoke:production`
 
 ---
@@ -83,4 +83,4 @@
 1. Dependency güncelleme penceresi aç
 2. Backup restore tatbikatı yap
 3. Rate limit ve security header gözden geçirmesi yap
-4. Product backlog önceliklerini canlı geri bildirimle tekrar sırala
+4. Operasyon checklist'ini ve bakım önceliklerini tekrar gözden geçir

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import {
     getDashboardStats,
     getDashboardCharts,
@@ -14,6 +14,7 @@ import { toast } from 'react-toastify';
 export interface DashboardData {
     stats: DashboardStats;
     chartData: ChartData | null;
+    chartsLoading: boolean;
     recentProjects: Project[];
     upcomingMaintenances: UpcomingMaintenance[];
     loading: boolean;
@@ -23,6 +24,7 @@ export interface DashboardData {
 
 export const useDashboard = () => {
     const [loading, setLoading] = useState(true);
+    const [chartsLoading, setChartsLoading] = useState(false);
     const [apiAvailable, setApiAvailable] = useState<boolean | null>(null);
 
     const [stats, setStats] = useState<DashboardStats>({
@@ -36,13 +38,32 @@ export const useDashboard = () => {
     const [recentProjects, setRecentProjects] = useState<Project[]>([]);
     const [upcomingMaintenances, setUpcomingMaintenances] = useState<UpcomingMaintenance[]>([]);
 
+    const loadCharts = async () => {
+        setChartsLoading(true);
+        try {
+            const charts = await getDashboardCharts(7);
+            startTransition(() => {
+                setChartData(charts);
+            });
+        } catch (err) {
+            logger.error('Charts fetch failed', err);
+            startTransition(() => {
+                setChartData(null);
+            });
+        } finally {
+            setChartsLoading(false);
+        }
+    };
+
     const fetchData = async () => {
         setLoading(true);
+        setChartsLoading(false);
         try {
             const isApiAvailable = await checkApiHealth();
             setApiAvailable(isApiAvailable);
 
             if (!isApiAvailable) {
+                setChartData(null);
                 toast.error('API erişilemiyor');
                 setLoading(false);
                 return;
@@ -68,16 +89,8 @@ export const useDashboard = () => {
             } else {
                 logger.error('Projects fetch failed', projectsRes.reason);
             }
-
-            // Lazy load charts (non-blocking for main stats, but here we await for "loading" state simplicity or separate?)
-            // User asked for dynamic data flow. let's fetch charts too.
-            try {
-                const charts = await getDashboardCharts(7);
-                setChartData(charts);
-            } catch (err) {
-                logger.error('Charts fetch failed', err);
-            }
-
+            setLoading(false);
+            void loadCharts();
         } catch (error) {
             logger.error('Dashboard fetch error', error);
             toast.error('Veriler yüklenirken hata oluştu');
@@ -93,6 +106,7 @@ export const useDashboard = () => {
     return {
         stats,
         chartData,
+        chartsLoading,
         recentProjects,
         upcomingMaintenances,
         loading,

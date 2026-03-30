@@ -2,13 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getAllTasks, deleteTask } from '@/services/taskService';
-import ExportButton from '@/components/admin/ExportButton';
+import dynamic from 'next/dynamic';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import PermissionButton from '@/components/common/PermissionButton';
 import PermissionLink from '@/components/common/PermissionLink';
 import { Permission } from '@/config/permissions';
+
+const ExportButton = dynamic(() => import('@/components/admin/ExportButton'), {
+  ssr: false,
+  loading: () => (
+    <button
+      type="button"
+      disabled
+      className="px-4 py-2 rounded-md bg-green-600/70 text-white opacity-70"
+    >
+      Yukleniyor...
+    </button>
+  ),
+});
 
 // Görev türü tanımlama
 interface Task {
@@ -18,44 +30,15 @@ interface Task {
   priority: 'Düşük' | 'Orta' | 'Yüksek' | 'Acil';
   status: 'Atandı' | 'Devam Ediyor' | 'Beklemede' | 'Tamamlandı' | 'İptal Edildi';
   dueDate: string;
-  assignedTo: string;
-  relatedProject?: string;
+  assignedToId?: string;
+  assignedToName?: string;
+  assignedToRole?: string;
+  relatedProjectId?: string;
+  relatedProjectName?: string;
+  relatedProjectStatus?: string;
   createdAt: string;
   updatedAt: string;
 }
-
-// Kullanıcı türü tanımlama
-interface User {
-  id: string;
-  name: string;
-  role: string;
-  avatar?: string;
-}
-
-// Proje türü tanımlama
-interface Project {
-  id: string;
-  name: string;
-  status: string;
-}
-
-// Örnek kullanıcı verileri
-const sampleUsers: User[] = [
-  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör', avatar: 'AY' },
-  { id: '2', name: 'Zeynep Kaya', role: 'Medya Server Uzmanı', avatar: 'ZK' },
-  { id: '3', name: 'Mehmet Demir', role: 'Görüntü Yönetmeni', avatar: 'MD' },
-  { id: '4', name: 'Ayşe Şahin', role: 'Teknisyen', avatar: 'AŞ' },
-  { id: '5', name: 'Can Özkan', role: 'Proje Yöneticisi', avatar: 'CÖ' }
-];
-
-// Örnek proje verileri
-const sampleProjects: Project[] = [
-  { id: '1', name: 'TechCon 2023 Lansman Etkinliği', status: 'Tamamlandı' },
-  { id: '2', name: 'Kurumsal Tanıtım Filmi', status: 'Devam Ediyor' },
-  { id: '3', name: 'Yıllık Bayi Toplantısı', status: 'Planlanıyor' },
-  { id: '4', name: 'Festival Organizasyonu', status: 'Devam Ediyor' },
-  { id: '5', name: 'Müze Multimedya Kurulumu', status: 'Planlanıyor' }
-];
 
 // Renk ayarları
 const priorityColors = {
@@ -91,6 +74,7 @@ export default function TaskList() {
       setLoading(true);
       setError(null);
       try {
+        const { getAllTasks } = await import('@/services/taskService');
         const response = await getAllTasks();
         // Backend'den gelen response formatına göre düzenle
         const tasksList = response.tasks || response;
@@ -104,10 +88,15 @@ export default function TaskList() {
               item.priority === 'HIGH' ? 'Yüksek' : 'Acil') as 'Düşük' | 'Orta' | 'Yüksek' | 'Acil',
           status: (item.status === 'TODO' ? 'Atandı' :
             item.status === 'IN_PROGRESS' ? 'Devam Ediyor' :
-              item.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
+              item.status === 'COMPLETED' ? 'Tamamlandı' :
+                item.status === 'ON_HOLD' ? 'Beklemede' : 'İptal Edildi') as 'Atandı' | 'Devam Ediyor' | 'Beklemede' | 'Tamamlandı' | 'İptal Edildi',
           dueDate: item.dueDate || '',
-          assignedTo: typeof item.assignedTo === 'string' ? item.assignedTo : item.assignedTo?._id || item.assignedTo?.id || '',
-          relatedProject: typeof item.project === 'string' ? item.project : item.project?._id || item.project?.id || '',
+          assignedToId: typeof item.assignedTo === 'string' ? item.assignedTo : item.assignedTo?._id || item.assignedTo?.id || '',
+          assignedToName: typeof item.assignedTo === 'object' && item.assignedTo ? item.assignedTo.name || '' : '',
+          assignedToRole: typeof item.assignedTo === 'object' && item.assignedTo ? item.assignedTo.role || '' : '',
+          relatedProjectId: typeof item.project === 'string' ? item.project : item.project?._id || item.project?.id || '',
+          relatedProjectName: typeof item.project === 'object' && item.project ? item.project.name || '' : '',
+          relatedProjectStatus: typeof item.project === 'object' && item.project ? item.project.status || '' : '',
           createdAt: item.createdAt || new Date().toISOString(),
           updatedAt: item.updatedAt || new Date().toISOString()
         })) : [];
@@ -122,17 +111,6 @@ export default function TaskList() {
     };
     fetchTasks();
   }, []);
-
-  // Kullanıcı bilgisini bul
-  const findUserById = (userId: string): User | undefined => {
-    return sampleUsers.find(user => user.id === userId);
-  };
-
-  // Proje bilgisini bul
-  const findProjectById = (projectId?: string): Project | undefined => {
-    if (!projectId) return undefined;
-    return sampleProjects.find(project => project.id === projectId);
-  };
 
   // Tarihi formatlama
   const formatDate = (dateString: string) => {
@@ -151,16 +129,26 @@ export default function TaskList() {
 
     const matchesAssignee =
       selectedAssignee === 'Tümü' ||
-      task.assignedTo === selectedAssignee;
+      task.assignedToId === selectedAssignee;
 
     return matchesSearch && matchesPriority && matchesStatus && matchesAssignee;
   });
+
+  const assigneeOptions = tasks.reduce<Array<{ id: string; name: string }>>((acc, task) => {
+    if (!task.assignedToId || !task.assignedToName || acc.some((user) => user.id === task.assignedToId)) {
+      return acc;
+    }
+
+    acc.push({ id: task.assignedToId, name: task.assignedToName });
+    return acc;
+  }, []);
 
   // Görev silme işlevi
   const handleDeleteTask = async () => {
     if (!taskToDelete) return;
     setIsDeleting(true);
     try {
+      const { deleteTask } = await import('@/services/taskService');
       await deleteTask(taskToDelete);
       setTasks(prevTasks => prevTasks.filter(t => t.id !== taskToDelete));
       setShowDeleteModal(false);
@@ -304,7 +292,7 @@ export default function TaskList() {
               className="bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5"
             >
               <option value="Tümü">Tüm Kullanıcılar</option>
-              {sampleUsers.map(user => (
+              {assigneeOptions.map(user => (
                 <option key={user.id} value={user.id}>{user.name}</option>
               ))}
             </select>
@@ -378,8 +366,6 @@ export default function TaskList() {
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredTasks.map(task => {
-                  const user = findUserById(task.assignedTo);
-                  const project = findProjectById(task.relatedProject);
                   const daysRemaining = calculateDaysRemaining(task.dueDate);
                   const dueDateClass = getDueDateStatus(task.dueDate, task.status);
 
@@ -402,16 +388,16 @@ export default function TaskList() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {user ? (
+                        {task.assignedToName ? (
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-8 w-8 bg-[#0066CC]/10 dark:bg-primary-light/10 rounded-full flex items-center justify-center">
                               <span className="text-[#0066CC] dark:text-primary-light text-sm font-semibold">
-                                {user.avatar || user.name.split(' ').map(n => n[0]).join('')}
+                                {task.assignedToName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                               </span>
                             </div>
                             <div className="ml-3">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">{user.role}</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">{task.assignedToName}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{task.assignedToRole || 'Kullanıcı'}</div>
                             </div>
                           </div>
                         ) : (
@@ -419,10 +405,10 @@ export default function TaskList() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                        {project ? (
+                        {task.relatedProjectName ? (
                           <div>
-                            <div className="font-medium">{project.name}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{project.status}</div>
+                            <div className="font-medium">{task.relatedProjectName}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{task.relatedProjectStatus || '-'}</div>
                           </div>
                         ) : (
                           <span className="text-gray-500 dark:text-gray-400">-</span>
@@ -517,4 +503,4 @@ export default function TaskList() {
       )}
     </div>
   );
-} 
+}

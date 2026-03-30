@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import ExportMenu from '@/components/admin/ExportMenu';
+import dynamic from 'next/dynamic';
 import { ProjectDisplay, ProjectStatusDisplay } from '@/types/project';
 import { getStoredUserRole, getStoredUserPermissions } from '@/utils/authStorage';
 import { hasPermission, Permission } from '@/config/permissions';
@@ -18,6 +18,11 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
+
+const ExportMenu = dynamic(() => import('@/components/admin/ExportMenu'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const statusColors: Record<ProjectStatusDisplay, string> = {
   'Onay Bekleyen': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',

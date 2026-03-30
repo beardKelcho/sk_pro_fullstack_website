@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 // Performance Budget (KB cinsinden)
 const PERFORMANCE_BUDGET = {
@@ -32,17 +33,17 @@ const BUILD_DIR = path.join(__dirname, '..', '.next');
 
 // Build manifest dosyası
 const BUILD_MANIFEST = path.join(BUILD_DIR, 'build-manifest.json');
+const APP_BUILD_MANIFEST = path.join(BUILD_DIR, 'app-build-manifest.json');
 const BUILD_ID_FILE = path.join(BUILD_DIR, 'BUILD_ID');
 
 /**
  * Build manifest'i oku
  */
-function readBuildManifest() {
+function readBuildManifest(manifestPath) {
   try {
-    const manifest = JSON.parse(fs.readFileSync(BUILD_MANIFEST, 'utf8'));
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     return manifest;
   } catch (error) {
-    console.error('❌ Build manifest okunamadı:', error.message);
     return null;
   }
 }
@@ -52,8 +53,8 @@ function readBuildManifest() {
  */
 function getFileSize(filePath) {
   try {
-    const stats = fs.statSync(filePath);
-    return stats.size / 1024; // KB
+    const fileBuffer = fs.readFileSync(filePath);
+    return zlib.gzipSync(fileBuffer).length / 1024; // KB (gzip)
   } catch (error) {
     return 0;
   }
@@ -71,6 +72,24 @@ function getBuildId() {
 }
 
 /**
+ * Route label'ini rapor için normalize et
+ */
+function normalizeRouteLabel(route) {
+  if (route === '/page') {
+    return '/';
+  }
+
+  return route.replace(/\/page$/, '').replace(/\/route$/, '');
+}
+
+/**
+ * Build asset yolunu çöz
+ */
+function resolveBuildAssetPath(assetPath) {
+  return path.join(BUILD_DIR, assetPath.replace(/^\/+/, ''));
+}
+
+/**
  * Bundle dosyalarını analiz et
  */
 function analyzeBundles() {
@@ -80,15 +99,11 @@ function analyzeBundles() {
     process.exit(1);
   }
 
-  const manifest = readBuildManifest();
-  if (!manifest) {
+  const manifests = [readBuildManifest(BUILD_MANIFEST), readBuildManifest(APP_BUILD_MANIFEST)].filter(Boolean);
+  if (manifests.length === 0) {
     console.error('❌ Build manifest bulunamadı. Önce build yapın: npm run build');
     process.exit(1);
   }
-
-  const staticDir = path.join(BUILD_DIR, 'static');
-  const chunksDir = path.join(staticDir, 'chunks');
-  
   const results = {
     pages: {},
     shared: {},
@@ -96,56 +111,95 @@ function analyzeBundles() {
       js: 0,
       css: 0,
     },
+    routeCount: 0,
     warnings: [],
     errors: [],
   };
 
-  // Shared chunks
-  if (manifest.pages['/_app']) {
-    manifest.pages['/_app'].forEach((file) => {
-      if (file.endsWith('.js')) {
-        const filePath = path.join(chunksDir, file);
-        const size = getFileSize(filePath);
-        results.shared[file] = size;
-        results.total.js += size;
-      } else if (file.endsWith('.css')) {
-        const filePath = path.join(chunksDir, file);
-        const size = getFileSize(filePath);
-        results.shared[file] = size;
-        results.total.css += size;
+  const routeFiles = {};
+  manifests.forEach((manifest) => {
+    Object.entries(manifest.pages || {}).forEach(([page, files]) => {
+      if (page === '/_app' || page === '/_document') return;
+      if (!Array.isArray(files)) return;
+
+      const route = normalizeRouteLabel(page);
+      const routeAssetFiles = Array.from(
+        new Set(files.filter((file) => file.endsWith('.js') || file.endsWith('.css')))
+      );
+
+      if (!routeFiles[route]) {
+        routeFiles[route] = new Set();
       }
+
+      routeAssetFiles.forEach((file) => {
+        routeFiles[route].add(file);
+      });
     });
+  });
+
+  const normalizedRoutes = Object.keys(routeFiles);
+  results.routeCount = normalizedRoutes.length;
+
+  if (normalizedRoutes.length === 0) {
+    console.error('❌ Analiz edilecek route bulunamadı. Build çıktısını kontrol edin.');
+    process.exit(1);
   }
 
-  // Page-specific chunks
-  Object.keys(manifest.pages).forEach((page) => {
-    if (page === '/_app' || page === '/_document') return;
+  const globalSharedFiles = normalizedRoutes.reduce((sharedFiles, route, index) => {
+    const routeAssetFiles = routeFiles[route];
 
-    const pageFiles = manifest.pages[page] || [];
+    if (index === 0) {
+      return new Set(routeAssetFiles);
+    }
+
+    return new Set([...sharedFiles].filter((file) => routeAssetFiles.has(file)));
+  }, new Set());
+
+  globalSharedFiles.forEach((file) => {
+    results.shared[file] = getFileSize(resolveBuildAssetPath(file));
+  });
+
+  normalizedRoutes.forEach((route) => {
     const pageSize = {
       js: 0,
       css: 0,
+      firstLoadJS: 0,
+      firstLoadCSS: 0,
       files: [],
     };
 
-    pageFiles.forEach((file) => {
-      if (file.endsWith('.js')) {
-        const filePath = path.join(chunksDir, file);
-        const size = getFileSize(filePath);
-        pageSize.js += size;
-        pageSize.files.push({ file, size });
-        results.total.js += size;
-      } else if (file.endsWith('.css')) {
-        const filePath = path.join(chunksDir, file);
-        const size = getFileSize(filePath);
-        pageSize.css += size;
-        pageSize.files.push({ file, size });
-        results.total.css += size;
+    routeFiles[route].forEach((file) => {
+      if (globalSharedFiles.has(file)) {
+        return;
       }
+
+      const size = getFileSize(resolveBuildAssetPath(file));
+      const fileKind = file.endsWith('.css') ? 'css' : 'js';
+
+      pageSize[fileKind] += size;
+      pageSize.files.push({ file, size, scope: 'page' });
     });
 
-    results.pages[page] = pageSize;
+    results.pages[route] = pageSize;
   });
+
+  const sharedJS = Object.entries(results.shared)
+    .filter(([file]) => file.endsWith('.js'))
+    .reduce((sum, [, size]) => sum + size, 0);
+  const sharedCSS = Object.entries(results.shared)
+    .filter(([file]) => file.endsWith('.css'))
+    .reduce((sum, [, size]) => sum + size, 0);
+
+  const maxPageJS = Math.max(0, ...Object.values(results.pages).map((page) => page.js));
+  const maxPageCSS = Math.max(0, ...Object.values(results.pages).map((page) => page.css));
+
+  Object.values(results.pages).forEach((page) => {
+    page.firstLoadJS = sharedJS + page.js;
+    page.firstLoadCSS = sharedCSS + page.css;
+  });
+
+  results.total.js = sharedJS + maxPageJS;
+  results.total.css = sharedCSS + maxPageCSS;
 
   return results;
 }
@@ -158,9 +212,9 @@ function checkPerformanceBudget(results) {
   const errors = [];
 
   // Shared JS kontrolü
-  const sharedJSSize = Object.values(results.shared)
-    .filter((size, index) => Object.keys(results.shared)[index].endsWith('.js'))
-    .reduce((sum, size) => sum + size, 0);
+  const sharedJSSize = Object.entries(results.shared)
+    .filter(([file]) => file.endsWith('.js'))
+    .reduce((sum, [, size]) => sum + size, 0);
 
   if (sharedJSSize > PERFORMANCE_BUDGET.sharedJS) {
     const diff = sharedJSSize - PERFORMANCE_BUDGET.sharedJS;
@@ -186,13 +240,20 @@ function checkPerformanceBudget(results) {
         `⚠️  ${page} JS budget aşıldı: ${pageSize.js.toFixed(2)} KB (limit: ${PERFORMANCE_BUDGET.pageJS} KB, fazla: ${diff.toFixed(2)} KB)`
       );
     }
+
+    if (pageSize.firstLoadJS > PERFORMANCE_BUDGET.firstLoadJS) {
+      const diff = pageSize.firstLoadJS - PERFORMANCE_BUDGET.firstLoadJS;
+      warnings.push(
+        `⚠️  ${page} First Load JS budget aşıldı: ${pageSize.firstLoadJS.toFixed(2)} KB (limit: ${PERFORMANCE_BUDGET.firstLoadJS} KB, fazla: ${diff.toFixed(2)} KB)`
+      );
+    }
   });
 
-  // Total JS kontrolü
+  // Worst-case first load JS kontrolü
   if (results.total.js > PERFORMANCE_BUDGET.totalJS) {
     const diff = results.total.js - PERFORMANCE_BUDGET.totalJS;
     errors.push(
-      `❌ Total JS budget aşıldı: ${results.total.js.toFixed(2)} KB (limit: ${PERFORMANCE_BUDGET.totalJS} KB, fazla: ${diff.toFixed(2)} KB)`
+      `❌ En yüksek First Load JS budget aşıldı: ${results.total.js.toFixed(2)} KB (limit: ${PERFORMANCE_BUDGET.totalJS} KB, fazla: ${diff.toFixed(2)} KB)`
     );
   }
 
@@ -206,6 +267,7 @@ function generateReport(results) {
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('📊 Bundle Size Report');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  console.log(`🧭 Analiz edilen route sayısı: ${results.routeCount}\n`);
 
   // Shared chunks
   console.log('📦 Shared Chunks:');
@@ -223,6 +285,7 @@ function generateReport(results) {
     console.log(`   ${page}:`);
     console.log(`      JS: ${pageSize.js.toFixed(2)} KB`);
     console.log(`      CSS: ${pageSize.css.toFixed(2)} KB`);
+    console.log(`      First Load JS: ${pageSize.firstLoadJS.toFixed(2)} KB`);
     if (pageSize.files.length > 0) {
       pageSize.files.forEach(({ file, size }) => {
         console.log(`         - ${file}: ${size.toFixed(2)} KB`);
@@ -231,8 +294,8 @@ function generateReport(results) {
   });
   console.log('');
 
-  // Total
-  console.log('📊 Total:');
+  // Worst-case summary
+  console.log('📊 Worst-Case First Load:');
   console.log(`   JS: ${results.total.js.toFixed(2)} KB`);
   console.log(`   CSS: ${results.total.css.toFixed(2)} KB`);
   console.log(`   Total: ${(results.total.js + results.total.css).toFixed(2)} KB`);
@@ -283,4 +346,3 @@ if (require.main === module) {
 }
 
 module.exports = { analyzeBundles, checkPerformanceBudget, PERFORMANCE_BUDGET };
-

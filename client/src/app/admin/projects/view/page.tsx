@@ -3,14 +3,35 @@ import { Suspense } from 'react';
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ProjectStatus } from '@/types/project';
-import VersionHistoryModal from '@/components/admin/VersionHistoryModal';
 import logger from '@/utils/logger';
 import { getStoredUserRole } from '@/utils/authStorage';
 import { hasRole, Role } from '@/config/permissions';
-import CommentsPanel from '@/components/admin/CommentsPanel';
-import ProjectTasks from '@/components/admin/ProjectTasks';
+
+const VersionHistoryModal = dynamic(() => import('@/components/admin/VersionHistoryModal'), {
+  ssr: false,
+  loading: () => null,
+});
+
+const CommentsPanel = dynamic(() => import('@/components/admin/CommentsPanel'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+      Yorum paneli yukleniyor...
+    </div>
+  ),
+});
+
+const ProjectTasks = dynamic(() => import('@/components/admin/ProjectTasks'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+      Gorevler yukleniyor...
+    </div>
+  ),
+});
 
 // Müşteri tipi
 interface Customer {
@@ -725,7 +746,7 @@ function ViewProjectContent() {
       )}
     </div>
   );
-} 
+}
 export default function ViewProject() {
   return (
     <Suspense fallback={

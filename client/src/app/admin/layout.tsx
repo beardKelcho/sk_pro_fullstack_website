@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -22,7 +21,6 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const normalizedPathname = pathname?.replace(/\/$/, '') || '';
-  const shouldReduceMotion = useReducedMotion();
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -129,18 +127,10 @@ export default function AdminLayout({
               {/* Page content */}
               <main className="p-6">
                 <ErrorBoundary>
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.div
-                      key={pathname}
-                      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
-                      animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                      exit={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                    >
-                      <Breadcrumb />
-                      {children}
-                    </motion.div>
-                  </AnimatePresence>
+                  <div key={pathname} className="animate-in fade-in duration-200">
+                    <Breadcrumb />
+                    {children}
+                  </div>
                 </ErrorBoundary>
               </main>
             </div>

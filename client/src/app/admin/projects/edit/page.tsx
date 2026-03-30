@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ProjectStatus } from '@/types/project';
 import { getProjectById, updateProject } from '@/services/projectService';
 import { getAllCustomers, type Customer } from '@/services/customerService';
@@ -13,8 +14,19 @@ import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { getStoredUserRole } from '@/utils/authStorage';
 import { hasRole, Role } from '@/config/permissions';
-import VersionHistoryModal from '@/components/admin/VersionHistoryModal';
-import EquipmentSelector from '@/components/admin/projects/EquipmentSelector';
+
+const VersionHistoryModal = dynamic(() => import('@/components/admin/VersionHistoryModal'), {
+  ssr: false,
+});
+
+const EquipmentSelector = dynamic(() => import('@/components/admin/projects/EquipmentSelector'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
+      Ekipman secici yukleniyor...
+    </div>
+  ),
+});
 
 // Form verileri için arayüz
 interface FormData {
@@ -622,13 +634,15 @@ function EditProjectContent() {
       </form>
 
       {/* Versiyon Geçmişi Modal */}
-      <VersionHistoryModal
-        isOpen={showVersionHistory}
-        onClose={() => setShowVersionHistory(false)}
-        resource="Project"
-        resourceId={projectId}
-        resourceName={formData.name}
-      />
+      {showVersionHistory && (
+        <VersionHistoryModal
+          isOpen={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          resource="Project"
+          resourceId={projectId}
+          resourceName={formData.name}
+        />
+      )}
     </div>
   );
 } 

@@ -3,40 +3,79 @@ updates:
   # Root package-lock.json (scripts + tooling)
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "main"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "02:00"
       timezone: "Europe/Istanbul"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "deps"
 
   # Client (Next.js)
   - package-ecosystem: "npm"
     directory: "/client"
+    target-branch: "main"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "02:10"
       timezone: "Europe/Istanbul"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "client"
+    commit-message:
+      prefix: "deps"
 
   # Server (Express)
   - package-ecosystem: "npm"
     directory: "/server"
+    target-branch: "main"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "02:20"
       timezone: "Europe/Istanbul"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "server"
+    commit-message:
+      prefix: "deps"
+
+  # Mobile (Capacitor)
+  - package-ecosystem: "npm"
+    directory: "/mobile"
+    target-branch: "main"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:25"
+      timezone: "Europe/Istanbul"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "mobile"
+    commit-message:
+      prefix: "deps"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "main"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "02:30"
       timezone: "Europe/Istanbul"
-    open-pull-requests-limit: 10
-
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"

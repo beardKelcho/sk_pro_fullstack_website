@@ -1,15 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import inventoryService, { InventoryItem, Category, Location } from '@/services/inventoryService';
-import AddItemModal from '@/components/admin/inventory/AddItemModal';
-import EditItemModal from '@/components/admin/inventory/EditItemModal';
+import dynamic from 'next/dynamic';
+import type { InventoryItem, Category, Location } from '@/services/inventoryService';
 import { Pencil, QrCode, Trash2, ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
-import AssignProjectModal from '@/components/admin/inventory/AssignProjectModal';
-import ReturnModal from '@/components/admin/inventory/ReturnModal';
-import QRCodeModal from '@/components/admin/inventory/QRCodeModal';
-import ImportModal from '@/components/admin/ImportModal';
-import ExportMenu from '@/components/admin/ExportMenu';
 import { toast } from 'react-toastify';
 
 import {
@@ -19,6 +13,27 @@ import {
     createColumnHelper,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
+
+const AddItemModal = dynamic(() => import('@/components/admin/inventory/AddItemModal'), { ssr: false });
+const EditItemModal = dynamic(() => import('@/components/admin/inventory/EditItemModal'), { ssr: false });
+const AssignProjectModal = dynamic(() => import('@/components/admin/inventory/AssignProjectModal'), { ssr: false });
+const ReturnModal = dynamic(() => import('@/components/admin/inventory/ReturnModal'), { ssr: false });
+const QRCodeModal = dynamic(() => import('@/components/admin/inventory/QRCodeModal'), { ssr: false });
+const ImportModal = dynamic(() => import('@/components/admin/ImportModal'), { ssr: false });
+const ExportMenu = dynamic(() => import('@/components/admin/ExportMenu'), {
+    ssr: false,
+    loading: () => (
+        <button
+            type="button"
+            disabled
+            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-400 dark:border-gray-600 dark:text-gray-500"
+        >
+            Yukleniyor...
+        </button>
+    ),
+});
+
+const getInventoryService = async () => (await import('@/services/inventoryService')).default;
 
 export default function InventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
@@ -45,6 +60,7 @@ export default function InventoryPage() {
 
     const loadMeta = async () => {
         try {
+            const inventoryService = await getInventoryService();
             const [catsRes, locsRes] = await Promise.all([
                 inventoryService.getCategories(),
                 inventoryService.getLocations()
@@ -61,6 +77,7 @@ export default function InventoryPage() {
         else setIsFetchingNextPage(true);
 
         try {
+            const inventoryService = await getInventoryService();
             const res = await inventoryService.getItems({
                 page: pageToFetch,
                 limit: 50, // Bir defada daha çok veri çekiyoruz (sanallaştırma avantajı)
@@ -102,6 +119,7 @@ export default function InventoryPage() {
     const handleDelete = async (id: string) => {
         if (window.confirm('Bu ekipmanı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
             try {
+                const inventoryService = await getInventoryService();
                 await inventoryService.deleteItem(id);
                 toast.success('Ekipman başarıyla silindi');
                 setItems(prev => prev.filter(item => item._id !== id));
@@ -405,49 +423,61 @@ export default function InventoryPage() {
             </div>
 
             {/* Modals */}
-            <ImportModal
-                isOpen={importModalOpen}
-                onClose={() => setImportModalOpen(false)}
-                onSuccess={() => fetchData(1, false)}
-                type="inventory"
-                title="Envanter İçe Aktar"
-            />
+            {importModalOpen && (
+                <ImportModal
+                    isOpen={importModalOpen}
+                    onClose={() => setImportModalOpen(false)}
+                    onSuccess={() => fetchData(1, false)}
+                    type="inventory"
+                    title="Envanter Ice Aktar"
+                />
+            )}
 
-            <AddItemModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onSuccess={() => fetchData(1, false)}
-                categories={categories}
-                locations={locations}
-            />
+            {isAddModalOpen && (
+                <AddItemModal
+                    isOpen={isAddModalOpen}
+                    onClose={() => setIsAddModalOpen(false)}
+                    onSuccess={() => fetchData(1, false)}
+                    categories={categories}
+                    locations={locations}
+                />
+            )}
 
-            <EditItemModal
-                isOpen={!!editItem}
-                onClose={() => setEditItem(null)}
-                onSuccess={() => fetchData(1, false)}
-                item={editItem}
-                categories={categories}
-            />
+            {editItem && (
+                <EditItemModal
+                    isOpen={!!editItem}
+                    onClose={() => setEditItem(null)}
+                    onSuccess={() => fetchData(1, false)}
+                    item={editItem}
+                    categories={categories}
+                />
+            )}
 
-            <QRCodeModal
-                isOpen={!!qrItem}
-                onClose={() => setQrItem(null)}
-                item={qrItem}
-            />
+            {qrItem && (
+                <QRCodeModal
+                    isOpen={!!qrItem}
+                    onClose={() => setQrItem(null)}
+                    item={qrItem}
+                />
+            )}
 
-            <AssignProjectModal
-                isOpen={!!assignItem}
-                onClose={() => setAssignItem(null)}
-                onSuccess={() => fetchData(1, false)}
-                item={assignItem}
-            />
+            {assignItem && (
+                <AssignProjectModal
+                    isOpen={!!assignItem}
+                    onClose={() => setAssignItem(null)}
+                    onSuccess={() => fetchData(1, false)}
+                    item={assignItem}
+                />
+            )}
 
-            <ReturnModal
-                isOpen={!!returnItem}
-                onClose={() => setReturnItem(null)}
-                onSuccess={() => fetchData(1, false)}
-                item={returnItem}
-            />
+            {returnItem && (
+                <ReturnModal
+                    isOpen={!!returnItem}
+                    onClose={() => setReturnItem(null)}
+                    onSuccess={() => fetchData(1, false)}
+                    item={returnItem}
+                />
+            )}
         </div>
     );
 }

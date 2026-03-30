@@ -1,17 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { use2FAStatus, useSetup2FA, useVerify2FA, useDisable2FA } from '@/services/twoFactorService';
+import dynamic from 'next/dynamic';
+import { use2FAStatus } from '@/services/twoFactorService';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
-import PasswordInput from '@/components/ui/PasswordInput';
-import LazyImage from '@/components/common/LazyImage';
+
+const PasswordInput = dynamic(() => import('@/components/ui/PasswordInput'), {
+  ssr: false,
+  loading: () => null,
+});
+
+const LazyImage = dynamic(() => import('@/components/common/LazyImage'), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function TwoFactorPage() {
   const { data: status, isLoading, refetch } = use2FAStatus();
-  const setupMutation = useSetup2FA();
-  const verifyMutation = useVerify2FA();
-  const disableMutation = useDisable2FA();
 
   const [step, setStep] = useState<'status' | 'setup' | 'verify' | 'disable'>('status');
   const [qrCode, setQrCode] = useState<string>('');
@@ -21,18 +27,25 @@ export default function TwoFactorPage() {
   const [disablePassword, setDisablePassword] = useState('');
   const [disableToken, setDisableToken] = useState('');
   const [disableBackupCode, setDisableBackupCode] = useState('');
+  const [setupPending, setSetupPending] = useState(false);
+  const [verifyPending, setVerifyPending] = useState(false);
+  const [disablePending, setDisablePending] = useState(false);
 
   const is2FAEnabled = status?.is2FAEnabled || false;
 
   const handleSetup = async () => {
+    setSetupPending(true);
     try {
-      const result = await setupMutation.mutateAsync();
+      const { setup2FA } = await import('@/services/twoFactorService');
+      const result = await setup2FA();
       setQrCode(result.qrCode);
       setBackupCodes(result.backupCodes);
       setStep('verify');
       toast.success('QR kod oluşturuldu. Lütfen uygulamanızla tarayın ve doğrulama kodunu girin.');
     } catch (error: any) {
       toast.error(error?.response?.data?.message || '2FA kurulumu başlatılırken bir hata oluştu');
+    } finally {
+      setSetupPending(false);
     }
   };
 
@@ -43,8 +56,10 @@ export default function TwoFactorPage() {
       return;
     }
 
+    setVerifyPending(true);
     try {
-      await verifyMutation.mutateAsync({ token, backupCode });
+      const { verify2FA } = await import('@/services/twoFactorService');
+      await verify2FA({ token, backupCode });
       toast.success('2FA başarıyla aktif edildi!');
       setStep('status');
       setToken('');
@@ -52,6 +67,8 @@ export default function TwoFactorPage() {
       refetch();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || '2FA doğrulama başarısız');
+    } finally {
+      setVerifyPending(false);
     }
   };
 
@@ -62,8 +79,10 @@ export default function TwoFactorPage() {
       return;
     }
 
+    setDisablePending(true);
     try {
-      await disableMutation.mutateAsync({
+      const { disable2FA } = await import('@/services/twoFactorService');
+      await disable2FA({
         password: disablePassword,
         token: disableToken || undefined,
         backupCode: disableBackupCode || undefined,
@@ -76,6 +95,8 @@ export default function TwoFactorPage() {
       refetch();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || '2FA devre dışı bırakma başarısız');
+    } finally {
+      setDisablePending(false);
     }
   };
 
@@ -131,10 +152,10 @@ export default function TwoFactorPage() {
             ) : (
               <button
                 onClick={handleSetup}
-                disabled={setupMutation.isPending}
+                disabled={setupPending}
                 className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
-                {setupMutation.isPending ? (
+                {setupPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Kurulum Başlatılıyor...
@@ -254,10 +275,10 @@ export default function TwoFactorPage() {
               </button>
               <button
                 type="submit"
-                disabled={verifyMutation.isPending}
+                disabled={verifyPending}
                 className="flex-1 px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {verifyMutation.isPending ? 'Doğrulanıyor...' : 'Doğrula ve Aktif Et'}
+                {verifyPending ? 'Doğrulanıyor...' : 'Doğrula ve Aktif Et'}
               </button>
             </div>
           </form>
@@ -329,10 +350,10 @@ export default function TwoFactorPage() {
               </button>
               <button
                 type="submit"
-                disabled={disableMutation.isPending}
+                disabled={disablePending}
                 className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {disableMutation.isPending ? 'Devre Dışı Bırakılıyor...' : "2FA'yı Devre Dışı Bırak"}
+                {disablePending ? 'Devre Dışı Bırakılıyor...' : "2FA'yı Devre Dışı Bırak"}
               </button>
             </div>
           </form>
@@ -341,4 +362,3 @@ export default function TwoFactorPage() {
     </div>
   );
 }
-

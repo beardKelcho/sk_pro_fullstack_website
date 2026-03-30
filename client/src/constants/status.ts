@@ -64,4 +64,15 @@ export const STATUS_NAMES = {
   [`equipment_${EQUIPMENT_STATUS.IN_USE}`]: 'Kullanımda',
   [`equipment_${EQUIPMENT_STATUS.MAINTENANCE}`]: 'Bakımda',
   [`equipment_${EQUIPMENT_STATUS.DAMAGED}`]: 'Arızalı',
-} as const; 
+} as const;
+
+type StatusResource = 'project' | 'task' | 'equipment';
+
+export const getStatusName = (resource: StatusResource, status?: string | null): string => {
+  if (!status) {
+    return '-';
+  }
+
+  const key = `${resource}_${String(status).toLowerCase()}` as keyof typeof STATUS_NAMES;
+  return STATUS_NAMES[key] || status;
+};

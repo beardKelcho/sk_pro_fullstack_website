@@ -6,7 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { authApi } from '@/services/api/auth';
 import PasswordInput from '@/components/ui/PasswordInput';
-import { useVerify2FALogin } from '@/services/twoFactorService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 
@@ -24,7 +23,6 @@ export default function AdminLogin() {
   const [twoFAChallengeToken, setTwoFAChallengeToken] = useState(''); // login sonrası backend'den gelen challenge
   const [twoFactorToken, setTwoFactorToken] = useState('');
   const [twoFactorBackupCode, setTwoFactorBackupCode] = useState('');
-  const verify2FAMutation = useVerify2FALogin();
 
   // Sayfa yüklendiğinde mevcut oturumu cookie üzerinden kontrol et
   useEffect(() => {
@@ -207,7 +205,8 @@ export default function AdminLogin() {
     setLoginError('');
 
     try {
-      const response = await verify2FAMutation.mutateAsync({
+      const { verify2FALogin } = await import('@/services/twoFactorService');
+      const response = await verify2FALogin({
         challengeToken: twoFAChallengeToken,
         token: twoFactorToken || undefined,
         backupCode: twoFactorBackupCode || undefined,
@@ -514,10 +513,10 @@ export default function AdminLogin() {
                       </button>
                       <button
                         type="submit"
-                        disabled={loading || verify2FAMutation.isPending}
+                        disabled={loading}
                         className="flex-1 rounded-xl bg-gradient-to-r from-[#0066CC] to-[#00C49F] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#0066CC]/20 transition hover:brightness-110 disabled:opacity-70"
                       >
-                        {loading || verify2FAMutation.isPending ? 'Doğrulanıyor…' : 'Doğrula ve Giriş Yap'}
+                        {loading ? 'Doğrulanıyor…' : 'Doğrula ve Giriş Yap'}
                       </button>
                     </div>
                   </form>

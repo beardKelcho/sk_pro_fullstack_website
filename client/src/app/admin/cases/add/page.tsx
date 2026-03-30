@@ -3,11 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { createCase } from '@/services/caseService';
 import { getAllProjects } from '@/services/projectService';
 import { toast } from 'react-toastify';
-import EquipmentSelector from '@/components/admin/projects/EquipmentSelector';
 import logger from '@/utils/logger';
+
+const EquipmentSelector = dynamic(() => import('@/components/admin/projects/EquipmentSelector'), {
+    ssr: false,
+    loading: () => (
+        <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-400">
+            Ekipman secici yukleniyor...
+        </div>
+    ),
+});
 
 export default function AddCase() {
     const router = useRouter();

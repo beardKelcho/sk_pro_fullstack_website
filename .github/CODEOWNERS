@@ -1,0 +1,13 @@
+# Default ownership
+* @beardKelcho
+
+# CI and governance
+.github/ @beardKelcho
+SECURITY.md @beardKelcho
+
+# Application areas
+/client/ @beardKelcho
+/server/ @beardKelcho
+/mobile/ @beardKelcho
+/scripts/ @beardKelcho
+/docs/ @beardKelcho

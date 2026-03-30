@@ -5,12 +5,23 @@ import logger from '@/utils/logger';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import inventoryService, { InventoryItem, Category } from '@/services/inventoryService';
+import type { InventoryItem, Category } from '@/services/inventoryService';
 import { toast } from 'react-toastify';
 import { ArrowLeft, Edit, QrCode } from 'lucide-react';
-import EditItemModal from '@/components/admin/inventory/EditItemModal';
-import QRCodeModal from '@/components/admin/inventory/QRCodeModal';
+
+const EditItemModal = dynamic(() => import('@/components/admin/inventory/EditItemModal'), {
+    ssr: false,
+    loading: () => null,
+});
+
+const QRCodeModal = dynamic(() => import('@/components/admin/inventory/QRCodeModal'), {
+    ssr: false,
+    loading: () => null,
+});
+
+const getInventoryService = async () => (await import('@/services/inventoryService')).default;
 
 function InventoryItemViewContent() {
     const router = useRouter();
@@ -23,20 +34,18 @@ function InventoryItemViewContent() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [qrItem, setQrItem] = useState<InventoryItem | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(false);
 
     const fetchData = React.useCallback(async () => {
         setLoading(true);
         try {
-            const [itemRes, catsRes] = await Promise.all([
-                inventoryService.getItem(id),
-                inventoryService.getCategories()
-            ]);
+            const inventoryService = await getInventoryService();
+            const itemRes = await inventoryService.getItem(id);
 
             // Backend "getItem" returns { success: true, data: ... } or just data depending on controller
             // Controller returns { success: true, data: item } wrapper usually
             const itemData = itemRes.data || itemRes;
             setItem(itemData);
-            setCategories(catsRes.data || catsRes);
         } catch (error) {
             logger.error(error instanceof Error ? error.message : String(error), { error });
             toast.error('Ekipman detayları alınamadı');
@@ -51,6 +60,24 @@ function InventoryItemViewContent() {
             fetchData();
         }
     }, [id, fetchData]);
+
+    const ensureCategoriesLoaded = React.useCallback(async () => {
+        if (categories.length > 0 || categoriesLoading) {
+            return;
+        }
+
+        setCategoriesLoading(true);
+        try {
+            const inventoryService = await getInventoryService();
+            const categoriesResponse = await inventoryService.getCategories();
+            setCategories(categoriesResponse.data || categoriesResponse);
+        } catch (error) {
+            logger.error(error instanceof Error ? error.message : String(error), { error });
+            toast.error('Kategoriler alınamadı');
+        } finally {
+            setCategoriesLoading(false);
+        }
+    }, [categories.length, categoriesLoading]);
 
     if (loading) {
         return (
@@ -117,11 +144,15 @@ function InventoryItemViewContent() {
                         <QrCode className="w-5 h-5" />
                     </button>
                     <button
-                        onClick={() => setIsEditModalOpen(true)}
+                        onClick={() => {
+                            ensureCategoriesLoaded().catch(() => undefined);
+                            setIsEditModalOpen(true);
+                        }}
+                        disabled={categoriesLoading}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                     >
                         <Edit className="w-4 h-4" />
-                        Düzenle
+                        {categoriesLoading ? 'Hazırlanıyor...' : 'Düzenle'}
                     </button>
                 </div>
             </div>
@@ -210,19 +241,23 @@ function InventoryItemViewContent() {
             </div>
 
             {/* Modals */}
-            <EditItemModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                onSuccess={fetchData}
-                item={item}
-                categories={categories}
-            />
+            {isEditModalOpen && (
+                <EditItemModal
+                    isOpen={isEditModalOpen}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onSuccess={fetchData}
+                    item={item}
+                    categories={categories}
+                />
+            )}
 
-            <QRCodeModal
-                isOpen={!!qrItem}
-                onClose={() => setQrItem(null)}
-                item={qrItem}
-            />
+            {qrItem && (
+                <QRCodeModal
+                    isOpen={!!qrItem}
+                    onClose={() => setQrItem(null)}
+                    item={qrItem}
+                />
+            )}
         </div>
     );
 }

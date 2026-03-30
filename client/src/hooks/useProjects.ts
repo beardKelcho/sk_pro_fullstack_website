@@ -3,7 +3,6 @@ import { Project, ProjectStatus, ProjectStatusDisplay, ProjectDisplay } from '@/
 import type { Client } from '@/types/client';
 import type { Equipment } from '@/types/equipment';
 import type { TeamMember } from '@/types/project';
-import { getAllProjects, deleteProject, updateProject } from '@/services/projectService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { MESSAGES } from '@/constants/messages';
@@ -100,6 +99,7 @@ export const useProjects = () => {
         setLoading(true);
         setError(null);
         try {
+            const { getAllProjects } = await import('@/services/projectService');
             const response = await getAllProjects();
             const projectsList = response.projects || response;
 
@@ -119,6 +119,7 @@ export const useProjects = () => {
 
     const removeProject = async (id: string): Promise<boolean> => {
         try {
+            const { deleteProject } = await import('@/services/projectService');
             await deleteProject(id);
             setProjects(prev => prev.filter(p => p.id !== id));
             toast.success(MESSAGES.SUCCESS.PROJECT_DELETE);
@@ -144,6 +145,7 @@ export const useProjects = () => {
         setUpdatingStatusId(projectId);
 
         try {
+            const { updateProject } = await import('@/services/projectService');
             await updateProject(projectId, { status: nextBackendStatus } as ProjectStatusUpdatePayload);
             toast.success(MESSAGES.SUCCESS.PROJECT_UPDATE);
         } catch (err: unknown) {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import {
     Film,
     Building2,
@@ -16,13 +16,19 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 
-// Import New Components
-import MaintenanceToggle from '@/components/admin/MaintenanceToggle';
-import HeroSectionModal from '@/components/admin/modals/HeroSectionModal';
-import ServicesSectionModal from '@/components/admin/modals/ServicesSectionModal';
-import ProjectsSectionModal from '@/components/admin/modals/ProjectsSectionModal';
-import AboutSectionModal from '@/components/admin/modals/AboutSectionModal';
-import ContactSectionModal from '@/components/admin/modals/ContactSectionModal';
+const MaintenanceToggle = dynamic(() => import('@/components/admin/MaintenanceToggle'), {
+    ssr: false,
+    loading: () => (
+        <div className="rounded-xl border-2 border-gray-200 bg-white p-6 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            Bakim karti yukleniyor...
+        </div>
+    ),
+});
+const HeroSectionModal = dynamic(() => import('@/components/admin/modals/HeroSectionModal'), { ssr: false });
+const ServicesSectionModal = dynamic(() => import('@/components/admin/modals/ServicesSectionModal'), { ssr: false });
+const ProjectsSectionModal = dynamic(() => import('@/components/admin/modals/ProjectsSectionModal'), { ssr: false });
+const AboutSectionModal = dynamic(() => import('@/components/admin/modals/AboutSectionModal'), { ssr: false });
+const ContactSectionModal = dynamic(() => import('@/components/admin/modals/ContactSectionModal'), { ssr: false });
 
 interface SectionCard {
     id: string;
@@ -155,15 +161,16 @@ export default function SiteManagementPage() {
 
                 {/* 2. Content Sections */}
                 {cards.map((card, index) => (
-                    <motion.div
+                    <div
                         key={card.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
                         onClick={card.onClick}
+                        style={{
+                            animationDelay: `${index * 80}ms`,
+                            animationFillMode: 'both',
+                        }}
                         className={`
               relative p-6 rounded-xl border-2 cursor-pointer
-              transition-all duration-300 hover:shadow-xl
+              transition-all duration-300 hover:shadow-xl animate-in fade-in slide-in-from-bottom-2
               ${card.isActive === false
                                 ? 'bg-gray-50 border-gray-300 dark:bg-gray-800 dark:border-gray-600 opacity-60'
                                 : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:border-blue-400'
@@ -214,36 +221,46 @@ export default function SiteManagementPage() {
                         <div className="absolute top-4 right-4">
                             <Edit className="w-5 h-5 text-gray-400 hover:text-blue-600 transition-colors" />
                         </div>
-                    </motion.div>
+                    </div>
                 ))}
             </div>
 
             {/* Modals */}
-            <HeroSectionModal
-                isOpen={selectedSection === 'hero'}
-                onClose={() => setSelectedSection(null)}
-                initialData={getSectionData('hero')?.data || {}} // Note: backend returns 'data' field now
-            />
+            {selectedSection === 'hero' && (
+                <HeroSectionModal
+                    isOpen
+                    onClose={() => setSelectedSection(null)}
+                    initialData={getSectionData('hero')?.data || {}}
+                />
+            )}
 
-            <ProjectsSectionModal
-                isOpen={selectedSection === 'projects'}
-                onClose={() => setSelectedSection(null)}
-            />
+            {selectedSection === 'projects' && (
+                <ProjectsSectionModal
+                    isOpen
+                    onClose={() => setSelectedSection(null)}
+                />
+            )}
 
-            <ServicesSectionModal
-                isOpen={selectedSection === 'services'}
-                onClose={() => setSelectedSection(null)}
-            />
+            {selectedSection === 'services' && (
+                <ServicesSectionModal
+                    isOpen
+                    onClose={() => setSelectedSection(null)}
+                />
+            )}
 
-            <AboutSectionModal
-                isOpen={selectedSection === 'about'}
-                onClose={() => setSelectedSection(null)}
-            />
+            {selectedSection === 'about' && (
+                <AboutSectionModal
+                    isOpen
+                    onClose={() => setSelectedSection(null)}
+                />
+            )}
 
-            <ContactSectionModal
-                isOpen={selectedSection === 'contact'}
-                onClose={() => setSelectedSection(null)}
-            />
+            {selectedSection === 'contact' && (
+                <ContactSectionModal
+                    isOpen
+                    onClose={() => setSelectedSection(null)}
+                />
+            )}
 
             {/* Placeholder for other modals */}
             {selectedSection && selectedSection !== 'hero' && selectedSection !== 'projects' && selectedSection !== 'services' && selectedSection !== 'about' && selectedSection !== 'contact' && (

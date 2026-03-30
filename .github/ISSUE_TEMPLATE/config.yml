@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security policy
+    url: https://github.com/beardKelcho/sk_pro_fullstack_website/blob/main/SECURITY.md
+    about: Please report vulnerabilities privately and do not disclose exploit details in public issues.
+  - name: Project documentation
+    url: https://github.com/beardKelcho/sk_pro_fullstack_website/blob/main/docs/README.md
+    about: Check setup, deployment, and operational docs before opening support-style issues.

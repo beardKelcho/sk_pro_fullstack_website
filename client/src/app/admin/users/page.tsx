@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { getAllUsers, deleteUser, mapBackendRoleToFrontend } from '@/services/userService';
+import dynamic from 'next/dynamic';
 import { getStoredUserRole } from '@/utils/authStorage';
-import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 import logger from '@/utils/logger';
 import { toast } from 'react-toastify';
 import PermissionButton from '@/components/common/PermissionButton';
@@ -18,6 +17,11 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
+
+const ChangePasswordModal = dynamic(() => import('@/components/admin/ChangePasswordModal'), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface User {
   id: string;
@@ -40,6 +44,18 @@ const roleColors = {
 };
 
 const departments = ['Yönetim', 'Teknik', 'Medya', 'Görüntü'];
+
+const mapBackendRoleToFrontend = (backendRole: string): User['role'] => {
+  const roleMap: Record<string, User['role']> = {
+    'ADMIN': 'Admin',
+    'FIRMA_SAHIBI': 'Firma Sahibi',
+    'PROJE_YONETICISI': 'Proje Yöneticisi',
+    'DEPO_SORUMLUSU': 'Depo Sorumlusu',
+    'TEKNISYEN': 'Teknisyen',
+  };
+
+  return roleMap[backendRole] || 'Teknisyen';
+};
 
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
@@ -67,6 +83,7 @@ export default function UserList() {
       setLoading(true);
       setError(null);
       try {
+        const { getAllUsers } = await import('@/services/userService');
         const response = await getAllUsers();
         const usersList = response.users || response;
         let formattedUsers = Array.isArray(usersList) ? usersList.map((item: any) => ({
@@ -125,6 +142,7 @@ export default function UserList() {
     if (!userToDelete) return;
     setIsDeleting(true);
     try {
+      const { deleteUser } = await import('@/services/userService');
       await deleteUser(userToDelete);
       setUsers(prevUsers => prevUsers.filter(u => u.id !== userToDelete));
       setShowDeleteModal(false);

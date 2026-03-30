@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useDashboard } from '@/hooks/useDashboard';
 import type { Widget } from '@/services/widgetService';
+import type { Project } from '@/services/projectService';
 import StatCardWidget from '@/components/admin/widgets/StatCardWidget';
 import dynamic from 'next/dynamic';
+import { getStatusName } from '@/constants/status';
 
 const DonutChartWidget = dynamic(() => import('@/components/admin/widgets/DonutChartWidget'), {
   ssr: false,
@@ -28,13 +30,22 @@ export default function Dashboard() {
   const {
     stats,
     chartData,
+    chartsLoading,
     recentProjects,
     upcomingMaintenances,
     loading,
-    apiAvailable
+    apiAvailable,
+    refresh,
   } = useDashboard();
 
   const [isCustomizing, setIsCustomizing] = useState(false);
+
+  type DashboardProject = Project & {
+    client?: {
+      companyName?: string;
+      name?: string;
+    };
+  };
 
   // Helper Helpers
   const formatDate = (dateString: string) => {
@@ -59,6 +70,14 @@ export default function Dashboard() {
     upcomingProjects: [],
     upcomingMaintenances
   };
+  const dashboardProjects = recentProjects as DashboardProject[];
+
+  const chartSkeleton = (
+    <div
+      data-testid="dashboard-chart-skeleton"
+      className="animate-pulse rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800/80 h-[380px]"
+    />
+  );
 
   const makeWidget = (w: Pick<Widget, 'type' | 'title' | 'settings'>): Widget => ({
     userId: 'system',
@@ -84,6 +103,13 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Dashboard - Sistem Hatası</h1>
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 p-4 rounded-lg">
           <p className="text-yellow-700 dark:text-yellow-300">Backend API erişilemiyor.</p>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="mt-3 inline-flex items-center rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-700"
+          >
+            Yeniden Dene
+          </button>
         </div>
       </div>
     );
@@ -113,7 +139,7 @@ export default function Dashboard() {
         <div className="p-4">
           {recentProjects.length > 0 ? (
             <div className="max-h-80 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
-              {recentProjects.map((project: any) => (
+              {dashboardProjects.map((project) => (
                 <Link key={project.id || project._id} href={`/admin/projects/view?id=${project.id || project._id}`} className="block py-3 hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
@@ -121,7 +147,7 @@ export default function Dashboard() {
                       <p className="text-xs text-gray-500">{project.client?.companyName || project.client?.name} • {formatDate(project.startDate)}</p>
                     </div>
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getProjectStatusBadgeClass(project.status)}`}>
-                      {project.status}
+                      {getStatusName('project', project.status)}
                     </span>
                   </div>
                 </Link>
@@ -141,7 +167,9 @@ export default function Dashboard() {
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 min-h-[380px]">
-          <DonutChartWidget widget={makeWidget({ type: 'DONUT_CHART', title: 'Proje Durumu', settings: { chartType: 'project_status' } })} chartData={chartData || undefined} isEditable={isCustomizing} />
+          {chartsLoading && !chartData ? chartSkeleton : (
+            <DonutChartWidget widget={makeWidget({ type: 'DONUT_CHART', title: 'Proje Durumu', settings: { chartType: 'project_status' } })} chartData={chartData || undefined} isEditable={isCustomizing} />
+          )}
         </div>
         <div className="min-h-[190px]">
           <StatCardWidget widget={makeWidget({ type: 'STAT_CARD', title: 'Müşteriler', settings: { statType: 'clients_total' } })} dashboardStats={dashboardStats} isEditable={isCustomizing} />
@@ -151,7 +179,9 @@ export default function Dashboard() {
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="min-h-[380px]">
-          <PieChartWidget widget={makeWidget({ type: 'PIE_CHART', title: 'Ekipman Durumu', settings: { chartType: 'equipment_status' } })} chartData={chartData || undefined} isEditable={isCustomizing} />
+          {chartsLoading && !chartData ? chartSkeleton : (
+            <PieChartWidget widget={makeWidget({ type: 'PIE_CHART', title: 'Ekipman Durumu', settings: { chartType: 'equipment_status' } })} chartData={chartData || undefined} isEditable={isCustomizing} />
+          )}
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
@@ -170,8 +200,12 @@ export default function Dashboard() {
 
       {/* Charts Row 3 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <LineChartWidget widget={makeWidget({ type: 'LINE_CHART', title: 'Görev Trendi', settings: { chartType: 'task_completion' } })} chartData={chartData || undefined} isEditable={isCustomizing} />
-        <BarChartWidget widget={makeWidget({ type: 'BAR_CHART', title: 'Aylık Aktivite', settings: { chartType: 'monthly_activity' } })} chartData={chartData || undefined} isEditable={isCustomizing} />
+        {chartsLoading && !chartData ? chartSkeleton : (
+          <LineChartWidget widget={makeWidget({ type: 'LINE_CHART', title: 'Görev Trendi', settings: { chartType: 'task_completion' } })} chartData={chartData || undefined} isEditable={isCustomizing} />
+        )}
+        {chartsLoading && !chartData ? chartSkeleton : (
+          <BarChartWidget widget={makeWidget({ type: 'BAR_CHART', title: 'Aylık Aktivite', settings: { chartType: 'monthly_activity' } })} chartData={chartData || undefined} isEditable={isCustomizing} />
+        )}
       </div>
     </div>
   );

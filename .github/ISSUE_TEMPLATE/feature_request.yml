@@ -1,0 +1,48 @@
+name: Feature request
+description: Suggest a new capability or meaningful product improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share the problem first, then the proposed solution. This helps us prioritize work with the most impact.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What pain point or opportunity are you addressing?
+      placeholder: It is currently difficult to ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      placeholder: We could add ...
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Expected impact
+      description: Who benefits and what changes in practice?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional
+  - type: dropdown
+    id: area
+    attributes:
+      label: Related area
+      options:
+        - Client
+        - Server
+        - Mobile
+        - CI/CD
+        - Documentation
+        - Other
+    validations:
+      required: true

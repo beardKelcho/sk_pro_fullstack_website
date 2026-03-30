@@ -26,48 +26,69 @@ const maskConnectionString = (value: string): string => {
 };
 
 const seedTestUser = async () => {
-    const mongoUri =
-        process.env.MONGODB_URI ||
-        process.env.MONGO_URI ||
-        'mongodb://localhost:27017/skproduction-test';
-    const testEmail = process.env.TEST_USER_EMAIL || 'test@example.com';
-    const testPassword = process.env.TEST_USER_PASSWORD || 'Test123!';
+  const mongoUri =
+    process.env.MONGODB_URI ||
+    process.env.MONGO_URI ||
+    'mongodb://localhost:27017/skproduction-test';
+  const testEmail = process.env.TEST_USER_EMAIL || 'test@example.com';
+  const testPassword = process.env.TEST_USER_PASSWORD || 'Test123!';
+
+  // eslint-disable-next-line no-console
+  console.log(`[seedTestUser] Connecting to MongoDB: ${maskConnectionString(mongoUri)}`);
+  await mongoose.connect(mongoUri);
+
+  // Dinamik model yükleme (CI seed scriptini hafif tutmak için)
+  const User = (await import('../models/User')).default;
+
+  const existing = await User.findOne({ email: testEmail }).select(
+    '+password +twoFactorSecret +twoFactorSecretHash +backupCodes'
+  );
+
+  if (existing) {
+    existing.name = 'CI Test User';
+    existing.password = testPassword;
+    existing.role = 'ADMIN';
+    existing.isActive = true;
+    existing.is2FAEnabled = false;
+    existing.twoFactorSecret = undefined;
+    existing.twoFactorSecretHash = undefined;
+    existing.backupCodes = undefined;
+
+    await existing.save();
 
     // eslint-disable-next-line no-console
-    console.log(`[seedTestUser] Connecting to MongoDB: ${maskConnectionString(mongoUri)}`);
-    await mongoose.connect(mongoUri);
+    console.log(`[seedTestUser] ✅ Test user refreshed: ${testEmail}`);
+    return;
+  }
 
-    // Dinamik model yükleme (typecheck sırasında import döngülerinden kaçınmak için)
-    const User = (await import('../models/User')).default;
+  // Password will be hashed by the User model's pre-save hook.
+  await User.create({
+    name: 'CI Test User',
+    email: testEmail,
+    password: testPassword,
+    role: 'ADMIN',
+    isActive: true,
+    is2FAEnabled: false,
+  });
 
-    const existing = await User.findOne({ email: testEmail });
-    if (existing) {
-        // eslint-disable-next-line no-console
-        console.log(`[seedTestUser] Test user already exists: ${testEmail} — skipping.`);
-        await mongoose.connection.close();
-        process.exit(0);
-    }
-
-    // Password will be hashed by the User model's pre-save hook
-    await User.create({
-        name: 'CI Test User',
-        email: testEmail,
-        password: testPassword,
-        role: 'ADMIN',
-        isActive: true,
-        is2FAEnabled: false,
-    });
-
-    // eslint-disable-next-line no-console
-    console.log(`[seedTestUser] ✅ Test user created: ${testEmail}`);
-    await mongoose.connection.close();
-    process.exit(0);
+  // eslint-disable-next-line no-console
+  console.log(`[seedTestUser] ✅ Test user created: ${testEmail}`);
 };
 
-seedTestUser().catch((err) => {
+seedTestUser()
+  .then(async () => {
+    await mongoose.connection.close();
+    process.exit(0);
+  })
+  .catch(async (err) => {
     // eslint-disable-next-line no-console
     console.error('[seedTestUser] ❌ Error:', err);
+
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.close();
+    }
+
     process.exit(1);
-});
+  });
 
 export default seedTestUser;

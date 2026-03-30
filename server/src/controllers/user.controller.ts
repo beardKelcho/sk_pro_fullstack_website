@@ -8,9 +8,11 @@ export class UserController {
   // Tüm kullanıcıları listele
   async getAllUsers(req: Request, res: Response): Promise<void> {
     try {
-      const { role, search, sort, page, limit } = req.query;
+      const { role, search, sort, page, limit, isActive } = req.query;
       const requestUser = (req as AuthenticatedRequest).user;
       const excludeRole = requestUser?.role !== 'ADMIN' ? 'ADMIN' : undefined;
+      const parsedIsActive =
+        isActive === 'true' ? true : isActive === 'false' ? false : undefined;
 
       const result: PaginatedUsers = await userService.listUsers(
         parseInt(page as string, 10) || 1,
@@ -18,7 +20,8 @@ export class UserController {
         (sort as string) || '-createdAt',
         search as string,
         role as string,
-        excludeRole
+        excludeRole,
+        parsedIsActive
       );
 
       res.status(200).json({

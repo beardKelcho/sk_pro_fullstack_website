@@ -1,4 +1,11 @@
 const path = require('path');
+const packageJson = require('./package.json');
+
+const nextVersion = packageJson.dependencies?.next || '0.0.0';
+const nextMajorVersion = Number.parseInt(
+  String(nextVersion).replace(/^[^\d]*/, '').split('.')[0] || '0',
+  10
+);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -7,10 +14,6 @@ const nextConfig = {
   },
   outputFileTracingRoot: path.resolve(__dirname),
   reactStrictMode: true,
-  eslint: {
-    // ESLint runs separately via `npm run lint` (flat config CLI), not during next build
-    ignoreDuringBuilds: true,
-  },
   output: "export",
   turbopack: {
     root: path.resolve(__dirname),
@@ -24,5 +27,12 @@ const nextConfig = {
     ],
   },
 };
+
+if (Number.isFinite(nextMajorVersion) && nextMajorVersion < 16) {
+  nextConfig.eslint = {
+    // Next 15 still reads this flag during build. Next 16 removed the option.
+    ignoreDuringBuilds: true,
+  };
+}
 
 module.exports = nextConfig;

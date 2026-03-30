@@ -9,7 +9,7 @@ export class ProjectController {
   // Tüm projeleri listele
   async getAllProjects(req: Request, res: Response): Promise<void> {
     try {
-      const { page, limit, sort, search, status, client } = req.query;
+      const { page, limit, sort, search, status, client, dateScope } = req.query;
 
       const result: PaginatedProjects = await projectService.listProjects(
         parseInt(page as string, 10) || 1,
@@ -17,7 +17,8 @@ export class ProjectController {
         (sort as string) || '-startDate',
         search as string,
         status as string,
-        client as string
+        client as string,
+        dateScope as 'upcoming' | 'past' | 'all' | undefined
       );
 
       res.status(200).json({

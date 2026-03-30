@@ -28,12 +28,13 @@ interface User {
   name: string;
   email: string;
   role: 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen';
-  department?: string;
   status: 'Aktif' | 'Pasif';
   avatar?: string;
   phone?: string;
   lastActive?: string;
 }
+
+const PAGE_SIZE = 25;
 
 const roleColors = {
   'Admin': 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400',
@@ -42,8 +43,6 @@ const roleColors = {
   'Depo Sorumlusu': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
   'Teknisyen': 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400'
 };
-
-const departments = ['Yönetim', 'Teknik', 'Medya', 'Görüntü'];
 
 const mapBackendRoleToFrontend = (backendRole: string): User['role'] => {
   const roleMap: Record<string, User['role']> = {
@@ -57,14 +56,29 @@ const mapBackendRoleToFrontend = (backendRole: string): User['role'] => {
   return roleMap[backendRole] || 'Teknisyen';
 };
 
+const mapFrontendRoleToBackend = (frontendRole: string): string | undefined => {
+  const roleMap: Record<string, string> = {
+    'Admin': 'ADMIN',
+    'Firma Sahibi': 'FIRMA_SAHIBI',
+    'Proje Yöneticisi': 'PROJE_YONETICISI',
+    'Depo Sorumlusu': 'DEPO_SORUMLUSU',
+    'Teknisyen': 'TEKNISYEN',
+  };
+
+  return roleMap[frontendRole];
+};
+
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('Tümü');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('Tümü');
   const [selectedStatus, setSelectedStatus] = useState<string>('Tümü');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
@@ -76,33 +90,49 @@ export default function UserList() {
   const [userRole, setUserRole] = useState<string>('');
 
   useEffect(() => {
-    const role = getStoredUserRole() || '';
-    setUserRole(role);
+    setUserRole(getStoredUserRole() || '');
+  }, []);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, selectedRole, selectedStatus]);
+
+  useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
       setError(null);
       try {
         const { getAllUsers } = await import('@/services/userService');
-        const response = await getAllUsers();
-        const usersList = response.users || response;
-        let formattedUsers = Array.isArray(usersList) ? usersList.map((item: any) => ({
+        const response = await getAllUsers({
+          page: currentPage,
+          limit: PAGE_SIZE,
+          search: debouncedSearchTerm || undefined,
+          role: selectedRole !== 'Tümü' ? mapFrontendRoleToBackend(selectedRole) : undefined,
+          isActive: selectedStatus === 'Aktif' ? true : selectedStatus === 'Pasif' ? false : undefined,
+        });
+        const usersList = response.users || [];
+        const formattedUsers = Array.isArray(usersList) ? usersList.map((item: any) => ({
           id: item._id || item.id,
           name: item.name,
           email: item.email,
-          role: mapBackendRoleToFrontend(item.role) as 'Admin' | 'Firma Sahibi' | 'Proje Yöneticisi' | 'Depo Sorumlusu' | 'Teknisyen',
-          department: '',
-          status: (item.isActive ? 'Aktif' : 'Pasif') as 'Aktif' | 'Pasif',
+          role: mapBackendRoleToFrontend(item.role),
+          status: (item.isActive ? 'Aktif' : 'Pasif') as User['status'],
           avatar: item.name?.substring(0, 2).toUpperCase() || '',
-          phone: '',
-          lastActive: item.updatedAt || new Date().toISOString()
+          phone: item.phone || '',
+          lastActive: item.updatedAt || item.createdAt || new Date().toISOString()
         })) : [];
 
-        if (role !== 'ADMIN') {
-          formattedUsers = formattedUsers.filter((u: any) => u.role !== 'Admin');
-        }
-
         setUsers(formattedUsers);
+        setTotalUsers(response.total || 0);
+        setTotalPages(response.totalPages || 1);
       } catch (err) {
         logger.error('Kullanıcı yükleme hatası:', err);
         setError('Kullanıcılar alınamadı.');
@@ -110,8 +140,9 @@ export default function UserList() {
         setLoading(false);
       }
     };
-    fetchUsers();
-  }, []);
+
+    void fetchUsers();
+  }, [currentPage, debouncedSearchTerm, selectedRole, selectedStatus]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Belirtilmemiş';
@@ -125,32 +156,27 @@ export default function UserList() {
     return new Date(dateString).toLocaleDateString('tr-TR', options);
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.phone && user.phone.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesRole = selectedRole === 'Tümü' || user.role === selectedRole;
-    const matchesDepartment = selectedDepartment === 'Tümü' || user.department === selectedDepartment;
-    const matchesStatus = selectedStatus === 'Tümü' || user.status === selectedStatus;
-
-    return matchesSearch && matchesRole && matchesDepartment && matchesStatus;
-  });
-
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
     setIsDeleting(true);
     try {
+      const shouldMoveToPreviousPage = users.length === 1 && currentPage > 1;
       const { deleteUser } = await import('@/services/userService');
       await deleteUser(userToDelete);
-      setUsers(prevUsers => prevUsers.filter(u => u.id !== userToDelete));
+
+      if (shouldMoveToPreviousPage) {
+        setCurrentPage(prev => prev - 1);
+      } else {
+        setUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete));
+      }
+
+      setTotalUsers(prev => Math.max(prev - 1, 0));
       setShowDeleteModal(false);
       setUserToDelete(null);
       toast.success('Kullanıcı başarıyla silindi');
-    } catch (error: any) {
-      logger.error('Kullanıcı silme hatası:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Kullanıcı silinirken bir hata oluştu.';
+    } catch (deleteError: any) {
+      logger.error('Kullanıcı silme hatası:', deleteError);
+      const errorMessage = deleteError?.response?.data?.message || deleteError?.message || 'Kullanıcı silinirken bir hata oluştu.';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -158,7 +184,16 @@ export default function UserList() {
     }
   };
 
-  // TanStack Table Setup
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setSelectedRole('Tümü');
+    setSelectedStatus('Tümü');
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = Boolean(searchTerm) || selectedRole !== 'Tümü' || selectedStatus !== 'Tümü';
+
   const columnHelper = createColumnHelper<User>();
   const columns = [
     columnHelper.accessor('name', {
@@ -187,19 +222,13 @@ export default function UserList() {
       cell: info => <div className="text-sm text-gray-900 dark:text-white truncate">{info.getValue() || 'Belirtilmemiş'}</div>
     }),
     columnHelper.accessor('role', {
-      header: 'Rol & Departman',
-      size: 200,
-      cell: info => {
-        const user = info.row.original;
-        return (
-          <div className="flex flex-col space-y-1">
-            <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full ${roleColors[user.role]} w-max`}>
-              {user.role}
-            </span>
-            <span className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.department}</span>
-          </div>
-        );
-      }
+      header: 'Rol',
+      size: 180,
+      cell: info => (
+        <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full ${roleColors[info.getValue()]} w-max`}>
+          {info.getValue()}
+        </span>
+      )
     }),
     columnHelper.accessor('status', {
       header: 'Durum',
@@ -274,7 +303,7 @@ export default function UserList() {
   ];
 
   const table = useReactTable({
-    data: filteredUsers,
+    data: users,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -282,7 +311,7 @@ export default function UserList() {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
-    count: filteredUsers.length,
+    count: users.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 72,
     overscan: 10,
@@ -318,7 +347,7 @@ export default function UserList() {
       )}
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="md:col-span-2">
             <label htmlFor="search" className="sr-only">Ara</label>
             <div className="relative">
@@ -333,7 +362,7 @@ export default function UserList() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full pl-10 p-2.5 outline-none"
-                placeholder="İsim, e-posta veya telefon ara..."
+                placeholder="İsim veya e-posta ara..."
               />
             </div>
           </div>
@@ -347,26 +376,11 @@ export default function UserList() {
               className="bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5 outline-none"
             >
               <option value="Tümü">Tüm Roller</option>
-              <option value="Admin">Admin</option>
+              {userRole === 'ADMIN' && <option value="Admin">Admin</option>}
               <option value="Proje Yöneticisi">Proje Yöneticisi</option>
               <option value="Firma Sahibi">Firma Sahibi</option>
               <option value="Depo Sorumlusu">Depo Sorumlusu</option>
               <option value="Teknisyen">Teknisyen</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="department-filter" className="sr-only">Departman</label>
-            <select
-              id="department-filter"
-              value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-[#0066CC] dark:focus:ring-primary-light focus:border-[#0066CC] dark:focus:border-primary-light block w-full p-2.5 outline-none"
-            >
-              <option value="Tümü">Tüm Departmanlar</option>
-              {departments.map(department => (
-                <option key={department} value={department}>{department}</option>
-              ))}
             </select>
           </div>
 
@@ -394,21 +408,16 @@ export default function UserList() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           </div>
-        ) : filteredUsers.length === 0 ? (
+        ) : users.length === 0 ? (
           <div className="text-center py-12">
             <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
             </svg>
             <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-100">Kullanıcı Bulunamadı</h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Arama kriterlerinize uygun kullanıcı bulunamadı.</p>
-            {searchTerm || selectedRole !== 'Tümü' || selectedDepartment !== 'Tümü' || selectedStatus !== 'Tümü' ? (
+            {hasActiveFilters ? (
               <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedRole('Tümü');
-                  setSelectedDepartment('Tümü');
-                  setSelectedStatus('Tümü');
-                }}
+                onClick={clearFilters}
                 className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA]"
               >
                 Filtreleri Temizle
@@ -457,10 +466,28 @@ export default function UserList() {
             </table>
           </div>
         )}
-        {!loading && filteredUsers.length > 0 && (
-          <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-            <span>Gösterilen: {filteredUsers.length} Kayıt</span>
-            <span>Sanallaştırma Devrede 🚀</span>
+        {!loading && users.length > 0 && (
+          <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-3 md:flex-row md:items-center md:justify-between text-xs text-gray-500 dark:text-gray-400">
+            <span>Gösterilen: {users.length} / Toplam: {totalUsers}</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200"
+              >
+                Önceki
+              </button>
+              <span>Sayfa {currentPage} / {Math.max(totalPages, 1)}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage >= totalPages}
+                className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200"
+              >
+                Sonraki
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -16,7 +16,7 @@
     "db:sync-indexes": "ts-node src/scripts/syncIndexes.ts",
     "db:seed-email-templates": "ts-node src/scripts/seedEmailTemplates.ts",
     "check:env": "ts-node src/scripts/check-env.ts",
-    "create:test-user": "ts-node src/scripts/createTestUser.ts",
+    "create:test-user": "ts-node --transpile-only src/scripts/seedTestUser.ts",
     "db:cleanup-reseed": "ts-node src/scripts/cleanupAndReseedAdmin.ts",
     "test": "jest",
     "test:watch": "jest --watch",

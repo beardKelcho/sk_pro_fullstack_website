@@ -9,7 +9,7 @@ import { emitWebhookEvent } from '../services/webhook.service';
 // Tüm görevleri listele
 export const getAllTasks = async (req: Request, res: Response) => {
   try {
-    const { status, priority, project, assignedTo, sort = '-createdAt', page = 1, limit = 10 } = req.query;
+    const { status, priority, project, assignedTo, search, sort = '-createdAt', page = 1, limit = 10 } = req.query;
 
     const filters: Record<string, unknown> = {};
 
@@ -27,6 +27,13 @@ export const getAllTasks = async (req: Request, res: Response) => {
 
     if (assignedTo) {
       filters.assignedTo = assignedTo;
+    }
+
+    if (search) {
+      filters.$or = [
+        { title: { $regex: search as string, $options: 'i' } },
+        { description: { $regex: search as string, $options: 'i' } },
+      ];
     }
 
     const pageNumber = parseInt(page as string, 10);
@@ -365,4 +372,3 @@ export const deleteTask = async (req: Request, res: Response) => {
     });
   }
 };
-

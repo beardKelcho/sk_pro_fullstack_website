@@ -9,8 +9,19 @@ export interface Task {
   id?: string;
   title: string;
   description?: string;
-  project?: string;
-  assignedTo: string;
+  project?: string | {
+    _id?: string;
+    id?: string;
+    name?: string;
+    status?: string;
+  };
+  assignedTo: string | {
+    _id?: string;
+    id?: string;
+    name?: string;
+    email?: string;
+    role?: string;
+  };
   status: 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   dueDate?: string;
@@ -28,6 +39,8 @@ export const getAllTasks = async (params?: {
   priority?: string;
   project?: string;
   assignedTo?: string;
+  search?: string;
+  sort?: string;
   page?: number;
   limit?: number;
 }): Promise<{ tasks: Task[]; total: number; page: number; totalPages: number }> => {
@@ -90,6 +103,8 @@ export const useTasks = (params?: {
   priority?: string;
   project?: string;
   assignedTo?: string;
+  search?: string;
+  sort?: string;
   page?: number;
   limit?: number;
 }) => {
@@ -141,4 +156,4 @@ export const useDeleteTask = () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });
-}; 
+};

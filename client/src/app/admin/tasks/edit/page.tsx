@@ -28,7 +28,7 @@ interface TaskForm {
   title: string;
   description: string;
   priority: 'Düşük' | 'Orta' | 'Yüksek' | 'Acil';
-  status: 'Atandı' | 'Devam Ediyor' | 'Beklemede' | 'Tamamlandı' | 'İptal Edildi';
+  status: 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi';
   dueDate: string;
   assignedTo: string;
   relatedProject?: string;
@@ -346,7 +346,6 @@ function EditTaskContent() {
                     >
                       <option value="Atandı">Atandı</option>
                       <option value="Devam Ediyor">Devam Ediyor</option>
-                      <option value="Beklemede">Beklemede</option>
                       <option value="Tamamlandı">Tamamlandı</option>
                       <option value="İptal Edildi">İptal Edildi</option>
                     </select>

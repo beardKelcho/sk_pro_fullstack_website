@@ -46,6 +46,8 @@ export default [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-empty-interface': 'warn',
       '@typescript-eslint/no-empty-function': 'warn',
+      // Keep lint stable when plugin/parser major versions drift on dependency PRs.
+      '@typescript-eslint/no-duplicate-enum-values': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       // Mevcut kodda ts-ignore ve require kullanımları var — uyarı ver, hata değil

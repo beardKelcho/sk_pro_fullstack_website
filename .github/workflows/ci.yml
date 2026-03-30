@@ -186,6 +186,7 @@ jobs:
           spec: cypress/e2e/smoke-tests.cy.ts
         env:
           CYPRESS_baseUrl: http://127.0.0.1:3000
+          CYPRESS_SKIP_TEST_USER_SEED: '1'
 
       - name: Upload Logs & Structure
         if: always()

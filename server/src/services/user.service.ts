@@ -44,7 +44,8 @@ class UserService {
         sort: string = '-createdAt',
         search?: string,
         role?: string,
-        excludeRole?: string
+        excludeRole?: string,
+        isActive?: boolean
     ): Promise<PaginatedUsers> {
         const filters: mongoose.FilterQuery<IUser> = {};
 
@@ -52,6 +53,10 @@ class UserService {
             filters.role = role;
         } else if (excludeRole) {
             filters.role = { $ne: excludeRole } as unknown as IUser['role'];
+        }
+
+        if (typeof isActive === 'boolean') {
+            filters.isActive = isActive;
         }
 
         if (search) {

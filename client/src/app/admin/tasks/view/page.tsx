@@ -14,28 +14,18 @@ interface Task {
   title: string;
   description: string;
   priority: 'Düşük' | 'Orta' | 'Yüksek' | 'Acil';
-  status: 'Atandı' | 'Devam Ediyor' | 'Beklemede' | 'Tamamlandı' | 'İptal Edildi';
+  status: 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi';
   dueDate: string;
   assignedTo: string;
+  assignedToName?: string;
+  assignedToRole?: string;
   relatedProject?: string;
+  relatedProjectName?: string;
+  relatedProjectStatus?: string;
   createdAt: string;
   updatedAt: string;
   notes?: string;
   attachments?: Attachment[];
-}
-
-interface User {
-  id: string;
-  name: string;
-  role: string;
-  avatar?: string;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  status: string;
-  clientId?: string;
 }
 
 interface Attachment {
@@ -45,24 +35,6 @@ interface Attachment {
   url: string;
   uploadedAt: string;
 }
-
-// Örnek kullanıcı verileri
-const sampleUsers: User[] = [
-  { id: '1', name: 'Ahmet Yılmaz', role: 'Teknik Direktör', avatar: 'AY' },
-  { id: '2', name: 'Zeynep Kaya', role: 'Medya Server Uzmanı', avatar: 'ZK' },
-  { id: '3', name: 'Mehmet Demir', role: 'Görüntü Yönetmeni', avatar: 'MD' },
-  { id: '4', name: 'Ayşe Şahin', role: 'Teknisyen', avatar: 'AŞ' },
-  { id: '5', name: 'Can Özkan', role: 'Proje Yöneticisi', avatar: 'CÖ' }
-];
-
-// Örnek proje verileri
-const sampleProjects: Project[] = [
-  { id: '1', name: 'TechCon 2023 Lansman Etkinliği', status: 'Tamamlandı' },
-  { id: '2', name: 'Kurumsal Tanıtım Filmi', status: 'Devam Ediyor' },
-  { id: '3', name: 'Yıllık Bayi Toplantısı', status: 'Planlanıyor' },
-  { id: '4', name: 'Festival Organizasyonu', status: 'Devam Ediyor' },
-  { id: '5', name: 'Müze Multimedya Kurulumu', status: 'Planlanıyor' }
-];
 
 // Renk ayarları
 const priorityColors = {
@@ -75,7 +47,6 @@ const priorityColors = {
 const statusColors = {
   'Atandı': 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400',
   'Devam Ediyor': 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
-  'Beklemede': 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
   'Tamamlandı': 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
   'İptal Edildi': 'bg-gray-100 dark:bg-gray-700/50 text-gray-800 dark:text-gray-400'
 };
@@ -108,8 +79,12 @@ function ViewTaskContent() {
                  taskData.status === 'IN_PROGRESS' ? 'Devam Ediyor' :
                  taskData.status === 'COMPLETED' ? 'Tamamlandı' : 'İptal Edildi') as 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi',
           dueDate: taskData.dueDate || '',
-          assignedTo: typeof taskData.assignedTo === 'object' ? (taskData.assignedTo as any)._id || (taskData.assignedTo as any).id : taskData.assignedTo || '',
-          relatedProject: typeof taskData.project === 'object' ? (taskData.project as any)._id || (taskData.project as any).id : taskData.project || '',
+          assignedTo: typeof taskData.assignedTo === 'object' ? taskData.assignedTo._id || taskData.assignedTo.id || '' : taskData.assignedTo || '',
+          assignedToName: typeof taskData.assignedTo === 'object' ? taskData.assignedTo.name || '' : '',
+          assignedToRole: typeof taskData.assignedTo === 'object' ? taskData.assignedTo.role || '' : '',
+          relatedProject: typeof taskData.project === 'object' ? taskData.project._id || taskData.project.id || '' : taskData.project || '',
+          relatedProjectName: typeof taskData.project === 'object' ? taskData.project.name || '' : '',
+          relatedProjectStatus: typeof taskData.project === 'object' ? taskData.project.status || '' : '',
           createdAt: taskData.createdAt || new Date().toISOString(),
           updatedAt: taskData.updatedAt || new Date().toISOString()
         };
@@ -126,17 +101,6 @@ function ViewTaskContent() {
       fetchTaskData();
     }
   }, [taskId]);
-  
-  // Kullanıcı bilgisini bul
-  const findUserById = (userId: string): User | undefined => {
-    return sampleUsers.find(user => user.id === userId);
-  };
-  
-  // Proje bilgisini bul
-  const findProjectById = (projectId?: string): Project | undefined => {
-    if (!projectId) return undefined;
-    return sampleProjects.find(project => project.id === projectId);
-  };
   
   // Tarihi formatlama
   const formatDate = (dateString: string) => {
@@ -198,8 +162,6 @@ function ViewTaskContent() {
     );
   }
   
-  const assignedUser = findUserById(task.assignedTo);
-  const relatedProject = findProjectById(task.relatedProject);
   const daysRemaining = calculateDaysRemaining(task.dueDate);
   const dueDateClass = getDueDateStatus(task.dueDate, task.status);
 
@@ -355,16 +317,16 @@ function ViewTaskContent() {
                   <div className="space-y-4">
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Atanan Kişi</h4>
-                      {assignedUser ? (
+                      {task.assignedToName ? (
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-[#0066CC]/10 dark:bg-primary-light/10 rounded-full flex items-center justify-center">
                             <span className="text-[#0066CC] dark:text-primary-light text-base font-medium">
-                              {assignedUser.avatar || assignedUser.name.split(' ').map(n => n[0]).join('')}
+                              {task.assignedToName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                             </span>
                           </div>
                           <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">{assignedUser.name}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{assignedUser.role}</p>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{task.assignedToName}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{task.assignedToRole || 'Kullanıcı'}</p>
                           </div>
                         </div>
                       ) : (
@@ -374,12 +336,12 @@ function ViewTaskContent() {
                     
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">İlgili Proje</h4>
-                      {relatedProject ? (
+                      {task.relatedProject && task.relatedProjectName ? (
                         <div>
-                          <Link href={`/admin/projects/view?id=${relatedProject.id}`}>
-                            <span className="text-[#0066CC] dark:text-primary-light hover:underline font-medium">{relatedProject.name}</span>
+                          <Link href={`/admin/projects/view?id=${task.relatedProject}`}>
+                            <span className="text-[#0066CC] dark:text-primary-light hover:underline font-medium">{task.relatedProjectName}</span>
                           </Link>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{relatedProject.status}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{task.relatedProjectStatus || '-'}</p>
                           <Link href="/admin/projects">
                             <button className="mt-2 px-3 py-1 text-xs bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md transition-colors">
                               Proje Yönetimi
@@ -454,14 +416,14 @@ function ViewTaskContent() {
             <CommentsPanel
               resourceType="TASK"
               resourceId={task.id}
-              mentionableUsers={assignedUser ? [{ id: assignedUser.id, name: assignedUser.name }] : []}
+              mentionableUsers={task.assignedTo && task.assignedToName ? [{ id: task.assignedTo, name: task.assignedToName }] : []}
             />
           </div>
         )}
       </div>
     </div>
   );
-} 
+}
 export default function ViewTask() {
   return (
     <Suspense fallback={

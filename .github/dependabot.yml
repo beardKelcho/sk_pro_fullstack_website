@@ -29,6 +29,20 @@ updates:
     labels:
       - "dependencies"
       - "client"
+    groups:
+      nextjs:
+        patterns:
+          - "next"
+          - "eslint-config-next"
+          - "@next/*"
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+      cypress:
+        patterns:
+          - "cypress"
+          - "cypress-*"
+          - "@cypress/*"
     commit-message:
       prefix: "deps"
 

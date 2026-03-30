@@ -11,6 +11,15 @@ type ProjectStatusUpdatePayload = {
     status: ProjectStatus;
 };
 
+type UseProjectsParams = {
+    status?: ProjectStatus;
+    search?: string;
+    dateScope?: 'upcoming' | 'past' | 'all';
+    page?: number;
+    limit?: number;
+    sort?: string;
+};
+
 type BackendProjectEntity = Partial<Project> & {
     _id?: string;
     id?: string;
@@ -49,11 +58,20 @@ const getStatusFromDisplay = (display: ProjectStatusDisplay): ProjectStatus => {
     return displayMap[display] || 'PENDING_APPROVAL';
 };
 
-export const useProjects = () => {
+export const useProjects = (params?: UseProjectsParams) => {
     const [projects, setProjects] = useState<ProjectDisplay[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+    const [total, setTotal] = useState<number>(0);
+    const [page, setPage] = useState<number>(1);
+    const [totalPages, setTotalPages] = useState<number>(1);
+    const status = params?.status;
+    const search = params?.search;
+    const dateScope = params?.dateScope;
+    const pageParam = params?.page ?? 1;
+    const limitParam = params?.limit ?? 20;
+    const sortParam = params?.sort;
 
     const formatProject = (item: BackendProjectEntity): ProjectDisplay => {
         const backendStatus = item.status as ProjectStatus;
@@ -100,7 +118,14 @@ export const useProjects = () => {
         setError(null);
         try {
             const { getAllProjects } = await import('@/services/projectService');
-            const response = await getAllProjects();
+            const response = await getAllProjects({
+                status,
+                search,
+                dateScope,
+                page: pageParam,
+                limit: limitParam,
+                sort: sortParam,
+            });
             const projectsList = response.projects || response;
 
             const formattedProjects: ProjectDisplay[] = Array.isArray(projectsList)
@@ -108,20 +133,27 @@ export const useProjects = () => {
                 : [];
 
             setProjects(formattedProjects);
+            setTotal(response.total || 0);
+            setPage(response.page || pageParam);
+            setTotalPages(response.totalPages || 1);
         } catch (err: unknown) {
             logger.error('Proje yükleme hatası:', err);
             setError(MESSAGES.ERRORS.PROJECT_LOAD);
-            toast.error(MESSAGES.ERRORS.PROJECT_LOAD);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [dateScope, limitParam, pageParam, search, sortParam, status]);
 
     const removeProject = async (id: string): Promise<boolean> => {
         try {
             const { deleteProject } = await import('@/services/projectService');
             await deleteProject(id);
             setProjects(prev => prev.filter(p => p.id !== id));
+            setTotal(prev => {
+                const nextTotal = Math.max(prev - 1, 0);
+                setTotalPages(Math.max(1, Math.ceil(nextTotal / limitParam)));
+                return nextTotal;
+            });
             toast.success(MESSAGES.SUCCESS.PROJECT_DELETE);
             return true;
         } catch (error: unknown) {
@@ -169,6 +201,9 @@ export const useProjects = () => {
         projects,
         loading,
         error,
+        total,
+        page,
+        totalPages,
         updatingStatusId,
         refresh: fetchProjects,
         removeProject,

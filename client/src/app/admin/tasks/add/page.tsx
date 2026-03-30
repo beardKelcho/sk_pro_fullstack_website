@@ -29,7 +29,7 @@ interface TaskForm {
   title: string;
   description: string;
   priority: 'Düşük' | 'Orta' | 'Yüksek' | 'Acil';
-  status: 'Atandı' | 'Devam Ediyor' | 'Beklemede' | 'Tamamlandı' | 'İptal Edildi';
+  status: 'Atandı' | 'Devam Ediyor' | 'Tamamlandı' | 'İptal Edildi';
   dueDate: string;
   assignedTo: string;
   relatedProject?: string;
@@ -167,8 +167,7 @@ export default function AddTask() {
         description: formData.description.trim() || undefined,
         status: (formData.status === 'Atandı' ? 'TODO' :
           formData.status === 'Devam Ediyor' ? 'IN_PROGRESS' :
-            formData.status === 'Beklemede' ? 'TODO' :
-              formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
+            formData.status === 'Tamamlandı' ? 'COMPLETED' : 'CANCELLED') as 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED',
         priority: (formData.priority === 'Düşük' ? 'LOW' :
           formData.priority === 'Orta' ? 'MEDIUM' :
             formData.priority === 'Yüksek' ? 'HIGH' : 'URGENT') as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
@@ -285,7 +284,6 @@ export default function AddTask() {
                     >
                       <option value="Atandı">Atandı</option>
                       <option value="Devam Ediyor">Devam Ediyor</option>
-                      <option value="Beklemede">Beklemede</option>
                       <option value="Tamamlandı">Tamamlandı</option>
                       <option value="İptal Edildi">İptal Edildi</option>
                     </select>
@@ -436,4 +434,4 @@ export default function AddTask() {
       )}
     </div>
   );
-} 
+}

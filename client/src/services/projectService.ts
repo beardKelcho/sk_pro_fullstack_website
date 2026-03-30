@@ -26,8 +26,10 @@ export interface Project {
 export const getAllProjects = async (params?: {
   status?: string;
   search?: string;
+  dateScope?: 'upcoming' | 'past' | 'all';
   startDate?: string;
   endDate?: string;
+  sort?: string;
   page?: number;
   limit?: number;
 }): Promise<{ projects: Project[]; total: number; page: number; totalPages: number }> => {
@@ -88,8 +90,10 @@ export const deleteProject = async (id: string): Promise<void> => {
 export const useProjects = (params?: {
   status?: string;
   search?: string;
+  dateScope?: 'upcoming' | 'past' | 'all';
   startDate?: string;
   endDate?: string;
+  sort?: string;
   page?: number;
   limit?: number;
 }) => {
@@ -144,4 +148,4 @@ export const useDeleteProject = () => {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
-}; 
+};

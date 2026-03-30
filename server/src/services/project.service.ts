@@ -126,9 +126,10 @@ class ProjectService {
         sort: string = '-startDate',
         search?: string,
         status?: string,
-        client?: string
+        client?: string,
+        dateScope?: 'upcoming' | 'past' | 'all'
     ): Promise<PaginatedProjects> {
-        const cacheKey = `projects:list:${page}:${limit}:${sort}:${search || 'none'}:${status || 'all'}:${client || 'all'}`;
+        const cacheKey = `projects:list:${page}:${limit}:${sort}:${search || 'none'}:${status || 'all'}:${client || 'all'}:${dateScope || 'all'}`;
         const redisClient = getRedisClient();
 
         if (redisClient) {
@@ -144,6 +145,14 @@ class ProjectService {
 
         if (status && status !== 'all') filters.status = status;
         if (client) filters.client = client;
+
+        if (dateScope && dateScope !== 'all') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            filters.startDate = dateScope === 'upcoming'
+                ? { $gte: today }
+                : { $lt: today };
+        }
 
         if (search) {
             filters.$text = { $search: search };

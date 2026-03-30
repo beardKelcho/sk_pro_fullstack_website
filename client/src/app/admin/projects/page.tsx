@@ -24,6 +24,8 @@ const ExportMenu = dynamic(() => import('@/components/admin/ExportMenu'), {
   loading: () => null,
 });
 
+const PAGE_SIZE = 25;
+
 const statusColors: Record<ProjectStatusDisplay, string> = {
   'Onay Bekleyen': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   'Onaylanan': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
@@ -33,31 +35,67 @@ const statusColors: Record<ProjectStatusDisplay, string> = {
   'İptal Edildi': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
 };
 
-export default function ProjectsPage() {
-  const {
-    projects,
-    loading,
-    error: apiError,
-    updatingStatusId,
-    removeProject,
-    changeStatus
-  } = useProjects();
+const mapProjectStatusToBackend = (status: string) => {
+  const statusMap: Record<string, 'PENDING_APPROVAL' | 'APPROVED' | 'ACTIVE' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED'> = {
+    'Onay Bekleyen': 'PENDING_APPROVAL',
+    'Onaylanan': 'APPROVED',
+    'Devam Ediyor': 'ACTIVE',
+    'Tamamlandı': 'COMPLETED',
+    'Ertelendi': 'ON_HOLD',
+    'İptal Edildi': 'CANCELLED',
+  };
 
+  return statusMap[status];
+};
+
+export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<'upcoming' | 'past' | 'all'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [projectToDelete, setProjectToDelete] = useState<ProjectDisplay | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const [userRole, setUserRole] = useState<string>('');
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
+
+  const {
+    projects,
+    loading,
+    error: apiError,
+    total,
+    totalPages,
+    updatingStatusId,
+    removeProject,
+    changeStatus,
+  } = useProjects({
+    search: debouncedSearchQuery || undefined,
+    status: statusFilter ? mapProjectStatusToBackend(statusFilter) : undefined,
+    dateScope: dateFilter,
+    page: currentPage,
+    limit: PAGE_SIZE,
+  });
+
   const canUpdateProject = hasPermission(userRole, Permission.PROJECT_UPDATE, userPermissions);
 
   useEffect(() => {
     setUserRole(getStoredUserRole());
     setUserPermissions(getStoredUserPermissions());
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, statusFilter, dateFilter]);
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
@@ -72,33 +110,28 @@ export default function ProjectsPage() {
   const handleDeleteConfirm = async () => {
     if (!projectToDelete) return;
     setIsDeleting(true);
+    const shouldMoveToPreviousPage = projects.length === 1 && currentPage > 1;
     const success = await removeProject(projectToDelete.id);
     if (success) {
+      if (shouldMoveToPreviousPage) {
+        setCurrentPage(prev => prev - 1);
+      }
       setShowDeleteModal(false);
       setProjectToDelete(null);
     }
     setIsDeleting(false);
   };
 
-  const filteredProjects = projects.filter(project => {
-    if (searchQuery && !project.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !(project.customer.companyName || '').toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !(project.customer.name || '').toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    if (statusFilter && project.status !== statusFilter) return false;
+  const clearFilters = () => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+    setStatusFilter('');
+    setDateFilter('all');
+    setCurrentPage(1);
+  };
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = new Date(project.startDate);
+  const hasActiveFilters = Boolean(searchQuery) || Boolean(statusFilter) || dateFilter !== 'all';
 
-    if (dateFilter === 'upcoming' && startDate < today) return false;
-    if (dateFilter === 'past' && startDate >= today) return false;
-
-    return true;
-  });
-
-  // TanStack Table setup
   const columnHelper = createColumnHelper<ProjectDisplay>();
   const columns = [
     columnHelper.accessor('name', {
@@ -208,7 +241,7 @@ export default function ProjectsPage() {
   ];
 
   const table = useReactTable({
-    data: filteredProjects,
+    data: projects,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -216,7 +249,7 @@ export default function ProjectsPage() {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
-    count: filteredProjects.length,
+    count: projects.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 75,
     overscan: 10,
@@ -256,6 +289,7 @@ export default function ProjectsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="relative">
             <input
+              id="project-search"
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -267,6 +301,7 @@ export default function ProjectsPage() {
             </svg>
           </div>
           <select
+            id="project-status-filter"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none"
@@ -280,6 +315,7 @@ export default function ProjectsPage() {
             <option value="İptal Edildi">İptal Edildi</option>
           </select>
           <select
+            id="project-date-filter"
             value={dateFilter}
             onChange={e => setDateFilter(e.target.value as 'upcoming' | 'past' | 'all')}
             className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none"
@@ -289,7 +325,7 @@ export default function ProjectsPage() {
             <option value="past">Geçmiş Etkinlikler</option>
           </select>
           <button
-            onClick={() => { setSearchQuery(''); setStatusFilter(''); setDateFilter('all'); }}
+            onClick={clearFilters}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-sm font-medium outline-none text-left pl-2"
           >
             Filtreleri Temizle
@@ -314,13 +350,22 @@ export default function ProjectsPage() {
 
       {!loading && !apiError && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {filteredProjects.length === 0 ? (
+          {projects.length === 0 ? (
             <div className="p-8 text-center">
               <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{MESSAGES.UI.NO_DATA}</h3>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Filtreleri temizleyin veya yeni bir proje ekleyin.</p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="mt-4 inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
             </div>
           ) : (
             <div
@@ -359,9 +404,27 @@ export default function ProjectsPage() {
             </div>
           )}
 
-          <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-            <span>Gösterilen: {filteredProjects.length} Kayıt</span>
-            <span>Sanallaştırma Devrede 🚀</span>
+          <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-col gap-3 md:flex-row md:items-center md:justify-between text-xs text-gray-500 dark:text-gray-400">
+            <span>Gösterilen: {projects.length} / Toplam: {total}</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200"
+              >
+                Önceki
+              </button>
+              <span>Sayfa {currentPage} / {Math.max(totalPages, 1)}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage >= totalPages}
+                className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-200"
+              >
+                Sonraki
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -391,7 +454,7 @@ export default function ProjectsPage() {
                   disabled={isDeleting}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm"
                 >
-                  {isDeleting ? "Siliniyor..." : "Evet, Sil"}
+                  {isDeleting ? 'Siliniyor...' : 'Evet, Sil'}
                 </button>
                 <button
                   onClick={() => setShowDeleteModal(false)}

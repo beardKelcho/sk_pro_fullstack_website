@@ -20,6 +20,7 @@ export interface User {
 export const getAllUsers = async (params?: {
   role?: string;
   search?: string;
+  isActive?: boolean;
   page?: number;
   limit?: number;
 }): Promise<{ users: User[]; total: number; page: number; totalPages: number }> => {
@@ -116,6 +117,7 @@ export const mapFrontendRoleToBackend = (frontendRole: string): string => {
 export const useUsers = (params?: {
   role?: string;
   search?: string;
+  isActive?: boolean;
   page?: number;
   limit?: number;
 }) => {
@@ -167,4 +169,4 @@ export const useDeleteUser = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
-}; 
+};

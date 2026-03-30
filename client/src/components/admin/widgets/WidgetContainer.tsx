@@ -51,14 +51,6 @@ export default function WidgetContainer({
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  // Widget'ları layout formatına dönüştür - Stable key oluştur
-  const widgetsKey = useMemo(() => {
-    return widgets
-      .filter(w => w.isVisible)
-      .map(w => `${w._id}-${w.position?.x}-${w.position?.y}-${w.position?.w}-${w.position?.h}`)
-      .join('|');
-  }, [widgets]);
-
   const lgLayout = useMemo(() => {
     return widgets
       .filter(w => w.isVisible)
@@ -267,4 +259,3 @@ export default function WidgetContainer({
     </div>
   );
 }
-

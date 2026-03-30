@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
 import { Loader2, Send } from 'lucide-react';
+import { getUserFriendlyMessage, handleApiError } from '@/utils/apiErrorHandler';
 
 interface ContactFormData {
   name: string;
@@ -37,9 +38,8 @@ const ContactForm: React.FC = () => {
         message: ''
       });
     },
-    onError: (error: any) => {
-      const errorMessage = error.response?.data?.message || 'Mesaj gönderilirken bir hata oluştu';
-      toast.error(errorMessage);
+    onError: (error: unknown) => {
+      toast.error(getUserFriendlyMessage(handleApiError(error)));
     },
   });
 

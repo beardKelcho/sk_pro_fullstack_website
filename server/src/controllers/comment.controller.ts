@@ -5,8 +5,8 @@ import { Comment } from '../models';
 import Project from '../models/Project';
 import Task from '../models/Task';
 import { notifyUsers } from '../utils/notificationService';
-import sanitizeHtml from 'sanitize-html';
 import { Permission, hasPermission, Role, hasRole } from '../config/permissions';
+import { sanitizeCommentHtml, stripHtmlToPlainText } from '../utils/htmlSanitizers';
 
 const canViewUsers = (user: Express.Request['user']): boolean => {
   if (!user) return false;
@@ -76,7 +76,12 @@ export const listComments = async (req: Request, res: Response) => {
       .populate('author', authorFields)
       .lean();
 
-    return res.status(200).json({ success: true, comments });
+    const sanitizedComments = comments.map((comment) => ({
+      ...comment,
+      message: sanitizeCommentHtml(String(comment.message || '')),
+    }));
+
+    return res.status(200).json({ success: true, comments: sanitizedComments });
   } catch (error) {
     logger.error('Yorum listeleme hatası:', error);
     return res.status(500).json({ success: false, message: 'Yorumlar alınamadı' });
@@ -109,26 +114,11 @@ export const createComment = async (req: Request, res: Response) => {
     }
 
     // HTML içeriğini sanitize et (XSS koruması)
-    const sanitizedMessage = sanitizeHtml(message.trim(), {
-      allowedTags: [
-        'p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3',
-        'ul', 'ol', 'li', 'a', 'span',
-      ],
-      allowedAttributes: {
-        a: ['href', 'target', 'rel'],
-        span: ['style'],
-      },
-      allowedStyles: {
-        '*': {
-          color: [/^#[0-9a-fA-F]{3,6}$/],
-          'background-color': [/^#[0-9a-fA-F]{3,6}$/],
-        },
-      },
-      allowedSchemes: ['http', 'https', 'mailto'],
-      allowedSchemesByTag: {
-        a: ['http', 'https', 'mailto'],
-      },
-    });
+    const sanitizedMessage = sanitizeCommentHtml(message.trim());
+    const plainText = stripHtmlToPlainText(sanitizedMessage);
+    if (!plainText) {
+      return res.status(400).json({ success: false, message: 'Geçerli bir yorum içeriği giriniz' });
+    }
 
     const mentionIds: mongoose.Types.ObjectId[] = Array.isArray(mentions)
       ? mentions
@@ -145,6 +135,9 @@ export const createComment = async (req: Request, res: Response) => {
     });
 
     const populated = await Comment.findById(comment._id).populate('author', 'name email role').lean();
+    const sanitizedComment = populated
+      ? { ...populated, message: sanitizeCommentHtml(String(populated.message || '')) }
+      : populated;
 
     // Mention bildirimi (SYSTEM kullanıyoruz)
     if (mentionIds.length > 0) {
@@ -163,7 +156,7 @@ export const createComment = async (req: Request, res: Response) => {
       ).catch((err) => logger.error('Mention bildirim hatası:', err));
     }
 
-    return res.status(201).json({ success: true, comment: populated });
+    return res.status(201).json({ success: true, comment: sanitizedComment });
   } catch (error) {
     logger.error('Yorum oluşturma hatası:', error);
     return res.status(500).json({ success: false, message: 'Yorum oluşturulamadı' });
@@ -204,4 +197,3 @@ export const deleteComment = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: 'Yorum silinemedi' });
   }
 };
-

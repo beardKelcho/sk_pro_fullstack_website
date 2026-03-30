@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useTasks, useDeleteTask, Task } from '@/services/taskService';
+import { useTasks, useDeleteTask } from '@/services/taskService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 

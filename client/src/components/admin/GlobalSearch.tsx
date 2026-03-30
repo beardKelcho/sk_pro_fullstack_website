@@ -7,6 +7,7 @@ import { globalSearch, getSearchSuggestions, SearchResult } from '@/services/sea
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useSavedSearches, useSearchHistory, useCreateSavedSearch, useDeleteSavedSearch, useClearSearchHistory } from '@/services/savedSearchService';
 import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 interface GlobalSearchProps {
   isOpen: boolean;
@@ -158,7 +159,6 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error?.message || 'Arama kaydedilirken bir hata oluştu';
       toast.error(errorMessage);
-      const logger = require('@/utils/logger').default;
       logger.error('Arama kaydetme hatası:', error);
     }
   };
@@ -412,7 +412,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                     <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
                       {typeLabels[type]} ({results.length})
                     </div>
-                    {results.map((result, index) => {
+                    {results.map((result) => {
                       const globalIndex = allResults.findIndex(r => r.id === result.id && r.type === result.type);
                       const isSelected = globalIndex === selectedIndex;
                       return (
@@ -476,4 +476,3 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     </div>
   );
 }
-

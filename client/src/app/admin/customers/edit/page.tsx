@@ -1,5 +1,4 @@
 'use client';
-import { Suspense } from 'react';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -7,7 +6,6 @@ import { getCustomerById, updateCustomer } from '@/services/customerService';
 import type { Customer } from '@/services/customerService';
 import { industries, cities } from '@/services/customerService';
 import PhoneInput from '@/components/ui/PhoneInput';
-import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 
@@ -125,7 +123,14 @@ const EditCustomerPage: React.FC = () => {
         ? `${formData.address ? formData.address + ', ' : ''}${district}, ${city}`
         : formData.address || '';
       // Customer interface'inde olmayan field'ları çıkar
-      const { city: _, country: __, taxNumber: ___, taxOffice: ____, website: _____, industry: ______, status: _______, ...customerData } = formData;
+      const customerData = { ...formData };
+      delete customerData.city;
+      delete customerData.country;
+      delete customerData.taxNumber;
+      delete customerData.taxOffice;
+      delete customerData.website;
+      delete customerData.industry;
+      delete customerData.status;
       await updateCustomer(customerId, {
         ...customerData,
         address: fullAddress,

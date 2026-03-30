@@ -3,7 +3,7 @@ import React from 'react';
 export type SchemaType = 'LocalBusiness' | 'Service' | 'SoftwareApplication';
 
 interface StructuredDataProps {
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export default function StructuredData({ data }: StructuredDataProps) {

@@ -11,10 +11,15 @@ interface LanguageContextType {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
+type TranslationValue = string | TranslationDictionary;
+type TranslationDictionary = {
+  [key: string]: TranslationValue;
+};
+
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 // Dil dosyalarını yükle
-const translations: Record<Language, Record<string, any>> = {
+const translations: Record<Language, TranslationDictionary> = {
   tr: {},
   en: {},
 };
@@ -39,7 +44,6 @@ interface LanguageProviderProps {
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>('tr');
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // localStorage'dan dil tercihini yükle
@@ -61,8 +65,6 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
       // localStorage erişim hatası durumunda varsayılan dil
       logger.error('Language context initialization error:', error);
       setLanguageState('tr');
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -81,7 +83,7 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     }
 
     const keys = key.split('.');
-    let value: any = translations[language];
+    let value: TranslationValue | undefined = translations[language];
 
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
@@ -121,4 +123,3 @@ export function useLanguage() {
   }
   return context;
 }
-

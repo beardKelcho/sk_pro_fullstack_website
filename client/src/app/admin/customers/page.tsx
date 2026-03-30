@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { getAllCustomers, deleteCustomer, getStatusLabel, industries, cities } from '@/services/customerService';
 import type { Customer } from '@/services/customerService';
 import { toast } from 'react-toastify';
@@ -17,7 +16,6 @@ const statusColors = {
 };
 
 export default function CustomerList() {
-  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +104,12 @@ export default function CustomerList() {
           Yeni Müşteri Ekle
         </PermissionLink>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+          {error}
+        </div>
+      )}
 
       {/* Filtreler */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
@@ -334,9 +338,10 @@ export default function CustomerList() {
               </button>
               <button
                 onClick={handleDeleteCustomer}
-                className="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700"
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
               >
-                Sil
+                {isDeleting ? 'Siliniyor...' : 'Sil'}
               </button>
             </div>
           </div>

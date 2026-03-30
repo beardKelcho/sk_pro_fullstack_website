@@ -9,12 +9,17 @@ import { Permission, hasPermission } from '../config/permissions';
 export const bulkDelete = async (req: Request, res: Response) => {
   try {
     const { resource, ids } = req.body;
+    const user = req.user;
 
     if (!resource || !Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Kaynak tipi ve ID listesi gereklidir',
       });
+    }
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Kimlik dogrulamasi gerekli' });
     }
 
     /** Resource bazlı yetki kontrolü — her kaynak tipi için ilgili DELETE permission gerekir */
@@ -31,7 +36,7 @@ export const bulkDelete = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Geçersiz kaynak tipi' });
     }
 
-    if (!hasPermission(req.user!.role, requiredPermission as Permission, req.user!.permissions)) {
+    if (!hasPermission(user.role, requiredPermission as Permission, user.permissions)) {
       return res.status(403).json({ success: false, message: 'Bu işlem için yetkiniz yok' });
     }
 
@@ -100,12 +105,17 @@ export const bulkDelete = async (req: Request, res: Response) => {
 export const bulkUpdateStatus = async (req: Request, res: Response) => {
   try {
     const { resource, ids, status } = req.body;
+    const user = req.user;
 
     if (!resource || !Array.isArray(ids) || ids.length === 0 || !status) {
       return res.status(400).json({
         success: false,
         message: 'Kaynak tipi, ID listesi ve yeni durum gereklidir',
       });
+    }
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Kimlik dogrulamasi gerekli' });
     }
 
     /** Resource bazlı yetki kontrolü — her kaynak tipi için ilgili UPDATE permission gerekir */
@@ -122,7 +132,7 @@ export const bulkUpdateStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Geçersiz kaynak tipi' });
     }
 
-    if (!hasPermission(req.user!.role, requiredPermission as Permission, req.user!.permissions)) {
+    if (!hasPermission(user.role, requiredPermission as Permission, user.permissions)) {
       return res.status(403).json({ success: false, message: 'Bu işlem için yetkiniz yok' });
     }
 
@@ -275,4 +285,3 @@ export const bulkAssign = async (req: Request, res: Response) => {
     });
   }
 };
-

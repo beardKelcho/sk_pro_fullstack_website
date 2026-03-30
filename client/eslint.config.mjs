@@ -56,6 +56,31 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    files: ['src/__tests__/**/*.{ts,tsx}', 'scripts/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      'no-console': 'off',
+    },
+  },
+  {
+    files: ['src/app/admin/**/*.{ts,tsx}', 'src/components/admin/**/*.{ts,tsx}', 'src/services/**/*.{ts,tsx}'],
+    rules: {
+      // Legacy admin/service katmanında `any` birikimi yüksek. Burada lint'i
+      // kullanılabilir tutmak için önce daha sinyalli uyarıları görünür bırakıyoruz.
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    files: ['src/utils/logger.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
   // Prettier uyumu (format kurallarını devre dışı bırakır)
   prettier,
 ];

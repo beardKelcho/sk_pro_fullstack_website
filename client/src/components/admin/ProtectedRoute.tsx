@@ -28,6 +28,10 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
     let isMounted = true; // Component unmount kontrolü
 
+    const redirectToLogin = () => {
+      router.replace('/admin/login');
+    };
+
     const checkAuth = async () => {
       try {
         // Auth durumu httpOnly cookie üzerinden API çağrısıyla belirlenir
@@ -70,8 +74,9 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
           // Kullanıcı aktif değilse
           if (!user.isActive) {
-            router.replace('/admin');
+            setIsAuthenticated(false);
             setIsLoading(false);
+            redirectToLogin();
             return;
           }
 
@@ -82,8 +87,8 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
           // Oturum geçersiz, login'e yönlendir
           if (isMounted) {
             setIsAuthenticated(false);
-            router.replace('/admin');
             setIsLoading(false);
+            redirectToLogin();
           }
         }
       } catch (error: unknown) {
@@ -94,10 +99,8 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
         }
         if (isMounted) {
           setIsAuthenticated(false);
-          if (normalizedPathname !== '/admin' && normalizedPathname !== '/admin/login') {
-            router.replace('/admin');
-          }
           setIsLoading(false);
+          redirectToLogin();
         }
       }
     };
@@ -141,4 +144,3 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   // Loading durumunda loading ekranı göster (zaten yukarıda handle edildi)
   return null;
 }
-

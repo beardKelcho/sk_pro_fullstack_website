@@ -1,18 +1,35 @@
 import logger from '@/utils/logger';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-// Optional Redis import - if @upstash/redis is not installed, rate limiting will be disabled
-let Redis: any;
-try {
-  Redis = require('@upstash/redis').Redis;
-} catch {
-  // @upstash/redis not installed
-}
 
-const redis = Redis ? new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-}) : null;
+type RedisLike = {
+  get: (key: string) => Promise<number | null>;
+  incr: (key: string) => Promise<number>;
+  expire: (key: string, ttl: number) => Promise<unknown>;
+};
+
+let redisClientPromise: Promise<RedisLike | null> | null = null;
+
+const getRedisClient = async (): Promise<RedisLike | null> => {
+  if (redisClientPromise) {
+    return redisClientPromise;
+  }
+
+  redisClientPromise = (async () => {
+    try {
+      const redisModule = await import('@upstash/redis');
+      return new redisModule.Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL || '',
+        token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+      }) as RedisLike;
+    } catch {
+      logger.warn('@upstash/redis not available, API rate limiting disabled');
+      return null;
+    }
+  })();
+
+  return redisClientPromise;
+};
 
 interface RateLimitConfig {
   maxRequests: number;
@@ -27,7 +44,8 @@ const rateLimits: Record<string, RateLimitConfig> = {
 };
 
 export async function apiRateLimit(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for') ?? (request as any).ip ?? '127.0.0.1';
+  const redis = await getRedisClient();
+  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? '127.0.0.1';
   const path = request.nextUrl.pathname;
 
   // Rate limit konfigürasyonunu bul

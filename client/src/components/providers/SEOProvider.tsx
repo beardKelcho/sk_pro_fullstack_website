@@ -2,10 +2,17 @@ import { useEffect } from 'react';
 import Script from 'next/script';
 import { generateJsonLd } from '@/utils/seo';
 
+type SEOData = Record<string, unknown> & {
+  title?: string;
+  description?: string;
+  image?: string;
+  url?: string;
+};
+
 interface SEOProviderProps {
   children: React.ReactNode;
   type?: 'Organization' | 'WebSite' | 'Article' | 'Product';
-  data?: any;
+  data?: SEOData;
 }
 
 export function SEOProvider({ children, type = 'WebSite', data = {} }: SEOProviderProps) {

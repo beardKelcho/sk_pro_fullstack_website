@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
-import { X, Save, Loader2, Grid, Plus, Edit2, Trash2, Monitor, Server, Cpu, Layers, Activity } from 'lucide-react';
+import { X, Save, Loader2, Grid, Plus, Monitor, Server, Cpu, Layers, Activity } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableServiceItem from '../SortableServiceItem';

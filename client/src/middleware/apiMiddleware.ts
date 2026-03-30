@@ -51,7 +51,36 @@ export async function apiMiddleware(request: NextRequest) {
 // API route'ları için özel middleware
 export function withApiMiddleware(handler: (request: NextRequest) => Promise<NextResponse>) {
   return async (request: NextRequest) => {
-    return apiMiddleware(request);
+    const startTime = Date.now();
+
+    try {
+      const rateLimitResponse = await apiRateLimit(request);
+      if (rateLimitResponse.status === 429) {
+        return rateLimitResponse;
+      }
+
+      const response = await handler(request);
+      const apiLogger = ApiLogger.getInstance();
+      await apiLogger.logRequest(request, response, Date.now() - startTime);
+      return response;
+    } catch (error) {
+      logger.error('API middleware wrapper error:', error);
+
+      const errorResponse = new NextResponse(JSON.stringify({
+        success: false,
+        error: {
+          message: 'Internal Server Error',
+          code: 'INTERNAL_SERVER_ERROR'
+        }
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const apiLogger = ApiLogger.getInstance();
+      await apiLogger.logRequest(request, errorResponse, Date.now() - startTime);
+      return errorResponse;
+    }
   };
 }
 

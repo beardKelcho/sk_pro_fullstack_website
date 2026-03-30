@@ -2,7 +2,7 @@ import logger from '@/utils/logger';
 interface OfflineFormData {
   id: string;
   formName: string;
-  data: any;
+  data: unknown;
   timestamp: number;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   retryCount: number;
@@ -175,7 +175,7 @@ export const offlineForm = {
    * @param formName - Form adı
    * @param data - Form verisi
    */
-  save: async (formName: string, data: any) => {
+  save: async (formName: string, data: unknown) => {
     await offlineStorage.saveForm({
       formName,
       data,

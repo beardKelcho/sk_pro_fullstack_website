@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getMaintenanceById, updateMaintenance } from '@/services/maintenanceService';
-import type { Maintenance } from '@/services/maintenanceService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 

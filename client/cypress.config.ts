@@ -1,4 +1,8 @@
+import { execFileSync } from 'child_process';
+import path from 'path';
 import { defineConfig } from 'cypress';
+
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 export default defineConfig({
   e2e: {
@@ -22,8 +26,33 @@ export default defineConfig({
       ADMIN_EMAIL: 'admin@skpro.com.tr',
       ADMIN_PASSWORD: 'Admin123!',
     },
-    setupNodeEvents(_on, _config) {
-      // implement node event listeners here
+    setupNodeEvents(on, config) {
+      on('before:run', () => {
+        if (config.env.SKIP_TEST_USER_SEED) {
+          // eslint-disable-next-line no-console
+          console.log('[cypress] Skipping test user seed because SKIP_TEST_USER_SEED is enabled.');
+          return;
+        }
+
+        const serverDir = path.resolve(__dirname, '../server');
+        const testUserEmail = config.env.TEST_USER_EMAIL || 'test@skpro.com.tr';
+        const testUserPassword = config.env.TEST_USER_PASSWORD || 'Test123!';
+
+        // eslint-disable-next-line no-console
+        console.log(`[cypress] Ensuring E2E test user exists: ${testUserEmail}`);
+
+        execFileSync(npmCommand, ['run', 'create:test-user'], {
+          cwd: serverDir,
+          stdio: 'inherit',
+          env: {
+            ...process.env,
+            TEST_USER_EMAIL: testUserEmail,
+            TEST_USER_PASSWORD: testUserPassword,
+          },
+        });
+      });
+
+      return config;
     },
   },
   component: {

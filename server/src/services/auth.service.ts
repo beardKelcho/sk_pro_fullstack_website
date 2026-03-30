@@ -77,8 +77,8 @@ class AuthService {
                 isActive: true,
             });
         } catch (sessionError) {
-            // Non-blocking but log it
-            logger.warn('Session create failed:', sessionError);
+            logger.error('Session create failed during login:', sessionError);
+            throw new AppError('Oturum oluşturulamadı. Lütfen tekrar giriş yapın.', 500);
         }
 
         return { user, tokens };
@@ -178,8 +178,8 @@ class AuthService {
      * Get Profile
      */
     async getProfile(userId: string): Promise<IUser> {
-        /** OAuth token'larını profil yanıtından hariç tut */
-        const user = await User.findById(userId).select('-password -googleTokens -outlookTokens');
+        /** OAuth token alt alanları şemada zaten select:false olduğu için tekrar exclude etmiyoruz. */
+        const user = await User.findById(userId).select('-password');
         if (!user) {
             throw new AppError('Kullanıcı bulunamadı', 404);
         }
@@ -198,7 +198,7 @@ class AuthService {
             userId,
             updateData,
             { new: true, runValidators: true }
-        ).select('-password -googleTokens -outlookTokens');
+        ).select('-password');
 
         if (!updatedUser) {
             throw new AppError('Kullanıcı bulunamadı', 404);

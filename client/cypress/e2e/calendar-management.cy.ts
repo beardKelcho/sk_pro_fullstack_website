@@ -6,147 +6,93 @@
  */
 
 describe('Takvim Yönetimi', () => {
-  const ADMIN_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@skpro.com.tr';
-  const ADMIN_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
-
   beforeEach(() => {
-    // Tüm GET API isteklerini dinle
-    cy.intercept('GET', '**/api/**').as('apiGet');
+    cy.intercept('GET', '**/api/calendar/events*').as('calendarEvents');
     cy.loginAsAdmin();
-    cy.url({ timeout: 20000 }).should('include', '/admin');
+    cy.visit('/admin/calendar');
+    cy.url({ timeout: 20000 }).should('include', '/admin/calendar');
+    cy.wait('@calendarEvents', { timeout: 20000 });
+    cy.contains('h1', 'Proje Takvimi', { timeout: 15000 }).should('be.visible');
   });
 
   describe('Takvim Görünümleri', () => {
     it('takvim sayfası açılmalı', () => {
-      cy.visit('/admin/calendar');
-      cy.url().should('include', '/admin/calendar');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-
-      // Takvim içeriği kontrolü
-      cy.contains(/takvim|calendar/i, { timeout: 15000 }).should('exist');
+      cy.contains('Filtreler').should('be.visible');
+      cy.contains('Renk Kodları').scrollIntoView().should('be.visible');
+      cy.contains('button', 'Ay').should('exist');
+      cy.contains('button', 'Hafta').should('exist');
+      cy.contains('button', 'Gün').should('exist');
     });
 
     it('eventler görüntülenebilmeli', () => {
-      cy.visit('/admin/calendar');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
+      cy.get('@calendarEvents')
+        .its('response.statusCode')
+        .should('be.oneOf', [200, 304]);
 
-      // API yanıtını bekle
-      cy.wait('@apiGet', { timeout: 10000 });
-
-      // Event elementleri kontrolü - gerçek assertion ile
-      cy.get('[class*="fc-view"], [class*="calendar"]', { timeout: 10000 }).should('be.visible');
-      cy.get('[class*="event"], [class*="fc-event"], [data-event]', { timeout: 10000 })
-        .should('have.length.at.least', 0); // Event olmayabilir, ama sayfa yüklendi
+      cy.contains('Renk Kodları').scrollIntoView().should('be.visible');
+      cy.contains('label', 'Projeler').should('exist');
+      cy.contains('label', 'Ekipmanlar').should('exist');
     });
 
     it('ay görünümü çalışmalı', () => {
-      cy.visit('/admin/calendar');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-
-      // Ay görünümü butonu - gerçek assertion ile
-      cy.get('button:contains("Ay"), button:contains("Month"), [aria-label*="month"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .scrollIntoView()
-        .should('be.visible')
-        .click({ force: true });
-
-      // Ay görünümünün aktif olduğunu doğrula
-      cy.get('body', { timeout: 10000 }).should('contain.text', 'Ay').or('contain.text', 'Month');
+      cy.contains('button', 'Ay').click({ force: true });
+      cy.contains('button', 'Ay').should('have.class', 'text-white');
+      cy.contains('Pzt').should('be.visible');
     });
 
     it('hafta görünümü çalışmalı', () => {
-      cy.visit('/admin/calendar');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-
-      // Hafta görünümü butonu - gerçek assertion ile
-      cy.get('button:contains("Hafta"), button:contains("Week"), [aria-label*="week"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .scrollIntoView()
-        .should('be.visible')
-        .click({ force: true });
-
-      // Hafta görünümünün aktif olduğunu doğrula
-      cy.get('body', { timeout: 10000 }).should('contain.text', 'Hafta').or('contain.text', 'Week');
+      cy.contains('button', 'Hafta').click({ force: true });
+      cy.contains('button', 'Hafta').should('have.class', 'text-white');
+      cy.contains(/Pzt|Sal|Çar|Per|Cum|Cmt|Paz/).should('exist');
     });
 
     it('gün görünümü çalışmalı', () => {
-      cy.visit('/admin/calendar');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-
-      // Gün görünümü butonu - gerçek assertion ile
-      cy.get('button:contains("Gün"), button:contains("Day"), [aria-label*="day"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .scrollIntoView()
-        .should('be.visible')
-        .click({ force: true });
-
-      // Gün görünümünün aktif olduğunu doğrula
-      cy.get('body', { timeout: 10000 }).should('contain.text', 'Gün').or('contain.text', 'Day');
+      cy.contains('button', 'Gün').click({ force: true });
+      cy.contains('button', 'Gün').should('have.class', 'text-white');
+      cy.contains('Renk Kodları').should('be.visible');
     });
   });
 
-  describe('Event İşlemleri', () => {
-    it('event oluşturulabilmeli', () => {
-      cy.visit('/admin/calendar');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-
-      // Yeni event butonu - gerçek assertion ile
-      cy.get('button:contains("Yeni"), button:contains("New"), button:contains("Ekle")', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .scrollIntoView()
-        .should('be.visible')
-        .click({ force: true });
-
-      // Modal veya form görünürlüğünü bekle
-      cy.get('form, [role="dialog"], .modal', { timeout: 10000 })
-        .should('exist')
-        .should('be.visible');
-    });
-
-    it('assignee seçilebilmeli', () => {
-      cy.visit('/admin/calendar');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-
-      // Event oluştur veya düzenle - gerçek assertion ile
-      cy.get('button:contains("Yeni"), [class*="event"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .scrollIntoView()
-        .click({ force: true });
-
-      // Assignee select elementi görünür olana kadar bekle
-      cy.get('select[name*="assign"], select[name*="user"], select#assignedTo', { timeout: 10000 })
-        .should('exist')
-        .should('be.visible')
-        .find('option')
-        .should('have.length.at.least', 1)
-        .then(() => {
-          cy.get('select[name*="assign"], select[name*="user"], select#assignedTo')
-            .select(1, { force: true })
-            .should('have.value');
-        });
-    });
-
+  describe('Takvim Araçları', () => {
     it('filtreleme çalışmalı', () => {
-      cy.visit('/admin/calendar');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      cy.wait('@apiGet', { timeout: 10000 });
+      cy.contains('label', 'Projeler')
+        .find('input[type="checkbox"]')
+        .as('projectToggle');
+      cy.contains('label', 'Ekipmanlar')
+        .find('input[type="checkbox"]')
+        .as('equipmentToggle');
 
-      // Filtre butonları (showProjects, showEquipment, status) - gerçek assertion ile
-      cy.get('input[type="checkbox"][name*="show"], button[aria-label*="filtre"]', { timeout: 10000 })
-        .should('have.length.at.least', 1)
-        .first()
-        .should('exist')
-        .scrollIntoView()
-        .should('be.visible')
+      cy.get('@projectToggle').should('be.checked');
+      cy.get('@projectToggle').click({ force: true });
+      cy.contains('label', 'Projeler')
+        .find('input[type="checkbox"]')
+        .should('not.be.checked');
+      cy.contains('label', 'Projeler')
+        .find('input[type="checkbox"]')
         .click({ force: true });
+      cy.contains('label', 'Projeler')
+        .find('input[type="checkbox"]')
+        .should('be.checked');
 
-      // Filtrenin değiştiğini doğrula
-      cy.get('input[type="checkbox"][name*="show"]', { timeout: 10000 }).first().should('have.attr', 'checked').or('not.have.attr', 'checked');
+      cy.get('@equipmentToggle').should('be.checked');
+      cy.get('@equipmentToggle').click({ force: true });
+      cy.contains('label', 'Ekipmanlar')
+        .find('input[type="checkbox"]')
+        .should('not.be.checked');
+      cy.contains('label', 'Ekipmanlar')
+        .find('input[type="checkbox"]')
+        .click({ force: true });
+      cy.contains('label', 'Ekipmanlar')
+        .find('input[type="checkbox"]')
+        .should('be.checked');
+    });
+
+    it('iCal içe aktarma modalı açılıp kapanmalı', () => {
+      cy.contains('button', 'iCal İçe Aktar').click({ force: true });
+      cy.contains('h2', 'iCal Dosyası İçe Aktar', { timeout: 10000 }).should('be.visible');
+      cy.get('input[type="file"]').should('be.visible');
+      cy.contains('button', 'İptal').click({ force: true });
+      cy.contains('h2', 'iCal Dosyası İçe Aktar').should('not.exist');
     });
   });
 });

@@ -1,7 +1,18 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import {
+  useForm,
+  type FieldErrors,
+  type FieldValues,
+  type Path,
+  type UseFormRegister,
+} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z, ZodTypeAny } from 'zod';
+
+interface FormChildProps<TFieldValues extends FieldValues> {
+  register?: UseFormRegister<TFieldValues>;
+  errors?: FieldErrors<TFieldValues>;
+}
 
 interface FormProps<T extends ZodTypeAny> {
   schema: T;
@@ -27,8 +38,8 @@ export function Form<T extends ZodTypeAny>({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={`space-y-6 ${className}`}>
       {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child as any, {
+        if (React.isValidElement<FormChildProps<z.infer<T>>>(child)) {
+          return React.cloneElement(child, {
             register,
             errors,
           });
@@ -42,8 +53,8 @@ export function Form<T extends ZodTypeAny>({
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   name: string;
-  register?: any;
-  errors?: any;
+  register?: UseFormRegister<FieldValues>;
+  errors?: FieldErrors<FieldValues>;
   className?: string;
 }
 
@@ -55,11 +66,14 @@ export const FormField: React.FC<FormFieldProps> = ({
   className = '',
   ...props
 }) => {
-  const error = errors?.[name];
+  const fieldError = errors
+    ? (errors[name as keyof typeof errors] as { message?: unknown } | undefined)
+    : undefined;
+  const errorMessage = typeof fieldError?.message === 'string' ? fieldError.message : undefined;
   const inputClasses = `
     block w-full rounded-md border-gray-300 shadow-sm
     focus:border-blue-500 focus:ring-blue-500 sm:text-sm
-    ${error ? 'border-red-300' : ''}
+    ${errorMessage ? 'border-red-300' : ''}
   `;
 
   return (
@@ -69,11 +83,11 @@ export const FormField: React.FC<FormFieldProps> = ({
       </label>
       <input
         id={name}
-        {...(register ? register(name) : {})}
+        {...(register ? register(name as Path<FieldValues>) : {})}
         {...props}
         className={inputClasses}
       />
-      {error && <FormError>{error.message}</FormError>}
+      {errorMessage && <FormError>{errorMessage}</FormError>}
     </div>
   );
 };

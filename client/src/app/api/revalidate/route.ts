@@ -12,7 +12,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // @ts-ignore - Next.js version disparity fix
     revalidateTag(tag);
 
     return NextResponse.json({ revalidated: true, now: Date.now() });

@@ -8,11 +8,13 @@ import logger from '@/utils/logger';
 // Sentry import (conditional - sadece production'da yüklenecek)
 let Sentry: typeof import('@sentry/nextjs') | null = null;
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  try {
-    Sentry = require('@sentry/nextjs');
-  } catch {
-    // Sentry yoksa devam et
-  }
+  void import('@sentry/nextjs')
+    .then((module) => {
+      Sentry = module;
+    })
+    .catch(() => {
+      // Sentry yoksa devam et
+    });
 }
 
 interface ErrorInfo {
@@ -23,7 +25,7 @@ interface ErrorInfo {
   timestamp: string;
   userId?: string;
   severity?: 'low' | 'medium' | 'high' | 'critical';
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 class ErrorTracker {
@@ -50,7 +52,7 @@ class ErrorTracker {
    * @example
    * errorTracker.logError(new Error('Something went wrong'), { userId: '123' }, 'high')
    */
-  logError(error: Error | string, context?: Record<string, any>, severity: ErrorInfo['severity'] = 'medium') {
+  logError(error: Error | string, context?: Record<string, unknown>, severity: ErrorInfo['severity'] = 'medium') {
     const errorInfo: ErrorInfo = {
       message: typeof error === 'string' ? error : error.message,
       stack: typeof error === 'object' && error.stack ? error.stack : undefined,
@@ -209,7 +211,7 @@ class ErrorTracker {
    * @example
    * errorTracker.captureUnhandledRejection(error)
    */
-  captureUnhandledRejection(reason: any) {
+  captureUnhandledRejection(reason: unknown) {
     const error = reason instanceof Error 
       ? reason 
       : new Error(String(reason));
@@ -276,7 +278,7 @@ export const errorTracker = new ErrorTracker();
  * @param endpoint - API endpoint'i
  * @param method - HTTP method
  */
-export const trackApiError = (error: any, endpoint: string, method: string) => {
+export const trackApiError = (error: unknown, endpoint: string, method: string) => {
   errorTracker.logError(
     error instanceof Error ? error : new Error(String(error)),
     {
@@ -293,7 +295,7 @@ export const trackApiError = (error: any, endpoint: string, method: string) => {
  * @param error - Hata objesi veya mesajı
  * @param context - Ek bağlam bilgileri
  */
-export const trackError = (error: Error | string, context?: Record<string, any>) => {
+export const trackError = (error: Error | string, context?: Record<string, unknown>) => {
   errorTracker.logError(error, context, 'medium');
 };
 

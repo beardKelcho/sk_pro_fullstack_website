@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import axios from '@/services/api/axios';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { Monitor, Server, Cpu, Layers, Activity } from 'lucide-react';
 

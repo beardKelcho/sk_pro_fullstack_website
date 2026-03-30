@@ -9,7 +9,11 @@ const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID;
 // Google Analytics gtag type declaration
 declare global {
   interface Window {
-    gtag: (...args: any[]) => void;
+    gtag?: (
+      command: 'event' | 'config' | 'js',
+      target: string | Date,
+      params?: Record<string, string | number | boolean | undefined>
+    ) => void;
   }
 }
 
@@ -69,7 +73,7 @@ export const GoogleAnalytics = () => {
 // Kullanıcı davranışlarını izle
 export const trackUserBehavior = {
   // Form gönderimi
-  trackFormSubmission: (formId: string, formData: any) => {
+  trackFormSubmission: (formId: string) => {
     event({
       action: 'form_submission',
       category: 'form',

@@ -2,20 +2,34 @@ import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import BackgroundVideo from '@/components/layout/BackgroundVideo';
 import Hero from '@/components/home/Hero';
-import Services from '@/components/home/Services';
-import Projects from '@/components/home/Projects';
+import Services, { type Service } from '@/components/home/Services';
+import Projects, { type Project } from '@/components/home/Projects';
 import About from '@/components/home/About';
 import Contact from '@/components/home/Contact';
-import { SiteContent } from '@/types/cms';
+import { HeroContent, SiteContent } from '@/types/cms';
+
+type HeroContentInput = HeroContent | { data?: HeroContent | null } | null | undefined;
+
+const unwrapHeroContent = (value: HeroContentInput): HeroContent | undefined => {
+    if (!value || typeof value !== 'object') {
+        return undefined;
+    }
+
+    if (value && typeof value === 'object' && 'data' in value) {
+        return value.data || undefined;
+    }
+
+    return value as HeroContent;
+};
 
 interface HomePageProps {
     content: SiteContent;
-    services: any[];
-    projects: any[];
+    services: Service[];
+    projects: Project[];
 }
 
 export default function HomePage({ content, services, projects }: HomePageProps) {
-    const heroData = (content.hero as any)?.data || content.hero;
+    const heroData = unwrapHeroContent(content.hero as HeroContentInput);
     const videoUrl = heroData?.videoUrl || heroData?.backgroundVideo || undefined;
 
     return (

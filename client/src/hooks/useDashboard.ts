@@ -6,7 +6,7 @@ import {
     ChartData,
     UpcomingMaintenance
 } from '@/services/dashboardService';
-import { getAllProjects } from '@/services/projectService';
+import { getAllProjects, type Project } from '@/services/projectService';
 import { checkApiHealth } from '@/utils/apiHealthCheck';
 import logger from '@/utils/logger';
 import { toast } from 'react-toastify';
@@ -14,7 +14,7 @@ import { toast } from 'react-toastify';
 export interface DashboardData {
     stats: DashboardStats;
     chartData: ChartData | null;
-    recentProjects: any[]; // Ideally typed with Project interface but keeping any for now to match strictness incrementally or use Project[]
+    recentProjects: Project[];
     upcomingMaintenances: UpcomingMaintenance[];
     loading: boolean;
     apiAvailable: boolean | null;
@@ -33,7 +33,7 @@ export const useDashboard = () => {
     });
 
     const [chartData, setChartData] = useState<ChartData | null>(null);
-    const [recentProjects, setRecentProjects] = useState<any[]>([]);
+    const [recentProjects, setRecentProjects] = useState<Project[]>([]);
     const [upcomingMaintenances, setUpcomingMaintenances] = useState<UpcomingMaintenance[]>([]);
 
     const fetchData = async () => {
@@ -62,8 +62,8 @@ export const useDashboard = () => {
             }
 
             if (projectsRes.status === 'fulfilled') {
-                // Handle project response format (support { projects: [], ... } or [])
-                const pList = (projectsRes.value as any).projects || projectsRes.value;
+                const projectResponse = projectsRes.value as Awaited<ReturnType<typeof getAllProjects>> | Project[];
+                const pList = Array.isArray(projectResponse) ? projectResponse : projectResponse.projects;
                 setRecentProjects(Array.isArray(pList) ? pList : []);
             } else {
                 logger.error('Projects fetch failed', projectsRes.reason);

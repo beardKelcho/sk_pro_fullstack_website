@@ -47,11 +47,17 @@ export const setCachedData = <T>(key: string, data: T): void => {
 };
 
 // Offline mode için queue (backend geri geldiğinde gönderilecek)
-export const addToOfflineQueue = (action: string, data: any): void => {
+interface OfflineQueueItem<T = unknown> {
+  action: string;
+  data: T;
+  timestamp: number;
+}
+
+export const addToOfflineQueue = <T>(action: string, data: T): void => {
   if (typeof window === 'undefined') return;
 
   try {
-    const queue = JSON.parse(localStorage.getItem('offline_queue') || '[]');
+    const queue = JSON.parse(localStorage.getItem('offline_queue') || '[]') as OfflineQueueItem<T>[];
     queue.push({
       action,
       data,
@@ -68,4 +74,3 @@ export const clearOfflineQueue = (): void => {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('offline_queue');
 };
-

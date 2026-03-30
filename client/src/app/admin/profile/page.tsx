@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi } from '@/services/api/auth';
 import { toast } from 'react-toastify';
@@ -10,7 +9,6 @@ import PasswordInput from '@/components/ui/PasswordInput';
 import logger from '@/utils/logger';
 
 export default function ProfilePage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -366,4 +364,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

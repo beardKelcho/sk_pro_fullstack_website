@@ -56,11 +56,6 @@ export default function MonitoringPage() {
   }
 
   // Grafik verileri hazırla
-  const performanceData = [
-    { name: 'Ortalama', value: data.performance.averagePageLoadTime },
-    { name: 'P95', value: data.performance.p95PageLoadTime },
-  ];
-
   const apiMetricsData = data.apiMetrics.slowestEndpoints.map((endpoint) => ({
     name: endpoint.endpoint.split('/').pop() || endpoint.endpoint,
     time: endpoint.averageTime,
@@ -70,11 +65,6 @@ export default function MonitoringPage() {
   const topPagesData = data.userActivity.topPages.map((page) => ({
     name: page.path.split('/').pop() || page.path,
     value: page.views,
-  }));
-
-  const errorData = data.errors.topErrors.map((error) => ({
-    name: error.message.substring(0, 30) + (error.message.length > 30 ? '...' : ''),
-    value: error.count,
   }));
 
   return (

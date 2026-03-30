@@ -1,8 +1,16 @@
 import logger from '@/utils/logger';
+
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+type MediaTaskData = {
+  file: File;
+  metadata: Record<string, JsonValue>;
+};
+
 interface SyncTask {
   id: string;
   type: 'form' | 'data' | 'media';
-  data: any;
+  data: JsonValue | Record<string, JsonValue> | MediaTaskData;
   timestamp: number;
   priority: 'high' | 'medium' | 'low';
   retryCount: number;
@@ -16,6 +24,7 @@ class BackgroundSync {
   private readonly SYNC_INTERVAL = 5 * 60 * 1000; // 5 dakika
 
   private constructor() {
+    void this.SYNC_INTERVAL;
     this.initSync();
   }
 
@@ -133,9 +142,10 @@ class BackgroundSync {
   }
 
   private async processMediaTask(task: SyncTask): Promise<void> {
+    const mediaData = task.data as MediaTaskData;
     const formData = new FormData();
-    formData.append('file', task.data.file);
-    formData.append('metadata', JSON.stringify(task.data.metadata));
+    formData.append('file', mediaData.file);
+    formData.append('metadata', JSON.stringify(mediaData.metadata));
 
     const response = await fetch('/api/media/upload', {
       method: 'POST',
@@ -164,7 +174,7 @@ export const backgroundSync = BackgroundSync.getInstance();
 
 // Background sync için yardımcı fonksiyonlar
 export const sync = {
-  form: async (data: any, priority: SyncTask['priority'] = 'medium') => {
+  form: async (data: Record<string, JsonValue>, priority: SyncTask['priority'] = 'medium') => {
     await backgroundSync.addToSyncQueue({
       type: 'form',
       data,
@@ -172,7 +182,7 @@ export const sync = {
     });
   },
 
-  data: async (data: any, priority: SyncTask['priority'] = 'medium') => {
+  data: async (data: Record<string, JsonValue>, priority: SyncTask['priority'] = 'medium') => {
     await backgroundSync.addToSyncQueue({
       type: 'data',
       data,
@@ -180,7 +190,7 @@ export const sync = {
     });
   },
 
-  media: async (file: File, metadata: any, priority: SyncTask['priority'] = 'high') => {
+  media: async (file: File, metadata: Record<string, JsonValue>, priority: SyncTask['priority'] = 'high') => {
     await backgroundSync.addToSyncQueue({
       type: 'media',
       data: { file, metadata },

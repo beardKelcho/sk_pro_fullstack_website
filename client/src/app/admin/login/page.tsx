@@ -37,7 +37,6 @@ export default function AdminLogin() {
             logger.info('Active session found, redirecting to dashboard...');
           }
           router.replace('/admin/dashboard');
-          router.refresh();
         }
       } catch {
         // Oturum yok veya geçersiz — login sayfasında kal
@@ -157,7 +156,6 @@ export default function AdminLogin() {
 
         window.dispatchEvent(new CustomEvent('auth:login'));
         router.replace('/admin/dashboard');
-        router.refresh();
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
         logger.error('Login failed:', errorMsg);
@@ -235,7 +233,6 @@ export default function AdminLogin() {
         }
         window.dispatchEvent(new CustomEvent('auth:login'));
         router.replace('/admin/dashboard');
-        router.refresh();
       } else {
         setLoginError(response.message || '2FA doğrulama başarısız');
       }

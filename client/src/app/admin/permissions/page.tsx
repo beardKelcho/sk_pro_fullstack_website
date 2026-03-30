@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { getAllUsers, updateUser, mapBackendRoleToFrontend, mapFrontendRoleToBackend } from '@/services/userService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
-import { Permission, rolePermissions, Role, permissionDetails, permissionsByCategory } from '@/config/permissions';
+import { Permission, rolePermissions, Role, permissionsByCategory } from '@/config/permissions';
 
 // Rol tanımlamaları
 const roles = [

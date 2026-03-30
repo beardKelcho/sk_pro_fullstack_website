@@ -40,6 +40,10 @@ const customJestConfig = {
   ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
+    '!src/app/**',
+    '!src/instrumentation.ts',
+    '!src/**/__tests__/**',
+    '!src/**/*.{test,spec}.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/*.stories.{js,jsx,ts,tsx}',
   ],

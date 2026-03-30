@@ -2,6 +2,15 @@ import logger from '@/utils/logger';
 import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { cache } from '@/utils/cache';
 
+const getDataSize = (value: unknown): number => {
+  try {
+    const serialized = JSON.stringify(value);
+    return serialized ? serialized.length : 0;
+  } catch {
+    return 0;
+  }
+};
+
 interface CacheContextType {
   get: <T>(key: string) => Promise<T | null>;
   set: <T>(key: string, data: T, options?: { ttl?: number; tags?: string[] }) => Promise<void>;
@@ -65,15 +74,17 @@ export function CacheProvider({ children, defaultTTL = 3600, defaultTags = [] }:
 
     checkStatus: async (key: string) => {
       try {
-        const item = (cache as any).cache.get(key);
+        const item = cache.getItem(key);
         if (!item) {
           return { exists: false, ttl: 0, size: 0 };
         }
-        const ttl = (item.ttl || defaultTTL) - (Date.now() - item.timestamp);
+
+        const ttl = item.ttl - (Date.now() - item.timestamp);
+
         return {
           exists: true,
           ttl: Math.max(0, ttl),
-          size: JSON.stringify(item.data).length,
+          size: getDataSize(item.data),
         };
       } catch (error) {
         logger.error('Cache check status error:', error);
@@ -87,18 +98,7 @@ export function CacheProvider({ children, defaultTTL = 3600, defaultTags = [] }:
 
     getStats: async () => {
       try {
-        const cacheInstance = (cache as any);
-        const totalKeys = cacheInstance.cache.size;
-        const tags = Array.from(cacheInstance.tagIndex.keys()) as string[];
-        let totalSize = 0;
-        cacheInstance.cache.forEach((item: any) => {
-          totalSize += JSON.stringify(item.data).length;
-        });
-        return {
-          totalKeys: Number(totalKeys),
-          totalSize,
-          tags,
-        };
+        return cache.getStats();
       } catch (error) {
         logger.error('Cache get stats error:', error);
         return {

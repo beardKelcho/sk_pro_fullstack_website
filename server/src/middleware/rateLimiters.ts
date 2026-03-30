@@ -32,6 +32,12 @@ const keyByUserOrIp = (req: Request): string => {
   return `ip:${req.ip}`;
 };
 
+const isRateLimitDisabled = (): boolean => {
+  return process.env.NODE_ENV === 'test' ||
+    process.env.NODE_ENV === 'development' ||
+    process.env.DISABLE_RATE_LIMIT === 'true';
+};
+
 export const createRateLimiter = (opts: {
   windowMs: number;
   max: number;
@@ -40,12 +46,6 @@ export const createRateLimiter = (opts: {
 }) => {
   const minutes = Math.ceil(opts.windowMs / (60 * 1000));
   const defaultMessage = opts.customMessage || `Çok fazla istek. Lütfen ${minutes} dakika sonra tekrar deneyin.`;
-
-  // Test ve development ortamında rate limiting'i tamamen devre dışı bırak
-  // TestSprite gibi otomasyon testleri için gerekli
-  const isTestEnv = process.env.NODE_ENV === 'test' ||
-    process.env.NODE_ENV === 'development' ||
-    process.env.DISABLE_RATE_LIMIT === 'true';
 
   return rateLimit({
     windowMs: opts.windowMs,
@@ -56,7 +56,7 @@ export const createRateLimiter = (opts: {
       // OPTIONS isteklerini her zaman atla
       if (req.method === 'OPTIONS') return true;
       // Test ortamında tüm istekleri atla
-      if (isTestEnv) return true;
+      if (isRateLimitDisabled()) return true;
       return false;
     },
     keyGenerator: (req) => {
@@ -129,4 +129,3 @@ export const rateLimitConfig = () => ({
   uploadMax: parseNumber(process.env.RATE_LIMIT_UPLOAD_MAX, 60),
   exportMax: parseNumber(process.env.RATE_LIMIT_EXPORT_MAX, 60),
 });
-

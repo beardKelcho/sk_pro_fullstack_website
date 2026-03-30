@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
+import React from 'react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ErrorMessage, ErrorCard } from '../ErrorStates';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
@@ -73,7 +73,7 @@ describe('ErrorStates', () => {
     };
 
     beforeEach(() => {
-      jest.spyOn(console, 'error').mockImplementation(() => {});
+      jest.spyOn(console, 'error').mockImplementation(() => undefined);
     });
 
     afterEach(() => {

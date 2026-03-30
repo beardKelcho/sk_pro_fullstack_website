@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { CommentResourceType, useComments, useCreateComment, useDeleteComment } from '@/services/commentService';
+import { extractPlainTextFromHtml, sanitizeCommentHtmlForDisplay } from '@/utils/htmlSanitizer';
 import RichTextEditor from './RichTextEditor';
 
 type MentionUser = { id: string; name: string };
@@ -21,18 +22,19 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
   const [message, setMessage] = useState('');
   const [selectedMentions, setSelectedMentions] = useState<string[]>([]);
 
-  // HTML içeriğinden sadece metni çıkar (boş kontrolü için)
-  const getPlainText = (html: string): string => {
-    if (typeof window === 'undefined') return html;
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    return div.textContent || div.innerText || '';
-  };
-
   const canSubmit = useMemo(() => {
-    const plainText = getPlainText(message);
+    const plainText = extractPlainTextFromHtml(message);
     return plainText.trim().length > 0;
   }, [message]);
+
+  const sanitizedComments = useMemo(
+    () =>
+      (comments || []).map((comment) => ({
+        ...comment,
+        message: sanitizeCommentHtmlForDisplay(comment.message),
+      })),
+    [comments]
+  );
 
   const handleToggleMention = (userId: string) => {
     setSelectedMentions((prev) => (prev.includes(userId) ? prev.filter((x) => x !== userId) : [...prev, userId]));
@@ -116,8 +118,8 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm divide-y divide-gray-200 dark:divide-gray-700">
         {isLoading ? (
           <div className="p-4 text-sm text-gray-500">Yükleniyor…</div>
-        ) : comments && comments.length > 0 ? (
-          comments.map((c) => (
+        ) : sanitizedComments.length > 0 ? (
+          sanitizedComments.map((c) => (
             <div key={c._id} className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -200,4 +202,3 @@ export default function CommentsPanel({ resourceType, resourceId, mentionableUse
     </div>
   );
 }
-

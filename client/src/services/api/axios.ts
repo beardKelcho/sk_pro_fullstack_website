@@ -14,6 +14,12 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
+const clearStoredUser = () => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem('user');
+  window.sessionStorage.removeItem('user');
+};
+
 // Axios instance oluştur
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -23,21 +29,6 @@ const apiClient = axios.create({
   withCredentials: true,
   timeout: 30000,
 });
-
-let isRefreshing = false;
-let failedQueue: any[] = [];
-
-const processQueue = (error: any, token: any = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-
-  failedQueue = [];
-};
 
 // Request interceptor - Token cookie'den otomatik gönderilir (withCredentials:true)
 // Web Storage (localStorage/sessionStorage) kullanılmıyor — XSS koruması
@@ -56,8 +47,6 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
-    const originalRequest = error.config;
-
     // Network hatası handling...
     if (!error.response) {
       // ... (Keep existing network error logic)
@@ -80,12 +69,8 @@ apiClient.interceptors.response.use(
 
         // Monitoring ve login sayfalarında isek kullanıcıyı tekrar login'e fırlatmıyoruz
         if (!isMonitoringPage && !isLoginPage) {
-          // Kullanıcı metadata'sını temizle
-          localStorage.removeItem('user');
-          sessionStorage.removeItem('user');
-          window.location.href = '/admin/login';
-          // Başka istek atmasını durdurmak için asılı promise
-          return new Promise(() => { });
+          clearStoredUser();
+          window.location.replace('/admin/login');
         }
       }
       return Promise.reject(error);
@@ -103,4 +88,3 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-

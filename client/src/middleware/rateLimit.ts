@@ -2,21 +2,34 @@ import logger from '@/utils/logger';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Optional Redis import - rate limiting will be disabled if not available
-let Redis: any;
-let redis: any;
+type RedisLike = {
+  incr: (key: string) => Promise<number>;
+  expire: (key: string, ttl: number) => Promise<unknown>;
+  ttl: (key: string) => Promise<number>;
+};
 
-try {
-  const redisModule = require('@upstash/redis');
-  Redis = redisModule.Redis;
-  redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL || '',
-    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-  });
-} catch (error) {
-  // Redis not available, rate limiting will be disabled
-  logger.warn('@upstash/redis not available, rate limiting disabled');
-}
+let redisClientPromise: Promise<RedisLike | null> | null = null;
+
+const getRedisClient = async (): Promise<RedisLike | null> => {
+  if (redisClientPromise) {
+    return redisClientPromise;
+  }
+
+  redisClientPromise = (async () => {
+    try {
+      const redisModule = await import('@upstash/redis');
+      return new redisModule.Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL || '',
+        token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+      }) as RedisLike;
+    } catch {
+      logger.warn('@upstash/redis not available, rate limiting disabled');
+      return null;
+    }
+  })();
+
+  return redisClientPromise;
+};
 
 interface RateLimitConfig {
   limit: number;
@@ -31,13 +44,13 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
 };
 
 export async function middleware(request: NextRequest) {
-  // If Redis is not available, skip rate limiting
+  const redis = await getRedisClient();
   if (!redis) {
     return NextResponse.next();
   }
 
   const path = request.nextUrl.pathname;
-  const ip = (request as any).ip || request.headers.get('x-forwarded-for') || '127.0.0.1';
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
   const config = RATE_LIMITS[path] || RATE_LIMITS.default;
 
   const key = `rate_limit:${ip}:${path}`;
@@ -47,16 +60,17 @@ export async function middleware(request: NextRequest) {
   }
 
   if (current > config.limit) {
+    const retryAfter = await redis.ttl(key);
     return new NextResponse(
       JSON.stringify({
         error: 'Too many requests',
-        retryAfter: await redis.ttl(key),
+        retryAfter,
       }),
       {
         status: 429,
         headers: {
           'Content-Type': 'application/json',
-          'Retry-After': (await redis.ttl(key)).toString(),
+          'Retry-After': retryAfter.toString(),
         },
       }
     );

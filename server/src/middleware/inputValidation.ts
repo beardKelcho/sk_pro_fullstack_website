@@ -39,23 +39,31 @@ const xssFilter = new FilterXSS({
 });
 
 // Genel input sanitizasyonu
-export const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
-  // Request body'deki tüm string değerleri sanitize et
-  if (req.body) {
-    Object.keys(req.body).forEach(key => {
-      if (typeof req.body[key] === 'string') {
-        req.body[key] = xssFilter.process(req.body[key] as string);
-      }
-    });
+const sanitizeValue = (value: unknown): unknown => {
+  if (typeof value === 'string') {
+    return xssFilter.process(value);
   }
 
-  // Query parametrelerini sanitize et
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeValue(item));
+  }
+
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [key, sanitizeValue(nestedValue)])
+    );
+  }
+
+  return value;
+};
+
+export const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
+  if (req.body) {
+    req.body = sanitizeValue(req.body) as typeof req.body;
+  }
+
   if (req.query) {
-    Object.keys(req.query).forEach(key => {
-      if (typeof req.query[key] === 'string') {
-        req.query[key] = xssFilter.process(req.query[key] as string);
-      }
-    });
+    req.query = sanitizeValue(req.query) as typeof req.query;
   }
 
   next();

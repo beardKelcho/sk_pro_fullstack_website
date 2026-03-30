@@ -9,12 +9,14 @@ interface PushSubscriptionData {
   };
 }
 
+type NotificationData = Record<string, unknown>;
+
 export interface NotificationOptions {
   title: string;
   body: string;
   icon?: string;
   badge?: string;
-  data?: any;
+  data?: NotificationData;
   actions?: Array<{
     action: string;
     title: string;
@@ -25,7 +27,15 @@ export interface NotificationOptions {
   requireInteraction?: boolean;
 }
 
-class PushNotificationService {
+interface PushNotificationClient {
+  subscribe: () => Promise<boolean>;
+  unsubscribe: () => Promise<boolean>;
+  showNotification: (options: NotificationOptions) => Promise<void>;
+  isSupported: () => boolean;
+  isSubscribed: () => boolean;
+}
+
+class PushNotificationService implements PushNotificationClient {
   private static instance: PushNotificationService;
   private swRegistration: ServiceWorkerRegistration | null = null;
   private subscription: globalThis.PushSubscription | null = null;
@@ -146,9 +156,10 @@ class PushNotificationService {
     try {
       if (!this.subscription) return false;
 
+      const endpoint = this.subscription.endpoint;
       await this.subscription.unsubscribe();
       this.subscription = null;
-      await this.deleteSubscriptionFromServer();
+      await this.deleteSubscriptionFromServer(endpoint);
       return true;
     } catch (error) {
       logger.error('Push notification unsubscription failed:', error);
@@ -197,9 +208,9 @@ class PushNotificationService {
     }
   }
 
-  private async deleteSubscriptionFromServer(): Promise<void> {
+  private async deleteSubscriptionFromServer(endpoint?: string): Promise<void> {
     try {
-      await apiClient.post('/push/unsubscribe', {});
+      await apiClient.post('/push/unsubscribe', endpoint ? { endpoint } : {});
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         logger.error('Delete subscription from server failed:', error);
@@ -251,15 +262,15 @@ class PushNotificationService {
 }
 
 // Singleton instance only if on client, otherwise null/mock or handle in usage
-const pushNotificationServiceStub = {
+const pushNotificationServiceStub: PushNotificationClient = {
   subscribe: async () => false,
   unsubscribe: async () => false,
-  showNotification: async () => { },
+  showNotification: async (_options: NotificationOptions) => undefined,
   isSupported: () => false,
   isSubscribed: () => false
-} as any;
+};
 
-export const pushNotificationService = typeof window !== 'undefined'
+export const pushNotificationService: PushNotificationClient = typeof window !== 'undefined'
   ? PushNotificationService.getInstance()
   : pushNotificationServiceStub;
 

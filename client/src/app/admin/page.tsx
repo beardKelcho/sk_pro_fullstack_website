@@ -3,24 +3,47 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { getStoredUser } from '@/utils/authStorage';
+import { authApi } from '@/services/api/auth';
+import logger from '@/utils/logger';
 
 export default function AdminIndexPage() {
     const router = useRouter();
 
     useEffect(() => {
-        /** Kullanıcı oturum kontrolü — localStorage token yerine güvenli authStorage kullan */
-        const checkAuth = () => {
-            const user = getStoredUser();
+        let isMounted = true;
 
-            if (user) {
-                router.replace('/admin/dashboard');
-            } else {
-                router.replace('/admin/login');
+        const clearStoredUser = () => {
+            window.localStorage.removeItem('user');
+            window.sessionStorage.removeItem('user');
+        };
+
+        const checkAuth = async () => {
+            try {
+                const response = await authApi.getProfile();
+
+                if (!isMounted) return;
+
+                if (response.data?.success && response.data?.user) {
+                    router.replace('/admin/dashboard');
+                    return;
+                }
+            } catch (error) {
+                if (process.env.NODE_ENV === 'development') {
+                    logger.warn('Admin index auth check failed, redirecting to login.', error);
+                }
             }
+
+            if (!isMounted) return;
+
+            clearStoredUser();
+            router.replace('/admin/login');
         };
 
         checkAuth();
+
+        return () => {
+            isMounted = false;
+        };
     }, [router]);
 
     return (

@@ -143,18 +143,19 @@ const MANAGER_ROLES = new Set(['ADMIN', 'FIRMA_SAHIBI', 'PROJE_YONETICISI']);
 
 const requireAuth = (context: GraphQLContext) => {
   if (!context.user) throw new Error('Bu işlem için giriş yapmanız gerekiyor');
+  return context.user;
 };
 
 const requireAdminRole = (context: GraphQLContext) => {
-  requireAuth(context);
-  if (!ADMIN_ROLES.has(context.user!.role)) {
+  const user = requireAuth(context);
+  if (!ADMIN_ROLES.has(user.role)) {
     throw new Error('Bu işlem için yetkiniz bulunmuyor');
   }
 };
 
 const requireManagerRole = (context: GraphQLContext) => {
-  requireAuth(context);
-  if (!MANAGER_ROLES.has(context.user!.role)) {
+  const user = requireAuth(context);
+  if (!MANAGER_ROLES.has(user.role)) {
     throw new Error('Bu işlem için yetkiniz bulunmuyor');
   }
 };

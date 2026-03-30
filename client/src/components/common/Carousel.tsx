@@ -291,7 +291,7 @@ const Carousel = forwardRef<CarouselRef, CarouselProps>(({
             <div 
               key={`${isTop ? 'top' : 'bottom'}-${index}-${imageId}`} 
               className="w-80 flex-shrink-0 mx-4 cursor-pointer select-none"
-              onClick={(e) => {
+              onClick={() => {
                 if (!isDragging) {
                   onImageClick(image, isTop);
                 }

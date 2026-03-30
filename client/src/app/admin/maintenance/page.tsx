@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ExportButton from '@/components/admin/ExportButton';
-import { useRouter } from 'next/navigation';
 import { getAllMaintenance, deleteMaintenance, getStatusLabel, getTypeLabel, getPriorityLabel } from '@/services/maintenanceService';
 import type { Maintenance } from '@/services/maintenanceService';
 import { toast } from 'react-toastify';
@@ -32,7 +31,6 @@ const typeColors = {
 };
 
 export default function MaintenanceList() {
-  const router = useRouter();
   const [maintenance, setMaintenance] = useState<Maintenance[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +136,12 @@ export default function MaintenanceList() {
           </Link>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+          {error}
+        </div>
+      )}
       
       {/* Filtreler */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
@@ -377,9 +381,10 @@ export default function MaintenanceList() {
               </button>
               <button
                 onClick={handleDeleteMaintenance}
-                className="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700"
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
               >
-                Sil
+                {isDeleting ? 'Siliniyor...' : 'Sil'}
               </button>
             </div>
           </div>

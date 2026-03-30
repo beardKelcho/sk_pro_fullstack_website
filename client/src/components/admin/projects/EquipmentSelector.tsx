@@ -50,7 +50,7 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
                 toast.success(`${result.equipment.name} eklendi.`);
                 // Play beep sound
                 const audio = new Audio('/sounds/beep.mp3'); // Assuming file exists or fails silently
-                audio.play().catch(e => { });
+                audio.play().catch(() => undefined);
             }
         }
     };

@@ -16,6 +16,13 @@ const DEFAULT_OPTIONS: CacheMiddlewareOptions = {
   includePaths: ['/api/products', '/api/categories'],
 };
 
+interface CachedRouteResponse {
+  body: string;
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+}
+
 export async function cacheMiddleware(
   request: NextRequest,
   options: CacheMiddlewareOptions = {}
@@ -42,7 +49,7 @@ export async function cacheMiddleware(
 
   try {
     // Cache'den veriyi al
-    const cachedResponse = cache.get<any>(cacheKey);
+    const cachedResponse = cache.get<CachedRouteResponse>(cacheKey);
     if (cachedResponse) {
       return new NextResponse(cachedResponse.body, {
         status: cachedResponse.status,

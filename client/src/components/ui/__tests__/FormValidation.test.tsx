@@ -37,7 +37,7 @@ describe('FormValidation', () => {
     });
 
     it('applies custom className', () => {
-      const { container } = render(
+      render(
         <FormField className="custom-class" htmlFor="test">
           <input type="text" name="test" id="test" />
         </FormField>

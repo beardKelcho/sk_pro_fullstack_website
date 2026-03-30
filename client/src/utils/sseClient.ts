@@ -1,13 +1,13 @@
 type SseEvent = {
   event: string;
-  data: any;
+  data: unknown;
 };
 
 type ConnectSseOptions = {
   url: string;
   token?: string; // opsiyonel — httpOnly cookie kullanılıyorsa gerekli değil
   onEvent: (evt: SseEvent) => void;
-  onError?: (err: any) => void;
+  onError?: (err: unknown) => void;
 };
 
 export const connectSse = ({ url, token, onEvent, onError }: ConnectSseOptions) => {
@@ -41,9 +41,12 @@ export const connectSse = ({ url, token, onEvent, onError }: ConnectSseOptions) 
           if (value) {
             buffer += decoder.decode(value, { stream: true });
           }
-        } catch (readError: any) {
+        } catch (readError: unknown) {
           // ERR_INCOMPLETE_CHUNKED_ENCODING hatası - connection kapandı
-          if (readError?.name === 'AbortError' || readError?.message?.includes('chunked')) {
+          if (
+            readError instanceof Error &&
+            (readError.name === 'AbortError' || readError.message.includes('chunked'))
+          ) {
             break; // Normal disconnect, sessizce çık
           }
           throw readError; // Diğer hatalar için throw et
@@ -73,7 +76,7 @@ export const connectSse = ({ url, token, onEvent, onError }: ConnectSseOptions) 
           }
 
           const dataRaw = dataLines.join('\n');
-          let data: any = dataRaw;
+          let data: unknown = dataRaw;
           try {
             data = dataRaw ? JSON.parse(dataRaw) : null;
           } catch {
@@ -95,4 +98,3 @@ export const connectSse = ({ url, token, onEvent, onError }: ConnectSseOptions) 
     controller.abort();
   };
 };
-

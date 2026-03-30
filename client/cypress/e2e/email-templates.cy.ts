@@ -5,8 +5,14 @@
  */
 
 describe('Email Templates', () => {
-  const ADMIN_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@skpro.com.tr';
-  const ADMIN_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
+  const fillTemplateForm = (key: string, name: string, subject: string, html: string) => {
+    cy.get('input[placeholder="örn: task_assigned"]').clear().type(key);
+    cy.get('input[placeholder="örn: Görev Atandı"]').clear().type(name);
+    cy.get('input[placeholder="örn: Görev Güncellendi - SK Production"]')
+      .clear()
+      .type(subject, { parseSpecialCharSequences: false });
+    cy.get('textarea[placeholder="<div>...</div>"]').clear().type(html, { parseSpecialCharSequences: false });
+  };
 
   beforeEach(() => {
     cy.loginAsAdmin();
@@ -39,30 +45,43 @@ describe('Email Templates', () => {
     it('template düzenlenebilmeli', () => {
       cy.visit('/admin/email-templates');
       cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Düzenle butonu - gerçek assertion ile
-      cy.get('button:contains("Düzenle"), button:contains("Edit"), a[href*="edit"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .scrollIntoView()
-        .should('be.visible')
-        .click({ force: true });
-      
-      cy.wait(2000);
-      
-      // Düzenleme formu - gerçek assertion ile
-      cy.get('form, textarea, input[name*="subject"], input[name*="title"]', { timeout: 10000 })
-        .should('exist')
-        .should('be.visible');
+
+      const uniqueKey = `cypress_template_${Date.now()}`;
+      const initialName = `Cypress Template ${Date.now()}`;
+      const updatedName = `${initialName} Updated`;
+
+      fillTemplateForm(
+        uniqueKey,
+        initialName,
+        'Ilk konu',
+        '<div>Merhaba {{userName}}</div>'
+      );
+
+      cy.contains('button', 'Oluştur').click({ force: true });
+      cy.contains(initialName, { timeout: 10000 }).should('exist');
+
+      cy.contains('tr', initialName, { timeout: 10000 }).within(() => {
+        cy.contains('button', 'Düzenle').click({ force: true });
+      });
+
+      cy.contains('Şablon Düzenle', { timeout: 10000 }).should('exist');
+      cy.get('input[placeholder="örn: Görev Atandı"]').clear().type(updatedName);
+      cy.contains('button', 'Kaydet').click({ force: true });
+      cy.contains(updatedName, { timeout: 10000 }).should('exist');
     });
 
     it('template preview görüntülenebilmeli', () => {
       cy.visit('/admin/email-templates');
       cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Preview butonu - gerçek assertion ile
-      cy.get('button:contains("Önizle"), button:contains("Preview")', { timeout: 10000 })
-        .first()
+
+      fillTemplateForm(
+        `preview_template_${Date.now()}`,
+        'Preview Template',
+        'Merhaba {{userName}}',
+        '<div><strong>{{userName}}</strong></div>'
+      );
+
+      cy.contains('button', 'Çalıştır', { timeout: 10000 })
         .should('exist')
         .scrollIntoView()
         .should('be.visible')
@@ -70,10 +89,13 @@ describe('Email Templates', () => {
       
       cy.wait(2000);
       
-      // Preview modal - gerçek assertion ile
-      cy.get('[role="dialog"], .modal, [class*="preview"]', { timeout: 10000 })
+      cy.get('iframe[title="Email template preview"]', { timeout: 10000 })
         .should('exist')
-        .should('be.visible');
+        .should('be.visible')
+        .invoke('attr', 'srcdoc')
+        .should('contain', 'Ahmet');
+
+      cy.contains('Subject:', { timeout: 10000 }).should('exist');
     });
   });
 });

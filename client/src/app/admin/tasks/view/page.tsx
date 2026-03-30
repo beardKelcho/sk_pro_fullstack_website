@@ -5,7 +5,7 @@ import logger from '@/utils/logger';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import CommentsPanel from '@/components/admin/CommentsPanel';
 
 // Görev, Kullanıcı ve Proje türleri
@@ -64,90 +64,6 @@ const sampleProjects: Project[] = [
   { id: '5', name: 'Müze Multimedya Kurulumu', status: 'Planlanıyor' }
 ];
 
-// Örnek görev verileri
-const sampleTasks: Task[] = [
-  {
-    id: '1',
-    title: 'LED Ekran Kurulumu',
-    description: 'TechCon etkinliği için ana salona LED ekranların kurulması ve ayarlanması',
-    priority: 'Yüksek',
-    status: 'Tamamlandı',
-    dueDate: '2023-10-15',
-    assignedTo: '2',
-    relatedProject: '1',
-    createdAt: '2023-10-01',
-    updatedAt: '2023-10-15',
-    notes: 'Kurulum başarıyla tamamlandı. Ekranlar test edildi ve çalışır durumda.',
-    attachments: [
-      {
-        id: '1',
-        name: 'kurulum_plani.pdf',
-        type: 'pdf',
-        url: '',
-        uploadedAt: '2023-10-01'
-      },
-      {
-        id: '2',
-        name: 'ekran_gorselleri.jpg',
-        type: 'image',
-        url: '',
-        uploadedAt: '2023-10-15'
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Video İçerik Hazırlama',
-    description: 'Kurumsal tanıtım filmi için video içeriğinin düzenlenmesi ve efektlerin eklenmesi',
-    priority: 'Orta',
-    status: 'Devam Ediyor',
-    dueDate: '2023-11-20',
-    assignedTo: '3',
-    relatedProject: '2',
-    createdAt: '2023-11-01',
-    updatedAt: '2023-11-10',
-    notes: 'Montaj işlemleri devam ediyor. Müzik seçimi için öneriler bekleniyor.'
-  },
-  {
-    id: '3',
-    title: 'Ses Sistemi Testi',
-    description: 'Festival için kurulacak ses sisteminin test edilmesi ve kalibrasyonu',
-    priority: 'Yüksek',
-    status: 'Atandı',
-    dueDate: '2023-12-10',
-    assignedTo: '4',
-    relatedProject: '4',
-    createdAt: '2023-12-01',
-    updatedAt: '2023-12-01'
-  },
-  {
-    id: '4',
-    title: 'Medya Server Programlama',
-    description: 'Müze için interaktif medya içeriğinin programlanması',
-    priority: 'Acil',
-    status: 'Devam Ediyor',
-    dueDate: '2023-12-15',
-    assignedTo: '2',
-    relatedProject: '5',
-    createdAt: '2023-12-05',
-    updatedAt: '2023-12-07',
-    notes: 'İnteraktif kiosk için dokunmatik ekran kodlaması devam ediyor. İçerik akışı tasarlandı.'
-  },
-  {
-    id: '5',
-    title: 'Teknik Plan Hazırlama',
-    description: 'Bayi toplantısı için teknik gereksinimlerin planlanması',
-    priority: 'Düşük',
-    status: 'Beklemede',
-    dueDate: '2024-01-15',
-    assignedTo: '1',
-    relatedProject: '3',
-    createdAt: '2023-12-20',
-    updatedAt: '2023-12-20',
-    notes: 'Toplantı yeri netleşince devam edilecek.'
-  }
-];
-
 // Renk ayarları
 const priorityColors = {
   'Düşük': 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
@@ -165,7 +81,6 @@ const statusColors = {
 };
 
 function ViewTaskContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const taskId = (searchParams.get('id') as string);
   

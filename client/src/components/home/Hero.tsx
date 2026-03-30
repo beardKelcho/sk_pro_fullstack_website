@@ -2,15 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { HeroContent } from '@/types/cms';
+
+type HeroContentInput = HeroContent | { data?: HeroContent | null } | null | undefined;
+
+const unwrapHeroContent = (value: HeroContentInput): HeroContent | undefined => {
+    if (!value || typeof value !== 'object') {
+        return undefined;
+    }
+
+    if (value && typeof value === 'object' && 'data' in value) {
+        return value.data || undefined;
+    }
+
+    return value as HeroContent;
+};
 
 interface HeroProps {
-    content: any;
+    content?: HeroContentInput;
 }
 
 export default function Hero({ content }: HeroProps) {
-    const rawData = content?.data || content;
-
-    const title = rawData?.title || "SK Production";
+    const rawData = unwrapHeroContent(content);
     const subtitle = rawData?.subtitle || "";
     const slogans = rawData?.rotatingTexts || [];
 

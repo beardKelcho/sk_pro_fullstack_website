@@ -1,25 +1,43 @@
 "use client";
 
-import { useEffect } from 'react';
 import { useReportWebVitals } from 'next/web-vitals';
-import apiClient from '@/services/api/axios';
+import logger from '@/utils/logger';
 
 interface WebVitalsProps {
   analyticsId?: string;
 }
 
+type WebVitalMetricPayload = {
+  value: number;
+  metric_id: string;
+  metric_value: number;
+  metric_delta: number;
+  metric_label: string;
+};
+
+type GtagFn = (
+  command: 'event' | 'config' | 'js',
+  target: string | Date,
+  params?: WebVitalMetricPayload | Record<string, string | number | boolean | undefined>
+) => void;
+
+type StoredWebVital = {
+  name: string;
+  value: number;
+  delta: number;
+  id: string;
+  label: string;
+  timestamp: string;
+};
+
 export const WebVitals = ({ analyticsId }: WebVitalsProps) => {
   useReportWebVitals((metric) => {
-    // Web Vitals metriklerini logger ile yazdır (sadece kritik metrikler)
     if (process.env.NODE_ENV === 'development' && ['LCP', 'FID', 'CLS'].includes(metric.name)) {
-      // Sadece kritik metrikleri logla
-      const logger = require('@/utils/logger').default;
-      logger.info('Web Vital:', metric.name, metric.value);
+      logger.info(`Web Vital: ${metric.name}`, metric.value);
     }
 
-    // Google Analytics'e gönder (eğer analyticsId varsa)
-    if (analyticsId && typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', metric.name, {
+    if (analyticsId && typeof window !== 'undefined' && typeof window.gtag === 'function') {
+      (window.gtag as GtagFn)('event', metric.name, {
         value: Math.round(metric.name === 'CLS' ? metric.value * 1000 : metric.value),
         metric_id: metric.id,
         metric_value: metric.value,
@@ -28,16 +46,12 @@ export const WebVitals = ({ analyticsId }: WebVitalsProps) => {
       });
     }
 
-    // Backend'e gönder (opsiyonel - backend endpoint'i varsa)
-    // Production'da kritik metrikleri backend'e gönder
     if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined') {
       const criticalMetrics = ['LCP', 'FID', 'CLS', 'FCP', 'TTFB'];
-      
+
       if (criticalMetrics.includes(metric.name)) {
-        // Backend'de web-vitals endpoint'i varsa kullan
-        // Şimdilik localStorage'a kaydet
         try {
-          const vitals = JSON.parse(localStorage.getItem('webVitals') || '[]');
+          const vitals = JSON.parse(localStorage.getItem('webVitals') || '[]') as StoredWebVital[];
           vitals.push({
             name: metric.name,
             value: metric.value,
@@ -47,13 +61,12 @@ export const WebVitals = ({ analyticsId }: WebVitalsProps) => {
             timestamp: new Date().toISOString(),
           });
 
-          // Son 100 metriği sakla
           if (vitals.length > 100) {
             vitals.shift();
           }
 
           localStorage.setItem('webVitals', JSON.stringify(vitals));
-        } catch (error) {
+        } catch {
           // Sessizce devam et
         }
       }
@@ -61,4 +74,4 @@ export const WebVitals = ({ analyticsId }: WebVitalsProps) => {
   });
 
   return null;
-}; 
+};

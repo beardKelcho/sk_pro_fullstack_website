@@ -5,6 +5,13 @@
  * @module config/queryConfig
  * @description React Query için optimize edilmiş cache yapılandırması
  */
+import type { QueryClient } from '@tanstack/react-query';
+
+type QueryFilters = Readonly<Record<string, unknown>>;
+type EntityWithId = { _id?: string; id?: string } & Record<string, unknown>;
+type EquipmentListResponse = { equipment?: EntityWithId[] } & Record<string, unknown>;
+type ProjectListResponse = { projects?: EntityWithId[] } & Record<string, unknown>;
+type TaskListResponse = { tasks?: EntityWithId[] } & Record<string, unknown>;
 
 /**
  * Query cache key prefix'leri
@@ -19,32 +26,32 @@ export const QueryKeys = {
   
   // Equipment
   equipment: {
-    all: (filters?: any) => ['equipment', filters] as const,
+    all: (filters?: QueryFilters) => ['equipment', filters] as const,
     detail: (id: string) => ['equipment', id] as const,
-    maintenance: (filters?: any) => ['equipment', 'maintenance', filters] as const,
+    maintenance: (filters?: QueryFilters) => ['equipment', 'maintenance', filters] as const,
   },
   
   // Projects
   projects: {
-    all: (filters?: any) => ['projects', filters] as const,
+    all: (filters?: QueryFilters) => ['projects', filters] as const,
     detail: (id: string) => ['projects', id] as const,
   },
   
   // Tasks
   tasks: {
-    all: (filters?: any) => ['tasks', filters] as const,
+    all: (filters?: QueryFilters) => ['tasks', filters] as const,
     detail: (id: string) => ['tasks', id] as const,
   },
   
   // Users
   users: {
-    all: (filters?: any) => ['users', filters] as const,
+    all: (filters?: QueryFilters) => ['users', filters] as const,
     detail: (id: string) => ['users', id] as const,
   },
   
   // Customers
   customers: {
-    all: (filters?: any) => ['customers', filters] as const,
+    all: (filters?: QueryFilters) => ['customers', filters] as const,
     detail: (id: string) => ['customers', id] as const,
   },
   
@@ -325,9 +332,9 @@ export const OptimisticUpdates = {
    * Ekipman için optimistic update
    */
   equipment: {
-    update: (queryClient: any, id: string, updates: any) => {
+    update: (queryClient: QueryClient, id: string, updates: Partial<EntityWithId>) => {
       // Mevcut veriyi al
-      const previousData = queryClient.getQueryData(QueryKeys.equipment.detail(id));
+      const previousData = queryClient.getQueryData<EntityWithId>(QueryKeys.equipment.detail(id));
       
       // Optimistic update yap
       if (previousData) {
@@ -340,11 +347,11 @@ export const OptimisticUpdates = {
       // List query'yi de güncelle
       queryClient.setQueriesData(
         { queryKey: QueryKeys.equipment.all() },
-        (old: any) => {
+        (old: EquipmentListResponse | undefined) => {
           if (!old) return old;
           return {
             ...old,
-            equipment: old.equipment?.map((item: any) =>
+            equipment: old.equipment?.map((item) =>
               (item._id === id || item.id === id) ? { ...item, ...updates } : item
             ),
           };
@@ -357,8 +364,8 @@ export const OptimisticUpdates = {
    * Proje için optimistic update
    */
   projects: {
-    update: (queryClient: any, id: string, updates: any) => {
-      const previousData = queryClient.getQueryData(QueryKeys.projects.detail(id));
+    update: (queryClient: QueryClient, id: string, updates: Partial<EntityWithId>) => {
+      const previousData = queryClient.getQueryData<EntityWithId>(QueryKeys.projects.detail(id));
       
       if (previousData) {
         queryClient.setQueryData(QueryKeys.projects.detail(id), {
@@ -369,11 +376,11 @@ export const OptimisticUpdates = {
       
       queryClient.setQueriesData(
         { queryKey: QueryKeys.projects.all() },
-        (old: any) => {
+        (old: ProjectListResponse | undefined) => {
           if (!old) return old;
           return {
             ...old,
-            projects: old.projects?.map((item: any) =>
+            projects: old.projects?.map((item) =>
               (item._id === id || item.id === id) ? { ...item, ...updates } : item
             ),
           };
@@ -386,8 +393,8 @@ export const OptimisticUpdates = {
    * Görev için optimistic update
    */
   tasks: {
-    update: (queryClient: any, id: string, updates: any) => {
-      const previousData = queryClient.getQueryData(QueryKeys.tasks.detail(id));
+    update: (queryClient: QueryClient, id: string, updates: Partial<EntityWithId>) => {
+      const previousData = queryClient.getQueryData<EntityWithId>(QueryKeys.tasks.detail(id));
       
       if (previousData) {
         queryClient.setQueryData(QueryKeys.tasks.detail(id), {
@@ -398,11 +405,11 @@ export const OptimisticUpdates = {
       
       queryClient.setQueriesData(
         { queryKey: QueryKeys.tasks.all() },
-        (old: any) => {
+        (old: TaskListResponse | undefined) => {
           if (!old) return old;
           return {
             ...old,
-            tasks: old.tasks?.map((item: any) =>
+            tasks: old.tasks?.map((item) =>
               (item._id === id || item.id === id) ? { ...item, ...updates } : item
             ),
           };

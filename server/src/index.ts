@@ -1,4 +1,4 @@
-import express from 'express';
+import type { Express } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -36,6 +36,10 @@ dotenv.config();
 // Sentry'i başlat
 initSentry();
 
+// Express must be loaded after Sentry init so Sentry can instrument it.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const express = require('express') as typeof import('express');
+
 // Critical Config Check
 if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
   logger.error('CRITICAL: CLIENT_URL environment variable is not defined!');
@@ -43,7 +47,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
 }
 
 // Express app oluştur
-const app = express();
+const app: Express = express();
 
 // Trust Proxy: Render/Vercel arkasında çalışırken IP ve protokolü doğru algılamak için gerekli
 app.set('trust proxy', 1);

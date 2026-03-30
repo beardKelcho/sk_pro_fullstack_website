@@ -23,21 +23,6 @@ interface Project {
   status: string;
 }
 
-// Görev arayüzü
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  priority: 'Düşük' | 'Orta' | 'Yüksek' | 'Acil';
-  status: 'Atandı' | 'Devam Ediyor' | 'Beklemede' | 'Tamamlandı' | 'İptal Edildi';
-  dueDate: string;
-  assignedTo: string;
-  relatedProject?: string;
-  createdAt: string;
-  updatedAt: string;
-  notes?: string;
-}
-
 // Görev formu arayüzü
 interface TaskForm {
   title: string;

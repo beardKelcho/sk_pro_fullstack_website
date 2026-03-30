@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
-import { X, Save, Loader2, Upload, Grid, Video, Trash2, Plus, Edit2, Image as ImageIcon, Film, Images, Play } from 'lucide-react';
+import { X, Save, Loader2, Upload, Grid, Video, Plus, Image as ImageIcon, Film, Images } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableProjectItem from '../SortableProjectItem';
@@ -34,7 +34,6 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
     // Main tabs
     const [activeTab, setActiveTab] = useState<'list' | 'form'>('list');
     const [projectTypeFilter, setProjectTypeFilter] = useState<'all' | 'photo' | 'video'>('all');
-    const [editingProject, setEditingProject] = useState<ProjectForm | null>(null);
 
     // Media picker state
     const [mediaPickerFor, setMediaPickerFor] = useState<'cover' | 'video' | 'images' | null>(null);

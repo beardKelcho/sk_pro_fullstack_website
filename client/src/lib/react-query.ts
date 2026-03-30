@@ -2,6 +2,13 @@
 
 import { QueryClient } from '@tanstack/react-query';
 
+interface QueryErrorLike {
+  isNetworkError?: boolean;
+  response?: {
+    status?: number;
+  };
+}
+
 // QueryClient instance oluştur
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,13 +22,15 @@ export const queryClient = new QueryClient({
       refetchOnMount: true,
       refetchOnReconnect: true,
       // Retry ayarları
-      retry: (failureCount, error: any) => {
+      retry: (failureCount, error: unknown) => {
+        const queryError = error as QueryErrorLike;
+
         // Network hatası için 3 kez dene
-        if (error?.isNetworkError) {
+        if (queryError.isNetworkError) {
           return failureCount < 3;
         }
         // 4xx hataları için retry yapma
-        if (error?.response?.status >= 400 && error?.response?.status < 500) {
+        if ((queryError.response?.status || 0) >= 400 && (queryError.response?.status || 0) < 500) {
           return false;
         }
         // Diğer hatalar için 1 kez dene
@@ -36,4 +45,3 @@ export const queryClient = new QueryClient({
     },
   },
 });
-

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Icon from '@/components/common/Icon';
-import { useTheme } from 'next-themes';
 import { getStoredUser } from '@/utils/authStorage';
 
 // STATIC TURKISH MENU
@@ -17,7 +16,6 @@ const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { theme, setTheme } = useTheme();
 
   // Kullanıcı giriş kontrolü
   useEffect(() => {

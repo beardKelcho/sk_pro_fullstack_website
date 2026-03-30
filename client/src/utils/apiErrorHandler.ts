@@ -180,11 +180,11 @@ export const getUserFriendlyMessage = (error: ApiError): string => {
  * const safeGetUsers = withErrorHandling(getUsers, 'UserService');
  * const users = await safeGetUsers();
  */
-export const withErrorHandling = <T extends (...args: any[]) => Promise<any>>(
-  fn: T,
+export const withErrorHandling = <Args extends unknown[], Result>(
+  fn: (...args: Args) => Promise<Result>,
   context?: string
-): T => {
-  return (async (...args: Parameters<T>) => {
+): ((...args: Args) => Promise<Result>) => {
+  return async (...args: Args): Promise<Result> => {
     try {
       return await fn(...args);
     } catch (error) {
@@ -201,10 +201,9 @@ export const withErrorHandling = <T extends (...args: any[]) => Promise<any>>(
       }
       
       // Hata mesajını güncelle ve fırlat
-      const enhancedError = new Error(userMessage);
-      (enhancedError as any).apiError = apiError;
+      const enhancedError = new Error(userMessage) as Error & { apiError?: ApiError };
+      enhancedError.apiError = apiError;
       throw enhancedError;
     }
-  }) as T;
+  };
 };
-

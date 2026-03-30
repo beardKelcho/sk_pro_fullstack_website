@@ -132,7 +132,14 @@ export function generateJsonLd({
   data,
 }: {
   type: 'Organization' | 'WebSite' | 'Article' | 'Product';
-  data: any;
+  data: Record<string, unknown> & {
+    title?: string;
+    description?: string;
+    image?: string;
+    publishedTime?: string;
+    modifiedTime?: string;
+    name?: string;
+  };
 }) {
   const baseSchema = {
     '@context': 'https://schema.org',

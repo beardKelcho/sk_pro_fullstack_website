@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createMaintenance, useCreateMaintenance } from '@/services/maintenanceService';
+import { useCreateMaintenance } from '@/services/maintenanceService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { handleApiError, getUserFriendlyMessage } from '@/utils/apiErrorHandler';

@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import Footer from './Footer';
 
 const FooterWrapper = () => {

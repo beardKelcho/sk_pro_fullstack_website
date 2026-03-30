@@ -1,6 +1,5 @@
 import apiClient from './api/axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { trackApiError } from '@/utils/errorTracking';
 import logger from '@/utils/logger';
 
 export interface Notification {
@@ -156,4 +155,3 @@ export const useDeleteNotification = () => {
     },
   });
 };
-

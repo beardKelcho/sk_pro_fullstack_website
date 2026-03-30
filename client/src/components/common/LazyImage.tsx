@@ -82,9 +82,6 @@ export default function LazyImage({
     return null;
   }
 
-  // Blur placeholder data URL (simple gray placeholder)
-  const blurDataURL = placeholder || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2U1ZTdlYiIvPjwvc3ZnPg==';
-
   if (useFill) {
     return (
       <div 
@@ -138,4 +135,3 @@ export default function LazyImage({
     </div>
   );
 }
-

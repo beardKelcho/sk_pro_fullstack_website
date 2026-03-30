@@ -83,6 +83,7 @@ export const useDeleteMultipleSiteImages = () => {
 export const useSiteContent = () => {
     const queryClient = useQueryClient();
     const locale = 'tr'; // Static Turkish locale
+    type SiteContentPayload = SiteContentData['content'];
 
     // Helper to resolve localized string
     const resolveLocalized = (content: LocalizedString | string | undefined): string => {
@@ -111,7 +112,7 @@ export const useSiteContent = () => {
 
     // 3. Update content
     const updateMutation = useMutation({
-        mutationFn: ({ section, data }: { section: string; data: any }) => updateSiteContent(section, data),
+        mutationFn: ({ section, data }: { section: string; data: SiteContentPayload }) => updateSiteContent(section, data),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['siteContent', variables.section] });
             queryClient.invalidateQueries({ queryKey: ['siteContent', 'all'] });
@@ -119,7 +120,7 @@ export const useSiteContent = () => {
     });
 
     const createMutation = useMutation({
-        mutationFn: ({ section, data }: { section: string; data: any }) => updateSiteContent(section, data),
+        mutationFn: ({ section, data }: { section: string; data: SiteContentPayload }) => updateSiteContent(section, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['siteContent'] });
         }

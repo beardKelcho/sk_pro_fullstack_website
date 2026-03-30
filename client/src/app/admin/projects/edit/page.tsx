@@ -9,7 +9,6 @@ import { ProjectStatus } from '@/types/project';
 import { getProjectById, updateProject } from '@/services/projectService';
 import { getAllCustomers, type Customer } from '@/services/customerService';
 import { getAllUsers, getRoleLabel, type User } from '@/services/userService';
-import inventoryService, { type InventoryItem as EquipmentItem } from '@/services/inventoryService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { getStoredUserRole } from '@/utils/authStorage';
@@ -86,10 +85,8 @@ function EditProjectContent() {
 
   // State'ler - takım üyeleri ve ekipman seçimi için
   const [teamCheckboxes, setTeamCheckboxes] = useState<{ [key: string]: boolean }>({});
-  const [equipmentCheckboxes, setEquipmentCheckboxes] = useState<{ [key: string]: boolean }>({});
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [equipmentList, setEquipmentList] = useState<EquipmentItem[]>([]);
 
   // Proje verilerini yükle
   useEffect(() => {
@@ -98,15 +95,13 @@ function EditProjectContent() {
       try {
         setUserRole(getStoredUserRole());
 
-        const [project, customerRes, userRes, equipmentRes] = await Promise.all([
+        const [project, customerRes, userRes] = await Promise.all([
           getProjectById(projectId),
           getAllCustomers({ page: 1, limit: 1000 }),
           getAllUsers({ page: 1, limit: 1000 }),
-          inventoryService.getItems({ page: 1, limit: 1000 }),
         ]);
         setCustomers(customerRes.clients || []);
         setUsers(userRes.users || []);
-        setEquipmentList(equipmentRes.data || []);
 
         // Backend formatını frontend formatına dönüştür
         const clientId = typeof project.client === 'string' ? project.client : (project.client as any)?._id || (project.client as any)?.id || '';
@@ -139,14 +134,6 @@ function EditProjectContent() {
           teamStates[uid] = teamIds.includes(uid);
         });
         setTeamCheckboxes(teamStates);
-
-        const equipmentStates: { [key: string]: boolean } = {};
-        (equipmentRes.data || []).forEach((eq: EquipmentItem) => {
-          const eid = eq._id;
-          if (!eid) return;
-          equipmentStates[eid] = equipmentIds.includes(eid);
-        });
-        setEquipmentCheckboxes(equipmentStates);
 
         // Yüklemeyi tamamla
         setTimeout(() => {
@@ -192,24 +179,6 @@ function EditProjectContent() {
         : [...prev.team, id];
 
       return { ...prev, team: newTeam };
-    });
-  };
-
-  // Ekipmanları toggle
-  const handleEquipmentToggle = (id: string) => {
-    // Checkbox durumunu değiştir
-    setEquipmentCheckboxes(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-
-    // Form state'ini güncelle
-    setFormData(prev => {
-      const newEquipment = prev.equipment.includes(id)
-        ? prev.equipment.filter(equipId => equipId !== id)
-        : [...prev.equipment, id];
-
-      return { ...prev, equipment: newEquipment };
     });
   };
 

@@ -89,7 +89,6 @@ export default function Calendar() {
     status: string;
     equipment: string;
   }>>([]);
-  const [users, setUsers] = useState<Array<{ id: string; name: string; email: string }>>([]);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importing, setImporting] = useState(false);
   const importFileInputRef = React.useRef<HTMLInputElement>(null);
@@ -100,20 +99,6 @@ export default function Calendar() {
       setLoading(true);
       
       try {
-        // Kullanıcı listesini çek (assignee seçimi için)
-        try {
-          const { getAllUsers } = await import('@/services/userService');
-          const usersRes = await getAllUsers({ page: 1, limit: 1000 });
-          setUsers((usersRes.users || []).map((u: any) => ({
-            id: u._id || u.id || '',
-            name: u.name || '',
-            email: u.email || '',
-          })));
-        } catch (userError) {
-          logger.warn('Kullanıcı listesi yüklenemedi:', userError);
-          setUsers([]);
-        }
-
         // Görünüme göre tarih aralığını hesapla
         let startDate: Date;
         let endDate: Date;

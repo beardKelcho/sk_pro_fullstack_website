@@ -158,9 +158,56 @@ export const trapFocus = (element: HTMLElement | null) => {
  * @returns Kontrast oranı (placeholder: 4.5)
  * @note Bu basit bir placeholder implementasyon, production'da daha gelişmiş algoritma gerekir
  */
-export const getContrastRatio = (color1: string, color2: string): number => {
-  // Basit kontrast hesaplama (gerçek implementasyon için daha gelişmiş algoritma gerekir)
-  // Bu basit bir örnek, production'da daha detaylı olmalı
-  return 4.5; // Placeholder
+const parseColor = (color: string): [number, number, number] | null => {
+  const normalizedColor = color.trim().toLowerCase();
+
+  if (/^#([0-9a-f]{3}){1,2}$/i.test(normalizedColor)) {
+    const hex = normalizedColor.slice(1);
+    const expandedHex = hex.length === 3
+      ? hex.split('').map((char) => `${char}${char}`).join('')
+      : hex;
+
+    return [
+      Number.parseInt(expandedHex.slice(0, 2), 16),
+      Number.parseInt(expandedHex.slice(2, 4), 16),
+      Number.parseInt(expandedHex.slice(4, 6), 16),
+    ];
+  }
+
+  const rgbMatch = normalizedColor.match(/^rgb\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\)$/);
+  if (!rgbMatch) {
+    return null;
+  }
+
+  return [
+    Number.parseInt(rgbMatch[1], 10),
+    Number.parseInt(rgbMatch[2], 10),
+    Number.parseInt(rgbMatch[3], 10),
+  ];
 };
 
+const getRelativeLuminance = ([red, green, blue]: [number, number, number]): number => {
+  const normalizeChannel = (channel: number) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+
+  const [r, g, b] = [red, green, blue].map(normalizeChannel);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+export const getContrastRatio = (color1: string, color2: string): number => {
+  const rgb1 = parseColor(color1);
+  const rgb2 = parseColor(color2);
+
+  if (!rgb1 || !rgb2) {
+    return 1;
+  }
+
+  const luminance1 = getRelativeLuminance(rgb1);
+  const luminance2 = getRelativeLuminance(rgb2);
+  const lighter = Math.max(luminance1, luminance2);
+  const darker = Math.min(luminance1, luminance2);
+
+  return Number(((lighter + 0.05) / (darker + 0.05)).toFixed(2));
+};

@@ -5,7 +5,7 @@ import StageExperience, { StageSectionTitle } from '@/components/common/StageExp
 import Icon from '@/components/common/Icon';
 import dynamic from 'next/dynamic';
 import { ContactContent } from '@/types/cms';
-import { Loader2, Instagram, Linkedin } from 'lucide-react';
+import { Instagram, Linkedin } from 'lucide-react';
 
 const ContactForm = dynamic(() => import('@/components/common/ContactForm'), { ssr: false });
 

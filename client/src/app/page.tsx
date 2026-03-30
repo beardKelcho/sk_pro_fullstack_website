@@ -5,18 +5,38 @@ import MaintenancePage from '@/app/maintenance/page';
 import React from 'react';
 import { HeroContent, AboutContent, ServicesContent, ContactContent, SiteContent } from '@/types/cms';
 import StructuredData, { generateLocalBusinessSchema } from '@/components/common/StructuredData';
+import type { Service } from '@/components/home/Services';
+import type { Project } from '@/components/home/Projects';
 
 // Removed force-dynamic to support static export
 export const revalidate = 60; // Revalidate at most every 60 seconds (for SSG updates if supported, otherwise just static)
 
 import { fallbackContent } from '@/constants/fallbackData';
 
+type PublicSiteContentResponse = {
+  hero?: HeroContent;
+  about?: AboutContent;
+  services?: ServicesContent;
+  contact?: ContactContent;
+};
+
+type PublicSiteContentItem = {
+  section?: string;
+  data?: unknown;
+  content?: unknown;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+const isSiteContentResponse = (value: unknown): value is PublicSiteContentResponse =>
+  isRecord(value);
+
 // Fetch site data helper
 async function getSiteData() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-  
-  // Debug log for CI/Build visibility
-  console.log(`[BUILD-DEBUG] Fetching data from: ${apiUrl}`);
+
+  logger.info(`[BUILD-DEBUG] Fetching data from: ${apiUrl}`);
 
   try {
     // 1. Check Maintenance Mode
@@ -43,17 +63,17 @@ async function getSiteData() {
     ]);
 
     // Parse Services & Projects
-    let services = [];
-    let projects = [];
+    let services: Service[] = [];
+    let projects: Project[] = [];
     
     if (servicesRes && servicesRes.ok) {
         const servicesData = await servicesRes.json();
-        services = servicesData?.data || [];
+        services = Array.isArray(servicesData?.data) ? servicesData.data as Service[] : [];
     }
 
     if (projectsRes && projectsRes.ok) {
         const projectsData = await projectsRes.json();
-        projects = projectsData?.data || [];
+        projects = Array.isArray(projectsData?.data) ? projectsData.data as Project[] : [];
     }
 
     if (!contentRes || !contentRes.ok) {
@@ -69,17 +89,19 @@ async function getSiteData() {
     if (responseJson.data) {
       if (!Array.isArray(responseJson.data)) {
         const dataObj = responseJson.data;
-        if (dataObj.hero) contentMap.hero = { data: dataObj.hero } as any;
+        if (isSiteContentResponse(dataObj) && dataObj.hero) {
+          contentMap.hero = { data: dataObj.hero } as SiteContent['hero'];
+        }
         if (dataObj.about) contentMap.about = dataObj.about;
         if (dataObj.services) contentMap.services = dataObj.services;
         if (dataObj.contact) contentMap.contact = dataObj.contact;
       } else {
-        const items: any[] = responseJson.data;
-        items.forEach((item: any) => {
+        const items = responseJson.data as PublicSiteContentItem[];
+        items.forEach((item) => {
           const payload = item.data || item.content;
           if (!payload) return;
 
-          if (item.section === 'hero') contentMap.hero = { data: payload } as any;
+          if (item.section === 'hero') contentMap.hero = { data: payload as HeroContent } as SiteContent['hero'];
           else if (item.section === 'about') contentMap.about = payload;
           else if (item.section === 'services' || item.section === 'services-equipment') contentMap.services = payload;
           else if (item.section === 'contact') contentMap.contact = payload;

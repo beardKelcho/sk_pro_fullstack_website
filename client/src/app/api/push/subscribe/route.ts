@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
+import { isAxiosError } from 'axios';
 import apiClient from '@/services/api/axios';
+
+interface PushSubscriptionPayload {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
 
 /**
  * Push subscription kaydet
@@ -7,7 +16,14 @@ import apiClient from '@/services/api/axios';
  */
 export async function POST(request: Request) {
   try {
-    const subscription = await request.json();
+    const subscription = await request.json() as Partial<PushSubscriptionPayload>;
+
+    if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+      return NextResponse.json(
+        { error: 'Endpoint ve subscription keys gereklidir' },
+        { status: 400 }
+      );
+    }
 
     // Backend API'ye gönder
     const response = await apiClient.post('/push-subscriptions/subscribe', {
@@ -17,10 +33,15 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(response.data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const status = isAxiosError(error) ? error.response?.status || 500 : 500;
+    const message = isAxiosError(error)
+      ? error.response?.data?.message || 'Push subscription kaydedilemedi'
+      : 'Push subscription kaydedilemedi';
+
     return NextResponse.json(
-      { error: error.response?.data?.message || 'Push subscription kaydedilemedi' },
-      { status: error.response?.status || 500 }
+      { error: message },
+      { status }
     );
   }
-} 
+}

@@ -70,6 +70,5 @@ const CaseSchema: Schema = new Schema(
 // Indexes
 CaseSchema.index({ status: 1 });
 CaseSchema.index({ project: 1 });
-CaseSchema.index({ qrCode: 1 }, { unique: true });
 
 export default mongoose.model<ICase>('Case', CaseSchema);

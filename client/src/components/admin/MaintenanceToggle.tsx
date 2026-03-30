@@ -2,11 +2,7 @@ import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from '@/services/api/axios'; // Use our configured axios instance
 import { toast } from 'react-toastify';
-import { Settings as SettingsIcon, AlertTriangle } from 'lucide-react';
-
-interface MaintenanceToggleProps {
-    isMaintenanceMode: boolean;
-}
+import { Settings as SettingsIcon } from 'lucide-react';
 
 const MaintenanceToggle: React.FC = () => {
     const queryClient = useQueryClient();

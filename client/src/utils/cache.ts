@@ -3,16 +3,31 @@ interface CacheOptions {
   tags?: string[];
 }
 
-interface CacheItem<T> {
+export interface CacheItem<T = unknown> {
   data: T;
   timestamp: number;
   ttl: number;
   tags?: string[];
 }
 
+export interface CacheStats {
+  totalKeys: number;
+  totalSize: number;
+  tags: string[];
+}
+
+const getSerializedSize = (value: unknown): number => {
+  try {
+    const serialized = JSON.stringify(value);
+    return serialized ? serialized.length : 0;
+  } catch {
+    return 0;
+  }
+};
+
 class Cache {
   private static instance: Cache;
-  private cache: Map<string, CacheItem<any>>;
+  private cache: Map<string, CacheItem<unknown>>;
   private tagIndex: Map<string, Set<string>>;
 
   private constructor() {
@@ -48,16 +63,21 @@ class Cache {
   }
 
   get<T>(key: string): T | null {
-    const item = this.cache.get(key);
+    const item = this.getItem<T>(key);
+    if (!item) return null;
+    return item.data;
+  }
+
+  getItem<T = unknown>(key: string): CacheItem<T> | null {
+    const item = this.cache.get(key) as CacheItem<T> | undefined;
     if (!item) return null;
 
-    // TTL kontrolü
     if (Date.now() - item.timestamp > item.ttl) {
       this.delete(key);
       return null;
     }
 
-    return item.data;
+    return item;
   }
 
   delete(key: string): void {
@@ -81,6 +101,29 @@ class Cache {
   clear(): void {
     this.cache.clear();
     this.tagIndex.clear();
+  }
+
+  getTagNames(): string[] {
+    return Array.from(this.tagIndex.keys());
+  }
+
+  getStats(): CacheStats {
+    let totalSize = 0;
+
+    this.cache.forEach((item, key) => {
+      if (Date.now() - item.timestamp > item.ttl) {
+        this.delete(key);
+        return;
+      }
+
+      totalSize += getSerializedSize(item.data);
+    });
+
+    return {
+      totalKeys: this.cache.size,
+      totalSize,
+      tags: this.getTagNames(),
+    };
   }
 }
 

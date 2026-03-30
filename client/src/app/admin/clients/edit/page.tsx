@@ -8,7 +8,6 @@ import { FormError } from '@/types/form';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import PhoneInput from '@/components/ui/PhoneInput';
-import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
 
 // Müşteri türü (Local definition corresponding to API response)
 interface Client {

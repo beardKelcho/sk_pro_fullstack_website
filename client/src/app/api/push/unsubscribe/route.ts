@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
+import { isAxiosError } from 'axios';
 import apiClient from '@/services/api/axios';
+
+interface PushUnsubscribePayload {
+  endpoint?: string;
+}
 
 /**
  * Push subscription sil
@@ -7,7 +12,7 @@ import apiClient from '@/services/api/axios';
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json() as PushUnsubscribePayload;
     const { endpoint } = body;
 
     if (!endpoint) {
@@ -23,10 +28,15 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(response.data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const status = isAxiosError(error) ? error.response?.status || 500 : 500;
+    const message = isAxiosError(error)
+      ? error.response?.data?.message || 'Push subscription silinemedi'
+      : 'Push subscription silinemedi';
+
     return NextResponse.json(
-      { error: error.response?.data?.message || 'Push subscription silinemedi' },
-      { status: error.response?.status || 500 }
+      { error: message },
+      { status }
     );
   }
-} 
+}

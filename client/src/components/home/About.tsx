@@ -5,7 +5,6 @@ import StageExperience, { StageSectionTitle } from '@/components/common/StageExp
 import { motion } from 'framer-motion';
 import LazyImage from '@/components/common/LazyImage';
 import { AboutContent } from '@/types/cms';
-import { Loader2 } from 'lucide-react';
 
 interface AboutProps {
     content?: AboutContent;
@@ -46,7 +45,7 @@ const About: React.FC<AboutProps> = ({ content }) => {
                                 {/* Stats */}
                                 {content.stats && content.stats.length > 0 && (
                                     <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-                                        {content.stats.map((stat: any, index: number) => (
+                                        {content.stats.map((stat, index: number) => (
                                             <motion.div
                                                 key={index}
                                                 className="text-center"

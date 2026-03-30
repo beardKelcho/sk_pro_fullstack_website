@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 import { mapBackendRoleToFrontend } from '@/services/userService';
 import logger from '@/utils/logger';
@@ -36,125 +36,6 @@ const roleColors = {
   'Teknisyen': 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400'
 };
 
-// Örnek kullanıcı verileri
-const sampleUsers: User[] = [
-  {
-    id: '1',
-    name: 'Ahmet Yılmaz',
-    email: 'ahmet@skproduction.com',
-    role: 'Teknisyen',
-    department: 'Teknik',
-    status: 'Aktif',
-    avatar: 'AY',
-    phone: '+90 555 123 4567',
-    lastActive: '2023-12-25T14:30:00',
-    joinDate: '2020-05-15T09:00:00',
-    projects: ['Turkcell Dijital Konser', 'İstanbul Film Festivali'],
-    bio: 'Teknik ekibin lideri olarak, etkinliklerimizin teknik altyapısını yönetmekteyim. 10 yıllık sektör deneyimim var.',
-    skills: ['Video Switching', 'Işık Tasarımı', 'Teknik Yönetim', 'Ekip Koordinasyonu'],
-    address: 'Kadıköy, İstanbul',
-    emergencyContact: 'Ayşe Yılmaz (Eş) - +90 555 987 6543'
-  },
-  {
-    id: '2',
-    name: 'Zeynep Kaya',
-    email: 'zeynep@skproduction.com',
-    role: 'Teknisyen',
-    department: 'Medya',
-    status: 'Aktif',
-    avatar: 'ZK',
-    phone: '+90 555 234 5678',
-    lastActive: '2023-12-26T09:15:00',
-    joinDate: '2021-03-10T10:30:00',
-    projects: ['Vodafone Kurumsal Lansman', 'Mercedes Yeni Model Tanıtımı'],
-    bio: 'Medya server sistemleri konusunda 7 yıllık deneyime sahibim. Watchout ve Disguise sistemlerinde uzmanlığım var.',
-    skills: ['Disguise', 'Watchout', 'Resolume Arena', 'Content Management'],
-    address: 'Beşiktaş, İstanbul'
-  },
-  {
-    id: '3',
-    name: 'Mehmet Demir',
-    email: 'mehmet@skproduction.com',
-    role: 'Teknisyen',
-    department: 'Görüntü',
-    status: 'Aktif',
-    avatar: 'MD',
-    phone: '+90 555 345 6789',
-    lastActive: '2023-12-25T16:45:00',
-    joinDate: '2019-11-22T08:15:00',
-    projects: ['TED Konferansı', 'Ulusal Müzik Ödülleri'],
-    bio: 'Görüntü yönetmeni olarak çeşitli büyük ölçekli etkinliklerde görev aldım. Kamera ekibi koordinasyonu ve görüntü rejisi konularında deneyimliyim.',
-    skills: ['Görüntü Rejisi', 'Kamera Yönetimi', 'Görüntü Mikseri', 'IMAG'],
-    address: 'Şişli, İstanbul'
-  },
-  {
-    id: '4',
-    name: 'Ayşe Şahin',
-    email: 'ayse@skproduction.com',
-    role: 'Teknisyen',
-    department: 'Teknik',
-    status: 'Aktif',
-    avatar: 'AŞ',
-    phone: '+90 555 456 7890',
-    lastActive: '2023-12-26T11:20:00',
-    joinDate: '2022-01-15T14:00:00',
-    projects: ['Teknoloji Zirvesi', 'Gaming Istanbul'],
-    bio: 'Teknik kurulum ve sorun giderme konusunda 5 yıllık deneyime sahibim. LED ekran kurulumu ve video sistemleri konusunda uzmanım.',
-    skills: ['LED Kurulum', 'Video Sistemleri', 'Teknik Destek', 'Kablolama'],
-    address: 'Ataşehir, İstanbul'
-  },
-  {
-    id: '5',
-    name: 'Can Özkan',
-    email: 'can@skproduction.com',
-    role: 'Proje Yöneticisi',
-    department: 'Yönetim',
-    status: 'Aktif',
-    avatar: 'CÖ',
-    phone: '+90 555 567 8901',
-    lastActive: '2023-12-26T10:30:00',
-    joinDate: '2020-09-05T09:30:00',
-    projects: ['Ulusal Müzik Ödülleri', 'Kurumsal İnovasyon Günleri', 'E-Spor Şampiyonası'],
-    bio: 'Proje yönetimi konusunda 8 yıllık deneyimim var. Büyük ölçekli etkinlikler için planlama, koordinasyon ve müşteri ilişkileri konularında uzmanım.',
-    skills: ['Proje Yönetimi', 'Bütçe Planlama', 'Ekip Koordinasyonu', 'Müşteri İlişkileri'],
-    address: 'Levent, İstanbul',
-    emergencyContact: 'Deniz Özkan (Kardeş) - +90 555 222 3344'
-  },
-  {
-    id: '6',
-    name: 'Elif Yıldız',
-    email: 'elif@skproduction.com',
-    role: 'Admin',
-    department: 'Yönetim',
-    status: 'Aktif',
-    avatar: 'EY',
-    phone: '+90 555 678 9012',
-    lastActive: '2023-12-26T13:45:00',
-    joinDate: '2018-06-12T11:15:00',
-    projects: ['Tüm Projeler'],
-    bio: 'Şirket yönetimi ve operasyonlarından sorumlu olarak görev yapmaktayım. Finansal planlama, insan kaynakları ve şirket stratejisi konularında 12 yıllık deneyimim bulunmaktadır.',
-    skills: ['Şirket Yönetimi', 'Finansal Planlama', 'İnsan Kaynakları', 'Operasyon Yönetimi', 'Stratejik Planlama'],
-    address: 'Etiler, İstanbul',
-    emergencyContact: 'Ahmet Yıldız (Eş) - +90 555 111 2233'
-  },
-  {
-    id: '7',
-    name: 'Burak Aydın',
-    email: 'burak@skproduction.com',
-    role: 'Teknisyen',
-    department: 'Teknik',
-    status: 'Pasif',
-    avatar: 'BA',
-    phone: '+90 555 789 0123',
-    lastActive: '2023-12-20T15:10:00',
-    joinDate: '2021-11-08T10:00:00',
-    projects: ['Mobil Dünya Kongresi', 'Yılsonu Kurumsal Etkinliği'],
-    bio: 'Ses ve ışık sistemleri konusunda 6 yıllık deneyime sahibim. Teknik kurulum ve operasyon süreçlerinde uzmanım.',
-    skills: ['Ses Sistemleri', 'Işık Sistemleri', 'Sahne Kurulumu'],
-    address: 'Maltepe, İstanbul'
-  }
-];
-
 // Tarih formatlama fonksiyonu
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'Belirtilmemiş';
@@ -171,7 +52,6 @@ const formatDate = (dateString?: string) => {
 
 // Kullanıcı görüntüleme bileşeni
 function ViewUserContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const userId = (searchParams.get('id') as string);
   

@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getAuditLogs, AuditLog, AuditLogFilters } from '@/services/auditLogService';
-import { toast } from 'react-toastify';
+import { getAuditLogs, AuditLogFilters } from '@/services/auditLogService';
 
 const actionLabels: Record<string, string> = {
   'CREATE': 'Oluşturuldu',
@@ -47,7 +46,7 @@ export default function AuditLogsPage() {
     limit: 50,
   });
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['auditLogs', filters],
     queryFn: () => getAuditLogs(filters),
   });
@@ -267,4 +266,3 @@ export default function AuditLogsPage() {
     </div>
   );
 }
-

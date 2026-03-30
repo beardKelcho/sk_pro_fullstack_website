@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createCustomer } from '@/services/customerService';
 import type { Customer } from '@/services/customerService';
-import { industries, cities } from '@/services/customerService';
+import { industries } from '@/services/customerService';
 import PhoneInput from '@/components/ui/PhoneInput';
 import CityDistrictSelect from '@/components/ui/CityDistrictSelect';
 import { toast } from 'react-toastify';

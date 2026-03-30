@@ -38,6 +38,38 @@ const log = {
   header: (msg: string) => console.log(`${colors.cyan}${msg}${colors.reset}`),
 };
 
+const maskPlainSensitiveValue = (value: string): string => {
+  if (value.length <= 4) return '***';
+  return `***${value.slice(-4)}`;
+};
+
+const maskConnectionString = (value: string): string => {
+  try {
+    const parsed = new URL(value);
+    const hasCredentials = Boolean(parsed.username || parsed.password);
+
+    if (!hasCredentials) {
+      return value;
+    }
+
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+  } catch {
+    return maskPlainSensitiveValue(value);
+  }
+};
+
+const getDisplayValue = (varName: string, value: string): string => {
+  const upperVarName = varName.toUpperCase();
+  const isSensitiveByName = ['SECRET', 'PASSWORD', 'TOKEN', 'KEY', 'PRIVATE', 'CERT']
+    .some((pattern) => upperVarName.includes(pattern));
+
+  if (isSensitiveByName) {
+    return maskPlainSensitiveValue(value);
+  }
+
+  return maskConnectionString(value);
+};
+
 const checkEnvFile = (filePath: string, required: boolean): CheckResult => {
   const exists = fs.existsSync(filePath);
   
@@ -69,10 +101,7 @@ const checkEnvVariable = (varName: string, required: boolean = true): CheckResul
     };
   }
   
-  // Hassas bilgileri gizle
-  const displayValue = varName.includes('SECRET') || varName.includes('PASSWORD') || varName.includes('KEY')
-    ? '***' + value.slice(-4)
-    : value;
+  const displayValue = getDisplayValue(varName, value);
   
   return {
     name: `Env: ${varName}`,
@@ -171,7 +200,7 @@ const checkClientEnv = (): CheckResult[] => {
           name: `Client Env: ${varName}`,
           status: 'pass',
           message: 'Tanımlı',
-          details: envVars[varName],
+          details: getDisplayValue(varName, envVars[varName]),
         });
       } else {
         results.push({
@@ -188,7 +217,7 @@ const checkClientEnv = (): CheckResult[] => {
           name: `Client Env: ${varName}`,
           status: 'pass',
           message: 'Tanımlı',
-          details: varName.includes('SECRET') ? '***' : envVars[varName],
+          details: getDisplayValue(varName, envVars[varName]),
         });
       }
     });

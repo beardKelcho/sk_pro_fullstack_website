@@ -36,7 +36,7 @@ export default function QRScanner({
     return () => {
       // Component unmount olduğunda scanner'ı temizle
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => { });
+        scannerRef.current.stop().catch(() => undefined);
       }
     };
   }, []);
@@ -57,7 +57,7 @@ export default function QRScanner({
           // QR kod okundu
           handleQRCodeScanned(decodedText);
         },
-        (errorMessage) => {
+        (_errorMessage) => {
           // Hata mesajı (genellikle okuma devam ederken)
         }
       );
@@ -236,4 +236,3 @@ export default function QRScanner({
     </div>
   );
 }
-

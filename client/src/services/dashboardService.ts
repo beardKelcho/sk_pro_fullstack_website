@@ -1,4 +1,3 @@
-import logger from '@/utils/logger';
 /**
  * Dashboard Service
  * Dashboard istatistikleri ve grafik verilerini yönetir
@@ -178,4 +177,3 @@ export const useDashboardCharts = (period: number = 30) => {
     ...CacheStrategies.dashboard,
   });
 };
-

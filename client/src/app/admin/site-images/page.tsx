@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useSiteImages, useUploadSiteImage, useDeleteSiteImage, useDeleteMultipleSiteImages, SiteImage } from '@/hooks/useSiteContent';
 import AssetCard from '@/components/admin/media/AssetCard';
 import UploadZone from '@/components/admin/media/UploadZone';
-import { LayoutGrid, Image as ImageIcon, Video, Layers, Trash2 } from 'lucide-react';
+import { LayoutGrid, Image as ImageIcon, Layers, Trash2 } from 'lucide-react';
 
 export default function SiteImagesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');

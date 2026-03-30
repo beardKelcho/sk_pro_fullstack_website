@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import logger from '@/utils/logger';
 
 export default function Error({
   error,
@@ -12,8 +13,6 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Hata loglama
-    const logger = require('@/utils/logger').default;
     logger.error('Error:', error);
   }, [error]);
 
@@ -83,4 +82,3 @@ export default function Error({
     </div>
   );
 }
-

@@ -3,10 +3,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
-import { Play, X, Loader2, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { Play, X, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import NextImage from 'next/image';
 
-interface Project {
+export interface Project {
     _id: string;
     type: 'photo' | 'video';
     title: string;
@@ -97,7 +97,7 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
 
         if (shouldPlay) {
             video.muted = true;
-            video.play().catch(() => { });
+            video.play().catch(() => undefined);
         } else {
             video.pause();
             video.currentTime = 0;

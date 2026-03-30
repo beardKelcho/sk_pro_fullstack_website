@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { getAllTasks, deleteTask } from '@/services/taskService';
 import ExportButton from '@/components/admin/ExportButton';
 import { toast } from 'react-toastify';
@@ -58,94 +57,6 @@ const sampleProjects: Project[] = [
   { id: '5', name: 'Müze Multimedya Kurulumu', status: 'Planlanıyor' }
 ];
 
-// Örnek görev verileri
-const sampleTasks: Task[] = [
-  {
-    id: '1',
-    title: 'LED Ekran Kurulumu',
-    description: 'TechCon etkinliği için ana salona LED ekranların kurulması ve ayarlanması',
-    priority: 'Yüksek',
-    status: 'Tamamlandı',
-    dueDate: '2023-10-15',
-    assignedTo: '2',
-    relatedProject: '1',
-    createdAt: '2023-10-01',
-    updatedAt: '2023-10-15'
-  },
-  {
-    id: '2',
-    title: 'Video İçerik Hazırlama',
-    description: 'Kurumsal tanıtım filmi için video içeriğinin düzenlenmesi ve efektlerin eklenmesi',
-    priority: 'Orta',
-    status: 'Devam Ediyor',
-    dueDate: '2023-11-20',
-    assignedTo: '3',
-    relatedProject: '2',
-    createdAt: '2023-11-01',
-    updatedAt: '2023-11-10'
-  },
-  {
-    id: '3',
-    title: 'Ses Sistemi Testi',
-    description: 'Festival için kurulacak ses sisteminin test edilmesi ve kalibrasyonu',
-    priority: 'Yüksek',
-    status: 'Atandı',
-    dueDate: '2023-12-10',
-    assignedTo: '4',
-    relatedProject: '4',
-    createdAt: '2023-12-01',
-    updatedAt: '2023-12-01'
-  },
-  {
-    id: '4',
-    title: 'Medya Server Programlama',
-    description: 'Müze için interaktif medya içeriğinin programlanması',
-    priority: 'Acil',
-    status: 'Devam Ediyor',
-    dueDate: '2023-12-15',
-    assignedTo: '2',
-    relatedProject: '5',
-    createdAt: '2023-12-05',
-    updatedAt: '2023-12-07'
-  },
-  {
-    id: '5',
-    title: 'Teknik Plan Hazırlama',
-    description: 'Bayi toplantısı için teknik gereksinimlerin planlanması',
-    priority: 'Düşük',
-    status: 'Beklemede',
-    dueDate: '2024-01-15',
-    assignedTo: '1',
-    relatedProject: '3',
-    createdAt: '2023-12-20',
-    updatedAt: '2023-12-20'
-  },
-  {
-    id: '6',
-    title: 'Ekipman Bakımı',
-    description: 'Stüdyo ekipmanlarının düzenli bakımının yapılması',
-    priority: 'Orta',
-    status: 'Tamamlandı',
-    dueDate: '2023-11-30',
-    assignedTo: '4',
-    relatedProject: undefined,
-    createdAt: '2023-11-25',
-    updatedAt: '2023-11-30'
-  },
-  {
-    id: '7',
-    title: 'Kablolama İşleri',
-    description: 'Festival alanında kamera ve ışık sistemleri için kablolama yapılması',
-    priority: 'Yüksek',
-    status: 'Atandı',
-    dueDate: '2023-12-17',
-    assignedTo: '3',
-    relatedProject: '4',
-    createdAt: '2023-12-10',
-    updatedAt: '2023-12-10'
-  }
-];
-
 // Renk ayarları
 const priorityColors = {
   'Düşük': 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
@@ -163,7 +74,6 @@ const statusColors = {
 };
 
 export default function TaskList() {
-  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -319,6 +229,12 @@ export default function TaskList() {
           </PermissionLink>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+          {error}
+        </div>
+      )}
 
       {/* Filtreler */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
@@ -590,9 +506,10 @@ export default function TaskList() {
               </button>
               <button
                 onClick={handleDeleteTask}
-                className="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700"
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700 disabled:opacity-50"
               >
-                Sil
+                {isDeleting ? 'Siliniyor...' : 'Sil'}
               </button>
             </div>
           </div>

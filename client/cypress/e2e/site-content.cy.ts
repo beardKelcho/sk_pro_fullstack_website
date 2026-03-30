@@ -5,123 +5,78 @@
  */
 
 describe('Site Content Management', () => {
-  const ADMIN_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@skpro.com.tr';
-  const ADMIN_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
-
   beforeEach(() => {
     cy.loginAsAdmin();
-    cy.url({ timeout: 20000 }).should('include', '/admin');
+    cy.visit('/admin/site-management');
+    cy.url({ timeout: 20000 }).should('include', '/admin/site-management');
+    cy.contains('h1', 'Site Yönetimi', { timeout: 15000 }).should('be.visible');
   });
 
-  describe('Site Content Sayfası', () => {
-    it('site content sayfası açılmalı', () => {
-      cy.visit('/admin/site-content');
-      cy.url().should('include', '/admin/site-content');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Sayfa başlığını kontrol et
-      cy.contains(/içerik|content|site/i, { timeout: 15000 }).should('exist');
+  describe('Site Management Sayfası', () => {
+    it('site yönetimi sayfası açılmalı', () => {
+      cy.contains('h3', 'Hero Bölümü').should('be.visible');
+      cy.contains('h3', 'Hakkımızda').should('be.visible');
+      cy.contains('h3', 'Hizmetler').should('be.visible');
+      cy.contains('h3', 'İletişim').should('be.visible');
+      cy.contains('h3', 'Projeler').should('be.visible');
     });
 
     it('bölüm seçimi çalışmalı', () => {
-      cy.visit('/admin/site-content');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Bölüm seçimi - gerçek assertion ile
-      cy.get('button:contains("Hero"), button:contains("Hizmet"), [role="tab"]', { timeout: 10000 })
-        .first()
-        .should('exist')
+      cy.contains('h3', 'Hero Bölümü')
         .scrollIntoView()
-        .should('be.visible')
         .click({ force: true });
-      
-      cy.wait(1000);
-      
-      // Bölüm içeriğinin görüntülendiğini doğrula
-      cy.get('form, input, textarea', { timeout: 10000 })
-        .should('exist');
+
+      cy.contains('h2', 'Hero Bölümü Düzenle', { timeout: 10000 }).should('be.visible');
+      cy.contains('Metin İçerikleri').should('be.visible');
     });
   });
 
   describe('Hero Bölümü Düzenleme', () => {
     it('hero bölümü düzenlenebilmeli', () => {
-      cy.visit('/admin/site-content');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Hero bölümüne git - gerçek assertion ile
-      cy.get('button:contains("Hero"), [aria-label*="hero"]', { timeout: 10000 })
-        .first()
-        .should('exist')
+      cy.contains('h3', 'Hero Bölümü')
         .scrollIntoView()
         .click({ force: true });
-      
-      cy.wait(1000);
-      
-      // Hero form alanları - gerçek assertion ile
-      cy.get('input[name*="title"], textarea[name*="description"]', { timeout: 10000 })
-        .should('exist')
-        .should('be.visible');
+
+      cy.contains('h2', 'Hero Bölümü Düzenle', { timeout: 10000 }).should('be.visible');
+      cy.get('input[placeholder*="Piksellerin Ötesinde"]', { timeout: 10000 }).should('be.visible');
+      cy.get('textarea[placeholder*="Kısa açıklama"]', { timeout: 10000 }).should('be.visible');
     });
   });
 
   describe('Services Bölümü Düzenleme', () => {
     it('services bölümü düzenlenebilmeli', () => {
-      cy.visit('/admin/site-content');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Services bölümüne git - gerçek assertion ile
-      cy.get('button:contains("Hizmet"), button:contains("Service")', { timeout: 10000 })
-        .first()
-        .should('exist')
+      cy.contains('h3', 'Hizmetler')
         .scrollIntoView()
         .click({ force: true });
-      
-      cy.wait(1000);
-      
-      // Services form alanlarının görüntülendiğini doğrula
-      cy.get('form, input, textarea', { timeout: 10000 })
-        .should('exist');
+
+      cy.contains('h2', 'Hizmetler Yönetimi', { timeout: 10000 }).should('be.visible');
+      cy.contains('Hizmet Listesi').should('be.visible');
+      cy.contains('Yeni Ekle').should('be.visible');
     });
   });
 
   describe('About Bölümü Düzenleme', () => {
     it('about bölümü düzenlenebilmeli', () => {
-      cy.visit('/admin/site-content');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // About bölümüne git - gerçek assertion ile
-      cy.get('button:contains("Hakkımızda"), button:contains("About")', { timeout: 10000 })
-        .first()
-        .should('exist')
+      cy.contains('h3', 'Hakkımızda')
         .scrollIntoView()
         .click({ force: true });
-      
-      cy.wait(1000);
-      
-      // About form alanlarının görüntülendiğini doğrula
-      cy.get('form, input, textarea', { timeout: 10000 })
-        .should('exist');
+
+      cy.contains('h2', 'Hakkımızda Yönetimi', { timeout: 10000 }).should('be.visible');
+      cy.get('input[placeholder*="SK Production Hakkında"]', { timeout: 10000 }).should('be.visible');
+      cy.get('textarea[placeholder*="Şirket hakkında detaylı açıklama"]', { timeout: 10000 }).should('be.visible');
     });
   });
 
   describe('Contact Bilgileri Düzenleme', () => {
     it('contact bilgileri düzenlenebilmeli', () => {
-      cy.visit('/admin/site-content');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Contact bölümüne git - gerçek assertion ile
-      cy.get('button:contains("İletişim"), button:contains("Contact")', { timeout: 10000 })
-        .first()
-        .should('exist')
+      cy.contains('h3', 'İletişim')
         .scrollIntoView()
         .click({ force: true });
-      
-      cy.wait(1000);
-      
-      // Contact form alanları - gerçek assertion ile
-      cy.get('input[name*="email"], input[name*="phone"]', { timeout: 10000 })
-        .should('exist')
-        .should('be.visible');
+
+      cy.contains('h2', 'İletişim Yönetimi', { timeout: 10000 }).should('be.visible');
+      cy.get('input[type="email"]', { timeout: 10000 }).should('be.visible');
+      cy.get('input[type="tel"]', { timeout: 10000 }).should('be.visible');
+      cy.get('input[type="url"]', { timeout: 10000 }).should('be.visible');
     });
   });
 });

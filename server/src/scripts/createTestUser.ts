@@ -9,11 +9,11 @@ import logger from '../utils/logger';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const TEST_USER_EMAIL = process.env.TEST_USER_EMAIL || 'test@skpro.com.tr';
-const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD;
+const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD || 'Test123!';
 const TEST_USER_NAME = 'Test User';
 const TEST_USER_ROLE = 'ADMIN';
 
-if (!TEST_USER_PASSWORD || TEST_USER_PASSWORD.length < 8) {
+if (TEST_USER_PASSWORD.length < 8) {
   logger.error('TEST_USER_PASSWORD env var en az 8 karakter olmalıdır. Script iptal edildi.');
   process.exit(1);
 }
@@ -59,7 +59,7 @@ const createTestUser = async () => {
       );
       
       logger.info(`✅ Test kullanıcısı güncellendi: ${TEST_USER_EMAIL}`);
-      logger.info(`   Şifre: ${TEST_USER_PASSWORD}`);
+      logger.info('   Şifre: [gizli]');
       logger.info(`   Rol: ${TEST_USER_ROLE}`);
       logger.info(`   2FA: Kapalı`);
     } else {
@@ -76,7 +76,7 @@ const createTestUser = async () => {
       });
       
       logger.info(`✅ Test kullanıcısı oluşturuldu: ${TEST_USER_EMAIL}`);
-      logger.info(`   Şifre: ${TEST_USER_PASSWORD}`);
+      logger.info('   Şifre: [gizli]');
       logger.info(`   Rol: ${TEST_USER_ROLE}`);
       logger.info(`   2FA: Kapalı`);
     }
@@ -103,12 +103,9 @@ const createTestUser = async () => {
     logger.info('✅ Test kullanıcısı hazır!');
     logger.info('═══════════════════════════════════════════════════════════');
     logger.info(`📧 Email: ${TEST_USER_EMAIL}`);
-    logger.info(`🔑 Şifre: ${TEST_USER_PASSWORD}`);
+    logger.info('🔑 Şifre: [gizli]');
     logger.info(`👤 Rol: ${TEST_USER_ROLE}`);
     logger.info(`🔒 2FA: Kapalı`);
-    logger.info('');
-    logger.info('Cypress testlerinde bu bilgileri kullanabilirsiniz:');
-    logger.info(`  cy.loginAsUser('${TEST_USER_EMAIL}', '${TEST_USER_PASSWORD}')`);
     logger.info('═══════════════════════════════════════════════════════════');
     
     process.exit(0);

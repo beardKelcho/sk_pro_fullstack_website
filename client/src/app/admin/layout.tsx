@@ -26,9 +26,6 @@ export default function AdminLayout({
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
-  // Locale için default 'tr' kullan (admin paneli i18n dışında ama locale hatası önlemek için)
-  const adminLocale = 'tr';
-  const [adminMessages, setAdminMessages] = React.useState<any>({});
 
   // Sidebar toggle fonksiyonu
   const toggleSidebar = () => {
@@ -65,8 +62,11 @@ export default function AdminLayout({
           queryClient.invalidateQueries({ queryKey: ['notifications'] }).catch(() => undefined);
           queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] }).catch(() => undefined);
 
-          const title = evt.data?.title || 'Yeni bildirim';
-          const message = evt.data?.message || '';
+          const notificationData = typeof evt.data === 'object' && evt.data !== null
+            ? evt.data as { title?: string; message?: string }
+            : null;
+          const title = notificationData?.title || 'Yeni bildirim';
+          const message = notificationData?.message || '';
           toast.info(`${title}${message ? ` — ${message}` : ''}`, { autoClose: 4000 });
         }
 
@@ -82,27 +82,6 @@ export default function AdminLayout({
 
     return () => disconnect();
   }, [queryClient, normalizedPathname]);
-
-  // Admin paneli için minimal messages (locale hatası önlemek için)
-  React.useEffect(() => {
-    // Hook her render'da tanımlı olmalı; login sayfasında ekstra iş yapmayalım
-    if (normalizedPathname === '/admin/login' || normalizedPathname === '/admin') {
-      setAdminMessages({});
-      return;
-    }
-
-    const loadMessages = async () => {
-      try {
-        const messages = await import(`@/messages/${adminLocale}.json`);
-        setAdminMessages(messages.default || {});
-      } catch {
-        // messages dosyası yoksa boş obje kullan
-        setAdminMessages({});
-      }
-    };
-
-    loadMessages();
-  }, [adminLocale, normalizedPathname]);
 
   // Login sayfası için farklı layout gösterme - ProtectedRoute kullanma
   if (normalizedPathname === '/admin/login' || normalizedPathname === '/admin') {

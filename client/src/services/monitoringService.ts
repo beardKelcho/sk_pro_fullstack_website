@@ -1,4 +1,3 @@
-import logger from '@/utils/logger';
 /**
  * Monitoring Service
  * Production monitoring ve performance metrics için
@@ -10,6 +9,19 @@ import logger from '@/utils/logger';
 import apiClient from './api/axios';
 import { useQuery } from '@tanstack/react-query';
 import { CacheStrategies, QueryKeys } from '@/config/queryConfig';
+
+const shouldUseMockData = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const apiError = error as {
+    response?: { status?: number };
+    code?: string;
+  };
+
+  return apiError.response?.status === 404 || apiError.code === 'ERR_NETWORK';
+};
 
 /**
  * Performance metrikleri interface'i
@@ -138,9 +150,9 @@ export const getPerformanceMetrics = async (
 
     const res = await apiClient.get('/monitoring/performance', { params });
     return res.data.metrics || [];
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Backend endpoint henüz yoksa mock data döndür
-    if (error.response?.status === 404 || error.code === 'ERR_NETWORK') {
+    if (shouldUseMockData(error)) {
       return getMockPerformanceMetrics(timeRange);
     }
     throw new Error('Performance metrikleri alınamadı');
@@ -171,9 +183,9 @@ export const getApiResponseMetrics = async (
 
     const res = await apiClient.get('/monitoring/api-metrics', { params });
     return res.data.metrics || [];
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Backend endpoint henüz yoksa mock data döndür
-    if (error.response?.status === 404 || error.code === 'ERR_NETWORK') {
+    if (shouldUseMockData(error)) {
       return getMockApiResponseMetrics(timeRange);
     }
     throw new Error('API metrikleri alınamadı');
@@ -204,9 +216,9 @@ export const getUserActivityMetrics = async (
 
     const res = await apiClient.get('/monitoring/user-activity', { params });
     return res.data.metrics || [];
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Backend endpoint henüz yoksa mock data döndür
-    if (error.response?.status === 404 || error.code === 'ERR_NETWORK') {
+    if (shouldUseMockData(error)) {
       return getMockUserActivityMetrics(timeRange);
     }
     throw new Error('User activity metrikleri alınamadı');
@@ -236,9 +248,9 @@ export const getMonitoringDashboard = async (
       params: { timeRange },
     });
     return res.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Backend endpoint henüz yoksa mock data döndür
-    if (error.response?.status === 404 || error.code === 'ERR_NETWORK') {
+    if (shouldUseMockData(error)) {
       return getMockMonitoringDashboard(timeRange);
     }
     throw new Error('Monitoring dashboard verileri alınamadı');
@@ -250,11 +262,9 @@ export const getMonitoringDashboard = async (
  * @private
  */
 function getMockPerformanceMetrics(timeRange: '1h' | '24h' | '7d' | '30d'): PerformanceMetrics[] {
-  const now = Date.now();
-  const rangeMs = timeRange === '1h' ? 3600000 : timeRange === '24h' ? 86400000 : timeRange === '7d' ? 604800000 : 2592000000;
   const points = timeRange === '1h' ? 12 : timeRange === '24h' ? 24 : timeRange === '7d' ? 7 : 30;
 
-  return Array.from({ length: points }, (_, i) => ({
+  return Array.from({ length: points }, () => ({
     pageLoadTime: 800 + Math.random() * 400,
     apiResponseTime: 150 + Math.random() * 100,
     renderTime: 200 + Math.random() * 150,
@@ -300,6 +310,7 @@ function getMockUserActivityMetrics(timeRange: '1h' | '24h' | '7d' | '30d'): Use
  * @private
  */
 function getMockMonitoringDashboard(timeRange: '1h' | '24h' | '7d' | '30d'): MonitoringDashboardData {
+  void timeRange;
   return {
     performance: {
       averagePageLoadTime: 850,

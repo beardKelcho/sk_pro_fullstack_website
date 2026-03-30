@@ -3,6 +3,8 @@
 import React, { useMemo, useState } from 'react';
 import {
   EmailTemplate,
+  EmailTemplatePreviewData,
+  EmailTemplatePreviewResponse,
   EmailTemplateVariant,
   useCreateEmailTemplate,
   useDeleteEmailTemplate,
@@ -29,11 +31,23 @@ const emptyForm = {
   variants: [emptyVariant] as EmailTemplateVariant[],
 };
 
-const safeJsonParse = (raw: string): Record<string, any> => {
+type MutationErrorShape = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+};
+
+const getErrorMessage = (error: MutationErrorShape, fallback: string): string =>
+  error.response?.data?.message || error.message || fallback;
+
+const safeJsonParse = (raw: string): EmailTemplatePreviewData => {
   if (!raw?.trim()) return {};
   const v = JSON.parse(raw);
   if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
-  return v as Record<string, any>;
+  return v as EmailTemplatePreviewData;
 };
 
 export default function EmailTemplatesPage() {
@@ -75,7 +89,7 @@ export default function EmailTemplatesPage() {
       2
     )
   );
-  const [previewResult, setPreviewResult] = useState<{ subject: string; html: string; used?: any } | null>(null);
+  const [previewResult, setPreviewResult] = useState<EmailTemplatePreviewResponse | null>(null);
 
   const isBusy =
     createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || previewMutation.isPending;
@@ -121,8 +135,8 @@ export default function EmailTemplatesPage() {
       await deleteMutation.mutateAsync(id);
       toast.success('Email template silindi');
       if (editing?._id === id) handleStartCreate();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Silme başarısız');
+    } catch (error) {
+      toast.error(getErrorMessage(error as MutationErrorShape, 'Silme başarısız'));
     }
   };
 
@@ -191,8 +205,8 @@ export default function EmailTemplatesPage() {
       });
       setPreviewResult(res);
       toast.success('Önizleme hazır');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || 'Önizleme alınamadı');
+    } catch (error) {
+      toast.error(getErrorMessage(error as MutationErrorShape, 'Önizleme alınamadı'));
     }
   };
 
@@ -225,8 +239,8 @@ export default function EmailTemplatesPage() {
         toast.success('Email template oluşturuldu');
       }
       handleStartCreate();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'İşlem başarısız');
+    } catch (error) {
+      toast.error(getErrorMessage(error as MutationErrorShape, 'İşlem başarısız'));
     }
   };
 
@@ -450,10 +464,16 @@ export default function EmailTemplatesPage() {
                   </div>
                 </div>
                 <div className="p-3">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">HTML Render</div>
-                  <div
-                    className="prose prose-sm max-w-none dark:prose-invert"
-                    dangerouslySetInnerHTML={{ __html: previewResult.html }}
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    HTML Render
+                    <span className="ml-2">izole preview iframe icinde gosterilir</span>
+                  </div>
+                  <iframe
+                    title="Email template preview"
+                    sandbox=""
+                    referrerPolicy="no-referrer"
+                    srcDoc={previewResult.html}
+                    className="w-full h-[420px] rounded-lg border border-gray-200 dark:border-gray-700 bg-white"
                   />
                 </div>
               </div>
@@ -550,4 +570,3 @@ export default function EmailTemplatesPage() {
     </div>
   );
 }
-

@@ -1,9 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Project, ProjectStatus, ProjectStatusDisplay, ProjectDisplay } from '@/types/project';
+import type { Client } from '@/types/client';
+import type { Equipment } from '@/types/equipment';
+import type { TeamMember } from '@/types/project';
 import { getAllProjects, deleteProject, updateProject } from '@/services/projectService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 import { MESSAGES } from '@/constants/messages';
+
+type ProjectStatusUpdatePayload = {
+    status: ProjectStatus;
+};
+
+type BackendProjectEntity = Partial<Project> & {
+    _id?: string;
+    id?: string;
+    client?: string | Partial<Client> | null;
+    team?: Array<string | Partial<TeamMember>>;
+    equipment?: Array<string | Partial<Equipment>>;
+};
+
+const getEntityId = (entity: { _id?: string; id?: string } | string | undefined): string =>
+    typeof entity === 'string' ? entity : entity?._id || entity?.id || '';
 
 // Backend enum'larını Türkçe string'e çeviren yardımcı fonksiyon
 const getStatusDisplay = (status: ProjectStatus): ProjectStatusDisplay => {
@@ -38,7 +56,7 @@ export const useProjects = () => {
     const [error, setError] = useState<string | null>(null);
     const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
-    const formatProject = (item: any): ProjectDisplay => {
+    const formatProject = (item: BackendProjectEntity): ProjectDisplay => {
         const backendStatus = item.status as ProjectStatus;
         const clientData = typeof item.client === 'object' && item.client ? item.client : null;
 
@@ -70,8 +88,8 @@ export const useProjects = () => {
             status: getStatusDisplay(backendStatus),
             budget: item.budget || 0,
             location: item.location || '',
-            team: Array.isArray(item.team) ? item.team.map((t: any) => typeof t === 'string' ? t : (t._id || t.id || '')) : [],
-            equipment: Array.isArray(item.equipment) ? item.equipment.map((e: any) => typeof e === 'string' ? e : (e._id || e.id || '')) : [],
+            team: Array.isArray(item.team) ? item.team.map((member) => getEntityId(member)) : [],
+            equipment: Array.isArray(item.equipment) ? item.equipment.map((equipmentItem) => getEntityId(equipmentItem)) : [],
             notes: item.notes || '',
             createdAt: item.createdAt || new Date().toISOString(),
             updatedAt: item.updatedAt || new Date().toISOString()
@@ -86,7 +104,7 @@ export const useProjects = () => {
             const projectsList = response.projects || response;
 
             const formattedProjects: ProjectDisplay[] = Array.isArray(projectsList)
-                ? projectsList.map(formatProject)
+                ? (projectsList as BackendProjectEntity[]).map(formatProject)
                 : [];
 
             setProjects(formattedProjects);
@@ -126,7 +144,7 @@ export const useProjects = () => {
         setUpdatingStatusId(projectId);
 
         try {
-            await updateProject(projectId, { status: nextBackendStatus } as any);
+            await updateProject(projectId, { status: nextBackendStatus } as ProjectStatusUpdatePayload);
             toast.success(MESSAGES.SUCCESS.PROJECT_UPDATE);
         } catch (err: unknown) {
             logger.error('Proje durum güncelleme hatası:', err);

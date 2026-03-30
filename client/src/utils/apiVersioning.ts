@@ -12,7 +12,9 @@ export class ApiVersioning {
   private versions: Map<string, ApiVersion> = new Map();
   private defaultVersion: string = 'v1';
 
-  private constructor() {}
+  private constructor() {
+    // Singleton
+  }
 
   static getInstance(): ApiVersioning {
     if (!ApiVersioning.instance) {

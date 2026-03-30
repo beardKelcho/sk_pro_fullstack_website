@@ -16,25 +16,34 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const maskConnectionString = (value: string): string => {
+    try {
+        const parsed = new URL(value);
+        return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+    } catch {
+        return '[hidden]';
+    }
+};
+
 const seedTestUser = async () => {
     const mongoUri =
         process.env.MONGODB_URI ||
         process.env.MONGO_URI ||
         'mongodb://localhost:27017/skproduction-test';
+    const testEmail = process.env.TEST_USER_EMAIL || 'test@skpro.com.tr';
+    const testPassword = process.env.TEST_USER_PASSWORD || 'Test123!';
 
     // eslint-disable-next-line no-console
-    console.log(`[seedTestUser] Connecting to MongoDB: ${mongoUri}`);
+    console.log(`[seedTestUser] Connecting to MongoDB: ${maskConnectionString(mongoUri)}`);
     await mongoose.connect(mongoUri);
 
     // Dinamik model yükleme (typecheck sırasında import döngülerinden kaçınmak için)
     const User = (await import('../models/User')).default;
 
-    const TEST_EMAIL = 'test@skpro.com.tr';
-
-    const existing = await User.findOne({ email: TEST_EMAIL });
+    const existing = await User.findOne({ email: testEmail });
     if (existing) {
         // eslint-disable-next-line no-console
-        console.log(`[seedTestUser] Test user already exists: ${TEST_EMAIL} — skipping.`);
+        console.log(`[seedTestUser] Test user already exists: ${testEmail} — skipping.`);
         await mongoose.connection.close();
         process.exit(0);
     }
@@ -42,15 +51,15 @@ const seedTestUser = async () => {
     // Password will be hashed by the User model's pre-save hook
     await User.create({
         name: 'CI Test User',
-        email: TEST_EMAIL,
-        password: 'Test123!',
+        email: testEmail,
+        password: testPassword,
         role: 'ADMIN',
         isActive: true,
         is2FAEnabled: false,
     });
 
     // eslint-disable-next-line no-console
-    console.log(`[seedTestUser] ✅ Test user created: ${TEST_EMAIL}`);
+    console.log(`[seedTestUser] ✅ Test user created: ${testEmail}`);
     await mongoose.connection.close();
     process.exit(0);
 };

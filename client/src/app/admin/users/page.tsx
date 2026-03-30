@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { getAllUsers, deleteUser, getRoleLabel, mapBackendRoleToFrontend } from '@/services/userService';
+import { getAllUsers, deleteUser, mapBackendRoleToFrontend } from '@/services/userService';
 import { getStoredUserRole } from '@/utils/authStorage';
 import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 import logger from '@/utils/logger';
@@ -43,7 +42,6 @@ const roleColors = {
 const departments = ['Yönetim', 'Teknik', 'Medya', 'Görüntü'];
 
 export default function UserList() {
-  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -295,6 +293,12 @@ export default function UserList() {
         </Link>
       </div>
 
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
           <div className="md:col-span-2">
@@ -486,7 +490,7 @@ export default function UserList() {
           }}
           userId={selectedUserForPassword.id}
           userName={selectedUserForPassword.name}
-          onSuccess={() => { }}
+          onSuccess={() => undefined}
         />
       )}
     </div>

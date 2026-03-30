@@ -5,6 +5,7 @@
  * Production ortamında console loglarını engellemek ve merkezi
  * bir log yönetimi sağlamak için kullanılır.
  */
+/* eslint-disable no-console */
 
 const isProduction = process.env.NODE_ENV === 'production';
 

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createCase } from '@/services/caseService';
 import { getAllProjects } from '@/services/projectService';
-import inventoryService, { type InventoryItem } from '@/services/inventoryService';
 import { toast } from 'react-toastify';
 import EquipmentSelector from '@/components/admin/projects/EquipmentSelector';
 import logger from '@/utils/logger';

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/Button';
 import { PermissionButton } from '@/components/common/PermissionButton';
@@ -30,7 +29,6 @@ interface FileListResponse {
 }
 
 const FileManagementPage: React.FC = () => {
-  const router = useRouter();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);

@@ -1,21 +1,37 @@
 import logger from '@/utils/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Optional Redis import - logging will be disabled if not available
-let Redis: any;
-let redis: any;
+type JsonObject = Record<string, unknown>;
 
-try {
-  const redisModule = require('@upstash/redis');
-  Redis = redisModule.Redis;
-  redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL || '',
-    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-  });
-} catch (error) {
-  // Redis not available, logging will be disabled
-  logger.warn('@upstash/redis not available, API logging disabled');
-}
+type RedisLike = {
+  set: (key: string, value: string, options?: { ex?: number }) => Promise<unknown>;
+  keys: (pattern: string) => Promise<string[]>;
+  del: (...keys: string[]) => Promise<unknown>;
+  get: (key: string) => Promise<unknown>;
+};
+
+let redisClientPromise: Promise<RedisLike | null> | null = null;
+
+const getRedisClient = async (): Promise<RedisLike | null> => {
+  if (redisClientPromise) {
+    return redisClientPromise;
+  }
+
+  redisClientPromise = (async () => {
+    try {
+      const redisModule = await import('@upstash/redis');
+      return new redisModule.Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL || '',
+        token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+      }) as RedisLike;
+    } catch {
+      logger.warn('@upstash/redis not available, API logging disabled');
+      return null;
+    }
+  })();
+
+  return redisClientPromise;
+};
 
 interface ApiLog {
   timestamp: number;
@@ -23,7 +39,7 @@ interface ApiLog {
   path: string;
   query: Record<string, string>;
   headers: Record<string, string>;
-  body?: any;
+  body?: JsonObject;
   responseStatus: number;
   responseTime: number;
   ip: string;
@@ -35,7 +51,9 @@ export class ApiLogger {
   private readonly maxLogs: number = 1000;
   private readonly logTTL: number = 7 * 24 * 60 * 60; // 7 gün
 
-  private constructor() { }
+  private constructor() {
+    void this.maxLogs;
+  }
 
   static getInstance(): ApiLogger {
     if (!ApiLogger.instance) {
@@ -45,7 +63,8 @@ export class ApiLogger {
   }
 
   async logRequest(request: NextRequest, response: NextResponse, responseTime: number) {
-    if (!redis) return; // Redis not available, skip logging
+    const redis = await getRedisClient();
+    if (!redis) return;
 
     try {
       const log: ApiLog = {
@@ -64,8 +83,10 @@ export class ApiLogger {
       if (request.method !== 'GET') {
         try {
           const body = await request.clone().json();
-          log.body = body;
-        } catch (error) {
+          if (body && typeof body === 'object' && !Array.isArray(body)) {
+            log.body = body as JsonObject;
+          }
+        } catch {
           // Body parse edilemezse loglama
         }
       }
@@ -82,7 +103,8 @@ export class ApiLogger {
   }
 
   private async cleanupOldLogs() {
-    if (!redis) return; // Redis not available, skip cleanup
+    const redis = await getRedisClient();
+    if (!redis) return;
 
     try {
       const keys = await redis.keys('api_logs:*');
@@ -105,7 +127,8 @@ export class ApiLogger {
     status?: number;
     limit?: number;
   } = {}): Promise<ApiLog[]> {
-    if (!redis) return []; // Redis not available, return empty array
+    const redis = await getRedisClient();
+    if (!redis) return [];
 
     try {
       const keys = await redis.keys('api_logs:*');

@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { Mail, Clock } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 export default function MaintenancePage() {
     return (

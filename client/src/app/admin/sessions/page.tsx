@@ -22,7 +22,6 @@ const formatDistanceToNow = (date: Date) => {
 
 const getDeviceIcon = (deviceInfo?: { browser?: string; os?: string }) => {
   const os = deviceInfo?.os?.toLowerCase() || '';
-  const browser = deviceInfo?.browser?.toLowerCase() || '';
 
   if (os.includes('windows') || os.includes('win')) {
     return (
@@ -72,7 +71,7 @@ const getOSName = (deviceInfo?: { os?: string }) => {
 };
 
 export default function SessionsPage() {
-  const { data, isLoading, error, refetch } = useActiveSessions();
+  const { data, isLoading, error } = useActiveSessions();
   const terminateSession = useTerminateSession();
   const terminateAllOther = useTerminateAllOtherSessions();
   const [terminatingId, setTerminatingId] = useState<string | null>(null);
@@ -314,4 +313,3 @@ export default function SessionsPage() {
     </div>
   );
 }
-

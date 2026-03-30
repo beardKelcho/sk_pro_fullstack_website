@@ -3,7 +3,7 @@
 import logger from '@/utils/logger';
 
 import React, { useState } from 'react';
-import { useSiteImages, useUploadSiteImage, SiteImage } from '@/hooks/useSiteContent';
+import { useSiteImages, useUploadSiteImage } from '@/hooks/useSiteContent';
 import AssetCard from './AssetCard';
 import UploadZone from './UploadZone';
 import { X, Image as ImageIcon, Video, UploadCloud, Grid } from 'lucide-react';
@@ -25,7 +25,6 @@ const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
     title = 'Medya Seç'
 }) => {
     const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
     // Determine category based on allowed types if stricter
     const queryCategory = allowedTypes === 'video' ? 'video' : undefined; // Backend filter if supported, else client filter
@@ -127,8 +126,8 @@ const MediaPickerModal: React.FC<MediaPickerModalProps> = ({
                                     }}>
                                         <AssetCard
                                             asset={asset}
-                                            onToggleSelect={() => { }} // No multi-select in picker mode usually, or simple select
-                                            onDelete={() => { }} // No delete in picker
+                                            onToggleSelect={() => undefined} // No multi-select in picker mode usually, or simple select
+                                            onDelete={() => undefined} // No delete in picker
                                             selectionMode={false}
                                             isSelected={false} // Could implement "selected" visual state
                                         />

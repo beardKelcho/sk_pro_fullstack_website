@@ -3,7 +3,7 @@ import { usePathname } from 'next/navigation';
 import { trackUserBehavior } from '@/utils/analytics';
 
 export function useUserBehavior() {
-  const pathname = usePathname();
+  usePathname();
   const startTimeRef = useRef<number>(Date.now());
   const maxScrollDepthRef = useRef<number>(0);
 
@@ -63,8 +63,8 @@ export function useUserBehavior() {
   }, []);
 
   // Form gönderimi izleme
-  const trackFormSubmission = (formId: string, formData: any) => {
-    trackUserBehavior.trackFormSubmission(formId, formData);
+  const trackFormSubmission = (formId: string) => {
+    trackUserBehavior.trackFormSubmission(formId);
   };
 
   // Buton tıklaması izleme

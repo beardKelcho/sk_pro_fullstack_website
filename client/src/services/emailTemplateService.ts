@@ -32,6 +32,17 @@ export type EmailTemplatePreviewResponse = {
   used: { templateKey: string; variantName: string; locale: string };
 };
 
+export type EmailTemplatePreviewData = Record<string, unknown>;
+
+type ApiErrorShape = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+};
+
 export const getEmailTemplates = async (): Promise<EmailTemplate[]> => {
   const res = await apiClient.get('/email-templates');
   return (res.data?.data || []) as EmailTemplate[];
@@ -56,7 +67,7 @@ export const previewEmailTemplate = async (payload: {
   key?: string;
   locale?: string;
   variantName?: string;
-  data?: Record<string, any>;
+  data?: EmailTemplatePreviewData;
   template?: Partial<EmailTemplate>;
 }): Promise<EmailTemplatePreviewResponse> => {
   const res = await apiClient.post('/email-templates/preview', payload);
@@ -76,7 +87,7 @@ export const useCreateEmailTemplate = () => {
   return useMutation({
     mutationFn: createEmailTemplate,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['email-templates'] }),
-    onError: (e: any) => logger.error('EmailTemplate create error:', e),
+    onError: (error: ApiErrorShape) => logger.error('EmailTemplate create error:', error),
   });
 };
 
@@ -85,7 +96,7 @@ export const useUpdateEmailTemplate = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<EmailTemplate> }) => updateEmailTemplate(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['email-templates'] }),
-    onError: (e: any) => logger.error('EmailTemplate update error:', e),
+    onError: (error: ApiErrorShape) => logger.error('EmailTemplate update error:', error),
   });
 };
 
@@ -94,13 +105,12 @@ export const useDeleteEmailTemplate = () => {
   return useMutation({
     mutationFn: deleteEmailTemplate,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['email-templates'] }),
-    onError: (e: any) => logger.error('EmailTemplate delete error:', e),
+    onError: (error: ApiErrorShape) => logger.error('EmailTemplate delete error:', error),
   });
 };
 
 export const usePreviewEmailTemplate = () =>
   useMutation({
     mutationFn: previewEmailTemplate,
-    onError: (e: any) => logger.error('EmailTemplate preview error:', e),
+    onError: (error: ApiErrorShape) => logger.error('EmailTemplate preview error:', error),
   });
-

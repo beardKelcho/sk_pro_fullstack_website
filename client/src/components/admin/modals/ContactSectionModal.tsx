@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 import { toast } from 'react-toastify';
-import { X, Save, Loader2, MapPin, Phone, Mail, Instagram, Linkedin } from 'lucide-react';
+import { X, Save, Loader2, MapPin, Instagram, Linkedin } from 'lucide-react';
 
 interface ContactSectionModalProps {
     isOpen: boolean;

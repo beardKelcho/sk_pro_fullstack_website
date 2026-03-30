@@ -56,119 +56,75 @@ Cypress.Commands.add('loginAsAdmin', () => {
   const TEST_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@skpro.com.tr';
   const TEST_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
 
-  cy.visit('/admin');
-  // Sayfa yüklenmesini bekle
-  cy.get('body', { timeout: 15000 }).should('be.visible');
+  const performLogin = (email: string, password: string) => {
+    cy.visit('/admin', { failOnStatusCode: false });
+    cy.get('body', { timeout: 15000 }).should('be.visible');
 
-  // Eğer zaten giriş yapılmışsa tekrar giriş yapma
-  cy.url().then(url => {
-    if (url.includes('/admin/dashboard')) {
-      cy.log('Zaten giriş yapılmış.');
-      return;
-    }
-
-    // Admin login sayfası input[type="text"] kullanıyor, name="email" ile
     cy.get('input[name="email"], input#email, input[type="text"][name="email"]', { timeout: 10000 })
       .should('be.visible')
       .clear()
-      .type(TEST_EMAIL, { force: true });
+      .type(email, { force: true });
 
     cy.get('input[name="password"], input#password, input[type="password"]', { timeout: 10000 })
       .should('be.visible')
       .clear()
-      .type(TEST_PASSWORD, { force: true });
+      .type(password, { force: true });
 
-    // Form submit butonunu bul ve tıkla
-    cy.get('form', { timeout: 10000 }).then(($form) => {
-      if ($form.length > 0) {
-        cy.get('button[type="submit"], form button[type="submit"]', { timeout: 10000 })
-          .should('be.visible')
-          .click({ force: true });
-      } else {
-        // Form yoksa direkt buton tıkla
-        cy.get('button[type="submit"]', { timeout: 10000 })
-          .should('be.visible')
-          .click({ force: true });
-      }
-    });
+    cy.get('button[type="submit"], form button[type="submit"]', { timeout: 10000 })
+      .should('be.visible')
+      .click({ force: true });
 
-    // Dashboard'a yönlendirilmeyi bekle (window.location.href kullanılıyor - full page reload)
-    // Full page reload için daha uzun bekleme
-    cy.wait(3000);
+    cy.url({ timeout: 25000 }).should('include', '/admin/dashboard');
+  };
 
-    // URL kontrolü - dashboard'a yönlendirildi mi?
-    cy.url({ timeout: 25000 }).then(url => {
-      if (url.includes('/admin/dashboard')) {
-        cy.log('Login başarılı - Dashboard\'a yönlendirildi');
-        // Dashboard içeriğini kontrol et (esnek - başarısız olursa devam et)
-        cy.get('body', { timeout: 10000 }).then(($body) => {
-          const hasDashboardContent = $body.text().toLowerCase().includes('dashboard') ||
-            $body.text().toLowerCase().includes('ana sayfa') ||
-            $body.text().toLowerCase().includes('hoşgeldin');
-          if (!hasDashboardContent) {
-            cy.log('Dashboard içeriği bulunamadı ama URL doğru');
-          }
-        });
-        return;
-      }
+  cy.session(
+    ['admin-session', TEST_EMAIL],
+    () => {
+      performLogin(TEST_EMAIL, TEST_PASSWORD);
+    },
+    {
+      validate: () => {
+        cy.visit('/admin/dashboard', { failOnStatusCode: false });
+        cy.location('pathname', { timeout: 20000 }).should('include', '/admin/dashboard');
+      },
+    }
+  );
 
-      // Eğer hala /admin'deysek, hata mesajı var mı kontrol et
-      if (url.includes('/admin') && !url.includes('dashboard')) {
-        cy.wait(2000); // Ek bekleme (redirect henüz tamamlanmamış olabilir)
-        cy.url({ timeout: 5000 }).then(newUrl => {
-          if (newUrl.includes('/admin/dashboard')) {
-            cy.log('Login başarılı - Dashboard\'a yönlendirildi (geç)');
-            return;
-          }
-
-          // Hala dashboard'da değilsek, hata kontrolü yap
-          cy.get('body', { timeout: 5000 }).then($body => {
-            const bodyText = $body.text();
-            if (bodyText.includes('Hata') || bodyText.includes('Error') || bodyText.includes('Yanlış') || bodyText.includes('Geçersiz')) {
-              cy.log('Login Hatası Tespit Edildi - Backend çalışmıyor olabilir');
-            } else if (bodyText.includes('2FA') || bodyText.includes('İki Faktör')) {
-              cy.log('2FA ekranı görüntüleniyor');
-            } else {
-              cy.log('Login durumu belirsiz - URL:', newUrl);
-            }
-          });
-        });
-
-        // Dashboard'a yönlendirilmediyse, en azından /admin'de olduğumuzu doğrula
-        // Test devam edebilir (bazı sayfalar login olmadan da erişilebilir olabilir)
-        cy.url().should('include', '/admin');
-      }
-    });
-  });
+  cy.visit('/admin/dashboard', { failOnStatusCode: false });
+  cy.url({ timeout: 20000 }).should('include', '/admin/dashboard');
 });
 
 Cypress.Commands.add('loginAsUser', (email: string, password: string) => {
-  cy.visit('/admin');
-  cy.get('body', { timeout: 15000 }).should('be.visible');
+  const performLogin = () => {
+    cy.visit('/admin', { failOnStatusCode: false });
+    cy.get('body', { timeout: 15000 }).should('be.visible');
 
-  cy.get('input[name="email"], input#email, input[type="text"][name="email"]', { timeout: 10000 })
-    .should('be.visible')
-    .clear()
-    .type(email, { force: true });
+    cy.get('input[name="email"], input#email, input[type="text"][name="email"]', { timeout: 10000 })
+      .should('be.visible')
+      .clear()
+      .type(email, { force: true });
 
-  cy.get('input[name="password"], input#password, input[type="password"]', { timeout: 10000 })
-    .should('be.visible')
-    .clear()
-    .type(password, { force: true });
+    cy.get('input[name="password"], input#password, input[type="password"]', { timeout: 10000 })
+      .should('be.visible')
+      .clear()
+      .type(password, { force: true });
 
-  cy.get('form', { timeout: 10000 }).then(($form) => {
-    if ($form.length > 0) {
-      cy.get('button[type="submit"], form button[type="submit"]', { timeout: 10000 })
-        .should('be.visible')
-        .click({ force: true });
-    } else {
-      cy.get('button[type="submit"]', { timeout: 10000 })
-        .should('be.visible')
-        .click({ force: true });
-    }
+    cy.get('button[type="submit"], form button[type="submit"]', { timeout: 10000 })
+      .should('be.visible')
+      .click({ force: true });
+
+    cy.url({ timeout: 25000 }).should('include', '/admin/dashboard');
+  };
+
+  cy.session(['user-session', email], performLogin, {
+    validate: () => {
+      cy.visit('/admin/dashboard', { failOnStatusCode: false });
+      cy.location('pathname', { timeout: 20000 }).should('include', '/admin/dashboard');
+    },
   });
 
-  cy.url({ timeout: 20000 }).should('include', '/admin');
+  cy.visit('/admin/dashboard', { failOnStatusCode: false });
+  cy.url({ timeout: 20000 }).should('include', '/admin/dashboard');
 });
 
 Cypress.Commands.add('fillAndSubmitForm', (formData: Record<string, string>) => {
@@ -272,4 +228,3 @@ Cypress.Commands.add('uploadImage', (filePath: string) => {
 });
 
 export { };
-

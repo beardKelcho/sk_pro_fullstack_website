@@ -1,5 +1,4 @@
 import React from 'react';
-import { useError } from '@/components/providers/ErrorProvider';
 
 interface ErrorMessageProps {
   title?: string;
@@ -105,16 +104,6 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({
     </div>
   );
 };
-
-interface ErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-}
 
 // ErrorBoundary artık @/components/common/ErrorBoundary'dan import ediliyor
 // Bu duplicate implementasyon kaldırıldı - ErrorStates.tsx sadece error state component'leri içeriyor 

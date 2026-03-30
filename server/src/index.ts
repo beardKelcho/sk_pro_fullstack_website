@@ -53,14 +53,16 @@ const corsAllowedOrigins = [
   process.env.CORS_ORIGIN,
   'https://skpro.com.tr',
   'https://www.skpro.com.tr',
-  'app://.', // Electron masaüstü uygulaması (Electron'un standart app:// protokolü)
+  'app://.', // Electron masaüstü uygulaması
 ].filter(Boolean) as string[];
+
+// Vercel preview/deployment URL pattern (her deploy farklı hash üretir)
+const VERCEL_ORIGIN_REGEX = /^https:\/\/sk-pro-fullstack-website[a-z0-9-]*\.vercel\.app$/;
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    // Aynı kaynak veya sunucular arası istekler (origin yok)
     if (!origin) return callback(null, true);
-    if (corsAllowedOrigins.includes(origin)) {
+    if (corsAllowedOrigins.includes(origin) || VERCEL_ORIGIN_REGEX.test(origin)) {
       return callback(null, true);
     }
     logger.warn(`CORS: İzinsiz origin engellendi: ${origin}`);
@@ -68,7 +70,7 @@ const corsOptions: cors.CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-vercel-skip-toolbar'],
   maxAge: 86400,
 };
 

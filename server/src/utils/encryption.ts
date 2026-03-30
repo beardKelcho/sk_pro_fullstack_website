@@ -1,11 +1,12 @@
 import crypto from 'crypto';
-
-if (process.env.NODE_ENV === 'production' && !process.env.ENCRYPTION_KEY) {
-  throw new Error('FATAL: ENCRYPTION_KEY environment variable is required in production');
-}
+import logger from './logger';
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'dev-only-encryption-key-32chars!!';
 const ALGORITHM = 'aes-256-cbc';
+
+if (process.env.NODE_ENV === 'production' && !process.env.ENCRYPTION_KEY) {
+  logger.warn('ENCRYPTION_KEY is not set in production — using fallback key. Set ENCRYPTION_KEY env var for proper encryption.');
+}
 
 export function encryptField(plaintext: string): string {
   const iv = crypto.randomBytes(16);

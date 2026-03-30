@@ -9,6 +9,7 @@
 # - Type check
 # - Lint kontrolü
 # - Test çalıştırma
+# - Opsiyonel performance kontrolu
 
 set -e  # Hata durumunda dur
 
@@ -27,6 +28,9 @@ echo ""
 # Proje kök dizini
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+
+RUN_E2E="${RUN_E2E:-false}"
+RUN_PERF_CHECK="${RUN_PERF_CHECK:-false}"
 
 # ============================================
 # 1. Environment Variable Kontrolü
@@ -55,25 +59,14 @@ echo -e "${YELLOW}📦 2. Server Build Testi...${NC}"
 
 cd server
 
-# TypeScript type check
 echo "   TypeScript type check..."
-if npm run type-check > /dev/null 2>&1; then
-    echo -e "${GREEN}   ✅ Type check başarılı${NC}"
-else
-    echo -e "${YELLOW}   ⚠️  Type check uyarıları var (kontrol edin)${NC}"
-fi
+npm run type-check > /dev/null 2>&1
+echo -e "${GREEN}   ✅ Type check başarılı${NC}"
 
 # Build testi
 echo "   Build testi..."
-BUILD_OUTPUT=$(npm run build 2>&1)
-BUILD_EXIT_CODE=$?
-if [ $BUILD_EXIT_CODE -eq 0 ]; then
-    echo -e "${GREEN}   ✅ Build başarılı${NC}"
-else
-    echo -e "${RED}❌ Server build başarısız!${NC}"
-    echo "$BUILD_OUTPUT" | tail -20
-    exit 1
-fi
+npm run build > /dev/null 2>&1
+echo -e "${GREEN}   ✅ Build başarılı${NC}"
 
 cd ..
 echo ""
@@ -85,28 +78,18 @@ echo -e "${YELLOW}📦 3. Client Build Testi...${NC}"
 
 cd client
 
-# TypeScript type check
 echo "   TypeScript type check..."
-if npm run type-check > /dev/null 2>&1; then
-    echo -e "${GREEN}   ✅ Type check başarılı${NC}"
-else
-    echo -e "${YELLOW}   ⚠️  Type check uyarıları var (kontrol edin)${NC}"
-fi
+npm run type-check > /dev/null 2>&1
+echo -e "${GREEN}   ✅ Type check başarılı${NC}"
 
 # Lint kontrolü
 echo "   ESLint kontrolü..."
-if ! npm run lint > /dev/null 2>&1; then
-    echo -e "${YELLOW}   ⚠️  Lint uyarıları var (kritik değil)${NC}"
-else
-    echo -e "${GREEN}   ✅ Lint başarılı${NC}"
-fi
+npm run lint > /dev/null 2>&1
+echo -e "${GREEN}   ✅ Lint başarılı${NC}"
 
 # Production build testi
 echo "   Production build testi..."
-if ! NODE_ENV=production npm run build; then
-    echo -e "${RED}❌ Client production build başarısız!${NC}"
-    exit 1
-fi
+NODE_ENV=production npm run build > /dev/null 2>&1
 echo -e "${GREEN}   ✅ Production build başarılı${NC}"
 
 cd ..
@@ -119,23 +102,21 @@ echo -e "${YELLOW}🧪 4. Test Çalıştırma...${NC}"
 
 # Server testleri
 echo "   Server testleri..."
-cd server
-if npm test -- --passWithNoTests > /dev/null 2>&1; then
-    echo -e "${GREEN}   ✅ Server testleri başarılı${NC}"
-else
-    echo -e "${YELLOW}   ⚠️  Server testleri atlandı veya uyarı var${NC}"
-fi
-cd ..
+cd server && npm run test:coverage:ci > /dev/null 2>&1 && cd ..
+echo -e "${GREEN}   ✅ Server testleri başarılı${NC}"
 
 # Client testleri
 echo "   Client testleri..."
-cd client
-if npm test -- --passWithNoTests > /dev/null 2>&1; then
-    echo -e "${GREEN}   ✅ Client testleri başarılı${NC}"
+cd client && npm run test:ci:stable > /dev/null 2>&1 && cd ..
+echo -e "${GREEN}   ✅ Client testleri başarılı${NC}"
+
+if [ "$RUN_E2E" = "true" ]; then
+    echo "   E2E smoke testleri..."
+    npm run test:e2e > /dev/null 2>&1
+    echo -e "${GREEN}   ✅ E2E smoke testleri başarılı${NC}"
 else
-    echo -e "${YELLOW}   ⚠️  Client testleri atlandı veya uyarı var${NC}"
+    echo -e "${YELLOW}   ⚠️  E2E smoke testleri atlandi (RUN_E2E=true ile acabilirsiniz)${NC}"
 fi
-cd ..
 
 echo ""
 
@@ -143,20 +124,8 @@ echo ""
 # 5. Bundle Size Kontrolü
 # ============================================
 echo -e "${YELLOW}📊 5. Bundle Size Kontrolü...${NC}"
-
-cd client
-
-if [ -f ".bundle-size-budget.json" ]; then
-    if npm run bundle-size:check > /dev/null 2>&1; then
-        echo -e "${GREEN}   ✅ Bundle size bütçe dahilinde${NC}"
-    else
-        echo -e "${YELLOW}   ⚠️  Bundle size bütçe aşıldı (kontrol edin)${NC}"
-    fi
-else
-    echo -e "${YELLOW}   ⚠️  Bundle size budget dosyası yok${NC}"
-fi
-
-cd ..
+cd client && npm run bundle-size > /dev/null 2>&1 && cd ..
+echo -e "${GREEN}   ✅ Bundle size bütçe dahilinde${NC}"
 echo ""
 
 # ============================================
@@ -167,16 +136,33 @@ echo -e "${YELLOW}🔍 6. Production Check Script...${NC}"
 cd client
 
 if [ -f "scripts/check-production.ts" ]; then
-    if npm run check-production > /dev/null 2>&1; then
-        echo -e "${GREEN}   ✅ Production check başarılı${NC}"
-    else
-        echo -e "${YELLOW}   ⚠️  Production check uyarıları var${NC}"
-    fi
+    npm run check-production > /dev/null 2>&1
+    echo -e "${GREEN}   ✅ Production check başarılı${NC}"
 else
     echo -e "${YELLOW}   ⚠️  Production check script yok${NC}"
 fi
 
 cd ..
+echo ""
+
+# ============================================
+# 7. Security Audit
+# ============================================
+echo -e "${YELLOW}🔐 7. Security Audit...${NC}"
+npm run audit:ci > /dev/null 2>&1
+echo -e "${GREEN}   ✅ Security audit başarılı${NC}"
+echo ""
+
+# ============================================
+# 8. Optional Performance Check
+# ============================================
+echo -e "${YELLOW}⚡ 8. Optional Performance Check...${NC}"
+if [ "$RUN_PERF_CHECK" = "true" ]; then
+    bash ./scripts/performance-check.sh > /dev/null 2>&1
+    echo -e "${GREEN}   ✅ Performance check başarılı${NC}"
+else
+    echo -e "${YELLOW}   ⚠️  Performance check atlandi (RUN_PERF_CHECK=true ile acabilirsiniz)${NC}"
+fi
 echo ""
 
 # ============================================
@@ -192,14 +178,12 @@ echo "   ✅ Server build başarılı"
 echo "   ✅ Client build başarılı"
 echo "   ✅ Type check başarılı"
 echo "   ✅ Testler çalıştırıldı"
+echo "   ✅ Security audit başarılı"
 echo ""
 echo -e "${YELLOW}💡 Sonraki Adımlar:${NC}"
-echo "   1. Production environment variable'larını ayarlayın"
-echo "   2. MongoDB Atlas bağlantısını yapılandırın"
-echo "   3. Redis instance'ı ayarlayın (opsiyonel)"
-echo "   4. SMTP ayarlarını yapılandırın"
-echo "   5. VAPID keys oluşturun"
-echo "   6. Sentry DSN'i ayarlayın (opsiyonel)"
-echo "   7. Production'a deploy edin"
+echo "   1. npm run smoke:production ile canli smoke test calistirin"
+echo "   2. Render healthCheckPath olarak /api/readyz kullanin"
+echo "   3. MongoDB backup stratejisini dogrulayin"
+echo "   4. Sentry alert kurallarini ve owner listesini kontrol edin"
+echo "   5. Production'a deploy edin"
 echo ""
-

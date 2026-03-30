@@ -141,7 +141,7 @@ export const updateImage = async (req: Request, res: Response) => {
         if (oldImage && oldImage.filename) {
           // Cloudinary'den eski resmi sil
           // Not: category'yi de geçmek önemli, çünkü public_id klasör içeriyor olabilir veya folder append ediliyor olabilir
-          await uploadService.deleteFile(oldImage.filename, oldImage.category || 'general');
+          await uploadService.deleteFile(oldImage.path || oldImage.filename, oldImage.category || 'general');
         }
       } catch (err) {
         logger.warn(`Eski resim silinirken hata (Update sırasında): ${err}`);
@@ -210,7 +210,7 @@ export const deleteImage = async (req: Request, res: Response) => {
         // UploadService.deleteFile(image.filename, image.category) çağırırsak:
         // -> "project/myimage.jpg" silinir. Bu doğru görünüyor.
 
-        await uploadService.deleteFile(image.filename, image.category || 'general');
+        await uploadService.deleteFile(image.path || image.filename, image.category || 'general');
       } catch (err) {
         logger.warn(`Dosya silinirken hata (DB'den silinecek): ${err}`);
       }
@@ -239,7 +239,7 @@ export const deleteMultipleImages = async (req: Request, res: Response) => {
       try {
         const image = await siteService.getImageById(id);
         if (image && image.filename) {
-          await uploadService.deleteFile(image.filename, image.category || 'general');
+          await uploadService.deleteFile(image.path || image.filename, image.category || 'general');
         }
       } catch (err) {
         logger.warn(`Toplu silme sırasında dosya silme hatası (ID: ${id}):`, err);

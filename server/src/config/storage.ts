@@ -7,6 +7,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import logger from '../utils/logger';
+import { normalizeUploadType } from './uploadTypes';
 
 export type StorageType = 'local' | 'cloudinary' | 's3';
 
@@ -31,9 +32,14 @@ export const createLocalStorage = (uploadDir: string): multer.StorageEngine => {
   return multer.diskStorage({
     destination: (req, file, cb) => {
       // Path traversal koruması: sadece izin verilen klasörler kabul edilir
-      const ALLOWED_TYPES = new Set(['general', 'images', 'videos', 'documents', 'site-images', 'avatars']);
-      const rawType = (req.body.type || req.query.type || 'general') as string;
-      const type = ALLOWED_TYPES.has(rawType) ? rawType : 'general';
+      const rawType = (
+        req.body.type ||
+        req.query.type ||
+        req.body.category ||
+        req.query.category ||
+        'general'
+      ) as string;
+      const type = normalizeUploadType(rawType);
       const typeDir = path.join(uploadDir, type);
 
       if (!fs.existsSync(typeDir)) {

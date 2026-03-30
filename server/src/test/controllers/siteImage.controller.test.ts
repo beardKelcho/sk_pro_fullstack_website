@@ -158,7 +158,7 @@ describe('Site Image Controller Testleri', () => {
       const mockImage = {
         _id: '507f1f77bcf86cd799439011',
         filename: 'test.jpg',
-        path: 'uploads/site-images/test.jpg',
+        path: 'project/test.jpg',
         category: 'project',
       };
       mockRequest.params = { id: '507f1f77bcf86cd799439011' };
@@ -173,7 +173,7 @@ describe('Site Image Controller Testleri', () => {
         mockResponse as Response
       );
 
-      expect(uploadService.deleteFile).toHaveBeenCalledWith('test.jpg', 'project');
+      expect(uploadService.deleteFile).toHaveBeenCalledWith('project/test.jpg', 'project');
       expect(siteService.deleteImage).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
       expect(mockResponse.status).toHaveBeenCalledWith(200);
     });
@@ -182,8 +182,8 @@ describe('Site Image Controller Testleri', () => {
   describe('deleteMultipleImages', () => {
     it('birden fazla resmi başarıyla silmeli', async () => {
       const mockImages = [
-        { _id: '507f1f77bcf86cd799439011', filename: 'test1.jpg', category: 'project' },
-        { _id: '507f1f77bcf86cd799439012', filename: 'test2.jpg', category: 'hero' },
+        { _id: '507f1f77bcf86cd799439011', filename: 'test1.jpg', path: 'project/test1.jpg', category: 'project' },
+        { _id: '507f1f77bcf86cd799439012', filename: 'test2.jpg', path: 'hero/test2.jpg', category: 'hero' },
       ];
       mockRequest.body = { ids: ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012'] };
 
@@ -200,8 +200,8 @@ describe('Site Image Controller Testleri', () => {
         mockResponse as Response
       );
 
-      expect(uploadService.deleteFile).toHaveBeenCalledWith('test1.jpg', 'project');
-      expect(uploadService.deleteFile).toHaveBeenCalledWith('test2.jpg', 'hero');
+      expect(uploadService.deleteFile).toHaveBeenCalledWith('project/test1.jpg', 'project');
+      expect(uploadService.deleteFile).toHaveBeenCalledWith('hero/test2.jpg', 'hero');
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({

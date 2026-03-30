@@ -166,11 +166,32 @@ echo ""
 # ============================================
 echo -e "${YELLOW}📋 7. Test Kontrolü...${NC}"
 
-echo -n "  Running tests... "
-if npm run test:all > /dev/null 2>&1; then
+echo -n "  Running client tests... "
+if npm run test:frontend:ci > /dev/null 2>&1; then
     echo -e "${GREEN}✅ OK${NC}"
 else
-    echo -e "${YELLOW}⚠️  Bazı testler başarısız${NC}"
+    echo -e "${RED}❌ FAILED${NC}"
+    ERRORS=$((ERRORS + 1))
+fi
+
+echo -n "  Running server tests... "
+if npm run test:backend:ci > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ OK${NC}"
+else
+    echo -e "${RED}❌ FAILED${NC}"
+    ERRORS=$((ERRORS + 1))
+fi
+
+if [ "${RUN_E2E:-false}" = "true" ]; then
+    echo -n "  Running E2E smoke tests... "
+    if npm run test:e2e > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ OK${NC}"
+    else
+        echo -e "${YELLOW}⚠️  E2E smoke tests failed${NC}"
+        WARNINGS=$((WARNINGS + 1))
+    fi
+else
+    echo -e "${YELLOW}  ⚠️  E2E smoke tests skipped (RUN_E2E=true ile acabilirsiniz)${NC}"
     WARNINGS=$((WARNINGS + 1))
 fi
 
@@ -186,6 +207,26 @@ if npm run audit:ci > /dev/null 2>&1; then
     echo -e "${GREEN}✅ OK${NC}"
 else
     echo -e "${YELLOW}⚠️  Güvenlik açıkları bulundu (high/critical)${NC}"
+    WARNINGS=$((WARNINGS + 1))
+fi
+
+echo ""
+
+# ============================================
+# 9. Optional Performance Check
+# ============================================
+echo -e "${YELLOW}📋 9. Optional Performance Check...${NC}"
+
+echo -n "  Running performance budget checks... "
+if [ "${RUN_PERF_CHECK:-false}" = "true" ]; then
+    if npm run perf:check > /dev/null 2>&1; then
+        echo -e "${GREEN}✅ OK${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Performance check failed${NC}"
+        WARNINGS=$((WARNINGS + 1))
+    fi
+else
+    echo -e "${YELLOW}⚠️  Skipped (RUN_PERF_CHECK=true ile acabilirsiniz)${NC}"
     WARNINGS=$((WARNINGS + 1))
 fi
 

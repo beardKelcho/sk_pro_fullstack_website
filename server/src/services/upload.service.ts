@@ -3,12 +3,18 @@ import fs from 'fs';
 import { normalizePath, pathToUrl } from '../utils/pathNormalizer';
 import { checkAndOptimizeImage } from '../utils/imageOptimizer';
 import { isCloudStorage } from '../config/storage';
+import { ALL_UPLOAD_TYPES_WITH_ALL, normalizeUploadType } from '../config/uploadTypes';
 import { uploadToCloudinary, deleteFromCloudinary } from './cloudinaryService';
 import { uploadToS3, deleteFromS3 } from './s3Service';
 import logger from '../utils/logger';
 
 // Upload klasörünü tanımla
 const uploadDir = path.join(process.cwd(), 'uploads');
+
+const buildStorageTarget = (filenameOrPath: string, type: string): string => {
+    const sanitizedInput = filenameOrPath.trim().replace(/\\/g, '/');
+    return normalizePath(sanitizedInput, normalizeUploadType(type));
+};
 
 export interface FileInfo {
     filename: string;
@@ -81,8 +87,8 @@ export class UploadService {
         }
 
         // Local storage için dosya listesi
-        const ALLOWED_TYPES = new Set(['all', 'general', 'images', 'videos', 'documents', 'site-images', 'avatars']);
-        const safeType = ALLOWED_TYPES.has(fileType) ? fileType : 'general';
+        const allowedTypes = new Set<string>(ALL_UPLOAD_TYPES_WITH_ALL);
+        const safeType = allowedTypes.has(fileType) ? fileType : 'general';
         const files: FileInfo[] = [];
         const typeDir = safeType === 'all' ? uploadDir : path.join(uploadDir, safeType);
 
@@ -202,7 +208,11 @@ export class UploadService {
             }
         } else {
             // Local storage
-            const normalizedPath = normalizePath(`${type}/${file.filename}`, type);
+            const relativeDiskPath =
+                typeof file.path === 'string' && file.path.length > 0
+                    ? path.relative(uploadDir, file.path)
+                    : `${normalizeUploadType(type)}/${file.filename}`;
+            const normalizedPath = normalizePath(relativeDiskPath, normalizeUploadType(type));
             fileUrl = pathToUrl(normalizedPath);
             filePath = normalizedPath;
             filename = file.filename;
@@ -239,30 +249,28 @@ export class UploadService {
      * Dosya sil
      */
     async deleteFile(filename: string, type: string = 'general', userId?: string) {
-        // Path traversal koruması: type parametresi whitelist ile sınırlanıyor
-        const ALLOWED_TYPES = new Set(['general', 'images', 'videos', 'documents', 'site-images', 'avatars']);
-        const safeType = ALLOWED_TYPES.has(type) ? type : 'general';
-        type = safeType;
-        logger.info(`🗑️  Delete request received:`, { filename, type, userId });
+        const normalizedType = normalizeUploadType(type);
+        const storageTarget = buildStorageTarget(filename, normalizedType);
+        logger.info(`🗑️  Delete request received:`, { filename, type: normalizedType, storageTarget, userId });
 
         if (isCloudStorage()) {
             const storageType = process.env.STORAGE_TYPE?.toLowerCase();
 
             if (storageType === 'cloudinary') {
-                const publicId = `${type}/${filename}`;
-                const ext = filename.split('.').pop()?.toLowerCase();
+                const publicId = storageTarget;
+                const ext = path.extname(storageTarget).replace('.', '').toLowerCase();
                 const resourceType = ext && ['mp4', 'webm', 'mov', 'avi'].includes(ext) ? 'video' : 'image';
 
                 logger.info(`☁️  Deleting from Cloudinary:`, { publicId, resourceType });
                 await deleteFromCloudinary(publicId, resourceType);
                 logger.info(`✅ Cloudinary delete complete:`, { publicId, resourceType, userId });
             } else if (storageType === 's3') {
-                const key = `${type}/${filename}`;
+                const key = storageTarget;
                 await deleteFromS3(key);
             }
         } else {
             const resolvedUploadDir = path.resolve(uploadDir);
-            const filePath = path.resolve(uploadDir, type, filename);
+            const filePath = path.resolve(uploadDir, storageTarget);
             // Path traversal son hat koruması
             if (!filePath.startsWith(resolvedUploadDir + path.sep)) {
                 throw new Error('Geçersiz dosya yolu');

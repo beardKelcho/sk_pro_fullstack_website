@@ -97,7 +97,7 @@ export const verify2FA = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
     
-    const user = await User.findById(userId).select('+twoFactorSecret +backupCodes');
+    const user = await User.findById(userId).select('+twoFactorSecret +twoFactorSecretHash +backupCodes');
 
     if (!user) {
       return res.status(404).json({
@@ -106,7 +106,7 @@ export const verify2FA = async (req: Request, res: Response) => {
       });
     }
 
-    if (!user.twoFactorSecret) {
+    if (!user.twoFactorSecret && !user.twoFactorSecretHash) {
       return res.status(400).json({
         success: false,
         message: '2FA kurulumu yapılmamış. Önce setup endpoint\'ini çağırın.',
@@ -116,11 +116,19 @@ export const verify2FA = async (req: Request, res: Response) => {
     let isValid = false;
 
     // TOTP token doğrulama
-    if (token && user.twoFactorSecretHash) {
+    if (token && (user.twoFactorSecret || user.twoFactorSecretHash)) {
       try {
-        const decryptedSecret = decryptSecret(user.twoFactorSecretHash);
+        const verificationSecret = user.twoFactorSecret
+          ? user.twoFactorSecret
+          : user.twoFactorSecretHash
+            ? decryptSecret(user.twoFactorSecretHash)
+            : undefined;
+        if (!verificationSecret) {
+          throw new Error('2FA secret bulunamadı');
+        }
+
         isValid = speakeasy.totp.verify({
-          secret: decryptedSecret,
+          secret: verificationSecret,
           encoding: 'base32',
           token,
           window: 2, // ±2 adım tolerans
@@ -155,9 +163,11 @@ export const verify2FA = async (req: Request, res: Response) => {
     user.is2FAEnabled = true;
     // Secret'ı şifrele ve sakla (TOTP doğrulama için gerekli)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    user.twoFactorSecretHash = encryptSecret(user.twoFactorSecret!);
-    // Geçici secret'ı temizle
-    user.twoFactorSecret = undefined;
+    if (user.twoFactorSecret) {
+      user.twoFactorSecretHash = encryptSecret(user.twoFactorSecret);
+      // Geçici secret'ı temizle
+      user.twoFactorSecret = undefined;
+    }
     await user.save();
 
     await logAction(req, 'UPDATE', 'User', userId as unknown as string, [
@@ -279,7 +289,7 @@ export const get2FAStatus = async (req: Request, res: Response) => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select('+backupCodes');
 
     if (!user) {
       return res.status(404).json({
@@ -437,4 +447,3 @@ export const verify2FALogin = async (req: Request, res: Response) => {
     });
   }
 };
-

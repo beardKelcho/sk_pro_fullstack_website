@@ -69,8 +69,8 @@ JWT_REFRESH_SECRET=<güçlü-random-string>
 MONGO_URI=<mongodb-atlas-connection-string>
 
 # CORS sadece frontend domain'i
-CLIENT_URL=https://yourdomain.com
-CORS_ORIGIN=https://yourdomain.com
+CLIENT_URL=https://www.skpro.com.tr
+CORS_ORIGIN=https://www.skpro.com.tr
 ```
 
 #### Security Headers (Helmet)
@@ -120,6 +120,7 @@ CORS_ORIGIN=https://yourdomain.com
 - [ ] HTTPS aktif ve çalışıyor
 - [ ] Security headers aktif
 - [ ] Rate limiting çalışıyor
+- [ ] `npm run smoke:production` geçti
 - [ ] Error messages hassas bilgi içermiyor
 - [ ] Log'lar hassas bilgi içermiyor
 - [ ] Backup stratejisi oluşturuldu
@@ -130,6 +131,7 @@ CORS_ORIGIN=https://yourdomain.com
 - [ ] Dependency güncellemeleri (haftalık)
 - [ ] Security patch'ler uygulanıyor
 - [ ] Monitoring aktif (error tracking, uptime)
+- [ ] Backup restore tatbikatı yapılıyor
 
 ---
 

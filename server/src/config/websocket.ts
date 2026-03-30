@@ -7,6 +7,7 @@ import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { authenticateSocket } from '../middleware/socketAuth.middleware';
 import logger from '../utils/logger';
+import { getAllowedClientOrigins } from './clientOrigins';
 
 let io: SocketIOServer | null = null;
 
@@ -20,7 +21,7 @@ export const initWebSocket = (httpServer: HttpServer): SocketIOServer => {
 
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:3000',
+      origin: getAllowedClientOrigins(),
       methods: ['GET', 'POST'],
       credentials: true,
     },

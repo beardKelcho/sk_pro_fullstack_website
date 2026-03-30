@@ -1,0 +1,25 @@
+name: Production Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 6 * * *'
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Verify Production Health
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run production smoke verification
+        env:
+          BACKEND_URL: ${{ vars.PRODUCTION_BACKEND_URL }}
+          FRONTEND_URL: ${{ vars.PRODUCTION_FRONTEND_URL }}
+          CONTACT_PREFLIGHT_ORIGIN: ${{ vars.PRODUCTION_CORS_ORIGIN }}
+        run: ./scripts/verify-production-deployment.sh

@@ -4,6 +4,14 @@
 
 ---
 
+## Canlı Uç Noktalar
+
+- Frontend: `https://www.skpro.com.tr`
+- Backend: `https://sk-pro-backend.onrender.com`
+- Günlük smoke komutu: `npm run smoke:production`
+
+---
+
 ## ✅ Sağlık Endpoint’leri (Backend)
 
 Backend base: `https://<backend-host>`
@@ -26,6 +34,7 @@ Backend base: `https://<backend-host>`
 
 Öneri:
 - Load balancer / Render health check: **`/api/readyz`**
+- Render Blueprint kullanılıyorsa `render.yaml` içindeki `healthCheckPath` alanını bu endpoint ile eşitleyin.
 
 ---
 
@@ -48,9 +57,10 @@ Not:
 ## 🚨 Sentry (Frontend)
 
 Minimum önerilen alert’ler:
-- **New issue spike** (1h içinde X adet yeni issue)
-- **Error rate increase** (release bazlı)
-- **Performance degradation** (p95/p99)
+- **New issue spike**: 15 dakika içinde `3+` yeni issue
+- **Error rate increase**: 15 dakika içinde `10+` adet `5xx`
+- **Fatal event**: tek event bile acil inceleme
+- **Performance degradation**: Lighthouse veya p95 trendinde belirgin düşüş
 
 Test:
 - `client/src/app/api/sentry-test/route.ts` üzerinden production’da doğrulama (token ile).
@@ -74,6 +84,7 @@ Not:
 - [ ] `/api/livez` → 200
 - [ ] `/api/readyz` → 200
 - [ ] `/api/health` → DB connected + (opsiyonel) redis ready
+- [ ] `OPTIONS /api/cms/contact` → frontend origin ile 200/204
 - [ ] Admin login + kritik 1-2 ekran smoke test
 - [ ] Sentry “Issues” ekranında deploy sonrası spike var mı?
-
+- [ ] GitHub Actions `Production Smoke` workflow son sonucu başarılı mı?

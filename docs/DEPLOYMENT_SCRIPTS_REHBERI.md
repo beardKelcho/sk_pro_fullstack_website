@@ -171,14 +171,15 @@ npm run deploy:staging
 **Kullanım**:
 ```bash
 npm run verify:deployment
+npm run smoke:production
 # veya
 ./scripts/verify-production-deployment.sh
 ```
 
 **Environment Variables** (opsiyonel):
 ```bash
-BACKEND_URL=https://skproduction-api.onrender.com \
-FRONTEND_URL=https://skproduction.vercel.app \
+BACKEND_URL=https://sk-pro-backend.onrender.com \
+FRONTEND_URL=https://www.skpro.com.tr \
 ./scripts/verify-production-deployment.sh
 ```
 
@@ -186,10 +187,11 @@ FRONTEND_URL=https://skproduction.vercel.app \
 - ✅ Backend `/api/livez` (process up)
 - ✅ Backend `/api/readyz` (DB ready)
 - ✅ Backend `/api/health` (full health check)
-- ✅ Backend `/api-docs` (API documentation)
+- ✅ Backend `/api-docs` (erişilebilir veya production'da bilinçli olarak kapalı)
 - ✅ Frontend homepage
 - ✅ Frontend `/admin/login`
 - ✅ Frontend → Backend connectivity
+- ✅ Contact form CORS preflight
 - ✅ SSL/HTTPS check
 
 **Çıktı**:
@@ -216,6 +218,27 @@ npm run test:production
 - ✅ Type check
 - ✅ Lint kontrolü
 - ✅ Test çalıştırma
+- ✅ Security audit
+- ✅ Opsiyonel performance kontrolü
+
+---
+
+### 7. `performance-check.sh`
+
+**Amaç**: Frontend bundle budget ve opsiyonel Lighthouse kontrolü yapmak.
+
+**Kullanım**:
+```bash
+npm run perf:check
+
+# Lighthouse dahil
+RUN_LIGHTHOUSE=true npm run perf:check
+```
+
+**Kontroller**:
+- ✅ Client build
+- ✅ Bundle size budget
+- ✅ Opsiyonel Lighthouse raporu
 
 ---
 
@@ -234,7 +257,7 @@ npm run validate:env
 npm run deploy:production
 
 # 4. Deployment verification
-npm run verify:deployment
+npm run smoke:production
 ```
 
 ### Senaryo 2: Normal Deployment
@@ -247,7 +270,7 @@ npm run pre-deploy:check
 npm run deploy:production
 
 # 3. Verify
-npm run verify:deployment
+npm run smoke:production
 ```
 
 ### Senaryo 3: Sadece Environment Variables Kontrolü
@@ -263,7 +286,7 @@ npm run validate:env
 # Deployment sonrası sistem kontrolü
 BACKEND_URL=https://your-backend-url.com \
 FRONTEND_URL=https://your-frontend-url.com \
-npm run verify:deployment
+npm run smoke:production
 ```
 
 ---
@@ -325,18 +348,22 @@ npm run verify:deployment
 🔍 Production Deployment Verification
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Backend URL: https://skproduction-api.onrender.com
-Frontend URL: https://skproduction.vercel.app
+Backend URL: https://sk-pro-backend.onrender.com
+Frontend URL: https://www.skpro.com.tr
 
 📋 Backend Health Checks...
   Checking /api/livez... ✅ OK
   Checking /api/readyz... ✅ OK
   Checking /api/health... ✅ OK
-    ✅ MongoDB connected
+    ✅ API health status OK
+  Checking /api-docs... ✅ CLOSED IN PRODUCTION
 
 📋 Frontend Checks...
   Checking frontend homepage... ✅ OK
   Checking /admin/login... ✅ OK
+
+📋 API Connectivity Check...
+  Testing contact form CORS preflight... ✅ OK
 
 ✅ Tüm kontroller başarılı! Production deployment başarılı.
 ```

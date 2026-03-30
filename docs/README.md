@@ -18,6 +18,8 @@ Aşağıda projenin yeni klasör yapısına göre kategorize edilmiş dokümanla
 "Runbook"lar canlı sistemde yaşanan olaylara, alarmlara ve gözlemlere anında reaksiyon verebilmeniz için tasarlanmış operasyonel dosyalardır.
 - **[Sentry Error Tracking Runbook](./runbooks/SENTRY_RUNBOOK.md)** - Hata yakalama (Sentry) dashboard kontrolü ve alarm limitleri.
 - **[Observability Runbook](./OBSERVABILITY_RUNBOOK.md)** - Sistem metriklerini ve genel sunucu izlenebilirliğini takip eder.
+- **[Production Operations Runbook](./runbooks/PRODUCTION_OPERATIONS_RUNBOOK.md)** - Deploy sonrası kontrol, alarmlar ve ilk müdahale akışı.
+- **[Backup and Recovery](./runbooks/BACKUP_AND_RECOVERY.md)** - Backup, restore ve rollback rehberi.
 - **[Log Aggregation](./LOG_AGGREGATION.md)** - Sunucu ve istemci tarafı hata loglarının nasıl derlendiğinin yönetimi.
 
 ### 🛠️ Entegrasyon ve Rehberler (Guides)
@@ -32,6 +34,7 @@ Sistemdeki karmaşık entegrasyonlar, dış servis bağlamaları ve storage konf
 - **[Proje Durumu (Kapsamlı Özet)](./PROJE_DURUMU.md)** - Tamamlanan tüm özellikler, modüller ve sistem hiyerarşisi.
 - **[Proje Analiz Raporu](./PROJE_ANALIZ_RAPORU.md)** - Kod tabanı kalite analizi, refactor önerileri ve metrik sonuçları.
 - **[Performans İyileştirmeleri](./PERFORMANS_IYILESTIRMELERI.md)** - Sunucu tarafı ve istemci tarafı iyileştirme çıktıları.
+- **[Product Backlog](./PRODUCT_BACKLOG.md)** - Kod tabanı stabil hale geldikten sonraki öncelikli işler.
 - **[Query Optimization](./QUERY_OPTIMIZATION.md)** - Veritabanı okuma/yazma hızlandırma ve indeks raporu.
 - **[Aggregation Optimization](./AGGREGATION_OPTIMIZATION.md)** - MongoDB pipeline verimlilik rehberi.
 
@@ -53,4 +56,4 @@ Tüm bu dokümanlara `docs/archive/` klasörü üzerinden ulaşabilirsiniz.
 
 ---
 
-**Son Dokümantasyon Revizyonu: 2026-02-24**
+**Son Dokümantasyon Revizyonu: 2026-03-30**

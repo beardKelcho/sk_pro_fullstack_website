@@ -45,12 +45,13 @@
 1. Render dashboard → **New +** → **Web Service**
 2. GitHub repository'nizi bağlayın
 3. Ayarlar:
-   - **Name**: `skproduction-api`
+   - **Name**: `sk-pro-backend`
    - **Region**: Frankfurt (EU)
    - **Branch**: `main`
    - **Root Directory**: `server`
    - **Build Command**: `npm install && npm run build`
    - **Start Command**: `npm start`
+   - **Health Check Path**: `/api/readyz`
 4. **Environment Variables** ekleyin (aşağıdaki bölüme bakın)
 5. **Create Web Service** → Deploy başlar
 
@@ -117,13 +118,14 @@ npm run deploy:production
 2. "New +" → "Web Service" seçin
 3. GitHub repository'nizi bağlayın
 4. Ayarlar:
-   - **Name:** `skproduction-api`
+   - **Name:** `sk-pro-backend`
    - **Region:** Frankfurt (EU) veya size en yakın
    - **Branch:** `main`
    - **Root Directory:** `server`
    - **Runtime:** `Node`
    - **Build Command:** `npm install && npm run build`
    - **Start Command:** `npm start`
+   - **Health Check Path:** `/api/readyz`
    - **Instance Type:** Free tier (başlangıç için yeterli)
 
 #### Environment Variables
@@ -141,8 +143,8 @@ JWT_SECRET=<güçlü-random-string>
 JWT_REFRESH_SECRET=<güçlü-random-string>
 
 # Client URL (Frontend domain'i)
-CLIENT_URL=https://yourdomain.com
-CORS_ORIGIN=https://yourdomain.com
+CLIENT_URL=https://www.skpro.com.tr
+CORS_ORIGIN=https://www.skpro.com.tr
 
 # Opsiyonel
 LOG_LEVEL=info
@@ -174,13 +176,13 @@ npm run generate:secrets
 
 ```env
 # Backend API URL (ZORUNLU)
-NEXT_PUBLIC_API_URL=https://skproduction-api.onrender.com/api
-NEXT_PUBLIC_BACKEND_URL=https://skproduction-api.onrender.com
-NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+NEXT_PUBLIC_API_URL=https://sk-pro-backend.onrender.com/api
+NEXT_PUBLIC_BACKEND_URL=https://sk-pro-backend.onrender.com
+NEXT_PUBLIC_SITE_URL=https://www.skpro.com.tr
 
 # Opsiyonel
 NEXTAUTH_SECRET=<güçlü-random-string>
-NEXTAUTH_URL=https://yourdomain.com
+NEXTAUTH_URL=https://www.skpro.com.tr
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 NEXT_PUBLIC_SENTRY_DSN=<your-sentry-dsn>
 ```
@@ -207,7 +209,7 @@ CI/CD pipeline için deploy hook'ları ekleyin:
 #### Custom Domain Ekleme (Vercel)
 
 1. Vercel dashboard → Projeniz → "Settings" → "Domains"
-2. Domain'inizi ekleyin: `yourdomain.com`
+2. Domain'inizi ekleyin: `skpro.com.tr` ve `www.skpro.com.tr`
 3. DNS kayıtlarını güncelleyin:
    - **A Record:** `@` → Vercel IP (otomatik verilir)
    - **CNAME:** `www` → `cname.vercel-dns.com`
@@ -275,7 +277,7 @@ npm run pre-deploy:check
 npm run deploy:production
 
 # 3. Deployment verification
-npm run verify:deployment
+npm run smoke:production
 ```
 
 ### Hotfix Süreci
@@ -379,6 +381,8 @@ git push origin develop
 - `GET /api/livez` → Process up kontrolü
 - `GET /api/readyz` → DB ready kontrolü
 - `GET /api/health` → Full health check
+- Render health check path olarak `/api/readyz` kullanın
+- Deploy sonrası `npm run smoke:production` çalıştırın
 
 **Detaylı rehber**: [Observability Runbook](./OBSERVABILITY_RUNBOOK.md)
 
@@ -393,6 +397,7 @@ git push origin develop
 - **UptimeRobot** (ücretsiz): https://uptimerobot.com
 - **Pingdom** (ücretli): https://www.pingdom.com
 - **StatusCake** (ücretsiz tier var): https://www.statuscake.com
+- **GitHub Actions Production Smoke**: günlük read-only smoke doğrulaması
 
 ### Backup
 
@@ -405,6 +410,7 @@ git push origin develop
 
 - Upload klasörü: Cloud storage'a taşınmalı (AWS S3, Cloudinary)
 - Mevcut upload'lar: Manuel olarak yedeklenmeli
+- Detaylı adımlar için `docs/runbooks/BACKUP_AND_RECOVERY.md`
 
 ---
 
@@ -444,6 +450,7 @@ git push origin develop
 
 - **[Kurulum ve Başlangıç](./KURULUM_VE_BASLANGIC.md)** - Development ortamı kurulumu
 - **[Deployment Scripts Rehberi](./DEPLOYMENT_SCRIPTS_REHBERI.md)** - Deployment script'leri
+- **[Product Backlog](./PRODUCT_BACKLOG.md)** - Sıradaki iyileştirme ve ürün işleri
 - **[GitHub Secrets Rehberi](./GITHUB_SECRETS_REHBERI.md)** - GitHub Secrets yapılandırması
 - **[Domain Kurulumu](./SKPRO_DOMAIN_KURULUM.md)** - Domain/DNS yönlendirme
 
@@ -451,4 +458,4 @@ git push origin develop
 
 **Başarılar! 🚀**
 
-*Son Güncelleme: 2026-01-08*
+*Son Güncelleme: 2026-03-30*

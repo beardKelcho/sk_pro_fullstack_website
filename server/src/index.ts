@@ -25,6 +25,7 @@ import fs from 'fs';
 import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
 import { detectSlowQueries } from './utils/queryOptimizer';
+import { getAllowedClientOrigins } from './config/clientOrigins';
 // Removed unused legacyFileHandler
 
 import { setupExpressErrorHandler } from '@sentry/node';
@@ -52,13 +53,7 @@ const app: Express = express();
 // Trust Proxy: Render/Vercel arkasında çalışırken IP ve protokolü doğru algılamak için gerekli
 app.set('trust proxy', 1);
 
-const corsAllowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:3000',
-  process.env.CORS_ORIGIN,
-  'https://skpro.com.tr',
-  'https://www.skpro.com.tr',
-  'app://.', // Electron masaüstü uygulaması
-].filter(Boolean) as string[];
+const corsAllowedOrigins = getAllowedClientOrigins();
 
 // Vercel preview/deployment URL pattern (her deploy farklı hash üretir)
 const VERCEL_ORIGIN_REGEX = /^https:\/\/sk-pro-fullstack-website[a-z0-9-]*\.vercel\.app$/;

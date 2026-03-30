@@ -50,9 +50,16 @@ if (window.Sentry) {
 
 ## 🔔 Önerilen Alert (Alarm) Kuralları
 
-- **Error Rate Anomaly:** Hata sıklığı > 10 req/minute ise `Slack/Email bildirim`.
-- **Performance Threshold:** P95 response time hesabı > 2 Saniye ise uyarı.
-- **Fatal Alarm:** Hata Level = `fatal` parametresi geçerse anında SMS / C-Level iletişim.
+- **New Issue Spike:** 15 dakika içinde `3+` yeni issue.
+- **Error Rate Anomaly:** 15 dakika içinde `10+` adet `5xx`.
+- **Fatal Alarm:** Hata seviyesi `fatal` ise anında bildirim.
+- **Auth / Contact Regression:** Login veya contact form kaynaklı art arda hata görüldüğünde release notu ile birlikte inceleme.
+
+## 🧹 Issue Hijyeni
+
+- Son deploy'dan önce görülüp yeni event almayan issue'ları `resolved` durumuna çekin.
+- Yeni event gelmeyen ama açık kalan kayıtlar için release ve `last seen` bilgisini kontrol edin.
+- Stale issue temizliğini haftalık operasyon rutininin parçası yapın.
 
 ---
 

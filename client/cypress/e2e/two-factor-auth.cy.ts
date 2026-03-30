@@ -1,75 +1,131 @@
-/**
- * 2FA (İki Faktörlü Kimlik Doğrulama) E2E Testleri
- * 
- * Bu dosya 2FA modülünün tüm işlevlerini test eder
- */
+const stubAdminShell = () => {
+  cy.intercept('GET', '**/api/auth/profile*', {
+    statusCode: 200,
+    body: {
+      success: true,
+      user: {
+        _id: '507f1f77bcf86cd799439001',
+        name: 'Test Admin',
+        email: 'test@example.com',
+        role: 'ADMIN',
+        permissions: [],
+        isActive: true,
+      },
+    },
+  }).as('getAuthProfile');
+
+  cy.intercept('GET', '**/api/notifications/unread-count*', {
+    statusCode: 200,
+    body: {
+      success: true,
+      unreadCount: 0,
+    },
+  }).as('getUnreadCount');
+};
 
 describe('2FA Yönetimi', () => {
-  const ADMIN_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@example.com';
-  const ADMIN_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
-
   beforeEach(() => {
+    stubAdminShell();
     cy.loginAsAdmin();
-    cy.url({ timeout: 20000 }).should('include', '/admin');
   });
 
-  describe('2FA Kurulumu', () => {
-    it('2FA sayfası açılmalı', () => {
-      cy.visit('/admin/two-factor');
-      cy.url().should('include', '/admin/two-factor');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // 2FA içeriği kontrolü
-      cy.contains(/2fa|iki faktör|two factor/i, { timeout: 15000 }).should('exist');
-    });
+  it('2FA kurulumunu başlatıp doğrulama akışını tamamlamalı', () => {
+    let isEnabled = false;
 
-    it('2FA kurulum butonu görünmeli', () => {
-      cy.visit('/admin/two-factor');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Kurulum butonu - gerçek assertion ile
-      cy.get('button:contains("Kur"), button:contains("Setup"), button:contains("Etkinleştir")', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .should('be.visible')
-        .should('not.be.disabled');
-    });
-  });
-
-  describe('2FA Login', () => {
-    it('2FA ile login sayfası görüntülenebilmeli', () => {
-      // Logout yap
-      cy.clearCookies();
-      cy.clearLocalStorage();
-      
-      cy.visit('/admin');
-      cy.get('body', { timeout: 15000 }).should('be.visible');
-      
-      // Login formu
-      cy.get('input[name="email"], input#email', { timeout: 10000 })
-        .should('be.visible')
-        .clear()
-        .type(ADMIN_EMAIL, { force: true });
-      
-      cy.get('input[name="password"], input#password', { timeout: 10000 })
-        .should('be.visible')
-        .clear()
-        .type(ADMIN_PASSWORD, { force: true });
-      
-      cy.get('button[type="submit"]', { timeout: 10000 })
-        .should('be.visible')
-        .click({ force: true });
-      
-      cy.wait(2000);
-      
-      // 2FA ekranı kontrolü (eğer 2FA aktifse) - gerçek assertion ile
-      cy.get('body', { timeout: 10000 }).should(($body) => {
-        const has2FAScreen = $body.text().includes('2FA') || 
-                            $body.text().includes('kod') || 
-                            $body.find('input[type="text"][name*="code"]').length > 0;
-        // 2FA aktif değilse de test geçmeli (test kullanıcısı 2FA kapalı)
-        expect(has2FAScreen || true).to.be.true;
+    cy.intercept('GET', '**/api/two-factor/status*', (req) => {
+      req.reply({
+        statusCode: 200,
+        body: {
+          success: true,
+          is2FAEnabled: isEnabled,
+          hasBackupCodes: isEnabled,
+        },
       });
-    });
+    }).as('get2FAStatus');
+
+    cy.intercept('POST', '**/api/two-factor/setup', {
+      statusCode: 200,
+      body: {
+        success: true,
+        secret: 'TESTSECRET',
+        qrCode: 'data:image/png;base64,ZmFrZS1xci1jb2Rl',
+        backupCodes: ['AAAA-BBBB', 'CCCC-DDDD', 'EEEE-FFFF', 'GGGG-HHHH'],
+        message: '2FA setup started',
+      },
+    }).as('setup2FA');
+
+    cy.intercept('POST', '**/api/two-factor/verify', (req) => {
+      expect(req.body).to.deep.equal({ token: '123456', backupCode: '' });
+      isEnabled = true;
+
+      req.reply({
+        statusCode: 200,
+        body: {
+          success: true,
+          message: '2FA enabled',
+        },
+      });
+    }).as('verify2FA');
+
+    cy.visit('/admin/two-factor');
+
+    cy.get('[data-testid="two-factor-status-card"]', { timeout: 20000 }).should('contain.text', '2FA Devre Dışı');
+    cy.get('[data-testid="two-factor-enable-button"]').click();
+
+    cy.wait('@setup2FA');
+    cy.get('[data-testid="two-factor-verify-form"]').should('be.visible');
+    cy.contains('AAAA-BBBB').should('be.visible');
+
+    cy.get('[data-testid="two-factor-token-input"]').type('123456');
+    cy.get('[data-testid="two-factor-verify-submit"]').click();
+
+    cy.wait('@verify2FA');
+    cy.get('[data-testid="two-factor-status-card"]', { timeout: 20000 }).should('contain.text', '2FA Aktif');
+    cy.contains("2FA'yı Devre Dışı Bırak").should('be.visible');
+  });
+
+  it('2FA devre dışı bırakma akışını tamamlamalı', () => {
+    let isEnabled = true;
+
+    cy.intercept('GET', '**/api/two-factor/status*', (req) => {
+      req.reply({
+        statusCode: 200,
+        body: {
+          success: true,
+          is2FAEnabled: isEnabled,
+          hasBackupCodes: true,
+        },
+      });
+    }).as('get2FAStatus');
+
+    cy.intercept('POST', '**/api/two-factor/disable', (req) => {
+      expect(req.body).to.deep.equal({
+        password: 'Test123!',
+        token: '654321',
+      });
+      isEnabled = false;
+
+      req.reply({
+        statusCode: 200,
+        body: {
+          success: true,
+          message: '2FA disabled',
+        },
+      });
+    }).as('disable2FA');
+
+    cy.visit('/admin/two-factor');
+
+    cy.get('[data-testid="two-factor-status-card"]', { timeout: 20000 }).should('contain.text', '2FA Aktif');
+    cy.get('[data-testid="two-factor-disable-button"]').click();
+    cy.get('[data-testid="two-factor-disable-form"]').should('be.visible');
+
+    cy.get('[data-testid="two-factor-disable-password"]').type('Test123!');
+    cy.get('[data-testid="two-factor-disable-token"]').type('654321');
+    cy.get('[data-testid="two-factor-disable-submit"]').click();
+
+    cy.wait('@disable2FA');
+    cy.get('[data-testid="two-factor-status-card"]', { timeout: 20000 }).should('contain.text', '2FA Devre Dışı');
+    cy.get('[data-testid="two-factor-enable-button"]').should('be.visible');
   });
 });

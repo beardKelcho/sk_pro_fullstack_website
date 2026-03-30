@@ -4,15 +4,20 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import AdminSidebar from '@/components/admin/AdminSidebar';
-import AdminHeader from '@/components/admin/AdminHeader';
 import dynamic from 'next/dynamic';
+const AdminSidebar = dynamic(() => import('@/components/admin/AdminSidebar'), {
+  ssr: false,
+  loading: () => <div className="hidden h-screen w-20 shrink-0 border-r border-white/10 bg-white/40 dark:bg-gray-900/40 md:block" />,
+});
+const AdminHeader = dynamic(() => import('@/components/admin/AdminHeader'), {
+  ssr: false,
+  loading: () => <div className="h-16 border-b border-white/10 bg-white/40 dark:bg-gray-900/40" />,
+});
 const GlobalSearch = dynamic(() => import('@/components/admin/GlobalSearch'), { ssr: false });
 import ProtectedRoute from '@/components/admin/ProtectedRoute';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
-import OfflineIndicator from '@/components/common/OfflineIndicator';
-import Breadcrumb from '@/components/admin/Breadcrumb';
-import { connectSse } from '@/utils/sseClient';
+const OfflineIndicator = dynamic(() => import('@/components/common/OfflineIndicator'), { ssr: false });
+const Breadcrumb = dynamic(() => import('@/components/admin/Breadcrumb'), { ssr: false });
 
 export default function AdminLayout({
   children,
@@ -52,33 +57,43 @@ export default function AdminLayout({
     if (normalizedPathname === '/admin/login' || normalizedPathname === '/admin') return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-    const disconnect = connectSse({
-      url: `${apiUrl}/realtime/stream`,
-      onEvent: (evt) => {
-        if (evt.event === 'notification:new' && evt.data) {
-          // Notification list/unreadCount refresh
-          queryClient.invalidateQueries({ queryKey: ['notifications'] }).catch(() => undefined);
-          queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] }).catch(() => undefined);
+    let cancelled = false;
+    let disconnect: () => void = () => {
+      /* no-op until SSE client loads */
+    };
 
-          const notificationData = typeof evt.data === 'object' && evt.data !== null
-            ? evt.data as { title?: string; message?: string }
-            : null;
-          const title = notificationData?.title || 'Yeni bildirim';
-          const message = notificationData?.message || '';
-          toast.info(`${title}${message ? ` — ${message}` : ''}`, { autoClose: 4000 });
-        }
+    void import('@/utils/sseClient').then(({ connectSse }) => {
+      if (cancelled) return;
 
-        if (evt.event === 'monitoring:update') {
-          // Monitoring dashboard / metrics gerçek zamanlı güncelleme tetikleyicisi
-          queryClient.invalidateQueries({ queryKey: ['monitoring'], exact: false }).catch(() => undefined);
-        }
-      },
-      onError: () => {
-        // Sessiz: offline/back-end down senaryolarında panel çalışmaya devam etmeli
-      },
-    });
+      disconnect = connectSse({
+        url: `${apiUrl}/realtime/stream`,
+        onEvent: (evt) => {
+          if (evt.event === 'notification:new' && evt.data) {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] }).catch(() => undefined);
+            queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] }).catch(() => undefined);
 
-    return () => disconnect();
+            const notificationData = typeof evt.data === 'object' && evt.data !== null
+              ? evt.data as { title?: string; message?: string }
+              : null;
+            const title = notificationData?.title || 'Yeni bildirim';
+            const message = notificationData?.message || '';
+            toast.info(`${title}${message ? ` — ${message}` : ''}`, { autoClose: 4000 });
+          }
+
+          if (evt.event === 'monitoring:update') {
+            queryClient.invalidateQueries({ queryKey: ['monitoring'], exact: false }).catch(() => undefined);
+          }
+        },
+        onError: () => {
+          // Sessiz: offline/back-end down senaryolarında panel çalışmaya devam etmeli
+        },
+      });
+    }).catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+      disconnect();
+    };
   }, [queryClient, normalizedPathname]);
 
   // Login sayfası için farklı layout gösterme - ProtectedRoute kullanma

@@ -128,7 +128,7 @@ export default function TwoFactorPage() {
 
       {/* Status Card */}
       {step === 'status' && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div data-testid="two-factor-status-card" className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -145,6 +145,7 @@ export default function TwoFactorPage() {
             {is2FAEnabled ? (
               <button
                 onClick={() => setStep('disable')}
+                data-testid="two-factor-disable-button"
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md shadow-sm transition-colors"
               >
                 2FA&apos;yı Devre Dışı Bırak
@@ -153,6 +154,7 @@ export default function TwoFactorPage() {
               <button
                 onClick={handleSetup}
                 disabled={setupPending}
+                data-testid="two-factor-enable-button"
                 className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
                 {setupPending ? (
@@ -234,13 +236,14 @@ export default function TwoFactorPage() {
           )}
 
           {/* Verify Form */}
-          <form onSubmit={handleVerify} className="space-y-4">
+          <form onSubmit={handleVerify} data-testid="two-factor-verify-form" className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Doğrulama Kodu (6 haneli)
               </label>
               <input
                 type="text"
+                data-testid="two-factor-token-input"
                 value={token}
                 onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
@@ -255,6 +258,7 @@ export default function TwoFactorPage() {
               </label>
               <input
                 type="text"
+                data-testid="two-factor-backup-input"
                 value={backupCode}
                 onChange={(e) => setBackupCode(e.target.value.toUpperCase())}
                 placeholder="XXXX-XXXX"
@@ -275,6 +279,7 @@ export default function TwoFactorPage() {
               </button>
               <button
                 type="submit"
+                data-testid="two-factor-verify-submit"
                 disabled={verifyPending}
                 className="flex-1 px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -297,7 +302,7 @@ export default function TwoFactorPage() {
             </p>
           </div>
 
-          <form onSubmit={handleDisable} className="space-y-4">
+          <form onSubmit={handleDisable} data-testid="two-factor-disable-form" className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Şifre <span className="text-red-500">*</span>
@@ -307,6 +312,7 @@ export default function TwoFactorPage() {
                 onChange={(e) => setDisablePassword(e.target.value)}
                 required
                 className="w-full"
+                testId="two-factor-disable-password"
               />
             </div>
             <div>
@@ -315,6 +321,7 @@ export default function TwoFactorPage() {
               </label>
               <input
                 type="text"
+                data-testid="two-factor-disable-token"
                 value={disableToken}
                 onChange={(e) => setDisableToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
@@ -329,6 +336,7 @@ export default function TwoFactorPage() {
               </label>
               <input
                 type="text"
+                data-testid="two-factor-disable-backup"
                 value={disableBackupCode}
                 onChange={(e) => setDisableBackupCode(e.target.value.toUpperCase())}
                 placeholder="XXXX-XXXX"
@@ -350,6 +358,7 @@ export default function TwoFactorPage() {
               </button>
               <button
                 type="submit"
+                data-testid="two-factor-disable-submit"
                 disabled={disablePending}
                 className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >

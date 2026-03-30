@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { HeroContent } from '@/types/cms';
 
 type HeroContentInput = HeroContent | { data?: HeroContent | null } | null | undefined;
@@ -45,18 +44,12 @@ export default function Hero({ content }: HeroProps) {
 
                 {/* DÖNEN YAZILAR - EN ÜSTTE - ORTA BOYUT */}
                 <div className="h-12 md:h-16 flex items-center justify-center overflow-hidden w-full mb-4 relative">
-                    <AnimatePresence mode='wait'>
-                        <motion.div
-                            key={textIndex}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.5, ease: "easeOut" }}
-                            className="text-2xl md:text-3xl lg:text-4xl font-bold text-cyan-500 uppercase tracking-widest absolute w-full text-center"
-                        >
-                            {slogans.length > 0 ? slogans[textIndex] : "Profesyonel Prodüksiyon"}
-                        </motion.div>
-                    </AnimatePresence>
+                    <div
+                        key={textIndex}
+                        className="animate-in fade-in slide-in-from-bottom-4 duration-500 text-2xl md:text-3xl lg:text-4xl font-bold text-cyan-500 uppercase tracking-widest absolute w-full text-center"
+                    >
+                        {slogans.length > 0 ? slogans[textIndex] : "Profesyonel Prodüksiyon"}
+                    </div>
                 </div>
 
                 {/* ANA BAŞLIK - SABİT - BEYAZ */}

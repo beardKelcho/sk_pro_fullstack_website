@@ -36,8 +36,6 @@ const isSiteContentResponse = (value: unknown): value is PublicSiteContentRespon
 async function getSiteData() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
-  logger.info(`[BUILD-DEBUG] Fetching data from: ${apiUrl}`);
-
   try {
     // 1. Check Maintenance Mode
     const maintenanceRes = await fetch(`${apiUrl}/public/maintenance`, {
@@ -77,7 +75,9 @@ async function getSiteData() {
     }
 
     if (!contentRes || !contentRes.ok) {
-      logger.error('Failed to fetch site content, using fallback');
+      if (process.env.NODE_ENV === 'development') {
+        logger.warn('Site content endpoint unavailable, fallback content will be used');
+      }
       return { isMaintenanceMode: false, content: fallbackContent, services, projects };
     }
 
@@ -112,7 +112,9 @@ async function getSiteData() {
     return { isMaintenanceMode: false, content: contentMap, services, projects };
 
   } catch (error) {
-    logger.error('Error fetching site data, returning fallback content:', error);
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('Site data fetch failed, fallback content will be used', error);
+    }
     return { isMaintenanceMode: false, content: fallbackContent, services: [], projects: [] };
   }
 }

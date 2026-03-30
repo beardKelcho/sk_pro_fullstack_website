@@ -30,13 +30,13 @@ interface ErrorInfo {
 
 class ErrorTracker {
   private isProduction: boolean;
-  private apiEndpoint: string;
-  private sentryEnabled: boolean;
 
   constructor() {
     this.isProduction = process.env.NODE_ENV === 'production';
-    this.apiEndpoint = process.env.NEXT_PUBLIC_API_URL || '/api';
-    this.sentryEnabled = !!(
+  }
+
+  private get isSentryReady() {
+    return Boolean(
       this.isProduction &&
       typeof window !== 'undefined' &&
       process.env.NEXT_PUBLIC_SENTRY_DSN &&
@@ -72,7 +72,7 @@ class ErrorTracker {
     }
 
     // Sentry'ye gönder (production'da ve DSN varsa)
-    if (this.sentryEnabled && Sentry) {
+    if (this.isSentryReady && Sentry) {
       try {
         const errorObj = typeof error === 'string' ? new Error(error) : error;
         
@@ -173,7 +173,7 @@ class ErrorTracker {
    */
   captureException(error: Error, errorInfo?: React.ErrorInfo) {
     // Sentry'ye gönder (production'da)
-    if (this.sentryEnabled && Sentry) {
+    if (this.isSentryReady && Sentry) {
       try {
         Sentry.captureException(error, {
           level: 'error',
@@ -217,7 +217,7 @@ class ErrorTracker {
       : new Error(String(reason));
     
     // Sentry'ye gönder (production'da)
-    if (this.sentryEnabled && Sentry) {
+    if (this.isSentryReady && Sentry) {
       try {
         Sentry.captureException(error, {
           level: 'error',

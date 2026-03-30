@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import { Play, X, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import NextImage from 'next/image';
@@ -145,26 +144,20 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
 
                     {/* Photo Tab */}
                     {activeTab === 'photos' && (
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key="photos"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                            >
+                        <div
+                            key="photos"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                        >
                                 {photoProjects.length === 0 ? (
                                     <div className="col-span-full text-center py-32 text-gray-400">
                                         Henüz fotoğraf albümü eklenmemiş.
                                     </div>
                                 ) : (
                                     photoProjects.map((project, index) => (
-                                        <motion.div
+                                        <div
                                             key={project._id}
-                                            initial={{ opacity: 0, y: 30 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.1 }}
                                             className="group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all duration-500 cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10"
+                                            style={{ transitionDelay: `${index * 60}ms` }}
                                             onClick={() => setLightbox({
                                                 images: project.imageUrls || [project.coverUrl || ''],
                                                 currentIndex: 0,
@@ -219,35 +212,28 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                             </div>
 
                                             <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-                                        </motion.div>
+                                        </div>
                                     ))
                                 )}
-                            </motion.div>
-                        </AnimatePresence>
+                        </div>
                     )}
 
                     {/* Video Tab */}
                     {activeTab === 'videos' && (
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key="videos"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                            >
+                        <div
+                            key="videos"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
+                        >
                                 {videoProjects.length === 0 ? (
                                     <div className="col-span-full text-center py-32 text-gray-400">
                                         Henüz video prodüksiyonu eklenmemiş.
                                     </div>
                                 ) : (
                                     videoProjects.map((project, index) => (
-                                        <motion.div
+                                        <div
                                             key={project._id}
-                                            initial={{ opacity: 0, y: 30 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: index * 0.1 }}
                                             className="group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all duration-500 cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10"
+                                            style={{ transitionDelay: `${index * 60}ms` }}
                                             onMouseEnter={() => handleVideoHover(project._id, true)}
                                             onMouseLeave={() => handleVideoHover(project._id, false)}
                                             onClick={() => setSelectedVideo({ url: project.videoUrl || '', title: project.title })}
@@ -305,22 +291,17 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                             </div>
 
                                             <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-                                        </motion.div>
+                                        </div>
                                     ))
                                 )}
-                            </motion.div>
-                        </AnimatePresence>
+                        </div>
                     )}
                 </div>
 
                 {/* Lightbox for Photos */}
-                <AnimatePresence>
-                    {lightbox && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4"
+                {lightbox && (
+                        <div
+                            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 animate-in fade-in duration-300"
                             onClick={() => setLightbox(null)}
                         >
                             <div className="relative w-full max-w-7xl" onClick={(e) => e.stopPropagation()}>
@@ -334,15 +315,19 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                 </button>
 
                                 {/* Image */}
-                                <motion.img
+                                <div
                                     key={lightbox.currentIndex}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    src={lightbox.images[lightbox.currentIndex]}
-                                    alt={`${lightbox.title} - ${lightbox.currentIndex + 1}`}
-                                    className="w-full h-[80vh] object-contain rounded-xl"
-                                />
+                                    className="relative h-[80vh] w-full animate-in fade-in zoom-in-95 duration-300"
+                                >
+                                    <NextImage
+                                        src={lightbox.images[lightbox.currentIndex]}
+                                        alt={`${lightbox.title} - ${lightbox.currentIndex + 1}`}
+                                        fill
+                                        unoptimized
+                                        sizes="100vw"
+                                        className="object-contain rounded-xl"
+                                    />
+                                </div>
 
                                 {/* Navigation */}
                                 {lightbox.images.length > 1 && (
@@ -372,26 +357,17 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                     {lightbox.title}
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     )}
-                </AnimatePresence>
 
                 {/* Video Modal */}
-                <AnimatePresence>
-                    {selectedVideo && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4"
+                {selectedVideo && (
+                        <div
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 animate-in fade-in duration-300"
                             onClick={() => setSelectedVideo(null)}
                         >
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                transition={{ type: 'spring', damping: 20 }}
-                                className="relative w-full max-w-6xl"
+                            <div
+                                className="relative w-full max-w-6xl animate-in zoom-in-95 duration-300"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 {/* Close Button */}
@@ -417,10 +393,9 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                 >
                                     Tarayıcınız video oynatmayı desteklemiyor.
                                 </video>
-                            </motion.div>
-                        </motion.div>
+                            </div>
+                        </div>
                     )}
-                </AnimatePresence>
             </section>
         </StageExperience>
     );

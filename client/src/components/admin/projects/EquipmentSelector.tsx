@@ -117,7 +117,6 @@ export default function EquipmentSelector({ selectedEquipment, onSelectionChange
                         type="text"
                         placeholder="QR kod okutun..."
                         className="w-full pl-9 pr-4 py-2 bg-white border-2 border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm"
-                        autoFocus
                         onKeyDown={async (e) => {
                             if (e.key === 'Enter') {
                                 const input = e.currentTarget;

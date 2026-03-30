@@ -1,7 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
-import { useInView } from 'framer-motion';
+import { useInViewOnce } from '@/hooks/useInViewOnce';
 
 interface StageExperienceProps {
   children: React.ReactNode;
@@ -13,9 +12,7 @@ interface StageExperienceProps {
  * Kullanıcıyı sahne içine çeken immersive deneyim, optimized for 60FPS
  */
 export default function StageExperience({ children, className = '' }: StageExperienceProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  // Replaced heavy global scroll listener with simple IntersectionObserver
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const [ref, isInView] = useInViewOnce<HTMLDivElement>({ rootMargin: '-50px' });
 
   return (
     <div
@@ -61,8 +58,7 @@ export function StageSectionTitle({
   subtitle?: string;
   className?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const [ref, isInView] = useInViewOnce<HTMLDivElement>({ rootMargin: '-50px' });
 
   return (
     <div

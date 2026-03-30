@@ -214,7 +214,7 @@ export default function AddTask() {
 
       {/* Form kartı */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} data-testid="task-form">
           <div className="p-6">
             {/* Genel hata mesajı */}
             {errors.form && (
@@ -403,6 +403,7 @@ export default function AddTask() {
             </Link>
             <button
               type="submit"
+              data-testid="task-submit"
               disabled={isSubmitting}
               className="px-4 py-2 bg-[#0066CC] dark:bg-primary-light hover:bg-[#0055AA] dark:hover:bg-primary text-white rounded-md shadow-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center"
             >
@@ -422,7 +423,7 @@ export default function AddTask() {
 
       {/* Başarı bildirimi */}
       {showSuccessNotification && (
-        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center">
+        <div data-testid="task-success-notice" className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center">
           <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
           </svg>

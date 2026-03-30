@@ -8,6 +8,7 @@ import { getStoredUserRole, getStoredUserPermissions } from '@/utils/authStorage
 import { hasPermission, Permission } from '@/config/permissions';
 import PermissionButton from '@/components/common/PermissionButton';
 import PermissionLink from '@/components/common/PermissionLink';
+import ActiveFiltersBar from '@/components/admin/ActiveFiltersBar';
 import { useProjects } from '@/hooks/useProjects';
 import { MESSAGES } from '@/constants/messages';
 
@@ -131,6 +132,17 @@ export default function ProjectsPage() {
   };
 
   const hasActiveFilters = Boolean(searchQuery) || Boolean(statusFilter) || dateFilter !== 'all';
+  const activeFilterItems = [
+    searchQuery ? { key: 'search', label: `Arama: ${searchQuery}`, onRemove: () => setSearchQuery('') } : null,
+    statusFilter ? { key: 'status', label: `Durum: ${statusFilter}`, onRemove: () => setStatusFilter('') } : null,
+    dateFilter !== 'all'
+      ? {
+          key: 'date',
+          label: dateFilter === 'upcoming' ? 'Tarih: Yaklaşan etkinlikler' : 'Tarih: Geçmiş etkinlikler',
+          onRemove: () => setDateFilter('all'),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ key: string; label: string; onRemove: () => void }>;
 
   const columnHelper = createColumnHelper<ProjectDisplay>();
   const columns = [
@@ -332,6 +344,18 @@ export default function ProjectsPage() {
           </button>
         </div>
       </div>
+
+      {hasActiveFilters && (
+        <div className="mb-6">
+          <ActiveFiltersBar
+            filters={activeFilterItems}
+            totalCount={total}
+            visibleCount={projects.length}
+            itemLabel="proje"
+            onClearAll={clearFilters}
+          />
+        </div>
+      )}
 
       {loading && (
         <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-sm">

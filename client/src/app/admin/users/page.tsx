@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import PermissionButton from '@/components/common/PermissionButton';
 import PermissionLink from '@/components/common/PermissionLink';
 import { Permission } from '@/config/permissions';
+import ActiveFiltersBar from '@/components/admin/ActiveFiltersBar';
 
 import {
   useReactTable,
@@ -193,6 +194,11 @@ export default function UserList() {
   };
 
   const hasActiveFilters = Boolean(searchTerm) || selectedRole !== 'Tümü' || selectedStatus !== 'Tümü';
+  const activeFilterItems = [
+    searchTerm ? { key: 'search', label: `Arama: ${searchTerm}`, onRemove: () => setSearchTerm('') } : null,
+    selectedRole !== 'Tümü' ? { key: 'role', label: `Rol: ${selectedRole}`, onRemove: () => setSelectedRole('Tümü') } : null,
+    selectedStatus !== 'Tümü' ? { key: 'status', label: `Durum: ${selectedStatus}`, onRemove: () => setSelectedStatus('Tümü') } : null,
+  ].filter(Boolean) as Array<{ key: string; label: string; onRemove: () => void }>;
 
   const columnHelper = createColumnHelper<User>();
   const columns = [
@@ -399,6 +405,16 @@ export default function UserList() {
           </div>
         </div>
       </div>
+
+      {hasActiveFilters && (
+        <ActiveFiltersBar
+          filters={activeFilterItems}
+          totalCount={totalUsers}
+          visibleCount={users.length}
+          itemLabel="kullanıcı"
+          onClearAll={clearFilters}
+        />
+      )}
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {loading ? (

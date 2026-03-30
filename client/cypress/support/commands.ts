@@ -55,24 +55,35 @@ Cypress.Commands.add('loginAsAdmin', () => {
   // Test kullanıcısı kullan (2FA kapalı, test için hazır)
   const TEST_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@example.com';
   const TEST_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
+  const API_URL = Cypress.env('NEXT_PUBLIC_API_URL') || 'http://localhost:5001/api';
 
   const performLogin = (email: string, password: string) => {
-    cy.visit('/admin', { failOnStatusCode: false });
-    cy.get('body', { timeout: 15000 }).should('be.visible');
+    cy.request('POST', `${API_URL}/auth/login`, {
+      email,
+      password,
+    }).then((response) => {
+      expect(response.status).to.eq(200);
+      expect(response.body?.success).to.eq(true);
+      expect(response.body?.requires2FA).to.not.eq(true);
 
-    cy.get('input[name="email"], input#email, input[type="text"][name="email"]', { timeout: 10000 })
-      .should('be.visible')
-      .clear()
-      .type(email, { force: true });
+      const rawUser = response.body?.user;
+      const userData = {
+        id: rawUser?.id || rawUser?._id,
+        _id: rawUser?.id || rawUser?._id,
+        name: rawUser?.name,
+        email: rawUser?.email,
+        role: rawUser?.role,
+        permissions: rawUser?.permissions || [],
+        isActive: rawUser?.isActive !== undefined ? rawUser.isActive : true,
+      };
 
-    cy.get('input[name="password"], input#password, input[type="password"]', { timeout: 10000 })
-      .should('be.visible')
-      .clear()
-      .type(password, { force: true });
-
-    cy.get('button[type="submit"], form button[type="submit"]', { timeout: 10000 })
-      .should('be.visible')
-      .click({ force: true });
+      cy.visit('/admin/dashboard', {
+        failOnStatusCode: false,
+        onBeforeLoad(win) {
+          win.sessionStorage.setItem('user', JSON.stringify(userData));
+        },
+      });
+    });
 
     cy.url({ timeout: 25000 }).should('include', '/admin/dashboard');
   };
@@ -95,23 +106,35 @@ Cypress.Commands.add('loginAsAdmin', () => {
 });
 
 Cypress.Commands.add('loginAsUser', (email: string, password: string) => {
+  const API_URL = Cypress.env('NEXT_PUBLIC_API_URL') || 'http://localhost:5001/api';
+
   const performLogin = () => {
-    cy.visit('/admin', { failOnStatusCode: false });
-    cy.get('body', { timeout: 15000 }).should('be.visible');
+    cy.request('POST', `${API_URL}/auth/login`, {
+      email,
+      password,
+    }).then((response) => {
+      expect(response.status).to.eq(200);
+      expect(response.body?.success).to.eq(true);
+      expect(response.body?.requires2FA).to.not.eq(true);
 
-    cy.get('input[name="email"], input#email, input[type="text"][name="email"]', { timeout: 10000 })
-      .should('be.visible')
-      .clear()
-      .type(email, { force: true });
+      const rawUser = response.body?.user;
+      const userData = {
+        id: rawUser?.id || rawUser?._id,
+        _id: rawUser?.id || rawUser?._id,
+        name: rawUser?.name,
+        email: rawUser?.email,
+        role: rawUser?.role,
+        permissions: rawUser?.permissions || [],
+        isActive: rawUser?.isActive !== undefined ? rawUser.isActive : true,
+      };
 
-    cy.get('input[name="password"], input#password, input[type="password"]', { timeout: 10000 })
-      .should('be.visible')
-      .clear()
-      .type(password, { force: true });
-
-    cy.get('button[type="submit"], form button[type="submit"]', { timeout: 10000 })
-      .should('be.visible')
-      .click({ force: true });
+      cy.visit('/admin/dashboard', {
+        failOnStatusCode: false,
+        onBeforeLoad(win) {
+          win.sessionStorage.setItem('user', JSON.stringify(userData));
+        },
+      });
+    });
 
     cy.url({ timeout: 25000 }).should('include', '/admin/dashboard');
   };
@@ -176,50 +199,7 @@ Cypress.Commands.add('checkTestEnvironment', () => {
  * Güvenilir login - her test için kullanılabilir
  */
 Cypress.Commands.add('ensureLoggedIn', () => {
-  const TEST_EMAIL = Cypress.env('TEST_USER_EMAIL') || 'test@example.com';
-  const TEST_PASSWORD = Cypress.env('TEST_USER_PASSWORD') || 'Test123!';
-
-  // Login sayfasına git
-  cy.visit('/admin', { failOnStatusCode: false });
-  cy.wait(2000);
-
-  // Mevcut durumu kontrol et
-  cy.get('body', { timeout: 10000 }).then(($body) => {
-    const isLoginPage = $body.text().includes('Giriş Yap') ||
-      $body.text().includes('Login') ||
-      $body.find('input[name="email"]').length > 0;
-
-    if (!isLoginPage) {
-      // Zaten login olmuşsak devam et
-      cy.log('✅ Zaten login olunmuş');
-      return;
-    }
-
-    // Login formunu doldur
-    cy.get('input[name="email"], input#email, input[type="text"][name="email"]', { timeout: 15000 })
-      .should('be.visible')
-      .clear()
-      .type(TEST_EMAIL, { force: true });
-
-    cy.get('input[name="password"], input#password, input[type="password"]', { timeout: 15000 })
-      .should('be.visible')
-      .clear()
-      .type(TEST_PASSWORD, { force: true });
-
-    // Submit
-    cy.get('button[type="submit"], form button[type="submit"]', { timeout: 15000 })
-      .should('be.visible')
-      .click({ force: true });
-
-    // Login'in başarılı olduğunu bekle
-    cy.wait(3000);
-    cy.url({ timeout: 25000 }).should('satisfy', (url) => {
-      const cleanUrl = url.replace(/^\/(tr|en)/, '');
-      return cleanUrl.includes('/admin/dashboard') ||
-        cleanUrl.includes('/admin/equipment') ||
-        cleanUrl.includes('/admin');
-    });
-  });
+  cy.loginAsAdmin();
 });
 
 Cypress.Commands.add('uploadImage', (filePath: string) => {

@@ -222,19 +222,19 @@ export default function InventoryPage() {
                 return (
                     <div className="flex items-center justify-end gap-1">
                         {item.status === 'AVAILABLE' && (
-                            <button onClick={() => setAssignItem(item)} className="p-2 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg tooltip" title="Projeye Çık">
+                            <button data-testid={`inventory-assign-${item._id}`} onClick={() => setAssignItem(item)} className="p-2 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg tooltip" title="Projeye Çık">
                                 <ArrowUpRight className="w-5 h-5" />
                             </button>
                         )}
                         {item.status === 'IN_USE' && (
-                            <button onClick={() => setReturnItem(item)} className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg tooltip" title="İade Al">
+                            <button data-testid={`inventory-return-${item._id}`} onClick={() => setReturnItem(item)} className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg tooltip" title="İade Al">
                                 <ArrowDownLeft className="w-5 h-5" />
                             </button>
                         )}
-                        <button onClick={() => setEditItem(item)} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg tooltip" title="Düzenle">
+                        <button data-testid={`inventory-edit-${item._id}`} onClick={() => setEditItem(item)} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg tooltip" title="Düzenle">
                             <Pencil className="w-5 h-5" />
                         </button>
-                        <button onClick={() => setQrItem(item)} className="p-2 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900/20 rounded-lg tooltip" title="QR Kod">
+                        <button data-testid={`inventory-qr-${item._id}`} onClick={() => setQrItem(item)} className="p-2 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-900/20 rounded-lg tooltip" title="QR Kod">
                             <QrCode className="w-5 h-5" />
                         </button>
                         <button onClick={() => handleDelete(item._id)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg tooltip" title="Sil">
@@ -294,6 +294,7 @@ export default function InventoryPage() {
                 <div className="flex gap-2">
                     <button
                         onClick={() => setImportModalOpen(true)}
+                        data-testid="inventory-import-trigger"
                         className="px-4 py-2 bg-green-600 dark:bg-green-700 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 transition-colors"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,6 +305,7 @@ export default function InventoryPage() {
                     <ExportMenu type="inventory" baseFilename="inventory" label="Dışa Aktar" />
                     <button
                         onClick={() => setIsAddModalOpen(true)}
+                        data-testid="inventory-add-trigger"
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,6 +321,7 @@ export default function InventoryPage() {
                 <div className="relative">
                     <input
                         type="text"
+                        data-testid="inventory-search-input"
                         placeholder="Ara (İsim, Marka, Seri No)..."
                         className="w-full pl-10 pr-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         value={search}
@@ -330,6 +333,7 @@ export default function InventoryPage() {
                 </div>
 
                 <select
+                    data-testid="inventory-category-filter"
                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none"
                     value={selectedCategory}
                     onChange={e => setSelectedCategory(e.target.value)}
@@ -341,6 +345,7 @@ export default function InventoryPage() {
                 </select>
 
                 <select
+                    data-testid="inventory-location-filter"
                     className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none"
                     value={selectedLocation}
                     onChange={e => setSelectedLocation(e.target.value)}
@@ -353,6 +358,7 @@ export default function InventoryPage() {
 
                 <button
                     onClick={() => { setSearch(''); setSelectedCategory(''); setSelectedLocation(''); }}
+                    data-testid="inventory-clear-filters"
                     className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-sm font-medium outline-none"
                 >
                     Filtreleri Temizle

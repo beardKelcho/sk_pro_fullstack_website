@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Mail } from 'lucide-react';
 
@@ -10,12 +9,7 @@ export default function MaintenancePage() {
         // KURAL 1: Siyah-Beyaz Tema ve Footer Gizleme - fixed inset-0 z-[9999] bg-black
         <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center text-white p-4">
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="max-w-xl w-full text-center"
-            >
+            <div className="max-w-xl w-full text-center animate-[fadeIn_700ms_ease-out]">
                 {/* KURAL 2: Logo Ekleme */}
                 <div className="mb-12 flex justify-center">
                     <div className="relative h-20 w-48">
@@ -62,15 +56,38 @@ export default function MaintenancePage() {
                 {/* Animated dots for subtle activity indication */}
                 <div className="mt-16 flex justify-center gap-2 opacity-30">
                     {[0, 1, 2].map((i) => (
-                        <motion.div
+                        <div
                             key={i}
                             className="w-1.5 h-1.5 bg-white rounded-full"
-                            animate={{ opacity: [0.3, 1, 0.3] }}
-                            transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                            style={{
+                                animation: `maintenancePulse 1.5s ${i * 0.2}s infinite`,
+                            }}
                         />
                     ))}
                 </div>
-            </motion.div>
+            </div>
+            <style jsx>{`
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                @keyframes maintenancePulse {
+                    0%,
+                    100% {
+                        opacity: 0.3;
+                    }
+                    50% {
+                        opacity: 1;
+                    }
+                }
+            `}</style>
         </div>
     );
 }

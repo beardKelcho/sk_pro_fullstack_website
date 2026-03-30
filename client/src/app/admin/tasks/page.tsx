@@ -8,6 +8,7 @@ import logger from '@/utils/logger';
 import PermissionButton from '@/components/common/PermissionButton';
 import PermissionLink from '@/components/common/PermissionLink';
 import { Permission } from '@/config/permissions';
+import ActiveFiltersBar from '@/components/admin/ActiveFiltersBar';
 
 const ExportButton = dynamic(() => import('@/components/admin/ExportButton'), {
   ssr: false,
@@ -264,6 +265,18 @@ export default function TaskList() {
     selectedPriority !== 'Tümü' ||
     selectedStatus !== 'Tümü' ||
     selectedAssignee !== 'Tümü';
+  const activeFilterItems = [
+    searchTerm ? { key: 'search', label: `Arama: ${searchTerm}`, onRemove: () => setSearchTerm('') } : null,
+    selectedPriority !== 'Tümü' ? { key: 'priority', label: `Öncelik: ${selectedPriority}`, onRemove: () => setSelectedPriority('Tümü') } : null,
+    selectedStatus !== 'Tümü' ? { key: 'status', label: `Durum: ${selectedStatus}`, onRemove: () => setSelectedStatus('Tümü') } : null,
+    selectedAssignee !== 'Tümü'
+      ? {
+          key: 'assignee',
+          label: `Atanan: ${assigneeOptions.find((user) => user.id === selectedAssignee)?.name || 'Seçili kullanıcı'}`,
+          onRemove: () => setSelectedAssignee('Tümü'),
+        }
+      : null,
+  ].filter(Boolean) as Array<{ key: string; label: string; onRemove: () => void }>;
 
   const calculateDaysRemaining = (dueDate: string): number => {
     if (!dueDate) return 0;
@@ -393,6 +406,16 @@ export default function TaskList() {
           </div>
         </div>
       </div>
+
+      {hasActiveFilters && (
+        <ActiveFiltersBar
+          filters={activeFilterItems}
+          totalCount={totalTasks}
+          visibleCount={tasks.length}
+          itemLabel="görev"
+          onClearAll={clearFilters}
+        />
+      )}
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         {loading ? (

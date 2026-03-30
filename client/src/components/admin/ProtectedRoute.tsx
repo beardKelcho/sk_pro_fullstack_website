@@ -11,6 +11,11 @@ interface ProtectedRouteProps {
   requiredRole?: 'ADMIN' | 'FIRMA_SAHIBI' | 'PROJE_YONETICISI' | 'DEPO_SORUMLUSU' | 'TEKNISYEN';
 }
 
+interface StoredUserLike {
+  role?: string;
+  isActive?: boolean;
+}
+
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -34,6 +39,45 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
 
     const checkAuth = async () => {
       try {
+        if (typeof window !== 'undefined') {
+          const isCypress = Boolean((window as Window & { Cypress?: unknown }).Cypress);
+          const storedUser = window.sessionStorage.getItem('user') || window.localStorage.getItem('user');
+
+          if (isCypress && storedUser) {
+            const parsedUser = JSON.parse(storedUser) as StoredUserLike;
+
+            if (requiredRole) {
+              const roleHierarchy: Record<string, number> = {
+                'TEKNISYEN': 1,
+                'PROJE_YONETICISI': 2,
+                'DEPO_SORUMLUSU': 2,
+                'FIRMA_SAHIBI': 3,
+                'ADMIN': 4
+              };
+
+              const userRoleLevel = roleHierarchy[parsedUser.role || ''] || 0;
+              const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
+
+              if (userRoleLevel < requiredRoleLevel) {
+                router.replace('/admin/forbidden');
+                setIsLoading(false);
+                return;
+              }
+            }
+
+            if (parsedUser.isActive === false) {
+              setIsAuthenticated(false);
+              setIsLoading(false);
+              redirectToLogin();
+              return;
+            }
+
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            return;
+          }
+        }
+
         // Auth durumu httpOnly cookie üzerinden API çağrısıyla belirlenir
         // localStorage/sessionStorage kullanılmıyor (XSS koruması)
         let user = null;

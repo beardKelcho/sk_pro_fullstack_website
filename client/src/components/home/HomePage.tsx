@@ -39,19 +39,13 @@ export default function HomePage({ content, services, projects }: HomePageProps)
             {/* Hero Section */}
             <Hero content={content.hero || { data: null }} />
 
-            {/* Hizmetler - Server-side verisi kullanıyor */}
             <Services initialServices={services} />
 
-            {/* Projeler - Server-side verisi kullanıyor */}
             <Projects initialProjects={projects} />
 
-            {/* Hakkımızda - Server-side verisi kullanıyor */}
             <About content={content.about} />
 
-            {/* İletişim - Server-side verisi kullanıyor */}
             <Contact content={content.contact} />
-
-            {/* Footer Wrapper Layout tarafından handle ediliyor - CMS API kullanıyor */}
         </MainLayout>
     );
 }

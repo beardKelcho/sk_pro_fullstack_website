@@ -13,6 +13,7 @@ interface PasswordInputProps {
   error?: string;
   disabled?: boolean;
   autoHideTimeout?: number; // Otomatik kapanma süresi (milisaniye)
+  testId?: string;
 }
 
 export default function PasswordInput({
@@ -26,6 +27,7 @@ export default function PasswordInput({
   error,
   disabled = false,
   autoHideTimeout = 30000, // 30 saniye
+  testId,
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -66,6 +68,7 @@ export default function PasswordInput({
         onChange={onChange}
         disabled={disabled}
         required={required}
+        data-testid={testId}
         className={`pr-10 ${className}`}
         placeholder={placeholder}
       />
@@ -126,4 +129,3 @@ export default function PasswordInput({
     </div>
   );
 }
-

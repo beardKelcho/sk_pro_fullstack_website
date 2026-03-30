@@ -371,7 +371,7 @@ export default function AddProject() {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
+      <form onSubmit={handleSubmit} data-testid="project-form" className="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Proje Adı */}
@@ -437,6 +437,7 @@ export default function AddProject() {
                         <button
                           key={customer.id}
                           type="button"
+                          data-testid="customer-option"
                           className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
                           onClick={() => {
                             if (!customer.id || !/^[0-9a-fA-F]{24}$/.test(customer.id)) return;
@@ -781,6 +782,7 @@ export default function AddProject() {
           </Link>
           <button
             type="submit"
+            data-testid="project-submit"
             disabled={loading}
             className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >

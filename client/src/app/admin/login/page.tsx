@@ -97,7 +97,10 @@ export default function AdminLogin() {
 
     try {
       if (process.env.NODE_ENV === 'development') {
-        logger.info('Attempting login with:', { email: formData.email, passwordLength: formData.password.length });
+        logger.debug('Attempting admin login', {
+          identifier: formData.email,
+          rememberMe: formData.rememberMe,
+        });
       }
 
       const response = await authApi.login({
@@ -105,20 +108,12 @@ export default function AdminLogin() {
         password: formData.password,
       });
 
-      logger.debug('Login response:', response.data);
-
-      // Debug: Response'u console'a yazdır
       if (process.env.NODE_ENV === 'development') {
-        logger.info('=== LOGIN RESPONSE ===');
-        logger.info('Full response:', response);
-        logger.info('Response data:', response.data);
-        logger.info('Response success:', response.data?.success);
-        logger.info('AccessToken exists:', !!response.data?.accessToken);
-        logger.info('AccessToken value:', response.data?.accessToken);
-        logger.info('AccessToken type:', typeof response.data?.accessToken);
-        logger.info('User:', response.data?.user);
-        logger.info('Requires2FA:', response.data?.requires2FA);
-        logger.info('=====================');
+        logger.debug('Admin login response received', {
+          success: response.data?.success,
+          requires2FA: response.data?.requires2FA,
+          hasUser: Boolean(response.data?.user),
+        });
       }
 
       if (response.data && response.data.success) {
@@ -156,24 +151,19 @@ export default function AdminLogin() {
         router.replace('/admin/dashboard');
       } else {
         const errorMsg = response.data?.message || 'Giriş başarısız';
-        logger.error('Login failed:', errorMsg);
+        if (process.env.NODE_ENV === 'development') {
+          logger.warn('Admin login rejected by API', { message: errorMsg });
+        }
         setLoginError(errorMsg);
       }
     } catch (error: any) {
-      // Detaylı hata loglama
       if (process.env.NODE_ENV === 'development') {
-        logger.error('=== LOGIN ERROR ===');
-        logger.error('Error:', error);
-        logger.error('Error response:', error.response);
-        logger.error('Error response data:', error.response?.data);
-        logger.error('Error message:', error.message);
-        logger.error('Error status:', error.response?.status);
-        logger.error('Error code:', error.code);
-        logger.error('==================');
+        logger.error('Admin login request failed', {
+          status: error.response?.status,
+          code: error.code,
+          message: error.response?.data?.message || error.message,
+        });
       }
-
-      logger.error('Giriş hatası:', error);
-      logger.error('Error response:', error.response?.data);
       const backend = error.response?.data;
       const status = error.response?.status;
 
@@ -236,7 +226,12 @@ export default function AdminLogin() {
         setLoginError(response.message || '2FA doğrulama başarısız');
       }
     } catch (error: any) {
-      logger.error('2FA doğrulama hatası:', error);
+      if (process.env.NODE_ENV === 'development') {
+        logger.error('2FA verification failed', {
+          status: error.response?.status,
+          message: error.response?.data?.message || error.message,
+        });
+      }
       const errorMessage = error.response?.data?.message ||
         error.message ||
         '2FA doğrulama sırasında bir hata oluştu';

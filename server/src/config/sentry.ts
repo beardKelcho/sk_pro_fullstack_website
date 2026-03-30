@@ -13,17 +13,42 @@ const SENSITIVE_HEADERS = [
     'set-cookie',
 ];
 
+const SENSITIVE_QUERY_PARAMS = ['code', 'token', 'refreshToken', 'state', 'session_state'];
+
+const parseSampleRate = (value: string | undefined, fallback: number) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1 ? parsed : fallback;
+};
+
+const sanitizeUrl = (rawUrl: string) => {
+    try {
+        const url = new URL(rawUrl);
+        for (const key of SENSITIVE_QUERY_PARAMS) {
+            if (url.searchParams.has(key)) {
+                url.searchParams.set(key, '[Filtered]');
+            }
+        }
+        return url.toString();
+    } catch {
+        return rawUrl;
+    }
+};
+
 export const initSentry = () => {
     if (process.env.SENTRY_DSN) {
+        const isProduction = process.env.NODE_ENV === 'production';
+        const tracesSampleRate = parseSampleRate(process.env.SENTRY_TRACES_SAMPLE_RATE, isProduction ? 0.15 : 1.0);
+        const profilesSampleRate = parseSampleRate(process.env.SENTRY_PROFILES_SAMPLE_RATE, isProduction ? 0.0 : 1.0);
+
         Sentry.init({
             dsn: process.env.SENTRY_DSN,
             integrations: [
                 nodeProfilingIntegration(),
             ],
             // Performance Monitoring
-            tracesSampleRate: 1.0,
+            tracesSampleRate,
             // Set sampling rate for profiling - this is relative to tracesSampleRate
-            profilesSampleRate: 1.0,
+            profilesSampleRate,
 
             environment: process.env.NODE_ENV || 'development',
 
@@ -31,6 +56,9 @@ export const initSentry = () => {
             sendDefaultPii: false,
 
             beforeSend(event) {
+                if (event.request?.url) {
+                    event.request.url = sanitizeUrl(event.request.url);
+                }
                 // Hassas request header'larını temizle
                 if (event.request?.headers) {
                     for (const header of SENSITIVE_HEADERS) {

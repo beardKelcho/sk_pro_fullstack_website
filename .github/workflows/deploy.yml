@@ -21,11 +21,11 @@ jobs:
 
       - name: Install Server Dependencies
         working-directory: ./server
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Install Client Dependencies
         working-directory: ./client
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Typecheck Server
         working-directory: ./server

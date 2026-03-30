@@ -46,7 +46,7 @@ jobs:
 
       - name: Install Client Dependencies
         working-directory: ./client
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build Next.js Application
         working-directory: ./client

@@ -27,7 +27,7 @@ jobs:
 
       - name: Bağımlılıkları Yükle
         working-directory: ./client
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Next.js Projesini Derle
         working-directory: ./client
@@ -59,7 +59,7 @@ jobs:
 
       - name: Bağımlılıkları Yükle
         working-directory: ./client
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Next.js Projesini Derle
         working-directory: ./client

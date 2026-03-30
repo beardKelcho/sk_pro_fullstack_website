@@ -32,7 +32,10 @@ const JWT_2FA_SECRET = (process.env.JWT_SECRET || 'sk-dev-only-secret-not-for-pr
 
 // Development modunda JWT_SECRET durumunu logla (değeri loglanmaz)
 if (process.env.NODE_ENV === 'development') {
-  logger.info('JWT_SECRET configured', { status: JWT_SECRET ? 'Yes (length: ' + JWT_SECRET.length + ')' : 'No (using default)' });
+  logger.info('JWT secrets configured', {
+    accessSecretSource: process.env.JWT_SECRET ? 'env' : 'fallback',
+    refreshSecretSource: process.env.JWT_REFRESH_SECRET ? 'env' : 'fallback',
+  });
 }
 
 export const createTokenHash = (token: string): string => {
@@ -95,4 +98,3 @@ export const isMobileClient = (req: { headers?: Record<string, any> }): boolean 
   const value = raw.toLowerCase().trim();
   return value === 'mobile' || value === 'expo' || value === 'react-native';
 };
-

@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 import {
     getDashboardStats,
     getDashboardCharts,
@@ -38,7 +38,7 @@ export const useDashboard = () => {
     const [recentProjects, setRecentProjects] = useState<Project[]>([]);
     const [upcomingMaintenances, setUpcomingMaintenances] = useState<UpcomingMaintenance[]>([]);
 
-    const loadCharts = async () => {
+    const loadCharts = useCallback(async () => {
         setChartsLoading(true);
         try {
             const charts = await getDashboardCharts(7);
@@ -53,9 +53,9 @@ export const useDashboard = () => {
         } finally {
             setChartsLoading(false);
         }
-    };
+    }, []);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         setChartsLoading(false);
         try {
@@ -97,11 +97,11 @@ export const useDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [loadCharts]);
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        void fetchData();
+    }, [fetchData]);
 
     return {
         stats,

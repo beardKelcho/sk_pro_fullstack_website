@@ -1,4 +1,5 @@
 import apiClient from './api/axios';
+import logger from '@/utils/logger';
 
 class ReportService {
     async downloadInventoryReport(format: 'excel' | 'pdf'): Promise<void> {
@@ -15,7 +16,7 @@ class ReportService {
             link.click();
             link.remove();
         } catch (error) {
-            console.error('Envanter raporu indirme hatası:', error);
+            logger.error('Envanter raporu indirme hatası:', error);
             throw error;
         }
     }
@@ -34,7 +35,7 @@ class ReportService {
             link.click();
             link.remove();
         } catch (error) {
-            console.error('Proje raporu indirme hatası:', error);
+            logger.error('Proje raporu indirme hatası:', error);
             throw error;
         }
     }

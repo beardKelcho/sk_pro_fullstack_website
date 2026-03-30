@@ -342,8 +342,7 @@ class SiteService {
             siteContent.data = contentData;
             // 'order' removed from schema, ignoring parameter
             if (isActive !== undefined) siteContent.isActive = isActive;
-            // eslint-disable-next-line no-console
-            console.log('Modified content for section (createOrUpdate):', section);
+            logger.debug('Site content updated for section', { section });
             siteContent.markModified('data');
             await siteContent.save();
         } else {
@@ -383,14 +382,11 @@ class SiteService {
         // if (data.order !== undefined) siteContent.order = data.order; // removed
         if (data.isActive !== undefined) siteContent.isActive = data.isActive;
 
-        // eslint-disable-next-line no-console
-        console.log('Modified content (updateContentById) for id:', id);
+        logger.debug('Site content updated by id', { id });
         siteContent.markModified('data');
         await siteContent.save();
 
         const docObj = siteContent.toObject() as unknown as Record<string, unknown>;
-        // eslint-disable-next-line no-console
-        console.log('SITE_CONTENT_SAVED:', docObj.data);
         docObj.data = await this.fixContentUrls(docObj.data);
 
         await this.invalidateCache('site:content*');

@@ -4,9 +4,18 @@ import { Suspense } from 'react';
 import logger from '@/utils/logger';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import CommentsPanel from '@/components/admin/CommentsPanel';
+
+const CommentsPanel = dynamic(() => import('@/components/admin/CommentsPanel'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-lg bg-white p-4 text-sm text-gray-500 shadow-sm dark:bg-gray-800 dark:text-gray-400">
+      Yorumlar yükleniyor…
+    </div>
+  ),
+});
 
 // Görev, Kullanıcı ve Proje türleri
 interface Task {

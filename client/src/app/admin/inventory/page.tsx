@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import type { InventoryItem, Category, Location } from '@/services/inventoryService';
 import { Pencil, QrCode, Trash2, ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import logger from '@/utils/logger';
 
 import {
     useReactTable,
@@ -68,7 +69,7 @@ export default function InventoryPage() {
             setCategories(catsRes.data);
             setLocations(locsRes.data);
         } catch (error) {
-            console.error('Meta verileri yüklenemedi', error);
+            logger.error('Meta verileri yüklenemedi', error);
         }
     };
 

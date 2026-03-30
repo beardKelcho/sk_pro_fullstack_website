@@ -2,13 +2,17 @@
 import { Suspense } from 'react';
 
 import LazyImage from '@/components/common/LazyImage';
-import Image from 'next/image';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useQRCode, useUpdateQRCode, useDeleteQRCode, useRegenerateQRImage } from '@/services/qrCodeService';
 import { toast } from 'react-toastify';
+
+const QRCodeDetailModals = dynamic(() => import('@/components/admin/qr-codes/QRCodeDetailModals'), {
+  ssr: false,
+});
 
 function QRCodeDetailPageContent() {
   const searchParams = useSearchParams();
@@ -41,7 +45,7 @@ function QRCodeDetailPageContent() {
       setQrImage(result.qrImage);
       if (opts?.openModal) setShowQRImageModal(true);
       if (!opts?.silent) toast.success('QR kod görseli hazır');
-    } catch (err) {
+    } catch {
       setQrImageError('QR kod görseli alınamadı');
       if (!opts?.silent) toast.error('QR kod görseli alınamadı');
     } finally {
@@ -108,6 +112,8 @@ function QRCodeDetailPageContent() {
   const handleRegenerateImage = async () => {
     await loadQrImage({ openModal: true });
   };
+
+  const hasOpenModal = showEditModal || showDeleteModal || (showQRImageModal && Boolean(qrImage));
 
   return (
     <div className="p-6">
@@ -386,147 +392,23 @@ function QRCodeDetailPageContent() {
         </div>
       </div>
 
-      {/* Düzenleme Modalı */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">QR Kod Düzenle</h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Başlık
-                </label>
-                <input
-                  type="text"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Açıklama
-                </label>
-                <textarea
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={editForm.isActive}
-                    onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Aktif</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                İptal
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                disabled={updateMutation.isPending}
-                className="flex-1 px-4 py-2 bg-[#0066CC] dark:bg-primary-light text-white rounded hover:bg-[#0055AA] dark:hover:bg-primary disabled:opacity-50"
-              >
-                {updateMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Silme Onay Modalı */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">QR Kod Sil</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              Bu QR kodunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm tarama geçmişi de silinecektir.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                İptal
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteMutation.isPending}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Siliniyor...' : 'Sil'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QR Görsel Modalı */}
-      {showQRImageModal && qrImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">QR Kod Görseli</h3>
-              <button
-                onClick={() => {
-                  setShowQRImageModal(false);
-                  setQrImage(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="text-center mb-4">
-              <Image
-                src={qrImage || ''}
-                alt="QR Kod"
-                width={256}
-                height={256}
-                className="mx-auto border border-gray-200 dark:border-gray-700 rounded"
-                priority
-              />
-              <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                QR kodu yazdırmak için sağ tıklayıp &quot;Resmi Farklı Kaydet&quot; seçeneğini kullanabilirsiniz.
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setShowQRImageModal(false);
-                  setQrImage(null);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                Kapat
-              </button>
-              <a
-                href={qrImage}
-                download={`${qrCode.title || qrCode.code}-qr-code.png`}
-                className="flex-1 text-center px-4 py-2 bg-[#0066CC] dark:bg-primary-light text-white rounded hover:bg-[#0055AA] dark:hover:bg-primary"
-              >
-                İndir
-              </a>
-            </div>
-          </div>
-        </div>
+      {hasOpenModal && (
+        <QRCodeDetailModals
+          showEditModal={showEditModal}
+          showDeleteModal={showDeleteModal}
+          showQRImageModal={showQRImageModal}
+          qrImage={qrImage}
+          qrCodeLabel={qrCode.title || qrCode.code}
+          editForm={editForm}
+          updatePending={updateMutation.isPending}
+          deletePending={deleteMutation.isPending}
+          onEditFieldChange={(field, value) => setEditForm((prev) => ({ ...prev, [field]: value }))}
+          onCloseEdit={() => setShowEditModal(false)}
+          onSaveEdit={handleSaveEdit}
+          onCloseDelete={() => setShowDeleteModal(false)}
+          onConfirmDelete={handleDelete}
+          onCloseImage={() => setShowQRImageModal(false)}
+        />
       )}
     </div>
   );

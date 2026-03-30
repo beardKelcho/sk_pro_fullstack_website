@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import api from '@/services/api/axios';
 import { toast } from 'react-toastify';
 import { Calendar, RefreshCw, CheckCircle, ExternalLink } from 'lucide-react';
+import logger from '@/utils/logger';
 
 const CalendarOAuthContent = () => {
     const searchParams = useSearchParams();
@@ -50,7 +51,7 @@ const CalendarOAuthContent = () => {
             const res = await api.get('/calendar/status');
             setStatus(res.data);
         } catch (error) {
-            console.error('Error fetching calendar status', error);
+            logger.error('Calendar status alınamadı', error);
             toast.error('Bağlantı durumları alınamadı');
         } finally {
             setLoading(false);

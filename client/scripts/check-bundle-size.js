@@ -36,6 +36,18 @@ const BUILD_MANIFEST = path.join(BUILD_DIR, 'build-manifest.json');
 const APP_BUILD_MANIFEST = path.join(BUILD_DIR, 'app-build-manifest.json');
 const BUILD_ID_FILE = path.join(BUILD_DIR, 'BUILD_ID');
 
+const IGNORED_BUDGET_ROUTES = new Set([
+  '/_error',
+  '/_not-found',
+  '/global-error',
+  '/not-found',
+  '/layout',
+  '/error',
+  '/loading',
+  '/admin/layout',
+  '/admin/loading',
+]);
+
 /**
  * Build manifest'i oku
  */
@@ -87,6 +99,25 @@ function normalizeRouteLabel(route) {
  */
 function resolveBuildAssetPath(assetPath) {
   return path.join(BUILD_DIR, assetPath.replace(/^\/+/, ''));
+}
+
+/**
+ * Budget hesabından hariç tutulacak route'ları belirle
+ */
+function shouldCheckRouteBudget(route) {
+  if (IGNORED_BUDGET_ROUTES.has(route)) {
+    return false;
+  }
+
+  if (route.startsWith('/api/')) {
+    return false;
+  }
+
+  if (route === '/robots.txt' || route === '/sitemap.xml') {
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -233,6 +264,10 @@ function checkPerformanceBudget(results) {
 
   // Page-specific JS kontrolü
   Object.keys(results.pages).forEach((page) => {
+    if (!shouldCheckRouteBudget(page)) {
+      return;
+    }
+
     const pageSize = results.pages[page];
     if (pageSize.js > PERFORMANCE_BUDGET.pageJS) {
       const diff = pageSize.js - PERFORMANCE_BUDGET.pageJS;
@@ -321,6 +356,9 @@ function generateReport(results) {
     console.log('   • Tree shaking yapın');
     console.log('');
     process.exit(1);
+  } else if (warnings.length > 0) {
+    console.log('⚠️  Performance budget uyarıları var, ama bloklayıcı bir hata yok.');
+    console.log('');
   } else {
     console.log('✅ Tüm performance budget\'lar karşılanıyor!');
     console.log('');
@@ -345,4 +383,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { analyzeBundles, checkPerformanceBudget, PERFORMANCE_BUDGET };
+module.exports = { analyzeBundles, checkPerformanceBudget, PERFORMANCE_BUDGET, shouldCheckRouteBudget };

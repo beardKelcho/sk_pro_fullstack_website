@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import logger from '@/utils/logger';
 
 const DownloadPage = () => {
     // Statik yedek linkler
@@ -34,8 +35,8 @@ const DownloadPage = () => {
                     setVersion('Sürüm Bulunamadı');
                 }
             })
-            .catch(err => {
-                console.error("En son sürüm bilgileri alınamadı:", err);
+            .catch(error => {
+                logger.error('En son sürüm bilgileri alınamadı', error);
                 setVersion('Bağlantı Hatası');
             });
     }, []);

@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import ExportButton from '@/components/admin/ExportButton';
 import { getAllMaintenance, deleteMaintenance, getStatusLabel, getTypeLabel, getPriorityLabel } from '@/services/maintenanceService';
 import type { Maintenance } from '@/services/maintenanceService';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+
+const ExportButton = dynamic(() => import('@/components/admin/ExportButton'), {
+  ssr: false,
+  loading: () => (
+    <div className="inline-flex h-10 min-w-[120px] animate-pulse items-center rounded-md bg-gray-200 dark:bg-gray-700" />
+  ),
+});
 
 // Renk ayarları
 const statusColors = {
@@ -54,7 +61,7 @@ export default function MaintenanceList() {
       try {
         const data = await getAllMaintenance();
         setMaintenance(data.maintenances || []);
-      } catch (err) {
+      } catch {
         setError('Bakım kayıtları alınamadı.');
       } finally {
         setLoading(false);

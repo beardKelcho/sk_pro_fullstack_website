@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import reportService from '@/services/reportService';
 import inventoryService from '@/services/inventoryService';
 import { projectApi } from '@/services/api/project';
+import logger from '@/utils/logger';
 
 // Recharts kütüphanesini lazy load olarak içe aktar
 const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
@@ -71,8 +72,8 @@ export default function ReportsPage() {
                 }));
                 setProjectStatusStats(projData);
 
-            } catch (e) {
-                console.error("Dashboard verisi alınamadı", e);
+            } catch (error) {
+                logger.error('Dashboard verisi alınamadı', error);
             } finally {
                 setLoadingStats(false);
             }

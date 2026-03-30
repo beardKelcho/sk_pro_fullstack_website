@@ -416,7 +416,7 @@ export const syncCalendarImport = async (req: Request, res: Response) => {
     const user = req.user;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const integration = await CalendarIntegration.findOne({ _id: integrationId, user: (user as any).id });
+    const integration = await CalendarIntegration.findOne({ _id: integrationId, user: (user as any).id }).select('+accessToken +refreshToken');
     if (!integration || !integration.syncEnabled) {
       return res.status(404).json({
         success: false,
@@ -533,7 +533,7 @@ export const syncCalendarExport = async (req: Request, res: Response) => {
     const user = req.user;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const integration = await CalendarIntegration.findOne({ _id: integrationId, user: (user as any).id });
+    const integration = await CalendarIntegration.findOne({ _id: integrationId, user: (user as any).id }).select('+accessToken +refreshToken');
     if (!integration || !integration.syncEnabled) {
       return res.status(404).json({
         success: false,

@@ -9,31 +9,11 @@ import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
 import { Session } from '../models';
 import { createTokenHash, decode2FAChallenge, generateTokenPair, isMobileClient } from '../utils/authTokens';
+import { encryptField, decryptField } from '../utils/encryption';
 
-// Encryption/Decryption utilities for 2FA secrets
-if (process.env.NODE_ENV === 'production' && !process.env.ENCRYPTION_KEY) {
-  throw new Error('FATAL: ENCRYPTION_KEY environment variable is required in production');
-}
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'dev-only-encryption-key-32chars!!';
-const ALGORITHM = 'aes-256-cbc';
-
-function encryptSecret(secret: string): string {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY.slice(0, 32), 'utf8'), iv);
-  let encrypted = cipher.update(secret, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  return iv.toString('hex') + ':' + encrypted;
-}
-
-function decryptSecret(encryptedSecret: string): string {
-  const parts = encryptedSecret.split(':');
-  const iv = Buffer.from(parts[0], 'hex');
-  const encrypted = parts[1];
-  const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY.slice(0, 32), 'utf8'), iv);
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
+// Backwards-compatible aliases
+const encryptSecret = encryptField;
+const decryptSecret = decryptField;
 
 /**
  * 2FA kurulumunu başlat - QR kod ve secret üret
@@ -261,8 +241,8 @@ export const disable2FA = async (req: Request, res: Response) => {
       }
     }
 
-    // Şifre zorunlu, token veya backup kod önerilir
-    if (isPasswordValid && (isValid2FA || !token && !backupCode)) {
+    // Şifre + TOTP veya backup code zorunlu
+    if (isPasswordValid && isValid2FA) {
       user.is2FAEnabled = false;
       user.twoFactorSecretHash = undefined;
       user.backupCodes = [];
@@ -280,7 +260,7 @@ export const disable2FA = async (req: Request, res: Response) => {
 
     return res.status(400).json({
       success: false,
-      message: '2FA devre dışı bırakmak için şifre gereklidir',
+      message: '2FA devre dışı bırakmak için şifre ve TOTP kodu veya backup kod gereklidir',
     });
   } catch (error: unknown) {
       const appError = error as AppError;
@@ -431,7 +411,8 @@ export const verify2FALogin = async (req: Request, res: Response) => {
     }
 
     // Web için HttpOnly cookie — token body'de sadece mobile'a dönüyor (auth.controller.ts ile tutarlı)
-    const cookieOpts = { httpOnly: true, secure: true, sameSite: 'none' as const, path: '/' };
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOpts = { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' as const : 'lax' as const, path: '/' };
     res.cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 });
     res.cookie('accessToken', accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 });
 
@@ -439,8 +420,7 @@ export const verify2FALogin = async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       message: '2FA doğrulaması başarılı',
-      accessToken,
-      ...(mobile ? { refreshToken } : {}),
+      ...(mobile ? { accessToken, refreshToken } : {}),
       user: {
         id: user._id,
         name: user.name,

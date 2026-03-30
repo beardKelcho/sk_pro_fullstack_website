@@ -108,6 +108,7 @@ export const deliverPendingWebhooks = async (limit = 50) => {
         headers,
         body,
         signal: controller.signal,
+        redirect: 'error',
       });
 
       delivery.attempts = attemptNo;
@@ -186,7 +187,7 @@ export const sendTestWebhook = async (webhookId: string) => {
   const t = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetch(wh.url, { method: 'POST', headers, body, signal: controller.signal });
+    const res = await fetch(wh.url, { method: 'POST', headers, body, signal: controller.signal, redirect: 'error' });
     const text = await res.text().catch(() => '');
     return { ok: res.ok, status: res.status, body: text.slice(0, 1000) };
   } finally {

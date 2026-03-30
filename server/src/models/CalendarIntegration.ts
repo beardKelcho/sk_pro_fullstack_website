@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { encryptField, decryptField } from '../utils/encryption';
 
 export interface ICalendarIntegration extends Document {
   user: mongoose.Types.ObjectId;
@@ -34,10 +35,16 @@ const CalendarIntegrationSchema: Schema = new Schema(
     accessToken: {
       type: String,
       required: true,
+      select: false,
+      set: (v: string) => v && !v.includes(':') ? encryptField(v) : v,
+      get: (v: string) => { try { return v && v.includes(':') ? decryptField(v) : v; } catch { return v; } },
     },
     refreshToken: {
       type: String,
       required: false,
+      select: false,
+      set: (v: string) => v && !v.includes(':') ? encryptField(v) : v,
+      get: (v: string) => { try { return v && v.includes(':') ? decryptField(v) : v; } catch { return v; } },
     },
     expiresAt: {
       type: Date,
@@ -81,6 +88,8 @@ const CalendarIntegrationSchema: Schema = new Schema(
   },
   {
     timestamps: true,
+    toJSON: { getters: true },
+    toObject: { getters: true },
   }
 );
 

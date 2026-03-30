@@ -50,11 +50,11 @@ export class AuthController {
       const mobile = isMobileClient(req);
 
       try {
-        // Cookie Options (User Requested: Always Secure/None)
+        const isProduction = process.env.NODE_ENV === 'production';
         const cookieOptions = {
           httpOnly: true,
-          secure: true, // Render'da zorunlu
-          sameSite: 'none' as const, // Cross-domain için ŞART
+          secure: isProduction,
+          sameSite: isProduction ? 'none' as const : 'lax' as const,
           path: '/'
         };
 
@@ -72,8 +72,7 @@ export class AuthController {
 
       res.status(200).json({
         success: true,
-        accessToken,
-        ...(mobile ? { refreshToken } : {}),
+        ...(mobile ? { accessToken, refreshToken } : {}),
         user: {
           id: result.user._id,
           name: result.user.name,
@@ -142,11 +141,11 @@ export class AuthController {
 
       const result: RefreshResult = await authService.refreshToken(refreshTokenRaw);
 
-      // Cookie Options
+      const isProduction = process.env.NODE_ENV === 'production';
       const cookieOptions = {
         httpOnly: true,
-        secure: true,
-        sameSite: 'none' as const,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' as const : 'lax' as const,
         path: '/'
       };
 
@@ -158,8 +157,7 @@ export class AuthController {
 
       return res.status(200).json({
         success: true,
-        accessToken: result.accessToken,
-        ...(mobile ? { refreshToken: result.refreshToken } : {}),
+        ...(mobile ? { accessToken: result.accessToken, refreshToken: result.refreshToken } : {}),
       });
 
     } catch (error: unknown) {

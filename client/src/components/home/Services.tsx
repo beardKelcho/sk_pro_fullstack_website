@@ -2,15 +2,16 @@
 
 import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
-import { Monitor, Server, Cpu, Layers, Activity } from 'lucide-react';
+import Icon from '@/components/common/Icon';
 
-// Icon mapping for Lucide icons
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-    Monitor,
-    Server,
-    Cpu,
-    Layers,
-    Activity,
+type ServiceIconName = 'monitor' | 'server' | 'cpu' | 'layers' | 'activity';
+
+const ICON_MAP: Record<string, ServiceIconName> = {
+    Monitor: 'monitor',
+    Server: 'server',
+    Cpu: 'cpu',
+    Layers: 'layers',
+    Activity: 'activity',
 };
 
 export interface Service {
@@ -53,8 +54,7 @@ const Services: React.FC<ServicesProps> = ({ initialServices = [] }) => {
                     {services.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
                             {services.map((service) => {
-                                // Get the icon component
-                                const IconComponent = ICON_MAP[service.icon] || Monitor;
+                                const iconName = ICON_MAP[service.icon] || 'monitor';
 
                                 return (
                                     <div
@@ -63,7 +63,7 @@ const Services: React.FC<ServicesProps> = ({ initialServices = [] }) => {
                                     >
                                         {/* Icon with Gradient Background */}
                                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-600/20 mb-6 group-hover:scale-110 transition-transform duration-300">
-                                            <IconComponent className="w-8 h-8 text-cyan-400" />
+                                            <Icon name={iconName} className="w-8 h-8 text-cyan-400" />
                                         </div>
 
                                         {/* Title & Category */}

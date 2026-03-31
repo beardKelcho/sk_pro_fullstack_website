@@ -44,67 +44,66 @@ describe('RBAC Yönetimi', () => {
       cy.visit('/admin/permissions');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Kullanıcı seçimi - gerçek assertion ile
-      cy.get('select[name*="user"], button:contains("Kullanıcı"), table tbody tr', { timeout: 10000 })
-        .first()
+      cy.contains('Kullanıcı Seçin')
+        .parent()
+        .find('select', { timeout: 10000 })
         .should('exist')
         .scrollIntoView()
         .should('be.visible')
-        .click({ force: true });
+        .find('option')
+        .should('have.length.at.least', 2);
       
-      cy.wait(1000);
-      
-      // Kullanıcı seçildiğini doğrula (form veya detay paneli açılmalı)
-      cy.get('body').then(($body) => {
-        const hasForm = $body.find('form, [class*="form"], select[name*="role"]').length > 0;
-        expect(hasForm).to.be.true;
-      });
+      cy.contains('Kullanıcı Seçin')
+        .parent()
+        .find('select')
+        .select(1, { force: true });
+
+      cy.contains('Rol Seçin', { timeout: 10000 }).should('exist');
     });
 
     it('rol seçilebilmeli', () => {
       cy.visit('/admin/permissions');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Önce bir kullanıcı seç
-      cy.get('table tbody tr, [class*="user-item"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .click({ force: true });
+      cy.contains('Kullanıcı Seçin')
+        .parent()
+        .find('select', { timeout: 10000 })
+        .select(1, { force: true });
       
-      cy.wait(1000);
-      
-      // Rol seçimi - gerçek assertion ile
-      cy.get('select[name*="role"], select#role', { timeout: 10000 })
+      cy.contains('Rol Seçin')
+        .parent()
+        .find('select', { timeout: 10000 })
         .should('exist')
         .scrollIntoView()
         .should('be.visible')
         .find('option')
         .should('have.length.at.least', 1);
       
-      // Rol seçeneklerinden birini seç
-      cy.get('select[name*="role"], select#role')
+      cy.contains('Rol Seçin')
+        .parent()
+        .find('select')
         .select(1, { force: true })
-        .should('have.value');
+        .invoke('val')
+        .should('not.be.empty');
     });
 
     it('rol atanabilmeli', () => {
       cy.visit('/admin/permissions');
       cy.get('body', { timeout: 15000 }).should('be.visible');
       
-      // Kullanıcı seç - gerçek assertion ile
-      cy.get('table tbody tr, [class*="user-item"]', { timeout: 10000 })
-        .first()
-        .should('exist')
-        .click({ force: true });
+      cy.contains('Kullanıcı Seçin')
+        .parent()
+        .find('select', { timeout: 10000 })
+        .select(1, { force: true });
       
-      cy.wait(1000);
-      
-      // Rol seç - gerçek assertion ile
-      cy.get('select[name*="role"], select#role', { timeout: 10000 })
+      cy.contains('Rol Seçin')
+        .parent()
+        .find('select', { timeout: 10000 })
         .should('exist')
         .should('be.visible')
         .select('Teknisyen', { force: true })
-        .should('have.value');
+        .invoke('val')
+        .should('not.be.empty');
       
       // Kaydet butonu - gerçek assertion ile
       cy.get('button:contains("Kaydet"), button:contains("Save"), button[type="submit"]', { timeout: 10000 })

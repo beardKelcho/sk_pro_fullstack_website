@@ -5,7 +5,6 @@ import StageExperience, { StageSectionTitle } from '@/components/common/StageExp
 import Icon from '@/components/common/Icon';
 import dynamic from 'next/dynamic';
 import { ContactContent } from '@/types/cms';
-import { Instagram, Linkedin } from 'lucide-react';
 
 const ContactForm = dynamic(() => import('@/components/common/ContactForm'), { ssr: false });
 
@@ -90,7 +89,7 @@ const Contact: React.FC<ContactProps> = ({ content }) => {
                                                     rel="noopener noreferrer"
                                                     className="w-10 h-10 rounded-lg bg-[#0066CC]/20 flex items-center justify-center hover:bg-[#0066CC]/40 transition-colors"
                                                 >
-                                                    <Instagram className="w-5 h-5 text-[#0066CC]" />
+                                                    <Icon name="instagram" className="w-5 h-5 text-[#0066CC]" />
                                                 </a>
                                             )}
                                             {content.socialLinks.linkedin && (
@@ -100,7 +99,7 @@ const Contact: React.FC<ContactProps> = ({ content }) => {
                                                     rel="noopener noreferrer"
                                                     className="w-10 h-10 rounded-lg bg-[#0066CC]/20 flex items-center justify-center hover:bg-[#0066CC]/40 transition-colors"
                                                 >
-                                                    <Linkedin className="w-5 h-5 text-[#0066CC]" />
+                                                    <Icon name="linkedin" className="w-5 h-5 text-[#0066CC]" />
                                                 </a>
                                             )}
                                         </div>

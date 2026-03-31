@@ -253,6 +253,7 @@ const main = async () => {
   ];
   
   const optionalServerVars = [
+    'FRONTEND_URL',
     'CLIENT_URL',
     'CORS_ORIGIN',
     'NODE_ENV',

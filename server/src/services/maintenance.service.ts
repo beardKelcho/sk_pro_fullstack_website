@@ -6,6 +6,7 @@ import { AppError } from '../types/common';
 interface CreateMaintenanceData {
     equipment: string;
     type: string;
+    priority?: string;
     description: string;
     scheduledDate: Date;
     status?: string;
@@ -18,6 +19,7 @@ interface CreateMaintenanceData {
 interface UpdateMaintenanceData {
     equipment?: string;
     type?: string;
+    priority?: string;
     description?: string;
     scheduledDate?: Date;
     completedDate?: Date;
@@ -39,6 +41,7 @@ class MaintenanceService {
         const [maintenance] = await Maintenance.create([{
             equipment: data.equipment,
             type: data.type,
+            priority: data.priority || 'MEDIUM',
             description: data.description,
             scheduledDate: data.scheduledDate,
             status: data.status || 'SCHEDULED',

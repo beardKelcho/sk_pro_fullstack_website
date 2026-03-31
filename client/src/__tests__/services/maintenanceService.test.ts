@@ -2,7 +2,19 @@
  * Maintenance Service Tests
  */
 
-import { getAllMaintenance, getMaintenanceById, createMaintenance, updateMaintenance, deleteMaintenance, useMaintenance, useMaintenanceById } from '@/services/maintenanceService';
+import {
+  createMaintenance,
+  deleteMaintenance,
+  getAllMaintenance,
+  getMaintenanceById,
+  mapBackendMaintenancePriorityToFrontend,
+  mapBackendMaintenanceStatusToFrontend,
+  mapBackendMaintenanceTypeToFrontend,
+  mapFrontendMaintenancePriorityToBackend,
+  mapFrontendMaintenanceStatusToBackend,
+  mapFrontendMaintenanceTypeToBackend,
+  updateMaintenance,
+} from '@/services/maintenanceService';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -57,6 +69,8 @@ describe('Maintenance Service', () => {
       const result = await getAllMaintenance({
         status: 'SCHEDULED',
         type: 'ROUTINE',
+        priority: 'HIGH',
+        search: 'kamera',
         page: 1,
         limit: 10,
       });
@@ -68,6 +82,8 @@ describe('Maintenance Service', () => {
           params: expect.objectContaining({
             status: 'SCHEDULED',
             type: 'ROUTINE',
+            priority: 'HIGH',
+            search: 'kamera',
             page: 1,
             limit: 10,
           }),
@@ -190,5 +206,24 @@ describe('Maintenance Service', () => {
       await expect(deleteMaintenance('1')).rejects.toThrow();
     });
   });
-});
 
+  describe('mapping helpers', () => {
+    it('should map backend maintenance values to frontend labels', () => {
+      expect(mapBackendMaintenanceTypeToFrontend('ROUTINE')).toBe('Periyodik Bakım');
+      expect(mapBackendMaintenanceStatusToFrontend('IN_PROGRESS')).toBe('Devam Ediyor');
+      expect(mapBackendMaintenancePriorityToFrontend('URGENT')).toBe('Acil');
+    });
+
+    it('should map frontend labels to backend maintenance values', () => {
+      expect(mapFrontendMaintenanceTypeToBackend('Periyodik')).toBe('ROUTINE');
+      expect(mapFrontendMaintenanceTypeToBackend('Kalibrasyon')).toBe('INSPECTION');
+      expect(mapFrontendMaintenanceStatusToBackend('Tamamlandı')).toBe('COMPLETED');
+      expect(mapFrontendMaintenancePriorityToBackend('Yüksek')).toBe('HIGH');
+    });
+
+    it('should provide safe defaults for optional maintenance fields', () => {
+      expect(mapBackendMaintenancePriorityToFrontend(undefined)).toBe('Orta');
+      expect(mapFrontendMaintenancePriorityToBackend('Bilinmiyor')).toBeUndefined();
+    });
+  });
+});

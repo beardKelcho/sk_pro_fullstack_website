@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
-import { Play, X, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import Icon from '@/components/common/Icon';
 import NextImage from 'next/image';
 
 export interface Project {
@@ -125,7 +125,7 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                                 }`}
                         >
-                            <ImageIcon className="w-5 h-5 inline-block mr-2" />
+                            <Icon name="image" className="w-5 h-5 inline-block mr-2" />
                             Fotoğraflar
                         </button>
                         <button
@@ -135,7 +135,7 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                                 }`}
                         >
-                            <Play className="w-5 h-5 inline-block mr-2" />
+                            <Icon name="play" className="w-5 h-5 inline-block mr-2" />
                             Videolar
                         </button>
                     </div>
@@ -179,7 +179,7 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                                     {/* Gallery Badge */}
                                                     {project.imageUrls && project.imageUrls.length > 1 && (
                                                         <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-blue-600/90 text-white text-xs font-semibold flex items-center gap-1 backdrop-blur-sm">
-                                                            <ImageIcon className="w-3 h-3" />
+                                                            <Icon name="image" className="w-3 h-3" />
                                                             {project.imageUrls.length} Fotoğraf
                                                         </div>
                                                     )}
@@ -188,7 +188,7 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                                         <div className="text-center">
                                                             <div className="w-16 h-16 mx-auto rounded-full bg-blue-600/90 flex items-center justify-center backdrop-blur-sm mb-2">
-                                                                <ImageIcon className="w-8 h-8 text-white" />
+                                                                <Icon name="image" className="w-8 h-8 text-white" />
                                                             </div>
                                                             <p className="text-white font-semibold">Galeriyi Görüntüle</p>
                                                         </div>
@@ -270,7 +270,7 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                                 {/* Play Button */}
                                                 <div className="absolute inset-0 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-300">
                                                     <div className="w-20 h-20 rounded-full bg-blue-600/90 flex items-center justify-center backdrop-blur-sm">
-                                                        <Play className="w-10 h-10 text-white ml-2" fill="white" />
+                                                        <Icon name="play" className="w-10 h-10 text-white ml-2" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -310,7 +310,7 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                     onClick={() => setLightbox(null)}
                                     className="fixed top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 transition-all z-[110] backdrop-blur-md border border-white/20 group"
                                 >
-                                    <X className="w-8 h-8 text-white group-hover:rotate-90 transition-transform duration-300" />
+                                    <Icon name="close" className="w-8 h-8 text-white group-hover:rotate-90 transition-transform duration-300" />
                                     <span className="sr-only">Kapat</span>
                                 </button>
 
@@ -336,13 +336,13 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                             onClick={prevImage}
                                             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
                                         >
-                                            <ChevronLeft className="w-8 h-8 text-white" />
+                                            <Icon name="arrow-left" className="w-8 h-8 text-white" />
                                         </button>
                                         <button
                                             onClick={nextImage}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
                                         >
-                                            <ChevronRight className="w-8 h-8 text-white" />
+                                            <Icon name="arrow-right" className="w-8 h-8 text-white" />
                                         </button>
 
                                         {/* Counter */}
@@ -375,7 +375,7 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                     onClick={() => setSelectedVideo(null)}
                                     className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
                                 >
-                                    <X className="w-6 h-6 text-white" />
+                                    <Icon name="close" className="w-6 h-6 text-white" />
                                 </button>
 
                                 {/* Title */}

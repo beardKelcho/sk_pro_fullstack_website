@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { hasPermission, Permission } from '@/config/permissions';
+import { hasPermission, Permission } from '@/config/permissionCore';
 import { getStoredUserRole, getStoredUserPermissions } from '@/utils/authStorage';
 
 /**

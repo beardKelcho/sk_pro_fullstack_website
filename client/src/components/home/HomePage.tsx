@@ -6,6 +6,7 @@ import Services, { type Service } from '@/components/home/Services';
 import Projects, { type Project } from '@/components/home/Projects';
 import About from '@/components/home/About';
 import Contact from '@/components/home/Contact';
+import FallbackContentNotice from '@/components/home/FallbackContentNotice';
 import { HeroContent, SiteContent } from '@/types/cms';
 
 type HeroContentInput = HeroContent | { data?: HeroContent | null } | null | undefined;
@@ -26,9 +27,10 @@ interface HomePageProps {
     content: SiteContent;
     services: Service[];
     projects: Project[];
+    fallbackMessage?: string | null;
 }
 
-export default function HomePage({ content, services, projects }: HomePageProps) {
+export default function HomePage({ content, services, projects, fallbackMessage = null }: HomePageProps) {
     const heroData = unwrapHeroContent(content.hero as HeroContentInput);
     const videoUrl = heroData?.videoUrl || heroData?.backgroundVideo || undefined;
 
@@ -46,6 +48,8 @@ export default function HomePage({ content, services, projects }: HomePageProps)
             <About content={content.about} />
 
             <Contact content={content.contact} />
+
+            {fallbackMessage ? <FallbackContentNotice message={fallbackMessage} /> : null}
         </MainLayout>
     );
 }

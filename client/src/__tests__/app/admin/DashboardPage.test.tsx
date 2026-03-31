@@ -49,7 +49,7 @@ describe('Admin dashboard page', () => {
       refresh: refreshMock,
     });
 
-    const DashboardPage = (await import('@/app/admin/dashboard/page')).default;
+    const DashboardPage = (await import('@/components/admin/dashboard/DashboardPageClient')).default;
     render(<DashboardPage />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Yeniden Dene' }));
@@ -81,7 +81,7 @@ describe('Admin dashboard page', () => {
       refresh: refreshMock,
     });
 
-    const DashboardPage = (await import('@/app/admin/dashboard/page')).default;
+    const DashboardPage = (await import('@/components/admin/dashboard/DashboardPageClient')).default;
     render(<DashboardPage />);
 
     expect(screen.getByText('Onay Bekleyen')).toBeInTheDocument();

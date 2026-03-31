@@ -5,6 +5,7 @@ import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
 import cron from 'node-cron';
 import { sendEmail } from '../utils/emailService';
+import { buildClientUrl } from '../config/clientOrigins';
 
 /**
  * Tüm rapor zamanlamalarını getir
@@ -299,7 +300,7 @@ const startScheduledReport = (schedule: unknown) => {
 
       // Email gönder
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const reportUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/api/reports/${(schedule as any)._id}`;
+      const reportUrl = buildClientUrl(`/api/reports/${(schedule as any)._id}`, 'Rapor bağlantısı');
 
       await sendEmail(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -353,4 +354,3 @@ export const startAllScheduledReports = async () => {
     logger.error('Rapor zamanlamaları başlatma hatası:', error);
   }
 };
-

@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import logger from './logger';
 import { renderEmailTemplate } from './emailTemplateRenderer';
+import { buildClientUrl } from '../config/clientOrigins';
 
 const formatDateTr = (d?: Date) => (d ? new Date(d).toLocaleDateString('tr-TR') : '');
 
@@ -256,7 +257,7 @@ export const sendUserInviteEmail = async (
        <p style="color: #d32f2f; font-size: 12px;">⚠️ İlk girişte şifrenizi değiştirmeniz önerilir.</p>`
     : '';
 
-  const adminLoginUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/login`;
+  const adminLoginUrl = buildClientUrl('/admin/login', 'Kullanıcı davet bağlantısı');
 
   const data = {
     userEmail,
@@ -358,4 +359,3 @@ export const sendTaskUpdatedEmail = async (
     html
   );
 };
-

@@ -1,19 +1,23 @@
 import './globals.css';
 import './fonts.css';
 import type { Metadata } from 'next';
-import FooterWrapper from '@/components/layout/FooterWrapper';
 import { Providers } from '@/components/providers';
-import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ErrorProvider } from '@/components/providers/ErrorProvider';
 import { Analytics } from '@vercel/analytics/react';
-import { WebVitals } from '@/components/common/WebVitals';
 import LocalizedErrorBoundary from '@/components/common/LocalizedErrorBoundary';
-import OfflineIndicator from '@/components/common/OfflineIndicator';
-import CommandPalette from '@/components/common/CommandPalette';
+import GlobalClientShell from '@/components/layout/GlobalClientShell';
 import Script from 'next/script';
-import { errorTracker } from '@/utils/errorTracking';
 
+const siteVerification: NonNullable<Metadata['verification']> = {};
+
+if (process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()) {
+  siteVerification.google = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim();
+}
+
+if (process.env.NEXT_PUBLIC_YANDEX_SITE_VERIFICATION?.trim()) {
+  siteVerification.yandex = process.env.NEXT_PUBLIC_YANDEX_SITE_VERIFICATION.trim();
+}
 
 export const metadata: Metadata = {
   title: {
@@ -68,10 +72,7 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-site-verification',
-    yandex: 'your-yandex-verification',
-  },
+  verification: Object.keys(siteVerification).length > 0 ? siteVerification : undefined,
   icons: {
     icon: '/images/sk-logo.png',
     shortcut: '/images/sk-logo.png',
@@ -84,11 +85,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Global error handlers (sadece client-side)
-  if (typeof window !== 'undefined') {
-    errorTracker.logError = errorTracker.logError.bind(errorTracker);
-  }
-
   return (
     <html lang="tr" suppressHydrationWarning dir="ltr" className="dark">
       <head>
@@ -115,7 +111,6 @@ export default function RootLayout({
       </head>
       <body className={`font-sans antialiased min-h-screen bg-black`} suppressHydrationWarning>
         <LocalizedErrorBoundary>
-          <OfflineIndicator />
           {process.env.NEXT_PUBLIC_GA_ID && (
             <>
               <Script
@@ -137,28 +132,12 @@ export default function RootLayout({
           <Providers>
             <ErrorProvider>
               <div className="relative z-10">
-                <CommandPalette />
                 {children}
-                <FooterWrapper />
-                <ToastContainer
-                  position="top-right"
-                  autoClose={5000}
-                  hideProgressBar={false}
-                  newestOnTop
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="dark"
-                />
+                <GlobalClientShell analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
               </div>
             </ErrorProvider>
           </Providers>
           <Analytics />
-          {process.env.NEXT_PUBLIC_GA_ID && (
-            <WebVitals analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
-          )}
         </LocalizedErrorBoundary>
       </body>
     </html>

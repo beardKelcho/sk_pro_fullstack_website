@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IMaintenance extends Document {
   equipment: mongoose.Types.ObjectId;
   type: 'ROUTINE' | 'REPAIR' | 'INSPECTION' | 'UPGRADE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   description: string;
   scheduledDate: Date;
   completedDate?: Date;
@@ -25,6 +26,11 @@ const MaintenanceSchema: Schema = new Schema(
       type: String,
       enum: ['ROUTINE', 'REPAIR', 'INSPECTION', 'UPGRADE'],
       required: [true, 'Bakım tipi gereklidir'],
+    },
+    priority: {
+      type: String,
+      enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'],
+      default: 'MEDIUM',
     },
     description: {
       type: String,
@@ -72,10 +78,11 @@ MaintenanceSchema.index({ scheduledDate: 1, status: 1 });
 MaintenanceSchema.index({ assignedTo: 1, status: 1 });
 // Type ve status ile filtreleme için
 MaintenanceSchema.index({ type: 1, status: 1 });
+// Öncelik ve durum ile filtreleme için
+MaintenanceSchema.index({ priority: 1, status: 1 });
 // Arama için text index (description)
 MaintenanceSchema.index({ description: 'text' });
 // Completed date ile sıralama için
 MaintenanceSchema.index({ completedDate: -1 });
 
 export default mongoose.model<IMaintenance>('Maintenance', MaintenanceSchema);
-

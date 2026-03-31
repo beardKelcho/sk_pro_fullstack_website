@@ -6,6 +6,8 @@ export const metadata = {
   description: 'SK Production gizlilik politikası ve kişisel verilerin korunması hakkında bilgiler.',
 };
 
+const LAST_UPDATED_LABEL = '31 Mart 2026';
+
 export default function PrivacyPolicy() {
   return (
     <MainLayout>
@@ -17,7 +19,7 @@ export default function PrivacyPolicy() {
           
           <div className="prose prose-lg dark:prose-invert max-w-none">
             <p className="text-gray-600 dark:text-gray-300 mb-6">
-              <strong>Son Güncelleme:</strong> {new Date().toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })}
+              <strong>Son Güncelleme:</strong> {LAST_UPDATED_LABEL}
             </p>
 
             <section className="mb-8">
@@ -124,4 +126,3 @@ export default function PrivacyPolicy() {
     </MainLayout>
   );
 }
-

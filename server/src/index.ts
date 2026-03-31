@@ -25,7 +25,7 @@ import fs from 'fs';
 import path from 'path';
 import { initMongooseQueryMonitor } from './utils/monitoring/dbQueryMonitor';
 import { detectSlowQueries } from './utils/queryOptimizer';
-import { getAllowedClientOrigins } from './config/clientOrigins';
+import { getAllowedClientOrigins, getPrimaryClientOrigin } from './config/clientOrigins';
 // Removed unused legacyFileHandler
 
 import { setupExpressErrorHandler } from '@sentry/node';
@@ -42,8 +42,8 @@ initSentry();
 const express = require('express') as typeof import('express');
 
 // Critical Config Check
-if (process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL) {
-  logger.error('CRITICAL: CLIENT_URL environment variable is not defined!');
+if (process.env.NODE_ENV === 'production' && !getPrimaryClientOrigin()) {
+  logger.error('CRITICAL: FRONTEND_URL veya CLIENT_URL environment variable tanımlı değil!');
   // We don't exit process here to avoid crash loop, but it's a critical configuration error.
 }
 

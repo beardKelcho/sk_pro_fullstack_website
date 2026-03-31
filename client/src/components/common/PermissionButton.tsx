@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePermission } from '@/hooks/usePermission';
-import { Permission } from '@/config/permissions';
+import { Permission } from '@/config/permissionCore';
 import { toast } from 'react-toastify';
 
 /**

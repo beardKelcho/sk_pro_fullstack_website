@@ -41,8 +41,8 @@ const getDataByType = async (type: string) => {
     case 'maintenance':
       return {
         data: await Maintenance.find().populate('equipment', 'name type').populate('assignedTo', 'name email').lean(),
-        headers: ['Ekipman', 'Tip', 'Açıklama', 'Planlanan Tarih', 'Durum', 'Atanan', 'Maliyet'],
-        fields: ['equipment.name', 'type', 'description', 'scheduledDate', 'status', 'assignedTo.name', 'cost'],
+        headers: ['Ekipman', 'Tip', 'Öncelik', 'Açıklama', 'Planlanan Tarih', 'Durum', 'Atanan', 'Maliyet'],
+        fields: ['equipment.name', 'type', 'priority', 'description', 'scheduledDate', 'status', 'assignedTo.name', 'cost'],
         filename: 'maintenance'
       };
     case 'users':

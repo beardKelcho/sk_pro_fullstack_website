@@ -1,7 +1,16 @@
 const DEFAULT_DEV_CLIENT_ORIGIN = 'http://localhost:3000';
 
+const normalizeOrigin = (value?: string): string | undefined => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return trimmed.replace(/\/+$/, '');
+};
+
 export const getPrimaryClientOrigin = (): string | undefined => {
-  const configuredOrigin = process.env.CLIENT_URL?.trim();
+  const configuredOrigin = normalizeOrigin(process.env.FRONTEND_URL) || normalizeOrigin(process.env.CLIENT_URL);
   if (configuredOrigin) {
     return configuredOrigin;
   }
@@ -11,6 +20,21 @@ export const getPrimaryClientOrigin = (): string | undefined => {
   }
 
   return undefined;
+};
+
+export const requirePrimaryClientOrigin = (context: string): string => {
+  const origin = getPrimaryClientOrigin();
+  if (origin) {
+    return origin;
+  }
+
+  throw new Error(`${context} için FRONTEND_URL veya CLIENT_URL tanımlı değil.`);
+};
+
+export const buildClientUrl = (pathname: string, context = 'İstemci URL üretimi'): string => {
+  const origin = requirePrimaryClientOrigin(context);
+  const normalizedPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  return `${origin}${normalizedPath}`;
 };
 
 export const getAllowedClientOrigins = (extraOrigins: Array<string | undefined> = []): string[] => {

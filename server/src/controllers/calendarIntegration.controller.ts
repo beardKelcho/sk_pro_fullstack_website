@@ -24,6 +24,7 @@ import {
 } from '../services/outlookCalendarService';
 import { Project, Client } from '../models';
 import logger from '../utils/logger';
+import { buildClientUrl } from '../config/clientOrigins';
 
 // OAuth state CSRF koruması — state imzalama/doğrulama
 const OAUTH_STATE_SECRET = process.env.JWT_SECRET || 'dev-only-secret';
@@ -57,7 +58,7 @@ const verifyOAuthState = (state: string): { provider: string; userId: string } |
 export const getGoogleCalendarAuthUrl = async (req: Request, res: Response) => {
   try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations/google/callback`;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || buildClientUrl('/admin/calendar/integrations/google/callback', 'Google Calendar redirect URL');
     const scope = 'https://www.googleapis.com/auth/calendar';
 
     if (!clientId) {
@@ -132,7 +133,7 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations/google/callback`;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || buildClientUrl('/admin/calendar/integrations/google/callback', 'Google Calendar redirect URL');
 
     if (!clientId || !clientSecret) {
       return res.status(500).json({
@@ -220,11 +221,11 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
       });
     }
 
-    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?success=true`);
+    return res.redirect(buildClientUrl('/admin/calendar/integrations?success=true', 'Google Calendar callback redirect'));
   } catch (error: unknown) {
     const appError = error as AppError;
     logger.error('Google Calendar callback hatası:', error);
-    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?error=${encodeURIComponent(appError?.message || (error as Error)?.message || 'Entegrasyon başarısız')}`);
+    return res.redirect(buildClientUrl(`/admin/calendar/integrations?error=${encodeURIComponent(appError?.message || (error as Error)?.message || 'Entegrasyon başarısız')}`, 'Google Calendar callback redirect'));
   }
 };
 
@@ -234,7 +235,7 @@ export const handleGoogleCalendarCallback = async (req: Request, res: Response) 
 export const getOutlookCalendarAuthUrl = async (req: Request, res: Response) => {
   try {
     const clientId = process.env.OUTLOOK_CLIENT_ID;
-    const redirectUri = process.env.OUTLOOK_REDIRECT_URI || `${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations/outlook/callback`;
+    const redirectUri = process.env.OUTLOOK_REDIRECT_URI || buildClientUrl('/admin/calendar/integrations/outlook/callback', 'Outlook Calendar redirect URL');
     const tenantId = process.env.OUTLOOK_TENANT_ID || 'common';
     const scope = 'https://graph.microsoft.com/Calendars.ReadWrite offline_access';
 
@@ -306,7 +307,7 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
 
     const clientId = process.env.OUTLOOK_CLIENT_ID;
     const clientSecret = process.env.OUTLOOK_CLIENT_SECRET;
-    const redirectUri = process.env.OUTLOOK_REDIRECT_URI || `${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations/outlook/callback`;
+    const redirectUri = process.env.OUTLOOK_REDIRECT_URI || buildClientUrl('/admin/calendar/integrations/outlook/callback', 'Outlook Calendar redirect URL');
     const tenantId = process.env.OUTLOOK_TENANT_ID || 'common';
 
     if (!clientId || !clientSecret) {
@@ -345,11 +346,11 @@ export const handleOutlookCalendarCallback = async (req: Request, res: Response)
       { upsert: true, new: true }
     );
 
-    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?success=true`);
+    return res.redirect(buildClientUrl('/admin/calendar/integrations?success=true', 'Outlook Calendar callback redirect'));
   } catch (error: unknown) {
     const appError = error as AppError;
     logger.error('Outlook Calendar callback hatası:', error);
-    return res.redirect(`${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/calendar/integrations?error=${encodeURIComponent(appError?.message || (error as Error)?.message || 'Entegrasyon başarısız')}`);
+    return res.redirect(buildClientUrl(`/admin/calendar/integrations?error=${encodeURIComponent(appError?.message || (error as Error)?.message || 'Entegrasyon başarısız')}`, 'Outlook Calendar callback redirect'));
   }
 };
 

@@ -8,6 +8,11 @@
 /* eslint-disable no-console */
 
 const isProduction = process.env.NODE_ENV === 'production';
+const isTest = process.env.NODE_ENV === 'test';
+const isVerboseLoggingEnabled =
+  process.env.NEXT_PUBLIC_ENABLE_CLIENT_LOGS === 'true' ||
+  process.env.ENABLE_CLIENT_LOGS === 'true';
+const shouldEmitNonErrorLogs = !isProduction && (!isTest || isVerboseLoggingEnabled);
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
@@ -18,7 +23,7 @@ class Logger {
   }
 
   info(message: string, data?: unknown) {
-    if (isProduction) return;
+    if (!shouldEmitNonErrorLogs) return;
     if (data !== undefined) {
       console.info(this.formatMessage('info', message), data);
     } else {
@@ -27,7 +32,7 @@ class Logger {
   }
 
   warn(message: string, data?: unknown) {
-    if (isProduction) return;
+    if (!shouldEmitNonErrorLogs) return;
     if (data !== undefined) {
       console.warn(this.formatMessage('warn', message), data);
     } else {
@@ -45,7 +50,7 @@ class Logger {
   }
 
   debug(message: string, data?: unknown) {
-    if (isProduction) return;
+    if (!shouldEmitNonErrorLogs) return;
     if (data !== undefined) {
       console.debug(this.formatMessage('debug', message), data);
     } else {

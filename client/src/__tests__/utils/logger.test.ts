@@ -1,5 +1,6 @@
 describe('logger', () => {
   const originalNodeEnv = process.env.NODE_ENV;
+  const originalEnableClientLogs = process.env.ENABLE_CLIENT_LOGS;
 
   const loadLogger = () => {
     jest.resetModules();
@@ -14,6 +15,7 @@ describe('logger', () => {
 
   afterEach(() => {
     process.env.NODE_ENV = originalNodeEnv;
+    process.env.ENABLE_CLIENT_LOGS = originalEnableClientLogs;
     jest.restoreAllMocks();
     jest.resetModules();
   });
@@ -44,6 +46,34 @@ describe('logger', () => {
 
     expect(infoSpy).not.toHaveBeenCalled();
     expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('should suppress info and debug messages in test environment by default', () => {
+    process.env.NODE_ENV = 'test';
+    delete process.env.ENABLE_CLIENT_LOGS;
+    const infoSpy = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+    const logger = loadLogger();
+
+    logger.info('Hidden in tests');
+    logger.debug('Hidden debug in tests');
+
+    expect(infoSpy).not.toHaveBeenCalled();
+    expect(debugSpy).not.toHaveBeenCalled();
+  });
+
+  it('should allow verbose client logs in test environment when explicitly enabled', () => {
+    process.env.NODE_ENV = 'test';
+    process.env.ENABLE_CLIENT_LOGS = 'true';
+    const infoSpy = jest.spyOn(console, 'info').mockImplementation(() => undefined);
+    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+    const logger = loadLogger();
+
+    logger.info('Visible test info');
+    logger.debug('Visible test debug');
+
+    expect(infoSpy).toHaveBeenCalledTimes(1);
+    expect(debugSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should always log errors', () => {

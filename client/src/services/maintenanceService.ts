@@ -7,13 +7,14 @@ import { CacheStrategies } from '@/config/queryConfig';
 export interface Maintenance {
   _id?: string;
   id?: string;
-  equipment: string;
+  equipment: string | { _id?: string; id?: string; name?: string; type?: string; model?: string };
   type: 'ROUTINE' | 'REPAIR' | 'INSPECTION' | 'UPGRADE';
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   description: string;
   scheduledDate: string;
   completedDate?: string;
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  assignedTo: string;
+  assignedTo: string | { _id?: string; id?: string; name?: string; email?: string; role?: string };
   cost?: number;
   notes?: string;
   createdAt?: string;
@@ -26,6 +27,8 @@ export interface Maintenance {
 export const getAllMaintenance = async (params?: {
   status?: string;
   type?: string;
+  priority?: string;
+  search?: string;
   equipment?: string;
   startDate?: string;
   endDate?: string;
@@ -100,7 +103,7 @@ export const getTypeLabel = (type: string): string => {
   const types: Record<string, string> = {
     'ROUTINE': 'Periyodik Bakım',
     'REPAIR': 'Arıza Bakımı',
-    'INSPECTION': 'İnceleme',
+    'INSPECTION': 'Kalibrasyon',
     'UPGRADE': 'Güncelleme'
   };
   return types[type] || type;
@@ -116,10 +119,59 @@ export const getPriorityLabel = (priority: string): string => {
   return priorities[priority] || priority;
 };
 
+export const mapBackendMaintenanceTypeToFrontend = (type: string): string => {
+  return getTypeLabel(type);
+};
+
+export const mapFrontendMaintenanceTypeToBackend = (type: string): string | undefined => {
+  const typeMap: Record<string, string> = {
+    'Periyodik Bakım': 'ROUTINE',
+    'Arıza Bakımı': 'REPAIR',
+    'Kalibrasyon': 'INSPECTION',
+    'Güncelleme': 'UPGRADE',
+    'Periyodik': 'ROUTINE',
+    'Arıza': 'REPAIR',
+  };
+  return typeMap[type];
+};
+
+export const mapBackendMaintenanceStatusToFrontend = (status: string): string => {
+  return getStatusLabel(status);
+};
+
+export const mapFrontendMaintenanceStatusToBackend = (status: string): string | undefined => {
+  const statusMap: Record<string, string> = {
+    'Planlandı': 'SCHEDULED',
+    'Devam Ediyor': 'IN_PROGRESS',
+    'Tamamlandı': 'COMPLETED',
+    'İptal Edildi': 'CANCELLED',
+  };
+  return statusMap[status];
+};
+
+export const mapBackendMaintenancePriorityToFrontend = (priority?: string): string => {
+  if (!priority) return 'Orta';
+  return getPriorityLabel(priority);
+};
+
+export const mapFrontendMaintenancePriorityToBackend = (
+  priority: string
+): Maintenance['priority'] | undefined => {
+  const priorityMap: Record<string, NonNullable<Maintenance['priority']>> = {
+    'Düşük': 'LOW',
+    'Orta': 'MEDIUM',
+    'Yüksek': 'HIGH',
+    'Acil': 'URGENT',
+  };
+  return priorityMap[priority];
+};
+
 // React Query Hooks
 export const useMaintenance = (params?: {
   status?: string;
   type?: string;
+  priority?: string;
+  search?: string;
   equipment?: string;
   page?: number;
   limit?: number;
@@ -172,4 +224,4 @@ export const useDeleteMaintenance = () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
     },
   });
-}; 
+};

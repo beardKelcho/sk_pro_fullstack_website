@@ -4,6 +4,7 @@ import logger from './logger';
 import mongoose from 'mongoose';
 import { sendPushNotification } from './pushNotificationService';
 import { sendToUser } from './realtime/realtimeHub';
+import { buildClientUrl } from '../config/clientOrigins';
 
 export interface CreateNotificationParams {
   userId: mongoose.Types.ObjectId | string;
@@ -93,25 +94,26 @@ export const createNotification = async (params: CreateNotificationParams): Prom
         ) {
           const user = await User.findById(params.userId);
           if (user && user.email) {
-          const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #0066CC;">${params.title}</h2>
-              <p>${params.message}</p>
-              <p style="margin-top: 20px;">
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/notifications" 
-                   style="background-color: #0066CC; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                  Bildirimleri Görüntüle
-                </a>
-              </p>
-              <p>İyi çalışmalar,<br>SK Production</p>
-            </div>
-          `;
-          
-          await sendEmail(
-            user.email,
-            params.emailSubject || params.title,
-            emailHtml
-          );
+            const notificationsUrl = buildClientUrl('/admin/notifications', 'Bildirim bağlantısı');
+            const emailHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #0066CC;">${params.title}</h2>
+                <p>${params.message}</p>
+                <p style="margin-top: 20px;">
+                  <a href="${notificationsUrl}"
+                     style="background-color: #0066CC; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                    Bildirimleri Görüntüle
+                  </a>
+                </p>
+                <p>İyi çalışmalar,<br>SK Production</p>
+              </div>
+            `;
+
+            await sendEmail(
+              user.email,
+              params.emailSubject || params.title,
+              emailHtml
+            );
           }
         }
       } catch (emailError) {
@@ -189,4 +191,3 @@ export const notifyProjectTeam = async (
     sendEmail
   );
 };
-

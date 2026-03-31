@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Maintenance } from '../models';
+import { Equipment, Maintenance } from '../models';
 import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import maintenanceService from '../services/maintenance.service';
@@ -8,7 +8,18 @@ import maintenanceService from '../services/maintenance.service';
 // Tüm bakımları listele
 export const getAllMaintenances = async (req: Request, res: Response) => {
   try {
-    const { status, type, equipment, startDate, endDate, sort = '-scheduledDate', page = 1, limit = 10 } = req.query;
+    const {
+      status,
+      type,
+      equipment,
+      priority,
+      search,
+      startDate,
+      endDate,
+      sort = '-scheduledDate',
+      page = 1,
+      limit = 10,
+    } = req.query;
 
     const filters: Record<string, unknown> = {};
 
@@ -22,6 +33,10 @@ export const getAllMaintenances = async (req: Request, res: Response) => {
 
     if (equipment) {
       filters.equipment = equipment;
+    }
+
+    if (priority) {
+      filters.priority = priority;
     }
 
     // Tarih filtresi - scheduledDate aralığı
@@ -49,6 +64,18 @@ export const getAllMaintenances = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sortOptions: any = {};
     sortOptions[sortField] = sortOrder;
+
+    if (typeof search === 'string' && search.trim().length > 0) {
+      const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(escapedSearch, 'i');
+      const matchingEquipment = await Equipment.find({ name: searchRegex }).select('_id').lean();
+      const matchingEquipmentIds = matchingEquipment.map((item) => item._id);
+
+      filters.$or = [
+        { description: searchRegex },
+        ...(matchingEquipmentIds.length > 0 ? [{ equipment: { $in: matchingEquipmentIds } }] : []),
+      ];
+    }
 
     const [maintenances, total] = await Promise.all([
       Maintenance.find(filters)
@@ -118,7 +145,7 @@ export const createMaintenance = async (req: Request, res: Response) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { equipment, type, description, scheduledDate, status, assignedTo, cost, notes } = req.body;
+    const { equipment, type, priority, description, scheduledDate, status, assignedTo, cost, notes } = req.body;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
@@ -164,6 +191,7 @@ export const createMaintenance = async (req: Request, res: Response) => {
     const maintenance = await maintenanceService.createMaintenance({
       equipment,
       type,
+      priority,
       description,
       scheduledDate: parsedDate,
       status,
@@ -202,7 +230,7 @@ export const updateMaintenance = async (req: Request, res: Response) => {
   session.startTransaction();
   try {
     const { id } = req.params;
-    const { equipment, type, description, scheduledDate, completedDate, status, assignedTo, cost, notes } = req.body;
+    const { equipment, type, priority, description, scheduledDate, completedDate, status, assignedTo, cost, notes } = req.body;
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const userId = req.user!._id;
 
@@ -215,7 +243,7 @@ export const updateMaintenance = async (req: Request, res: Response) => {
 
     // Call Service
     const updatedMaintenance = await maintenanceService.updateMaintenance(id, {
-      equipment, type, description, scheduledDate, completedDate, status, assignedTo, cost, notes, userId: userId as unknown as string
+      equipment, type, priority, description, scheduledDate, completedDate, status, assignedTo, cost, notes, userId: userId as unknown as string
     }, session);
 
     if (!updatedMaintenance) {
@@ -290,4 +318,3 @@ export const deleteMaintenance = async (req: Request, res: Response) => {
     });
   }
 };
-

@@ -3,7 +3,33 @@
 import React from 'react';
 
 interface IconProps {
-  name: 'check' | 'close' | 'arrow-left' | 'arrow-right' | 'phone' | 'email' | 'location' | 'video' | 'screen' | 'led' | 'menu' | 'facebook' | 'instagram' | 'linkedin' | 'twitter' | 'youtube' | 'link' | 'sun' | 'moon';
+  name:
+    | 'check'
+    | 'close'
+    | 'arrow-left'
+    | 'arrow-right'
+    | 'phone'
+    | 'email'
+    | 'location'
+    | 'video'
+    | 'screen'
+    | 'led'
+    | 'menu'
+    | 'facebook'
+    | 'instagram'
+    | 'linkedin'
+    | 'twitter'
+    | 'youtube'
+    | 'link'
+    | 'sun'
+    | 'moon'
+    | 'play'
+    | 'image'
+    | 'monitor'
+    | 'server'
+    | 'cpu'
+    | 'layers'
+    | 'activity';
   className?: string;
   size?: number;
 }
@@ -70,6 +96,45 @@ const Icon: React.FC<IconProps> = ({ name, className = '', size = 24 }) => {
     moon: (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" suppressHydrationWarning />
     ),
+    play: (
+      <path fill="currentColor" d="M8 6.5v11l9-5.5-9-5.5z" />
+    ),
+    image: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+        <circle cx="8.5" cy="10" r="1.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16l-5.5-5.5L8 18" />
+      </>
+    ),
+    monitor: (
+      <>
+        <rect x="3" y="4" width="18" height="12" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 20h8M12 16v4" />
+      </>
+    ),
+    server: (
+      <>
+        <rect x="4" y="4" width="16" height="6" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} />
+        <rect x="4" y="14" width="16" height="6" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7h.01M8 17h.01M12 7h4M12 17h4" />
+      </>
+    ),
+    cpu: (
+      <>
+        <rect x="8" y="8" width="8" height="8" rx="1.5" ry="1.5" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10 1v3M14 1v3M10 20v3M14 20v3M20 10h3M20 14h3M1 10h3M1 14h3M18 6l2-2M6 18l-2 2M18 18l2 2M6 6L4 4" />
+      </>
+    ),
+    layers: (
+      <>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 4l8 4-8 4-8-4 8-4z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 12l8 4 8-4" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16l8 4 8-4" />
+      </>
+    ),
+    activity: (
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12h4l2.2-5 3.6 10 2.4-5H21" />
+    ),
   };
 
   return (
@@ -88,4 +153,4 @@ const Icon: React.FC<IconProps> = ({ name, className = '', size = 24 }) => {
   );
 };
 
-export default Icon; 
+export default Icon;

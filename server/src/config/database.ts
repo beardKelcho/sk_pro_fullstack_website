@@ -3,8 +3,81 @@ import mongoose from 'mongoose';
 import { AppError } from '../middleware/errorHandler';
 import logger from '../utils/logger';
 
+const RECONNECT_DELAY_MS = 5000;
+
+let reconnectTimer: NodeJS.Timeout | null = null;
+let connectionListenersRegistered = false;
+let shutdownHandlersRegistered = false;
+
+const scheduleReconnect = () => {
+  if (process.env.NODE_ENV === 'test' || reconnectTimer) {
+    return;
+  }
+
+  logger.warn(`MongoDB için ${RECONNECT_DELAY_MS / 1000} saniye sonra yeniden bağlanma denenecek...`);
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    void connectDB().catch((retryError) => {
+      logger.error('MongoDB yeniden bağlanma denemesi başarısız:', retryError);
+    });
+  }, RECONNECT_DELAY_MS);
+
+  reconnectTimer.unref();
+};
+
+const registerConnectionListeners = () => {
+  if (connectionListenersRegistered) {
+    return;
+  }
+
+  connectionListenersRegistered = true;
+
+  mongoose.connection.on('error', (err) => {
+    logger.error('MongoDB connection error:', err);
+  });
+
+  mongoose.connection.on('disconnected', () => {
+    logger.warn('MongoDB disconnected. Attempting to reconnect...');
+    scheduleReconnect();
+  });
+
+  mongoose.connection.on('reconnected', () => {
+    logger.info('MongoDB reconnected');
+  });
+};
+
+const registerShutdownHandlers = () => {
+  if (shutdownHandlersRegistered) {
+    return;
+  }
+
+  shutdownHandlersRegistered = true;
+
+  process.on('SIGINT', async () => {
+    await mongoose.connection.close();
+    logger.info('MongoDB connection closed through app termination (SIGINT)');
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    await mongoose.connection.close();
+    logger.info('MongoDB connection closed through app termination (SIGTERM)');
+    process.exit(0);
+  });
+};
+
 const connectDB = async () => {
   try {
+    if (mongoose.connection.readyState === 1) {
+      return mongoose.connection;
+    }
+
+    if (mongoose.connection.readyState === 2) {
+      logger.info('MongoDB bağlantı girişimi zaten devam ediyor.');
+      return mongoose.connection;
+    }
+
     // DB bağlantısı yokken yapılan sorguların 10sn buffer timeout'larına düşmesini engelle
     mongoose.set('bufferCommands', false);
     mongoose.set('bufferTimeoutMS', 0);
@@ -21,6 +94,11 @@ const connectDB = async () => {
     }
 
     logger.info('MongoDB bağlantısı kuruluyor...');
+
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
 
     // Connection pool ayarlarını environment variable'lardan al
     const maxPoolSize = parseInt(process.env.MONGODB_MAX_POOL_SIZE || '20', 10);
@@ -51,37 +129,8 @@ const connectDB = async () => {
 
     logger.info(`✅ MongoDB Connected: ${conn.connection.host}`);
 
-    // Handle connection errors after initial connection
-    mongoose.connection.on('error', (err) => {
-      logger.error('MongoDB connection error:', err);
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      logger.warn('MongoDB disconnected. Attempting to reconnect...');
-      // Test ortamında reconnect yapma (test teardown'da sorun çıkarır)
-      if (process.env.NODE_ENV !== 'test') {
-        const reconnectTimer = setTimeout(connectDB, 5000);
-        // Timer'ı unref et (process'i açık tutmasın - özellikle test ortamında)
-        reconnectTimer.unref();
-      }
-    });
-
-    mongoose.connection.on('reconnected', () => {
-      logger.info('MongoDB reconnected');
-    });
-
-    // Handle application termination
-    process.on('SIGINT', async () => {
-      await mongoose.connection.close();
-      logger.info('MongoDB connection closed through app termination (SIGINT)');
-      process.exit(0);
-    });
-
-    process.on('SIGTERM', async () => {
-      await mongoose.connection.close();
-      logger.info('MongoDB connection closed through app termination (SIGTERM)');
-      process.exit(0);
-    });
+    registerConnectionListeners();
+    registerShutdownHandlers();
 
   } catch (error: unknown) {
     logger.error('❌ MongoDB bağlantı hatası:', error);
@@ -118,8 +167,10 @@ const connectDB = async () => {
       logger.error('');
     }
 
+    scheduleReconnect();
+
     throw new AppError('Database connection failed', 500);
   }
 };
 
-export default connectDB; 
+export default connectDB;

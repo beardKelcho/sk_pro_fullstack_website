@@ -11,6 +11,9 @@ import type { Project } from '@/components/home/Projects';
 // Removed force-dynamic to support static export
 export const revalidate = 60; // Revalidate at most every 60 seconds (for SSG updates if supported, otherwise just static)
 
+// Temporary production switch while the live database is unavailable.
+const FORCE_PUBLIC_MAINTENANCE_MODE = true;
+
 import { fallbackContent } from '@/constants/fallbackData';
 
 type PublicSiteContentResponse = {
@@ -190,6 +193,17 @@ async function getSiteData(): Promise<SiteDataResult> {
 
 // SEO Metadata Implementation - fetching dynamic validation
 export async function generateMetadata(): Promise<Metadata> {
+  if (FORCE_PUBLIC_MAINTENANCE_MODE) {
+    return {
+      title: 'SK Production | Bakim Modu',
+      description: 'SK Production su anda bakim modunda. Kisa sure icinde yeniden hizmette olacagiz.',
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
   const { content } = await getSiteData();
 
   // Use dynamic content or defaults
@@ -213,6 +227,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
+  if (FORCE_PUBLIC_MAINTENANCE_MODE) {
+    return <MaintenancePage />;
+  }
+
   const { isMaintenanceMode, content, services, projects, fallbackMessage } = await getSiteData();
 
   if (isMaintenanceMode) {

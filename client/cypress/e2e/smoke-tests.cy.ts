@@ -8,6 +8,7 @@ describe('Smoke Tests - Kritik Fonksiyonlar', () => {
   beforeEach(() => {
     cy.visit('/', { failOnStatusCode: false });
     cy.get('body', { timeout: 15000 }).should('be.visible');
+    cy.get('header', { timeout: 20000 }).should('be.visible');
   });
 
   it('ana sayfa yüklenmeli', () => {
@@ -26,11 +27,12 @@ describe('Smoke Tests - Kritik Fonksiyonlar', () => {
         cy.log('Bakım modu aktif — navigasyon testi atlanıyor');
         return;
       }
-
-      cy.get('nav, header nav, [role="navigation"]', { timeout: 10000 }).should('be.visible');
-      const hasNavLinks = $body.find('a, nav a, header a').length > 0;
-      expect(hasNavLinks).to.be.true;
     });
+
+    cy.get('nav[role="navigation"], header nav, [role="navigation"]', { timeout: 20000 })
+      .should('be.visible')
+      .find('a')
+      .should('have.length.greaterThan', 0);
   });
 
   it('footer görünmeli', () => {
@@ -44,9 +46,11 @@ describe('Smoke Tests - Kritik Fonksiyonlar', () => {
         cy.log('Bakım modu aktif — footer testi atlanıyor');
         return;
       }
-
-      cy.get('footer').should('be.visible');
     });
+
+    cy.get('footer', { timeout: 20000 })
+      .scrollIntoView()
+      .should('be.visible');
   });
 
   it('admin login sayfasına erişilebilmeli', () => {
@@ -62,4 +66,3 @@ describe('Smoke Tests - Kritik Fonksiyonlar', () => {
     cy.get('body').should('contain.text', '404');
   });
 });
-

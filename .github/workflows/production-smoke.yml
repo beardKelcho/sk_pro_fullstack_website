@@ -17,7 +17,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check smoke configuration
+        id: smoke-config
+        run: |
+          if [ -z "${{ vars.PRODUCTION_BACKEND_URL }}" ] || [ -z "${{ vars.PRODUCTION_FRONTEND_URL }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Production smoke skipped: repository variables are not configured."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run production smoke verification
+        if: steps.smoke-config.outputs.configured == 'true'
         env:
           BACKEND_URL: ${{ vars.PRODUCTION_BACKEND_URL }}
           FRONTEND_URL: ${{ vars.PRODUCTION_FRONTEND_URL }}

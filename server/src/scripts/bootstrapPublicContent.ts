@@ -26,17 +26,20 @@ const defaultSections = [
   {
     section: 'hero',
     data: {
-      title: 'Piksellerin Ötesinde,\nKesintisiz Görüntü Yönetimi',
-      subtitle: 'Profesyonel Görüntü Rejisi ve Medya Çözümleri',
-      description:
-        "SK Production olarak en büyük sahnelerde, en karmaşık projelerde 'teknik beyin' rolünü üstleniyoruz. Dünyanın en iyi marka ve sanatçıları için sıfır hata toleransıyla kusursuz görsel şovlar yaratmak bizim işimiz.",
-      buttonText: 'Projelerimizi İnceleyin',
+      title: 'Profesyonel Prodüksiyon Deneyimi',
+      subtitle:
+        'Sıradan görüntülerin ötesine geçin. İleri teknoloji ekipmanlarımız, yaratıcı kurgu tekniklerimiz ve profesyonel bakış açımızla; en özel anlarınızı ve kurumsal vizyonunuzu sinematik bir başyapıta dönüştürüyoruz. Çünkü her hikaye, kusursuz anlatılmayı hak eder.',
+      description: 'SK Production ile etkinliklerinize profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz.',
+      buttonText: 'Projelerimiz',
       buttonLink: '#projects',
       rotatingTexts: [
-        'Kusursuz Görüntü Rejisi',
-        'İleri Seviye Medya Server Sistemleri',
-        'Devasa Sahnelerde Uçtan Uca Teknik Yönetim',
+        'Piksellerin Ötesinde Bir Dünya',
+        'Yaratıcılığın Sınırlarını Zorlayın',
+        'Sanat ve Teknolojinin Buluşması',
+        'Markanız İçin Yaratıcı Çözümler',
       ],
+      videoUrl: 'https://res.cloudinary.com/dmeviky6f/video/upload/v1769730001/skproduction/library/xekeqyyrwf7zlwvwgmtg.mp4',
+      backgroundVideo: 'https://res.cloudinary.com/dmeviky6f/video/upload/v1769730001/skproduction/library/xekeqyyrwf7zlwvwgmtg.mp4',
       availableVideos: [],
     },
     isActive: true,
@@ -44,28 +47,24 @@ const defaultSections = [
   {
     section: 'services',
     data: {
-      title: 'Hizmetlerimiz ve Altyapımız',
-      subtitle:
-        'Sıradan bir etkinlik ile unutulmaz bir şov arasındaki fark, doğru teknolojiyi ustalıkla kullanmaktır. Size en iyisi için ihtiyacınız olan her şeyi sunuyoruz.',
+      title: 'Hizmetlerimiz',
+      subtitle: 'Size özel profesyonel çözümler',
       services: [
         {
-          title: 'Uzman Ekip & Danışmanlık',
-          description:
-            "Sadece ekipman sağlamıyoruz. Projenizin kağıt üzerindeki tasarımından, son saniye alkışına kadar sahnedeki tüm teknik akışın kusursuz olmasını garantiye alan bir uzmanlık ekibiyiz.",
+          title: 'Video Prodüksiyon',
+          description: 'Yüksek kaliteli video çekim ve kurgu hizmetleri.',
           icon: 'screen',
           order: 0,
         },
         {
-          title: 'Görüntü Rejisi & İşleme',
-          description:
-            'Analog Way Aquilon ve Barco serisi cihazlarımızla devasa LED ekranlarda sıfır gecikmeli, 8K çözünürlüklü ve çok katmanlı, kesintisiz bir sinyal yönetimi sağlıyoruz.',
+          title: 'Ekipman Kiralama',
+          description: 'En son teknoloji kamera ve ışık ekipmanları.',
           icon: 'video',
           order: 1,
         },
         {
-          title: 'İleri Medya Server Çözümleri',
-          description:
-            'Dataton Watchout uzmanlığımız sayesinde milimetrik piksel mapping, devasa içerik senkronizasyonu ve karmaşık çoklu-ekran kurgularını mükemmellik ile yönetiyoruz.',
+          title: 'Canlı Yayın',
+          description: 'Kesintisiz ve profesyonel canlı yayın altyapısı.',
           icon: 'led',
           order: 2,
         },
@@ -87,14 +86,14 @@ const defaultSections = [
   {
     section: 'about',
     data: {
-      title: 'Teknoloji ve Sanatın Buluştuğu Yer',
+      title: 'Hakkımızda',
       description:
-        "SK Production olarak, teknolojinin sınırlarını zorlayarak sektördeki sıradanlaştırılmış çözümlerin dışına çıkıyoruz.\n\nSektörde yıllar içerisinde biriktirdiğimiz saha deneyimini, en güncel teknolojik ekipmanlarla harmanlayarak birleştiriyoruz. En zorlu sahnelerin ve devasa tasarımların ardındaki 'Görünmez Kahraman' olmaktan gurur duyuyoruz.",
+        'SK Production, profesyonel ekipmanları ve deneyimli kadrosu ile en iyi görüntü kalitesine ulaşmanızı sağlar.',
       imageUrl: '/images/sk-logo.png',
       stats: [
-        { label: 'Başarılı Proje', value: '450+' },
-        { label: 'Sektörel Deneyim', value: '14 Yıl' },
-        { label: 'Global Çözüm Ortakları', value: '25+' },
+        { label: 'Ekipler', value: '10+' },
+        { label: 'Projeler', value: '500+' },
+        { label: 'Yıllık Tecrübe', value: '15+' },
       ],
     },
     isActive: true,
@@ -120,37 +119,34 @@ const defaultSections = [
 
 const defaultServices = [
   {
-    title: 'Görüntü Rejisi & İşleme',
-    category: 'Video Processing',
-    description: 'Analog Way ve çok katmanlı görüntü işleme altyapısıyla etkinliklerinizde kusursuz akış yönetimi sağlıyoruz.',
-    icon: 'Layers',
+    title: 'Video Prodüksiyon',
+    category: 'Genel',
+    description: 'Yüksek kaliteli video çekim ve kurgu hizmetleri.',
+    icon: 'Monitor',
     details: [
-      'Analog Way Aquilon RS serisi ile çok katmanlı görüntü yönetimi',
-      'Büyük LED yüzeylerde sıfır gecikmeli sinyal işleme',
+      'Yüksek kaliteli video çekim ve kurgu hizmetleri.',
     ],
     order: 0,
     isActive: true,
   },
   {
-    title: 'Medya Server Sistemleri',
-    category: 'Media Server',
-    description: 'Dataton Watchout, içerik playback ve çoklu ekran senkronizasyonu ile karmaşık sahne kurgularını yönetiyoruz.',
+    title: 'Ekipman Kiralama',
+    category: 'Genel',
+    description: 'En son teknoloji kamera ve ışık ekipmanları.',
     icon: 'Server',
     details: [
-      'Dataton Watchout tabanlı içerik senkronizasyonu',
-      'Mapping, playback ve çoklu çıkış yönetimi',
+      'En son teknoloji kamera ve ışık ekipmanları.',
     ],
     order: 1,
     isActive: true,
   },
   {
-    title: 'LED Ekran & İçerik Yönetimi',
-    category: 'Display Control',
-    description: 'LED ekran, içerik dağıtımı ve sahne görsel akışı için uçtan uca teknik yönetim sağlıyoruz.',
+    title: 'Canlı Yayın',
+    category: 'Genel',
+    description: 'Kesintisiz ve profesyonel canlı yayın altyapısı.',
     icon: 'Activity',
     details: [
-      'Farklı ekran çözünürlüklerine uygun içerik yönetimi',
-      'Sahne akışı boyunca aktif teknik koordinasyon',
+      'Kesintisiz ve profesyonel canlı yayın altyapısı.',
     ],
     order: 2,
     isActive: true,
@@ -188,7 +184,7 @@ const defaultLegacyContact = {
   address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
   phone: '+90 532 123 4567',
   email: 'info@skpro.com.tr',
-  mapUrl: '',
+  mapUrl: 'https://www.google.com/maps?q=Zincirlidere%20Caddesi%20No%3A52%2FC%20%C5%9Ei%C5%9Fli%20%C4%B0stanbul&output=embed',
   socialLinks: {},
 };
 

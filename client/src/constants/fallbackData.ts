@@ -3,34 +3,37 @@ import { SiteContent } from '@/types/cms';
 
 export const fallbackContent: SiteContent = {
   hero: {
-    title: 'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
-    subtitle: 'Profesyonel Görüntü ve Medya Çözümleri',
-    description: 'SK Production olarak etkinliklerinize profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz.',
+    title: 'Profesyonel Prodüksiyon Deneyimi',
+    subtitle: 'Sıradan görüntülerin ötesine geçin. İleri teknoloji ekipmanlarımız, yaratıcı kurgu tekniklerimiz ve profesyonel bakış açımızla; en özel anlarınızı ve kurumsal vizyonunuzu sinematik bir başyapıta dönüştürüyoruz. Çünkü her hikaye, kusursuz anlatılmayı hak eder.',
+    description: 'SK Production ile etkinliklerinize profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz.',
     buttonText: 'Projelerimiz',
     buttonLink: '#projects',
     rotatingTexts: [
-      'Görsel mükemmellikte uzman ekip',
-      'Etkinliklerinizde profesyonel çözümler',
-      'Medya server ve görüntü rejisi çözümleri'
-    ]
+      'Piksellerin Ötesinde Bir Dünya',
+      'Yaratıcılığın Sınırlarını Zorlayın',
+      'Sanat ve Teknolojinin Buluşması',
+      'Markanız İçin Yaratıcı Çözümler'
+    ],
+    videoUrl: 'https://res.cloudinary.com/dmeviky6f/video/upload/v1769730001/skproduction/library/xekeqyyrwf7zlwvwgmtg.mp4',
+    backgroundVideo: 'https://res.cloudinary.com/dmeviky6f/video/upload/v1769730001/skproduction/library/xekeqyyrwf7zlwvwgmtg.mp4'
   },
   about: {
-    title: 'SK Production Hakkında',
-    description: 'SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.\n\nAnalog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.',
+    title: 'Hakkımızda',
+    description: 'SK Production, profesyonel ekipmanları ve deneyimli kadrosu ile en iyi görüntü kalitesine ulaşmanızı sağlar.',
     imageUrl: '/images/sk-logo.png',
     stats: [
-      { label: 'Tamamlanan Proje', value: '250+', icon: 'check-circle' },
-      { label: 'Yıllık Deneyim', value: '12+', icon: 'calendar' },
-      { label: 'Profesyonel Ekipman', value: '50+', icon: 'monitor' }
+      { label: 'Ekipler', value: '10+', icon: 'users' },
+      { label: 'Projeler', value: '500+', icon: 'check-circle' },
+      { label: 'Yıllık Tecrübe', value: '15+', icon: 'calendar' }
     ]
   },
   services: {
-    title: 'Hizmetlerimiz & Ekipmanlarımız',
-    subtitle: 'Etkinlikleriniz için profesyonel çözümler ve son teknoloji ekipmanlar',
+    title: 'Hizmetlerimiz',
+    subtitle: 'Size özel profesyonel çözümler',
     services: [
-      { title: 'Görüntü Rejisi', description: 'Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz.', icon: 'video' },
-      { title: 'Medya Server Sistemleri', description: 'Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını.', icon: 'screen' },
-      { title: 'LED Ekran Yönetimi', description: 'Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri.', icon: 'led' }
+      { title: 'Video Prodüksiyon', description: 'Yüksek kaliteli video çekim ve kurgu hizmetleri.', icon: 'video' },
+      { title: 'Ekipman Kiralama', description: 'En son teknoloji kamera ve ışık ekipmanları.', icon: 'camera' },
+      { title: 'Canlı Yayın', description: 'Kesintisiz ve profesyonel canlı yayın altyapısı.', icon: 'broadcast-tower' }
     ]
   },
   contact: {

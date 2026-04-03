@@ -107,8 +107,8 @@ export default function PrivacyPolicy() {
               </p>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 <strong>E-posta:</strong> info@skpro.com.tr<br />
-                <strong>Telefon:</strong> +90 532 123 4567<br />
-                <strong>Adres:</strong> Zincirlidere Caddesi No:52/C Şişli/İstanbul
+                <strong>Telefon:</strong> +90 544 644 93 04<br />
+                <strong>Adres:</strong> İstanbul, Türkiye
               </p>
             </section>
 

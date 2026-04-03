@@ -47,39 +47,85 @@ const defaultSections = [
   {
     section: 'services',
     data: {
-      title: 'Hizmetlerimiz',
-      subtitle: 'Size özel profesyonel çözümler',
+      title: 'Hizmetlerimiz & Ekipmanlarımız',
+      subtitle: 'Video Engineering ve Teknik Prodüksiyon Sistemleri',
       services: [
         {
-          title: 'Video Prodüksiyon',
-          description: 'Yüksek kaliteli video çekim ve kurgu hizmetleri.',
-          icon: 'screen',
-          order: 0,
-        },
-        {
-          title: 'Ekipman Kiralama',
-          description: 'En son teknoloji kamera ve ışık ekipmanları.',
-          icon: 'video',
-          order: 1,
-        },
-        {
-          title: 'Canlı Yayın',
-          description: 'Kesintisiz ve profesyonel canlı yayın altyapısı.',
-          icon: 'led',
-          order: 2,
-        },
-      ],
-      equipment: [
-        {
-          title: 'Sistem Altyapımız',
-          items: [
-            { name: 'Analog Way Aquilon RS4', description: '4K/8K Sinyal Yönetimi ve Kesintisiz Geçiş Sistemi' },
-            { name: 'Dataton Watchpax / Watchout 6', description: 'Gelişmiş Mapping ve Çoklu Ekran Playback Sistemi' },
-            { name: 'Barco E2 Gen 2 / S3-4K', description: 'Gelişmiş Görüntü İşleme ve Çoklu Çıkış Rejisi' }
+          title: 'Medya Sunucu Operatörlüğü',
+          description: 'Karmaşık akışa sahip etkinliklerde, timeline tabanlı içerik yönetimi ve canlı yayın senkronizasyonu.',
+          icon: 'Activity',
+          category: 'VIDEO PROCESSING',
+          details: [
+            'Canlı İçerik (Live Content) Yönetimi',
+            'Timecode Senkronizasyonu',
+            'Yedekli (Redundant) Sistem İşletimi',
           ],
           order: 0,
         },
+        {
+          title: 'Analog Way Aquilon C+',
+          description: '4K/8K içerikler için ultra düşük gecikmeli, endüstri standardı görüntü işleme ve sunum sistemi.',
+          icon: 'Layers',
+          category: 'VIDEO PROCESSING',
+          details: [
+            '4K60Hz 4:4:4 İşleme Kapasitesi',
+            '10-bit HDR Desteği',
+            'Ultra Düşük Gecikme (Low Latency)',
+            'Gerçek Zamanlı Layer Yönetimi',
+          ],
+          order: 1,
+        },
+        {
+          title: 'Pixel Mapping & Canvas Yönetimi',
+          description: 'Standart dışı, yaratıcı LED yerleşimlerinin dijital ortamda haritalanması ve tek bir tuval (canvas) olarak yönetilmesi.',
+          icon: 'Monitor',
+          category: 'TECHNICAL DESIGN & SIMULATION',
+          details: [
+            'Custom Resolution (Özel Çözünürlük) Çalışma',
+            'Multi-Screen (Çoklu Ekran) Senkronizasyonu',
+            'Piksel/Piksel Hassas Yerleşim',
+          ],
+          order: 2,
+        },
+        {
+          title: 'Dataton WATCHOUT 7',
+          description: 'Çoklu ekranlı projeler, 3D mapping ve geniş yüzeyli projeksiyonlar için profesyonel medya sunucu sistemi.',
+          icon: 'Server',
+          category: 'VIDEO PROCESSING',
+          details: [
+            'Sınırsız Çözünürlük Desteği',
+            '3D Projection Mapping',
+            'Timeline Tabanlı İçerik Yönetimi',
+            'Frame-Sync Senkronizasyon',
+          ],
+          order: 3,
+        },
+        {
+          title: 'Sunum & İçerik Yönetimi',
+          description: 'Üst düzey kongre ve lansmanlarda, sunum bilgisayarlarının (Main/Backup) switcher üzerinden kesintisiz yönetimi.',
+          icon: 'Monitor',
+          category: 'SIGNAL PROCESSING',
+          details: [
+            'DSK (Downstream Keyer) Kullanımı',
+            'Speaker Timer Entegrasyonu',
+            'Main/Backup PC Otomasyonu',
+            'Farklı Format (Mac/PC) Desteği',
+          ],
+          order: 4,
+        },
+        {
+          title: 'Teknik Projelendirme & Simülasyon',
+          description: 'Etkinlik öncesinde tüm görüntü sistemlerinin CAD ortamında çizilmesi, sinyal akış şemalarının hazırlanması ve simüle edilmesi.',
+          icon: 'Cpu',
+          category: 'VIDEO PROCESSING',
+          details: [
+            'Sinyal Akış Diyagramları (Signal Flow)',
+            'Pre-Visualization (Ön İzleme)',
+          ],
+          order: 5,
+        },
       ],
+      equipment: [],
     },
     isActive: true,
   },
@@ -101,15 +147,18 @@ const defaultSections = [
   {
     section: 'contact',
     data: {
-      address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
-      phone: '+90 532 123 4567',
+      address: 'İstanbul, Türkiye',
+      phone: '+90 544 644 93 04',
       email: 'info@skpro.com.tr',
       workingHours: [
         'Pazartesi - Cuma: 09:00 - 18:00',
         'Cumartesi: 10:00 - 14:00',
         'Pazar: Kapalı',
       ],
-      socialLinks: {},
+      socialLinks: {
+        instagram: 'https://instagram.com/skproduction',
+        linkedin: 'https://linkedin.com/company/skproduction',
+      },
       latitude: 41.057984,
       longitude: 28.987117,
     },
@@ -119,36 +168,83 @@ const defaultSections = [
 
 const defaultServices = [
   {
-    title: 'Video Prodüksiyon',
-    category: 'Genel',
-    description: 'Yüksek kaliteli video çekim ve kurgu hizmetleri.',
-    icon: 'Monitor',
+    title: 'Medya Sunucu Operatörlüğü',
+    category: 'VIDEO PROCESSING',
+    description: 'Karmaşık akışa sahip etkinliklerde, timeline tabanlı içerik yönetimi ve canlı yayın senkronizasyonu.',
+    icon: 'Activity',
     details: [
-      'Yüksek kaliteli video çekim ve kurgu hizmetleri.',
+      'Canlı İçerik (Live Content) Yönetimi',
+      'Timecode Senkronizasyonu',
+      'Yedekli (Redundant) Sistem İşletimi',
     ],
     order: 0,
     isActive: true,
   },
   {
-    title: 'Ekipman Kiralama',
-    category: 'Genel',
-    description: 'En son teknoloji kamera ve ışık ekipmanları.',
-    icon: 'Server',
+    title: 'Analog Way Aquilon C+',
+    category: 'VIDEO PROCESSING',
+    description: '4K/8K içerikler için ultra düşük gecikmeli, endüstri standardı görüntü işleme ve sunum sistemi.',
+    icon: 'Layers',
     details: [
-      'En son teknoloji kamera ve ışık ekipmanları.',
+      '4K60Hz 4:4:4 İşleme Kapasitesi',
+      '10-bit HDR Desteği',
+      'Ultra Düşük Gecikme (Low Latency)',
+      'Gerçek Zamanlı Layer Yönetimi',
     ],
     order: 1,
     isActive: true,
   },
   {
-    title: 'Canlı Yayın',
-    category: 'Genel',
-    description: 'Kesintisiz ve profesyonel canlı yayın altyapısı.',
-    icon: 'Activity',
+    title: 'Pixel Mapping & Canvas Yönetimi',
+    category: 'TECHNICAL DESIGN & SIMULATION',
+    description: 'Standart dışı, yaratıcı LED yerleşimlerinin dijital ortamda haritalanması ve tek bir tuval (canvas) olarak yönetilmesi.',
+    icon: 'Monitor',
     details: [
-      'Kesintisiz ve profesyonel canlı yayın altyapısı.',
+      'Custom Resolution (Özel Çözünürlük) Çalışma',
+      'Multi-Screen (Çoklu Ekran) Senkronizasyonu',
+      'Piksel/Piksel Hassas Yerleşim',
     ],
     order: 2,
+    isActive: true,
+  },
+  {
+    title: 'Dataton WATCHOUT 7',
+    category: 'VIDEO PROCESSING',
+    description: 'Çoklu ekranlı projeler, 3D mapping ve geniş yüzeyli projeksiyonlar için profesyonel medya sunucu sistemi.',
+    icon: 'Server',
+    details: [
+      'Sınırsız Çözünürlük Desteği',
+      '3D Projection Mapping',
+      'Timeline Tabanlı İçerik Yönetimi',
+      'Frame-Sync Senkronizasyon',
+    ],
+    order: 3,
+    isActive: true,
+  },
+  {
+    title: 'Sunum & İçerik Yönetimi',
+    category: 'SIGNAL PROCESSING',
+    description: 'Üst düzey kongre ve lansmanlarda, sunum bilgisayarlarının (Main/Backup) switcher üzerinden kesintisiz yönetimi.',
+    icon: 'Monitor',
+    details: [
+      'DSK (Downstream Keyer) Kullanımı',
+      'Speaker Timer Entegrasyonu',
+      'Main/Backup PC Otomasyonu',
+      'Farklı Format (Mac/PC) Desteği',
+    ],
+    order: 4,
+    isActive: true,
+  },
+  {
+    title: 'Teknik Projelendirme & Simülasyon',
+    category: 'VIDEO PROCESSING',
+    description: 'Etkinlik öncesinde tüm görüntü sistemlerinin CAD ortamında çizilmesi, sinyal akış şemalarının hazırlanması ve simüle edilmesi.',
+    icon: 'Cpu',
+    details: [
+      'Sinyal Akış Diyagramları (Signal Flow)',
+      'Pre-Visualization (Ön İzleme)',
+    ],
+    order: 5,
     isActive: true,
   },
 ] as const;
@@ -156,36 +252,63 @@ const defaultServices = [
 const defaultShowcaseProjects = [
   {
     type: 'photo' as const,
-    title: 'Kurumsal Lansman ve Sahne Kurulumu',
-    category: 'Kurumsal Etkinlik',
-    description: 'Kurumsal etkinliklerde görüntü yönetimi, sahne akışı ve içerik playback çözümleri.',
+    title: 'TRT Tabii Dubai Lansman',
+    category: 'LANSMAN',
+    coverUrl: '/restored-projects/project-1.png',
     order: 1,
     isActive: true,
   },
   {
     type: 'photo' as const,
-    title: 'Festival Görüntü Rejisi',
-    category: 'Festival',
-    description: 'Çoklu kamera ve medya server kurgusuyla büyük ölçekli festival prodüksiyon desteği.',
+    title: '29 Ekim Cumhuriyet Bayramı 100. Yıl Kutlamaları',
+    category: 'KONSER',
+    coverUrl: '/restored-projects/project-2.png',
     order: 2,
     isActive: true,
   },
   {
-    type: 'video' as const,
-    title: 'Canlı Yayın Prodüksiyonu',
-    category: 'Canlı Yayın',
-    description: 'Etkinlik, lansman ve hibrit yayınlar için kesintisiz canlı yayın altyapısı.',
+    type: 'photo' as const,
+    title: 'YouTube Influencer Etkinliği',
+    category: 'LANSMAN',
+    coverUrl: '/restored-projects/project-3.png',
     order: 3,
+    isActive: true,
+  },
+  {
+    type: 'photo' as const,
+    title: 'Haliç Kongre Merkezi',
+    category: 'KONGRE',
+    coverUrl: '/restored-projects/project-4.png',
+    order: 4,
+    isActive: true,
+  },
+  {
+    type: 'photo' as const,
+    title: '2025 Kültür Yolu Festivali',
+    category: 'KONSER',
+    coverUrl: '/restored-projects/project-5.png',
+    order: 5,
+    isActive: true,
+  },
+  {
+    type: 'photo' as const,
+    title: "19 Mayıs Atatürk'ü Anma Gençlik ve Spor Bayramı",
+    category: 'KONSER',
+    coverUrl: '/restored-projects/project-6.png',
+    order: 6,
     isActive: true,
   },
 ] as const;
 
 const defaultLegacyContact = {
-  address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
-  phone: '+90 532 123 4567',
+  address: 'İstanbul, Türkiye',
+  phone: '+90 544 644 93 04',
   email: 'info@skpro.com.tr',
-  mapUrl: 'https://www.google.com/maps?q=Zincirlidere%20Caddesi%20No%3A52%2FC%20%C5%9Ei%C5%9Fli%20%C4%B0stanbul&output=embed',
-  socialLinks: {},
+  mapUrl: '',
+  socialLinks: {
+    instagram: 'https://instagram.com/skproduction',
+    linkedin: 'https://linkedin.com/company/skproduction',
+  },
 };
 
 const defaultLegacyAbout = {
@@ -199,21 +322,6 @@ const defaultLegacyAbout = {
     { label: 'Ekip Üyesi', value: '15+' },
     { label: 'Tecrübe Yılı', value: '10+' },
   ],
-};
-
-const containsPlaceholder = (value?: string) => {
-  if (!value) {
-    return true;
-  }
-
-  const normalized = value.toLowerCase();
-  return (
-    normalized.includes('example.com') ||
-    normalized.includes('instagram.com/example') ||
-    normalized.includes('linkedin.com/company/example') ||
-    normalized.includes('new york') ||
-    normalized.includes('xxx xxx')
-  );
 };
 
 const bootstrapPublicContent = async () => {
@@ -232,27 +340,13 @@ const bootstrapPublicContent = async () => {
       console.log(`Upserted section: ${section.section}`);
     }
 
-    const existingServices = await Service.find().sort({ order: 1, createdAt: 1 });
-    for (const [index, service] of defaultServices.entries()) {
-      const existing = existingServices[index];
-      if (existing) {
-        await Service.findByIdAndUpdate(existing._id, service, { new: true });
-      } else {
-        await Service.create(service);
-      }
-    }
+    await Service.deleteMany({});
+    await Service.insertMany(defaultServices);
     // eslint-disable-next-line no-console
     console.log('Upserted public services');
 
-    const existingShowcaseProjects = await ShowcaseProject.find().sort({ order: 1, createdAt: 1 });
-    for (const [index, project] of defaultShowcaseProjects.entries()) {
-      const existing = existingShowcaseProjects[index];
-      if (existing) {
-        await ShowcaseProject.findByIdAndUpdate(existing._id, project, { new: true });
-      } else {
-        await ShowcaseProject.create(project);
-      }
-    }
+    await ShowcaseProject.deleteMany({});
+    await ShowcaseProject.insertMany(defaultShowcaseProjects);
     // eslint-disable-next-line no-console
     console.log('Upserted showcase projects');
 
@@ -268,23 +362,9 @@ const bootstrapPublicContent = async () => {
     // eslint-disable-next-line no-console
     console.log('Ensured maintenance mode is disabled');
 
-    const contact = await Contact.findOne();
-    if (!contact) {
-      await Contact.create(defaultLegacyContact);
-      // eslint-disable-next-line no-console
-      console.log('Created legacy CMS contact');
-    } else if (
-      containsPlaceholder(contact.address) ||
-      containsPlaceholder(contact.phone) ||
-      containsPlaceholder(contact.email) ||
-      containsPlaceholder(contact.mapUrl) ||
-      containsPlaceholder(contact.socialLinks?.instagram) ||
-      containsPlaceholder(contact.socialLinks?.linkedin)
-    ) {
-      await Contact.findByIdAndUpdate(contact._id, defaultLegacyContact, { new: true });
-      // eslint-disable-next-line no-console
-      console.log('Updated legacy CMS contact placeholders');
-    }
+    await Contact.findOneAndUpdate({}, defaultLegacyContact, { upsert: true, new: true });
+    // eslint-disable-next-line no-console
+    console.log('Upserted legacy CMS contact');
 
     const about = await About.findOne();
     if (!about) {

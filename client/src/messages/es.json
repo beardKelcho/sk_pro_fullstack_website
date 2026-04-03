@@ -121,7 +121,7 @@
           "title": "7. Contacto",
           "paragraphs": [
             "Si tienes preguntas sobre esta política, puedes contactarnos:",
-            "Correo: info@skpro.com.tr • Teléfono: +90 532 123 4567 • Dirección: Zincirlidere Caddesi No:52/C Şişli/İstanbul"
+            "Correo: info@skpro.com.tr • Teléfono: +90 544 644 93 04 • Dirección: İstanbul, Türkiye"
           ]
         }
       ]
@@ -175,7 +175,7 @@
           "title": "7. Contacto",
           "paragraphs": [
             "Si tienes preguntas sobre los términos de uso, puedes contactarnos:",
-            "Correo: info@skpro.com.tr • Teléfono: +90 532 123 4567 • Dirección: Zincirlidere Caddesi No:52/C Şişli/İstanbul"
+            "Correo: info@skpro.com.tr • Teléfono: +90 544 644 93 04 • Dirección: İstanbul, Türkiye"
           ]
         }
       ]
@@ -250,8 +250,8 @@
           "email": "Correo"
         },
         "fallback": {
-          "address": "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
-          "phone": "+90 532 123 4567",
+          "address": "İstanbul, Türkiye",
+          "phone": "+90 544 644 93 04",
           "email": "info@skpro.com.tr"
         }
       },
@@ -293,4 +293,3 @@
     }
   }
 }
-

@@ -110,10 +110,12 @@ const mapCmsServicesToServiceCards = (content: SiteContent): Service[] => {
   return cmsServices.map((service, index) => ({
     _id: `fallback-service-${index}`,
     title: service.title,
-    category: 'Genel',
+    category: service.category || 'Genel',
     description: service.description,
     icon: service.icon || 'Monitor',
-    details: service.description ? [service.description] : [],
+    details: Array.isArray(service.details) && service.details.length > 0
+      ? service.details
+      : (service.description ? [service.description] : []),
     order: index,
     isActive: true,
   }));

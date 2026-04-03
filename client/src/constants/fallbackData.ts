@@ -28,19 +28,88 @@ export const fallbackContent: SiteContent = {
     ]
   },
   services: {
-    title: 'Hizmetlerimiz',
-    subtitle: 'Size özel profesyonel çözümler',
+    title: 'Hizmetlerimiz & Ekipmanlarımız',
+    subtitle: 'Video Engineering ve Teknik Prodüksiyon Sistemleri',
     services: [
-      { title: 'Video Prodüksiyon', description: 'Yüksek kaliteli video çekim ve kurgu hizmetleri.', icon: 'video' },
-      { title: 'Ekipman Kiralama', description: 'En son teknoloji kamera ve ışık ekipmanları.', icon: 'camera' },
-      { title: 'Canlı Yayın', description: 'Kesintisiz ve profesyonel canlı yayın altyapısı.', icon: 'broadcast-tower' }
+      {
+        title: 'Medya Sunucu Operatörlüğü',
+        description: 'Karmaşık akışa sahip etkinliklerde, timeline tabanlı içerik yönetimi ve canlı yayın senkronizasyonu.',
+        icon: 'Activity',
+        category: 'VIDEO PROCESSING',
+        details: [
+          'Canlı İçerik (Live Content) Yönetimi',
+          'Timecode Senkronizasyonu',
+          'Yedekli (Redundant) Sistem İşletimi',
+        ],
+      },
+      {
+        title: 'Analog Way Aquilon C+',
+        description: '4K/8K içerikler için ultra düşük gecikmeli, endüstri standardı görüntü işleme ve sunum sistemi.',
+        icon: 'Layers',
+        category: 'VIDEO PROCESSING',
+        details: [
+          '4K60Hz 4:4:4 İşleme Kapasitesi',
+          '10-bit HDR Desteği',
+          'Ultra Düşük Gecikme (Low Latency)',
+          'Gerçek Zamanlı Layer Yönetimi',
+        ],
+      },
+      {
+        title: 'Pixel Mapping & Canvas Yönetimi',
+        description: 'Standart dışı, yaratıcı LED yerleşimlerinin dijital ortamda haritalanması ve tek bir tuval (canvas) olarak yönetilmesi.',
+        icon: 'Monitor',
+        category: 'TECHNICAL DESIGN & SIMULATION',
+        details: [
+          'Custom Resolution (Özel Çözünürlük) Çalışma',
+          'Multi-Screen (Çoklu Ekran) Senkronizasyonu',
+          'Piksel/Piksel Hassas Yerleşim',
+        ],
+      },
+      {
+        title: 'Dataton WATCHOUT 7',
+        description: 'Çoklu ekranlı projeler, 3D mapping ve geniş yüzeyli projeksiyonlar için profesyonel medya sunucu sistemi.',
+        icon: 'Server',
+        category: 'VIDEO PROCESSING',
+        details: [
+          'Sınırsız Çözünürlük Desteği',
+          '3D Projection Mapping',
+          'Timeline Tabanlı İçerik Yönetimi',
+          'Frame-Sync Senkronizasyon',
+        ],
+      },
+      {
+        title: 'Sunum & İçerik Yönetimi',
+        description: 'Üst düzey kongre ve lansmanlarda, sunum bilgisayarlarının (Main/Backup) switcher üzerinden kesintisiz yönetimi.',
+        icon: 'Monitor',
+        category: 'SIGNAL PROCESSING',
+        details: [
+          'DSK (Downstream Keyer) Kullanımı',
+          'Speaker Timer Entegrasyonu',
+          'Main/Backup PC Otomasyonu',
+          'Farklı Format (Mac/PC) Desteği',
+        ],
+      },
+      {
+        title: 'Teknik Projelendirme & Simülasyon',
+        description: 'Etkinlik öncesinde tüm görüntü sistemlerinin CAD ortamında çizilmesi, sinyal akış şemalarının hazırlanması ve simüle edilmesi.',
+        icon: 'Cpu',
+        category: 'VIDEO PROCESSING',
+        details: [
+          'Sinyal Akış Diyagramları (Signal Flow)',
+          'Pre-Visualization (Ön İzleme)',
+        ],
+      }
     ]
   },
   contact: {
-    address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
-    phone: '+90 532 123 4567',
+    address: 'İstanbul, Türkiye',
+    phone: '+90 544 644 93 04',
     email: 'info@skpro.com.tr',
-    workingHours: ['Pazartesi - Cuma: 09:00 - 18:00', 'Cumartesi: 10:00 - 14:00', 'Pazar: Kapalı']
+    workingHours: ['Pazartesi - Cuma: 09:00 - 18:00', 'Cumartesi: 10:00 - 14:00', 'Pazar: Kapalı'],
+    socialLinks: {
+      instagram: 'https://instagram.com/skproduction',
+      linkedin: 'https://linkedin.com/company/skproduction',
+    }
   }
 };
 
@@ -48,25 +117,49 @@ export const fallbackProjects: Project[] = [
   {
     _id: 'fallback-project-1',
     type: 'photo',
-    title: 'Kurumsal Lansman ve Sahne Kurulumu',
-    category: 'Kurumsal Etkinlik',
-    description: 'Kurumsal etkinlikler için görüntü yönetimi, sahne akışı ve içerik playback çözümleri.',
+    title: 'TRT Tabii Dubai Lansman',
+    category: 'LANSMAN',
+    coverUrl: '/restored-projects/project-1.png',
     order: 1,
   },
   {
     _id: 'fallback-project-2',
     type: 'photo',
-    title: 'Festival Görüntü Rejisi',
-    category: 'Festival',
-    description: 'Çoklu kamera ve medya server kurgusuyla büyük ölçekli festival prodüksiyon desteği.',
+    title: '29 Ekim Cumhuriyet Bayramı 100. Yıl Kutlamaları',
+    category: 'KONSER',
+    coverUrl: '/restored-projects/project-2.png',
     order: 2,
   },
   {
     _id: 'fallback-project-3',
-    type: 'video',
-    title: 'Canlı Yayın Prodüksiyonu',
-    category: 'Canlı Yayın',
-    description: 'Etkinlik, lansman ve hibrit yayınlar için kesintisiz canlı yayın altyapısı.',
+    type: 'photo',
+    title: 'YouTube Influencer Etkinliği',
+    category: 'LANSMAN',
+    coverUrl: '/restored-projects/project-3.png',
     order: 3,
+  },
+  {
+    _id: 'fallback-project-4',
+    type: 'photo',
+    title: 'Haliç Kongre Merkezi',
+    category: 'KONGRE',
+    coverUrl: '/restored-projects/project-4.png',
+    order: 4,
+  },
+  {
+    _id: 'fallback-project-5',
+    type: 'photo',
+    title: '2025 Kültür Yolu Festivali',
+    category: 'KONSER',
+    coverUrl: '/restored-projects/project-5.png',
+    order: 5,
+  },
+  {
+    _id: 'fallback-project-6',
+    type: 'photo',
+    title: "19 Mayıs Atatürk'ü Anma Gençlik ve Spor Bayramı",
+    category: 'KONSER',
+    coverUrl: '/restored-projects/project-6.png',
+    order: 6,
   },
 ];

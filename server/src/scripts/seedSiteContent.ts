@@ -132,11 +132,15 @@ const seedSiteContent = async () => {
             {
                 section: 'contact',
                 data: {
-                    address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
-                    phone: '+90 555 555 55 55',
-                    email: process.env.CONTACT_FORM_TO_EMAIL || 'info@example.com',
+                    address: 'İstanbul, Türkiye',
+                    phone: '+90 544 644 93 04',
+                    email: process.env.CONTACT_FORM_TO_EMAIL || 'info@skpro.com.tr',
                     latitude: 41.057984,
-                    longitude: 28.987117
+                    longitude: 28.987117,
+                    socialLinks: {
+                        instagram: 'https://instagram.com/skproduction',
+                        linkedin: 'https://linkedin.com/company/skproduction'
+                    }
                 },
                 isActive: true,
                 order: 3

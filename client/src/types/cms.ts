@@ -22,6 +22,8 @@ export interface ServiceItem {
     title: string;
     description: string;
     icon: string;
+    category?: string;
+    details?: string[];
 }
 
 export interface EquipmentItem {

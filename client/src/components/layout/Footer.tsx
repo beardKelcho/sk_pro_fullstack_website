@@ -27,10 +27,13 @@ type FooterContactData = {
 };
 
 const STATIC_CONTACT: FooterContactData = {
-  address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
-  phone: '+90 532 123 4567',
+  address: 'İstanbul, Türkiye',
+  phone: '+90 544 644 93 04',
   email: 'info@skpro.com.tr',
-  socialLinks: {},
+  socialLinks: {
+    instagram: 'https://instagram.com/skproduction',
+    linkedin: 'https://linkedin.com/company/skproduction',
+  },
 };
 
 const isPlaceholderValue = (value?: string) => {
@@ -57,7 +60,7 @@ const normalizeFooterContactData = (value: FooterContactData | null | undefined)
     address: isPlaceholderValue(value.address) ? STATIC_CONTACT.address : value.address,
     phone: isPlaceholderValue(value.phone) ? STATIC_CONTACT.phone : value.phone,
     email: isPlaceholderValue(value.email) ? STATIC_CONTACT.email : value.email,
-    socialLinks: {},
+    socialLinks: { ...STATIC_CONTACT.socialLinks },
   };
 
   if (value.socialLinks?.instagram && !isPlaceholderValue(value.socialLinks.instagram)) {

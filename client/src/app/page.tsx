@@ -12,7 +12,7 @@ import type { Project } from '@/components/home/Projects';
 export const revalidate = 60; // Revalidate at most every 60 seconds (for SSG updates if supported, otherwise just static)
 
 // Temporary production switch while the live database is unavailable.
-const FORCE_PUBLIC_MAINTENANCE_MODE = true;
+const FORCE_PUBLIC_MAINTENANCE_MODE = false;
 
 import { fallbackContent } from '@/constants/fallbackData';
 

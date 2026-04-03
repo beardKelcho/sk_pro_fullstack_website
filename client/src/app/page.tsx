@@ -34,6 +34,8 @@ type SiteDataResult = {
   fallbackMessage: string | null;
 };
 
+const isStaticBuildProcess = process.env.npm_lifecycle_event === 'build';
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
@@ -50,6 +52,15 @@ const createFallbackMessage = (degradedSources: string[]) => {
   }
 
   return null;
+};
+
+const reportSiteDataIssue = (message: string, detail?: unknown) => {
+  if (isStaticBuildProcess) {
+    logger.warn(message);
+    return;
+  }
+
+  logger.error(message, detail);
 };
 
 // Fetch site data helper
@@ -69,11 +80,11 @@ async function getSiteData(): Promise<SiteDataResult> {
         isMaintenanceMode = maintenanceData.data?.isMaintenanceMode || false;
       } else {
         degradedSources.add('maintenance');
-        logger.error('Maintenance endpoint unavailable; continuing with content fetch', { status: maintenanceRes.status });
+        reportSiteDataIssue('Maintenance endpoint unavailable; continuing with content fetch', { status: maintenanceRes.status });
       }
     } catch (maintenanceError) {
       degradedSources.add('maintenance');
-      logger.error('Maintenance endpoint request failed', maintenanceError);
+      reportSiteDataIssue('Maintenance endpoint request failed', maintenanceError);
     }
 
     if (isMaintenanceMode) {
@@ -83,17 +94,17 @@ async function getSiteData(): Promise<SiteDataResult> {
     const [contentRes, servicesRes, projectsRes] = await Promise.all([
       fetch(`${apiUrl}/public/site-content`, { signal: AbortSignal.timeout(5000) }).catch((error) => {
         degradedSources.add('site-content');
-        logger.error('Site content endpoint request failed', error);
+        reportSiteDataIssue('Site content endpoint request failed', error);
         return null;
       }),
       fetch(`${apiUrl}/services`, { signal: AbortSignal.timeout(5000) }).catch((error) => {
         degradedSources.add('services');
-        logger.error('Services endpoint request failed', error);
+        reportSiteDataIssue('Services endpoint request failed', error);
         return null;
       }),
       fetch(`${apiUrl}/showcase-projects`, { signal: AbortSignal.timeout(5000) }).catch((error) => {
         degradedSources.add('showcase-projects');
-        logger.error('Showcase projects endpoint request failed', error);
+        reportSiteDataIssue('Showcase projects endpoint request failed', error);
         return null;
       })
     ]);
@@ -106,7 +117,7 @@ async function getSiteData(): Promise<SiteDataResult> {
       services = Array.isArray(servicesData?.data) ? servicesData.data as Service[] : [];
     } else if (servicesRes) {
       degradedSources.add('services');
-      logger.error('Services endpoint unavailable; using empty fallback', { status: servicesRes.status });
+      reportSiteDataIssue('Services endpoint unavailable; using empty fallback', { status: servicesRes.status });
     }
 
     if (projectsRes && projectsRes.ok) {
@@ -114,13 +125,13 @@ async function getSiteData(): Promise<SiteDataResult> {
       projects = Array.isArray(projectsData?.data) ? projectsData.data as Project[] : [];
     } else if (projectsRes) {
       degradedSources.add('showcase-projects');
-      logger.error('Showcase projects endpoint unavailable; using empty fallback', { status: projectsRes.status });
+      reportSiteDataIssue('Showcase projects endpoint unavailable; using empty fallback', { status: projectsRes.status });
     }
 
     if (!contentRes || !contentRes.ok) {
       if (contentRes) {
         degradedSources.add('site-content');
-        logger.error('Site content endpoint unavailable; fallback content will be used', { status: contentRes.status });
+        reportSiteDataIssue('Site content endpoint unavailable; fallback content will be used', { status: contentRes.status });
       }
       return {
         isMaintenanceMode: false,
@@ -166,7 +177,7 @@ async function getSiteData(): Promise<SiteDataResult> {
     };
 
   } catch (error) {
-    logger.error('Site data fetch failed, fallback content will be used', error);
+    reportSiteDataIssue('Site data fetch failed, fallback content will be used', error);
     return {
       isMaintenanceMode: false,
       content: fallbackContent,

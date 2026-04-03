@@ -48,6 +48,8 @@ const IGNORED_BUDGET_ROUTES = new Set([
   '/admin/loading',
 ]);
 
+const SHARED_CHUNK_USAGE_THRESHOLD = 0.95;
+
 /**
  * Build manifest'i oku
  */
@@ -176,15 +178,20 @@ function analyzeBundles() {
     process.exit(1);
   }
 
-  const globalSharedFiles = normalizedRoutes.reduce((sharedFiles, route, index) => {
-    const routeAssetFiles = routeFiles[route];
+  const fileUsageCounts = new Map();
 
-    if (index === 0) {
-      return new Set(routeAssetFiles);
-    }
+  normalizedRoutes.forEach((route) => {
+    routeFiles[route].forEach((file) => {
+      fileUsageCounts.set(file, (fileUsageCounts.get(file) || 0) + 1);
+    });
+  });
 
-    return new Set([...sharedFiles].filter((file) => routeAssetFiles.has(file)));
-  }, new Set());
+  const minSharedUsageCount = Math.max(1, Math.floor(normalizedRoutes.length * SHARED_CHUNK_USAGE_THRESHOLD));
+  const globalSharedFiles = new Set(
+    [...fileUsageCounts.entries()]
+      .filter(([, usageCount]) => usageCount >= minSharedUsageCount)
+      .map(([file]) => file)
+  );
 
   globalSharedFiles.forEach((file) => {
     results.shared[file] = getFileSize(resolveBuildAssetPath(file));

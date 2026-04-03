@@ -113,10 +113,10 @@ npm run generate:secrets
 
 ```bash
 cd client
-cp .env.local.example .env.local
+cp .env.example .env.development.local
 ```
 
-`client/.env.local` dosyasını düzenleyin:
+`client/.env.development.local` dosyasını düzenleyin:
 
 ```env
 NEXT_PUBLIC_BACKEND_URL=<your-backend-url>
@@ -260,11 +260,11 @@ npm run generate:secrets
 
 #### Client Environment Variables
 
-`client/.env.local` dosyasını oluşturun:
+`client/.env.development.local` dosyasını oluşturun:
 
 ```bash
 cd client
-cp .env.local.example .env.local
+cp .env.example .env.development.local
 ```
 
 Gerekli değişkenler:
@@ -360,7 +360,7 @@ lsof -ti:3000 | xargs kill -9  # Frontend
 
 **Çözüm:**
 1. `.env` dosyalarının doğru konumda olduğunu kontrol edin
-2. Dosya isimlerinin doğru olduğunu kontrol edin (`server/.env`, `client/.env.local`)
+2. Dosya isimlerinin doğru olduğunu kontrol edin (`server/.env`, `client/.env.development.local`)
 3. Gerekli environment variable'ların tanımlı olduğunu kontrol edin
 
 ### Problem: Build Hatası

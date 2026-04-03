@@ -85,7 +85,7 @@ npm install
 # 3. MongoDB Atlas kurulumu yap (KURULUM_VE_BASLANGIC.md'ye bak)
 
 # 4. Environment dosyalarını oluştur
-# server/.env ve client/.env.local (KURULUM_VE_BASLANGIC.md'ye bak)
+# server/.env ve client/.env.development.local (KURULUM_VE_BASLANGIC.md'ye bak)
 
 # 5. İlk admin kullanıcısını oluştur
 cd server && npm run seed && cd ..

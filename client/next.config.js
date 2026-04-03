@@ -26,6 +26,15 @@ const nextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" }
     ],
   },
+  webpack: (config) => {
+    config.ignoreWarnings = config.ignoreWarnings || [];
+    config.ignoreWarnings.push({
+      module: /@prisma\/instrumentation[\\/]node_modules[\\/]@opentelemetry[\\/]instrumentation/,
+      message: /Critical dependency: the request of a dependency is an expression/,
+    });
+
+    return config;
+  },
 };
 
 if (Number.isFinite(nextMajorVersion) && nextMajorVersion < 16) {

@@ -55,7 +55,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint .",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

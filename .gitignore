@@ -12,6 +12,7 @@ node_modules/
 .env.production.local
 client/.env
 client/.env.local
+!client/.env.example
 server/.env
 server/.env.local
 
@@ -74,6 +75,7 @@ pids
 # Logs
 logs
 *.log
+lint_results.json
 
 # Optional npm cache directory
 .npm
@@ -103,4 +105,4 @@ uploads/
 *.mp4
 *.mov
 *.avi
-*.webm 
+*.webm

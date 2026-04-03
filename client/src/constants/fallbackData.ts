@@ -3,35 +3,41 @@ import { SiteContent } from '@/types/cms';
 
 export const fallbackContent: SiteContent = {
   hero: {
-    title: 'SK Production',
-    subtitle: 'Profesyonel Görüntü Çözümleri',
-    description: 'Profesyonel görüntü ve medya çözümleri ile projelerinize değer katıyoruz.',
-    buttonText: 'Hizmetlerimiz',
-    buttonLink: '#services',
+    title: 'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
+    subtitle: 'Profesyonel Görüntü ve Medya Çözümleri',
+    description: 'SK Production olarak etkinliklerinize profesyonel görüntü rejisi ve medya server çözümleri sunuyoruz.',
+    buttonText: 'Projelerimiz',
+    buttonLink: '#projects',
+    rotatingTexts: [
+      'Görsel mükemmellikte uzman ekip',
+      'Etkinliklerinizde profesyonel çözümler',
+      'Medya server ve görüntü rejisi çözümleri'
+    ]
   },
   about: {
-    title: 'Hakkımızda',
-    description: 'SK Production, profesyonel ekipmanları ve deneyimli kadrosu ile en iyi görüntü kalitesine ulaşmanızı sağlar.',
+    title: 'SK Production Hakkında',
+    description: 'SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.\n\nAnalog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.',
+    imageUrl: '/images/sk-logo.png',
     stats: [
-      { label: 'Ekipler', value: '10+', icon: 'users' },
-      { label: 'Projeler', value: '500+', icon: 'check-circle' },
-      { label: 'Yıllık Tecrübe', value: '15+', icon: 'calendar' }
+      { label: 'Tamamlanan Proje', value: '250+', icon: 'check-circle' },
+      { label: 'Yıllık Deneyim', value: '12+', icon: 'calendar' },
+      { label: 'Profesyonel Ekipman', value: '50+', icon: 'monitor' }
     ]
   },
   services: {
-    title: 'Hizmetlerimiz',
-    subtitle: 'Size özel profesyonel çözümler',
+    title: 'Hizmetlerimiz & Ekipmanlarımız',
+    subtitle: 'Etkinlikleriniz için profesyonel çözümler ve son teknoloji ekipmanlar',
     services: [
-      { title: 'Video Prodüksiyon', description: 'Yüksek kaliteli video çekim ve kurgu hizmetleri.', icon: 'video' },
-      { title: 'Ekipman Kiralama', description: 'En son teknoloji kamera ve ışık ekipmanları.', icon: 'camera' },
-      { title: 'Canlı Yayın', description: 'Kesintisiz ve profesyonel canlı yayın altyapısı.', icon: 'broadcast-tower' }
+      { title: 'Görüntü Rejisi', description: 'Profesyonel ekipmanlarımız ve uzman ekibimizle etkinlikleriniz için kusursuz görüntü rejisi hizmeti sağlıyoruz.', icon: 'video' },
+      { title: 'Medya Server Sistemleri', description: 'Yüksek performanslı medya server sistemlerimiz ile etkinliklerinizde kesintisiz ve yüksek kaliteli içerik yayını.', icon: 'screen' },
+      { title: 'LED Ekran Yönetimi', description: 'Farklı boyut ve çözünürlüklerdeki LED ekranlar için içerik hazırlama ve profesyonel yönetim hizmetleri.', icon: 'led' }
     ]
   },
   contact: {
-    address: 'İstanbul, Türkiye',
-    phone: '+90 212 XXX XX XX',
+    address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
+    phone: '+90 532 123 4567',
     email: 'info@skpro.com.tr',
-    workingHours: ['Pazartesi - Cuma: 09:00 - 18:00']
+    workingHours: ['Pazartesi - Cuma: 09:00 - 18:00', 'Cumartesi: 10:00 - 14:00', 'Pazar: Kapalı']
   }
 };
 

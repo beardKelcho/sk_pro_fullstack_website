@@ -13,6 +13,8 @@ interface AboutProps {
 const About: React.FC<AboutProps> = ({ content }) => {
     const [contentRef, isContentVisible] = useInViewOnce<HTMLDivElement>({ rootMargin: '-80px' });
     const [imageRef, isImageVisible] = useInViewOnce<HTMLDivElement>({ rootMargin: '-80px' });
+    const imageSrc = content?.imageUrl || content?.image || '/images/sk-logo.png';
+    const hasCustomImage = Boolean(content?.imageUrl || content?.image);
 
     if (!content) {
         return null;
@@ -75,14 +77,14 @@ const About: React.FC<AboutProps> = ({ content }) => {
                             >
                                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
                                     <div className="absolute inset-0 bg-gradient-to-br from-[#0066CC]/20 to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
-                                    {content.imageUrl && (
-                                        <LazyImage
-                                            src={content.imageUrl}
-                                            alt="SK Production Team"
-                                            className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
-                                            fill
-                                        />
-                                    )}
+                                    <LazyImage
+                                        src={imageSrc}
+                                        alt="SK Production Team"
+                                        className={`w-full h-full transition-transform duration-700 group-hover:scale-110 ${
+                                            hasCustomImage ? 'object-cover' : 'object-contain p-12 bg-black/60'
+                                        }`}
+                                        fill
+                                    />
                                 </div>
                             </div>
                         </div>

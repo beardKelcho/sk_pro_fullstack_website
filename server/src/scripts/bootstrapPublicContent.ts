@@ -18,7 +18,7 @@ const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 if (!mongoUri) {
   // eslint-disable-next-line no-console
-  console.error('FATAL: MONGO_URI veya MONGODB_URI bulunamadi.');
+  console.error('FATAL: MONGO_URI veya MONGODB_URI bulunamadı.');
   process.exit(1);
 }
 
@@ -26,56 +26,55 @@ const defaultSections = [
   {
     section: 'hero',
     data: {
-      title: 'Piksellerin Otesinde, Kesintisiz Goruntu Yonetimi',
-      subtitle: 'Profesyonel Goruntu ve Medya Cozumleri',
+      title: 'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
+      subtitle: 'Profesyonel Görüntü ve Medya Çözümleri',
       description:
-        "2017'den beri sektorun en karmasik projelerinde teknik beyin olarak yer aliyoruz. Goruntu yonetimi, medya server cozumleri ve uzman ekip.",
+        "2017'den beri sektörün en karmaşık projelerinde teknik beyin olarak yer alıyoruz. Görüntü yönetimi, medya server çözümleri ve uzman ekip.",
       buttonText: 'Projelerimiz',
       buttonLink: '#projects',
       rotatingTexts: [
-        'Piksellerin Otesinde, Kesintisiz Goruntu Yonetimi',
-        'Medya Server ve Goruntu Rejisi Cozumleri',
-        'Gorsel Mukemmellikte Uzman Ekip',
+        'Profesyonel Prodüksiyon',
+        'Medya Server ve Görüntü Rejisi Çözümleri',
+        'Görsel Mükemmellikte Uzman Ekip',
       ],
       availableVideos: [],
     },
     isActive: true,
-    order: 0,
   },
   {
     section: 'services',
     data: {
-      title: 'Profesyonel Goruntu ve Medya Cozumleri',
+      title: 'Profesyonel Görüntü ve Medya Çözümleri',
       subtitle:
-        'Etkinlikleriniz icin dunya standartlarinda medya sunuculari, goruntu isleme teknolojileri ve uzman reji hizmetleri sunuyoruz.',
+        'Etkinlikleriniz için dünya standartlarında medya sunucuları, görüntü işleme teknolojileri ve uzman reji hizmetleri sunuyoruz.',
       services: [
         {
-          title: 'Uzman Ekip ve Teknik Yonetim',
+          title: 'Uzman Ekip & Teknik Yönetim',
           description:
-            "2017'den beri sektorun en karmasik projelerinde teknik beyin olarak yer aliyoruz. Sadece cihaz saglamiyor, projenizin tum goruntu mimarisini uctan uca yonetiyoruz.",
+            "2017'den beri sektörün en karmaşık projelerinde teknik beyin olarak yer alıyoruz. Sadece cihaz sağlamıyor, projenizin tüm görüntü mimarisini uçtan uca yönetiyoruz.",
           icon: 'screen',
           order: 0,
         },
         {
-          title: 'Goruntu Rejisi ve Isleme',
+          title: 'Görüntü Rejisi & İşleme',
           description:
-            'Analog Way Aquilon RS serisi ile cok katmanli goruntu yonetimi. Buyuk LED ekranlarda sifir gecikmeli ve kusursuz sinyal isleme.',
+            'Analog Way Aquilon RS serisi ile çok katmanlı görüntü yönetimi. Büyük LED ekranlarda sıfır gecikmeli ve kusursuz sinyal işleme.',
           icon: 'video',
           order: 1,
         },
         {
-          title: 'Medya Server Cozumleri',
+          title: 'Medya Server Çözümleri',
           description:
-            'Dataton Watchout uzmanligiyla milimetrik icerik senkronizasyonu. Buyuk yuzeylerde ileri seviye mapping ve coklu ekran yonetimi.',
+            'Dataton Watchout uzmanlığıyla milimetrik içerik senkronizasyonu. Büyük yüzeylerde ileri seviye mapping ve çoklu ekran yönetimi.',
           icon: 'led',
           order: 2,
         },
       ],
       equipment: [
         {
-          title: 'Goruntu Rejisi Sistemleri',
+          title: 'Görüntü Rejisi Sistemleri',
           items: [
-            { name: 'Analog Way Aquilon RS4', description: '4K/8K giris-cikis yonetimi' },
+            { name: 'Analog Way Aquilon RS4', description: '4K/8K giriş-çıkış yönetimi' },
             { name: 'Barco E2 Gen 2', description: '4K screen management system' },
           ],
           order: 0,
@@ -83,117 +82,125 @@ const defaultSections = [
       ],
     },
     isActive: true,
-    order: 1,
   },
   {
     section: 'about',
     data: {
-      title: 'Hakkimizda',
+      title: 'SK Production Hakkında',
       description:
-        "SK Production olarak goruntu teknolojileri alaninda uctan uca cozumler uretiyor, teknolojiyi sanatla bulusturuyoruz. 2017'den beri teknik prodüksiyon projelerinde güvenilir cozum ortagi olarak calisiyoruz.",
+        'SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.\n\nAnalog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.',
+      imageUrl: '/images/sk-logo.png',
       stats: [
-        { label: 'Tamamlanan Proje', value: '500+' },
-        { label: 'Mutlu Musteri', value: '100+' },
+        { label: 'Tamamlanan Proje', value: '250+' },
+        { label: 'Yıllık Deneyim', value: '12+' },
+        { label: 'Profesyonel Ekipman', value: '50+' },
       ],
     },
     isActive: true,
-    order: 2,
   },
   {
     section: 'contact',
     data: {
-      address: 'Zincirlidere Caddesi No:52/C Sisli/Istanbul',
-      phone: '+90 212 XXX XX XX',
+      address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
+      phone: '+90 532 123 4567',
       email: 'info@skpro.com.tr',
       workingHours: [
         'Pazartesi - Cuma: 09:00 - 18:00',
         'Cumartesi: 10:00 - 14:00',
-        'Pazar: Kapali',
+        'Pazar: Kapalı',
       ],
       socialLinks: {},
       latitude: 41.057984,
       longitude: 28.987117,
     },
     isActive: true,
-    order: 3,
   },
 ] as const;
 
 const defaultServices = [
   {
-    title: 'Video Produksiyon',
-    category: 'Genel',
-    description: 'Yuksek kaliteli video cekim ve kurgu hizmetleri.',
-    icon: 'Monitor',
-    details: ['Yuksek kaliteli video cekim ve kurgu hizmetleri.'],
+    title: 'Görüntü Rejisi & İşleme',
+    category: 'Video Processing',
+    description: 'Analog Way ve çok katmanlı görüntü işleme altyapısıyla etkinliklerinizde kusursuz akış yönetimi sağlıyoruz.',
+    icon: 'Layers',
+    details: [
+      'Analog Way Aquilon RS serisi ile çok katmanlı görüntü yönetimi',
+      'Büyük LED yüzeylerde sıfır gecikmeli sinyal işleme',
+    ],
     order: 0,
     isActive: true,
   },
   {
-    title: 'Ekipman Kiralama',
-    category: 'Genel',
-    description: 'En son teknoloji kamera ve isik ekipmanlari.',
-    icon: 'Monitor',
-    details: ['En son teknoloji kamera ve isik ekipmanlari.'],
+    title: 'Medya Server Sistemleri',
+    category: 'Media Server',
+    description: 'Dataton Watchout, içerik playback ve çoklu ekran senkronizasyonu ile karmaşık sahne kurgularını yönetiyoruz.',
+    icon: 'Server',
+    details: [
+      'Dataton Watchout tabanlı içerik senkronizasyonu',
+      'Mapping, playback ve çoklu çıkış yönetimi',
+    ],
     order: 1,
     isActive: true,
   },
   {
-    title: 'Canli Yayin',
-    category: 'Genel',
-    description: 'Kesintisiz ve profesyonel canli yayin altyapisi.',
-    icon: 'Monitor',
-    details: ['Kesintisiz ve profesyonel canli yayin altyapisi.'],
+    title: 'LED Ekran & İçerik Yönetimi',
+    category: 'Display Control',
+    description: 'LED ekran, içerik dağıtımı ve sahne görsel akışı için uçtan uca teknik yönetim sağlıyoruz.',
+    icon: 'Activity',
+    details: [
+      'Farklı ekran çözünürlüklerine uygun içerik yönetimi',
+      'Sahne akışı boyunca aktif teknik koordinasyon',
+    ],
     order: 2,
     isActive: true,
   },
-];
+] as const;
 
 const defaultShowcaseProjects = [
   {
     type: 'photo' as const,
     title: 'Kurumsal Lansman ve Sahne Kurulumu',
     category: 'Kurumsal Etkinlik',
-    description: 'Kurumsal etkinlikler icin goruntu yonetimi, sahne akisi ve icerik playback cozumleri.',
+    description: 'Kurumsal etkinliklerde görüntü yönetimi, sahne akışı ve içerik playback çözümleri.',
     order: 1,
     isActive: true,
   },
   {
     type: 'photo' as const,
-    title: 'Festival Goruntu Rejisi',
+    title: 'Festival Görüntü Rejisi',
     category: 'Festival',
-    description: 'Coklu kamera ve medya server kurgusuyla buyuk olcekli festival prodüksiyon destegi.',
+    description: 'Çoklu kamera ve medya server kurgusuyla büyük ölçekli festival prodüksiyon desteği.',
     order: 2,
     isActive: true,
   },
   {
     type: 'video' as const,
-    title: 'Canli Yayin Produksiyonu',
-    category: 'Canli Yayin',
-    description: 'Etkinlik, lansman ve hibrit yayinlar icin kesintisiz canli yayin altyapisi.',
+    title: 'Canlı Yayın Prodüksiyonu',
+    category: 'Canlı Yayın',
+    description: 'Etkinlik, lansman ve hibrit yayınlar için kesintisiz canlı yayın altyapısı.',
     order: 3,
     isActive: true,
   },
-];
+] as const;
 
 const defaultLegacyContact = {
-  address: 'Istanbul, Turkiye',
-  phone: '+90 212 XXX XX XX',
+  address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
+  phone: '+90 532 123 4567',
   email: 'info@skpro.com.tr',
   mapUrl: '',
   socialLinks: {},
 };
 
 const defaultLegacyAbout = {
-  title: 'SK Production Hakkinda',
+  title: 'SK Production Hakkında',
   description:
-    'Profesyonel sahne, goruntu ve medya sistemlerinde deneyimli ekibimizle etkinliklerinize deger katiyoruz.',
+    'Profesyonel sahne, görüntü ve medya sistemlerinde deneyimli ekibimizle etkinliklerinize değer katıyoruz.',
   imageUrl: '/images/sk-logo.png',
   stats: [
-    { label: 'Yillik Etkinlik', value: '50+' },
-    { label: 'Mutlu Musteri', value: '100+' },
-    { label: 'Ekip Uyesi', value: '15+' },
-    { label: 'Tecrube Yili', value: '10+' },
+    { label: 'Yıllık Etkinlik', value: '50+' },
+    { label: 'Mutlu Müşteri', value: '100+' },
+    { label: 'Ekip Üyesi', value: '15+' },
+    { label: 'Tecrübe Yılı', value: '10+' },
   ],
 };
 
@@ -219,38 +226,50 @@ const bootstrapPublicContent = async () => {
     await mongoose.connect(mongoUri);
 
     for (const section of defaultSections) {
-      const existing = await SiteContent.findOne({ section: section.section });
-      if (!existing) {
-        await SiteContent.create(section);
-        // eslint-disable-next-line no-console
-        console.log(`Created default section: ${section.section}`);
+      await SiteContent.findOneAndUpdate(
+        { section: section.section },
+        section,
+        { upsert: true, new: true }
+      );
+      // eslint-disable-next-line no-console
+      console.log(`Upserted section: ${section.section}`);
+    }
+
+    const existingServices = await Service.find().sort({ order: 1, createdAt: 1 });
+    for (const [index, service] of defaultServices.entries()) {
+      const existing = existingServices[index];
+      if (existing) {
+        await Service.findByIdAndUpdate(existing._id, service, { new: true });
+      } else {
+        await Service.create(service);
       }
     }
+    // eslint-disable-next-line no-console
+    console.log('Upserted public services');
 
-    const serviceCount = await Service.countDocuments();
-    if (serviceCount === 0) {
-      await Service.insertMany(defaultServices);
-      // eslint-disable-next-line no-console
-      console.log('Inserted default public services');
+    const existingShowcaseProjects = await ShowcaseProject.find().sort({ order: 1, createdAt: 1 });
+    for (const [index, project] of defaultShowcaseProjects.entries()) {
+      const existing = existingShowcaseProjects[index];
+      if (existing) {
+        await ShowcaseProject.findByIdAndUpdate(existing._id, project, { new: true });
+      } else {
+        await ShowcaseProject.create(project);
+      }
     }
+    // eslint-disable-next-line no-console
+    console.log('Upserted showcase projects');
 
-    const showcaseCount = await ShowcaseProject.countDocuments();
-    if (showcaseCount === 0) {
-      await ShowcaseProject.insertMany(defaultShowcaseProjects);
-      // eslint-disable-next-line no-console
-      console.log('Inserted default showcase projects');
-    }
-
-    const maintenanceSetting = await SystemSetting.findOne({ key: 'maintenance_mode' });
-    if (!maintenanceSetting) {
-      await SystemSetting.create({
+    await SystemSetting.findOneAndUpdate(
+      { key: 'maintenance_mode' },
+      {
         key: 'maintenance_mode',
         value: { isMaintenanceMode: false },
-        description: 'Site genel bakim modu ayari',
-      });
-      // eslint-disable-next-line no-console
-      console.log('Created default maintenance setting');
-    }
+        description: 'Site genel bakım modu ayarı',
+      },
+      { upsert: true, new: true }
+    );
+    // eslint-disable-next-line no-console
+    console.log('Ensured maintenance mode is disabled');
 
     const contact = await Contact.findOne();
     if (!contact) {
@@ -275,6 +294,10 @@ const bootstrapPublicContent = async () => {
       await About.create(defaultLegacyAbout);
       // eslint-disable-next-line no-console
       console.log('Created legacy CMS about');
+    } else if (!about.imageUrl) {
+      await About.findByIdAndUpdate(about._id, defaultLegacyAbout, { new: true });
+      // eslint-disable-next-line no-console
+      console.log('Updated legacy CMS about');
     }
 
     // eslint-disable-next-line no-console

@@ -27,8 +27,8 @@ type FooterContactData = {
 };
 
 const STATIC_CONTACT: FooterContactData = {
-  address: 'Istanbul, Turkiye',
-  phone: '+90 212 XXX XX XX',
+  address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
+  phone: '+90 532 123 4567',
   email: 'info@skpro.com.tr',
   socialLinks: {},
 };

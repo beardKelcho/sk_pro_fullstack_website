@@ -27,6 +27,32 @@ interface ProjectsProps {
     initialProjects?: Project[];
 }
 
+const ProjectMediaFallback = ({
+    project,
+    type,
+}: {
+    project: Project;
+    type: 'photo' | 'video';
+}) => (
+    <div className="relative h-64 overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/70">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.22),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(168,85,247,0.18),transparent_40%)]" />
+        <div className="absolute left-5 top-5 rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-300 backdrop-blur-sm">
+            {project.category}
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-white/5 text-cyan-300 shadow-[0_0_40px_rgba(6,182,212,0.18)]">
+                <Icon name={type === 'video' ? 'play' : 'image'} className="h-10 w-10" />
+            </div>
+            <div className="mt-5 max-w-sm">
+                <p className="text-lg font-semibold text-white md:text-xl">{project.title}</p>
+                {project.description ? (
+                    <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-gray-300">{project.description}</p>
+                ) : null}
+            </div>
+        </div>
+    </div>
+);
+
 const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
     const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
     const [lightbox, setLightbox] = useState<LightboxState | null>(null);
@@ -156,16 +182,26 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                     photoProjects.map((project, index) => (
                                         <div
                                             key={project._id}
-                                            className="group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all duration-500 cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10"
+                                            className={`group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all duration-500 ${
+                                                project.coverUrl || project.imageUrls?.[0]
+                                                    ? 'cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10'
+                                                    : 'cursor-default'
+                                            }`}
                                             style={{ transitionDelay: `${index * 60}ms` }}
-                                            onClick={() => setLightbox({
-                                                images: project.imageUrls || [project.coverUrl || ''],
-                                                currentIndex: 0,
-                                                title: project.title
-                                            })}
+                                            onClick={() => {
+                                                if (!(project.coverUrl || project.imageUrls?.[0])) {
+                                                    return;
+                                                }
+
+                                                setLightbox({
+                                                    images: project.imageUrls || [project.coverUrl || ''],
+                                                    currentIndex: 0,
+                                                    title: project.title
+                                                });
+                                            }}
                                         >
                                             {/* Cover Image */}
-                                            {(project.coverUrl || project.imageUrls?.[0]) && (
+                                            {project.coverUrl || project.imageUrls?.[0] ? (
                                                 <div className="relative h-64 overflow-hidden">
                                                     <NextImage
                                                         src={project.coverUrl || project.imageUrls?.[0] || ''}
@@ -194,6 +230,8 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                                         </div>
                                                     </div>
                                                 </div>
+                                            ) : (
+                                                <ProjectMediaFallback project={project} type="photo" />
                                             )}
 
                                             {/* Content */}
@@ -232,11 +270,27 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                     videoProjects.map((project, index) => (
                                         <div
                                             key={project._id}
-                                            className="group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all duration-500 cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10"
+                                            className={`group relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-md border border-white/10 hover:border-cyan-500/50 transition-all duration-500 ${
+                                                project.videoUrl ? 'cursor-pointer hover:shadow-lg hover:shadow-cyan-500/10' : 'cursor-default'
+                                            }`}
                                             style={{ transitionDelay: `${index * 60}ms` }}
-                                            onMouseEnter={() => handleVideoHover(project._id, true)}
-                                            onMouseLeave={() => handleVideoHover(project._id, false)}
-                                            onClick={() => setSelectedVideo({ url: project.videoUrl || '', title: project.title })}
+                                            onMouseEnter={() => {
+                                                if (project.videoUrl) {
+                                                    handleVideoHover(project._id, true);
+                                                }
+                                            }}
+                                            onMouseLeave={() => {
+                                                if (project.videoUrl) {
+                                                    handleVideoHover(project._id, false);
+                                                }
+                                            }}
+                                            onClick={() => {
+                                                if (!project.videoUrl) {
+                                                    return;
+                                                }
+
+                                                setSelectedVideo({ url: project.videoUrl, title: project.title });
+                                            }}
                                         >
                                             {/* Video Preview */}
                                             <div className="relative h-64 overflow-hidden bg-black">
@@ -253,26 +307,33 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                                         playsInline
                                                         className="w-full h-full object-cover"
                                                     />
-                                                ) : (
+                                                ) : project.coverUrl ? (
                                                     <div className="relative w-full h-full">
                                                         <NextImage
-                                                            src={project.coverUrl || ''}
+                                                            src={project.coverUrl}
                                                             alt={project.title}
                                                             fill
                                                             sizes="(max-width: 768px) 100vw, 400px"
                                                             className="object-cover"
                                                         />
                                                     </div>
+                                                ) : (
+                                                    <ProjectMediaFallback project={project} type="video" />
                                                 )}
 
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
 
-                                                {/* Play Button */}
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-300">
-                                                    <div className="w-20 h-20 rounded-full bg-blue-600/90 flex items-center justify-center backdrop-blur-sm">
-                                                        <Icon name="play" className="w-10 h-10 text-white ml-2" />
+                                                {project.videoUrl ? (
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity duration-300">
+                                                        <div className="w-20 h-20 rounded-full bg-blue-600/90 flex items-center justify-center backdrop-blur-sm">
+                                                            <Icon name="play" className="w-10 h-10 text-white ml-2" />
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                ) : (
+                                                    <div className="absolute right-4 top-4 rounded-full border border-white/10 bg-black/45 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200 backdrop-blur-sm">
+                                                        Yakında
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Content */}

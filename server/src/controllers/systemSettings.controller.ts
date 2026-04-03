@@ -3,6 +3,18 @@ import { SystemSetting } from '../models/SystemSetting';
 import { AppError } from '../middleware/errorHandler';
 // Removed unused mongoose
 
+const extractMaintenanceStatus = (value: unknown): boolean => {
+    if (typeof value === 'boolean') {
+        return value;
+    }
+
+    if (value && typeof value === 'object' && 'isMaintenanceMode' in value) {
+        return Boolean((value as { isMaintenanceMode?: unknown }).isMaintenanceMode);
+    }
+
+    return false;
+};
+
 /**
  * Get maintenance mode status (Public endpoint - fast check)
  */
@@ -13,7 +25,7 @@ export const getMaintenanceStatus = async (req: Request, res: Response) => {
         res.json({
             success: true,
             data: {
-                isMaintenanceMode: setting?.value || false,
+                isMaintenanceMode: extractMaintenanceStatus(setting?.value),
                 message: setting?.description || null,
             },
         });
@@ -114,13 +126,14 @@ export const toggleMaintenanceMode = async (req: Request, res: Response) => {
 
         const setting = await SystemSetting.findOne({ key: 'maintenance_mode' });
 
-        const newValue = setting ? !setting.value : true;
+        const currentValue = extractMaintenanceStatus(setting?.value);
+        const newValue = !currentValue;
 
         const updatedSetting = await SystemSetting.findOneAndUpdate(
             { key: 'maintenance_mode' },
             {
                 key: 'maintenance_mode',
-                value: newValue,
+                value: { isMaintenanceMode: newValue },
                 description: req.body.message || 'Site bakımdadır. Kısa süre içinde yeniden hizmette olacağız.',
                 updatedBy: userId,
             },

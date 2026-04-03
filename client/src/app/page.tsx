@@ -37,6 +37,18 @@ type SiteDataResult = {
   fallbackMessage: string | null;
 };
 
+const extractMaintenanceStatus = (value: unknown): boolean => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (isRecord(value) && 'isMaintenanceMode' in value) {
+    return Boolean(value.isMaintenanceMode);
+  }
+
+  return false;
+};
+
 const isStaticBuildProcess = process.env.npm_lifecycle_event === 'build';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -80,7 +92,7 @@ async function getSiteData(): Promise<SiteDataResult> {
 
       if (maintenanceRes.ok) {
         const maintenanceData = await maintenanceRes.json();
-        isMaintenanceMode = maintenanceData.data?.isMaintenanceMode || false;
+        isMaintenanceMode = extractMaintenanceStatus(maintenanceData.data?.isMaintenanceMode);
       } else {
         degradedSources.add('maintenance');
         reportSiteDataIssue('Maintenance endpoint unavailable; continuing with content fetch', { status: maintenanceRes.status });

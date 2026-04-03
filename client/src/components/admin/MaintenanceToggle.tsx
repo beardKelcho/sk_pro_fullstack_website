@@ -4,6 +4,18 @@ import axios from '@/services/api/axios'; // Use our configured axios instance
 import { toast } from 'react-toastify';
 import { Settings as SettingsIcon } from 'lucide-react';
 
+const extractMaintenanceStatus = (value: unknown): boolean => {
+    if (typeof value === 'boolean') {
+        return value;
+    }
+
+    if (value && typeof value === 'object' && 'isMaintenanceMode' in value) {
+        return Boolean((value as { isMaintenanceMode?: unknown }).isMaintenanceMode);
+    }
+
+    return false;
+};
+
 const MaintenanceToggle: React.FC = () => {
     const queryClient = useQueryClient();
 
@@ -16,7 +28,7 @@ const MaintenanceToggle: React.FC = () => {
         },
     });
 
-    const isMaintenanceMode = maintenanceData?.isMaintenanceMode || false;
+    const isMaintenanceMode = extractMaintenanceStatus(maintenanceData?.isMaintenanceMode);
 
     // Toggle maintenance mode mutation
     const toggleMaintenanceMutation = useMutation({

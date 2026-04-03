@@ -26,16 +26,16 @@ const defaultSections = [
   {
     section: 'hero',
     data: {
-      title: 'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
-      subtitle: 'Profesyonel Görüntü ve Medya Çözümleri',
+      title: 'Piksellerin Ötesinde,\nKesintisiz Görüntü Yönetimi',
+      subtitle: 'Profesyonel Görüntü Rejisi ve Medya Çözümleri',
       description:
-        "2017'den beri sektörün en karmaşık projelerinde teknik beyin olarak yer alıyoruz. Görüntü yönetimi, medya server çözümleri ve uzman ekip.",
-      buttonText: 'Projelerimiz',
+        "SK Production olarak en büyük sahnelerde, en karmaşık projelerde 'teknik beyin' rolünü üstleniyoruz. Dünyanın en iyi marka ve sanatçıları için sıfır hata toleransıyla kusursuz görsel şovlar yaratmak bizim işimiz.",
+      buttonText: 'Projelerimizi İnceleyin',
       buttonLink: '#projects',
       rotatingTexts: [
-        'Profesyonel Prodüksiyon',
-        'Medya Server ve Görüntü Rejisi Çözümleri',
-        'Görsel Mükemmellikte Uzman Ekip',
+        'Kusursuz Görüntü Rejisi',
+        'İleri Seviye Medya Server Sistemleri',
+        'Devasa Sahnelerde Uçtan Uca Teknik Yönetim',
       ],
       availableVideos: [],
     },
@@ -44,38 +44,39 @@ const defaultSections = [
   {
     section: 'services',
     data: {
-      title: 'Profesyonel Görüntü ve Medya Çözümleri',
+      title: 'Hizmetlerimiz ve Altyapımız',
       subtitle:
-        'Etkinlikleriniz için dünya standartlarında medya sunucuları, görüntü işleme teknolojileri ve uzman reji hizmetleri sunuyoruz.',
+        'Sıradan bir etkinlik ile unutulmaz bir şov arasındaki fark, doğru teknolojiyi ustalıkla kullanmaktır. Size en iyisi için ihtiyacınız olan her şeyi sunuyoruz.',
       services: [
         {
-          title: 'Uzman Ekip & Teknik Yönetim',
+          title: 'Uzman Ekip & Danışmanlık',
           description:
-            "2017'den beri sektörün en karmaşık projelerinde teknik beyin olarak yer alıyoruz. Sadece cihaz sağlamıyor, projenizin tüm görüntü mimarisini uçtan uca yönetiyoruz.",
+            "Sadece ekipman sağlamıyoruz. Projenizin kağıt üzerindeki tasarımından, son saniye alkışına kadar sahnedeki tüm teknik akışın kusursuz olmasını garantiye alan bir uzmanlık ekibiyiz.",
           icon: 'screen',
           order: 0,
         },
         {
           title: 'Görüntü Rejisi & İşleme',
           description:
-            'Analog Way Aquilon RS serisi ile çok katmanlı görüntü yönetimi. Büyük LED ekranlarda sıfır gecikmeli ve kusursuz sinyal işleme.',
+            'Analog Way Aquilon ve Barco serisi cihazlarımızla devasa LED ekranlarda sıfır gecikmeli, 8K çözünürlüklü ve çok katmanlı, kesintisiz bir sinyal yönetimi sağlıyoruz.',
           icon: 'video',
           order: 1,
         },
         {
-          title: 'Medya Server Çözümleri',
+          title: 'İleri Medya Server Çözümleri',
           description:
-            'Dataton Watchout uzmanlığıyla milimetrik içerik senkronizasyonu. Büyük yüzeylerde ileri seviye mapping ve çoklu ekran yönetimi.',
+            'Dataton Watchout uzmanlığımız sayesinde milimetrik piksel mapping, devasa içerik senkronizasyonu ve karmaşık çoklu-ekran kurgularını mükemmellik ile yönetiyoruz.',
           icon: 'led',
           order: 2,
         },
       ],
       equipment: [
         {
-          title: 'Görüntü Rejisi Sistemleri',
+          title: 'Sistem Altyapımız',
           items: [
-            { name: 'Analog Way Aquilon RS4', description: '4K/8K giriş-çıkış yönetimi' },
-            { name: 'Barco E2 Gen 2', description: '4K screen management system' },
+            { name: 'Analog Way Aquilon RS4', description: '4K/8K Sinyal Yönetimi ve Kesintisiz Geçiş Sistemi' },
+            { name: 'Dataton Watchpax / Watchout 6', description: 'Gelişmiş Mapping ve Çoklu Ekran Playback Sistemi' },
+            { name: 'Barco E2 Gen 2 / S3-4K', description: 'Gelişmiş Görüntü İşleme ve Çoklu Çıkış Rejisi' }
           ],
           order: 0,
         },
@@ -86,14 +87,14 @@ const defaultSections = [
   {
     section: 'about',
     data: {
-      title: 'SK Production Hakkında',
+      title: 'Teknoloji ve Sanatın Buluştuğu Yer',
       description:
-        'SK Production, profesyonel etkinlikler için görüntü rejisi ve medya server çözümleri sunan uzman bir ekiptir.\n\nAnalog Way Aquilon, Dataton Watchpax ve Resolume Arena 7 gibi son teknoloji ekipmanlarla hizmet veriyoruz.',
+        "SK Production olarak, teknolojinin sınırlarını zorlayarak sektördeki sıradanlaştırılmış çözümlerin dışına çıkıyoruz.\n\nSektörde yıllar içerisinde biriktirdiğimiz saha deneyimini, en güncel teknolojik ekipmanlarla harmanlayarak birleştiriyoruz. En zorlu sahnelerin ve devasa tasarımların ardındaki 'Görünmez Kahraman' olmaktan gurur duyuyoruz.",
       imageUrl: '/images/sk-logo.png',
       stats: [
-        { label: 'Tamamlanan Proje', value: '250+' },
-        { label: 'Yıllık Deneyim', value: '12+' },
-        { label: 'Profesyonel Ekipman', value: '50+' },
+        { label: 'Başarılı Proje', value: '450+' },
+        { label: 'Sektörel Deneyim', value: '14 Yıl' },
+        { label: 'Global Çözüm Ortakları', value: '25+' },
       ],
     },
     isActive: true,

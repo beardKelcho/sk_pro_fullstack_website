@@ -36,15 +36,15 @@ const seedSiteContent = async () => {
             {
                 section: 'hero',
                 data: {
-                    title: 'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
-                    subtitle: 'Profesyonel Görüntü ve Medya Çözümleri',
-                    description: "2017'den beri sektörün en karmaşık projelerinde 'teknik beyin' olarak yer alıyoruz. Görüntü yönetimi, medya server çözümleri ve uzman ekip.",
-                    buttonText: 'Projelerimiz',
+                    title: 'Piksellerin Ötesinde,\nKesintisiz Görüntü Yönetimi',
+                    subtitle: 'Profesyonel Görüntü Rejisi ve Medya Çözümleri',
+                    description: "SK Production olarak en büyük sahnelerde, en karmaşık projelerde 'teknik beyin' rolünü üstleniyoruz. Dünyanın en iyi marka ve sanatçıları için sıfır hata toleransıyla kusursuz görsel şovlar yaratmak bizim işimiz.",
+                    buttonText: 'Projelerimizi İnceleyin',
                     buttonLink: '#projects',
                     rotatingTexts: [
-                        'Piksellerin Ötesinde, Kesintisiz Görüntü Yönetimi',
-                        'Medya Server ve Görüntü Rejisi Çözümleri',
-                        'Görsel Mükemmellikte Uzman Ekip'
+                        'Kusursuz Görüntü Rejisi',
+                        'İleri Seviye Medya Server Sistemleri',
+                        'Devasa Sahnelerde Uçtan Uca Teknik Yönetim'
                     ],
                     availableVideos: []
                 },
@@ -62,34 +62,35 @@ const seedSiteContent = async () => {
             {
                 section: 'services',
                 data: {
-                    title: 'Profesyonel Görüntü ve Medya Çözümleri',
-                    subtitle: 'Etkinlikleriniz için dünya standartlarında medya sunucuları, görüntü işleme teknolojileri ve uzman reji hizmetleri sunuyoruz.',
+                    title: 'Hizmetlerimiz ve Altyapımız',
+                    subtitle: 'Sıradan bir etkinlik ile unutulmaz bir şov arasındaki fark, doğru teknolojiyi ustalıkla kullanmaktır. Size en iyisi için ihtiyacınız olan her şeyi sunuyoruz.',
                     services: [
                         {
-                            title: 'Uzman Ekip & Teknik Yönetim',
-                            description: "2017'den beri sektörün en karmaşık projelerinde 'teknik beyin' olarak yer alıyoruz. Sadece cihaz sağlamıyor, projenizin tüm görüntü mimarisini uçtan uca yönetiyoruz.",
+                            title: 'Uzman Ekip & Danışmanlık',
+                            description: "Sadece ekipman sağlamıyoruz. Projenizin kağıt üzerindeki tasarımından, son saniye alkışına kadar sahnedeki tüm teknik akışın kusursuz olmasını garantiye alan bir uzmanlık ekibiyiz.",
                             icon: 'screen',
                             order: 0
                         },
                         {
                             title: 'Görüntü Rejisi & İşleme',
-                            description: "Analog Way Aquilon RS serisi ile çok katmanlı görüntü yönetimi. Dev LED ekranlarda 8K çözünürlüğe kadar sıfır gecikmeli ve kusursuz sinyal işleme.",
+                            description: "Analog Way Aquilon ve Barco serisi cihazlarımızla devasa LED ekranlarda sıfır gecikmeli, 8K çözünürlüklü ve çok katmanlı, kesintisiz bir sinyal yönetimi sağlıyoruz.",
                             icon: 'video',
                             order: 1
                         },
                         {
-                            title: 'Medya Server Çözümleri',
-                            description: "Dataton Watchout uzmanlığıyla milimetrik içerik senkronizasyonu. Devasa yüzeylerde ileri seviye mapping ve çoklu ekran yönetim çözümleri.",
+                            title: 'İleri Medya Server Çözümleri',
+                            description: "Dataton Watchout uzmanlığımız sayesinde milimetrik piksel mapping, devasa içerik senkronizasyonu ve karmaşık çoklu-ekran kurgularını mükemmellik ile yönetiyoruz.",
                             icon: 'led',
                             order: 2
                         }
                     ],
                     equipment: [
                         {
-                            title: 'Görüntü Rejisi Sistemleri',
+                            title: 'Sistem Altyapımız',
                             items: [
-                                { name: 'Analog Way Aquilon RS4', description: '4K/8K 24 Giriş / 16 Çıkış' },
-                                { name: 'Barco E2 Gen 2', description: '4K Screen Management System' }
+                                { name: 'Analog Way Aquilon RS4', description: '4K/8K Sinyal Yönetimi ve Kesintisiz Geçiş Sistemi' },
+                                { name: 'Dataton Watchpax / Watchout 6', description: 'Gelişmiş Mapping ve Çoklu Ekran Playback Sistemi' },
+                                { name: 'Barco E2 Gen 2 / S3-4K', description: 'Gelişmiş Görüntü İşleme ve Çoklu Çıkış Rejisi' }
                             ],
                             order: 0
                         }
@@ -109,11 +110,12 @@ const seedSiteContent = async () => {
             {
                 section: 'about',
                 data: {
-                    title: 'Hakkımızda',
-                    description: "SK Production olarak, görüntü teknolojileri alanında uçtan uca çözümler üreten, teknolojiyi sanatla buluşturan bir teknik prodüksiyon şirketiyiz.\n\n2017 yılında yola çıktığımız ilk günden beri, standartların ötesine geçmeyi hedefledik. Sadece ekipman kiralayan bir firma değil, projenizin 'teknik zekası' olmayı amaçlıyoruz.",
+                    title: 'Teknoloji ve Sanatın Buluştuğu Yer',
+                    description: "SK Production olarak, teknolojinin sınırlarını zorlayarak sektördeki sıradanlaştırılmış çözümlerin dışına çıkıyoruz.\n\nSektörde yıllar içerisinde biriktirdiğimiz saha deneyimini, en güncel teknolojik ekipmanlarla harmanlayarak birleştiriyoruz. En zorlu sahnelerin ve devasa tasarımların ardındaki 'Görünmez Kahraman' olmaktan gurur duyuyoruz.",
                     stats: [
-                        { label: 'Tamamlanan Proje', value: '500+' },
-                        { label: 'Mutlu Müşteri', value: '100+' }
+                        { label: 'Başarılı Proje', value: '450+' },
+                        { label: 'Sektörel Deneyim', value: '14 Yıl' },
+                        { label: 'Global Çözüm Ortakları', value: '25+' }
                     ]
                 },
                 isActive: true,

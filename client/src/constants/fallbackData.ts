@@ -1,3 +1,4 @@
+import type { Project } from '@/components/home/Projects';
 import { SiteContent } from '@/types/cms';
 
 export const fallbackContent: SiteContent = {
@@ -33,3 +34,30 @@ export const fallbackContent: SiteContent = {
     workingHours: ['Pazartesi - Cuma: 09:00 - 18:00']
   }
 };
+
+export const fallbackProjects: Project[] = [
+  {
+    _id: 'fallback-project-1',
+    type: 'photo',
+    title: 'Kurumsal Lansman ve Sahne Kurulumu',
+    category: 'Kurumsal Etkinlik',
+    description: 'Kurumsal etkinlikler için görüntü yönetimi, sahne akışı ve içerik playback çözümleri.',
+    order: 1,
+  },
+  {
+    _id: 'fallback-project-2',
+    type: 'photo',
+    title: 'Festival Görüntü Rejisi',
+    category: 'Festival',
+    description: 'Çoklu kamera ve medya server kurgusuyla büyük ölçekli festival prodüksiyon desteği.',
+    order: 2,
+  },
+  {
+    _id: 'fallback-project-3',
+    type: 'video',
+    title: 'Canlı Yayın Prodüksiyonu',
+    category: 'Canlı Yayın',
+    description: 'Etkinlik, lansman ve hibrit yayınlar için kesintisiz canlı yayın altyapısı.',
+    order: 3,
+  },
+];

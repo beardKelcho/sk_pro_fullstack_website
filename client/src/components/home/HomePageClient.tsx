@@ -9,6 +9,7 @@ import About from '@/components/home/About';
 import Contact from '@/components/home/Contact';
 import FallbackContentNotice from '@/components/home/FallbackContentNotice';
 import type { AboutContent, ContactContent, HeroContent, SiteContent } from '@/types/cms';
+import { fallbackProjects } from '@/constants/fallbackData';
 
 type PublicSiteContentResponse = {
   hero?: HeroContent;
@@ -62,6 +63,8 @@ const getPublicApiBaseUrl = () => {
   return null;
 };
 
+const shouldShowFallbackNotice = process.env.NODE_ENV !== 'production';
+
 const withTimeout = async <T,>(input: RequestInfo | URL, init?: RequestInit, timeoutMs = 6000): Promise<T> => {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -75,6 +78,27 @@ const withTimeout = async <T,>(input: RequestInfo | URL, init?: RequestInit, tim
   } finally {
     window.clearTimeout(timeout);
   }
+};
+
+const delay = (ms: number) => new Promise((resolve) => {
+  window.setTimeout(resolve, ms);
+});
+
+const withRetries = async <T,>(factory: () => Promise<T>, attempts = 3) => {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await factory();
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts - 1) {
+        await delay(1200 * (attempt + 1));
+      }
+    }
+  }
+
+  throw lastError;
 };
 
 const mapCmsServicesToServiceCards = (content: SiteContent): Service[] => {
@@ -134,8 +158,10 @@ export default function HomePageClient({
 }: HomePageClientProps) {
   const [content, setContent] = useState<SiteContent>(initialContent);
   const [services, setServices] = useState<Service[]>(initialServices);
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
-  const [fallbackMessage, setFallbackMessage] = useState<string | null>(initialFallbackMessage);
+  const [projects, setProjects] = useState<Project[]>(initialProjects.length > 0 ? initialProjects : fallbackProjects);
+  const [fallbackMessage, setFallbackMessage] = useState<string | null>(
+    shouldShowFallbackNotice ? initialFallbackMessage : null
+  );
 
   const heroData = unwrapHeroContent(content.hero);
   const videoUrl = heroData?.videoUrl || heroData?.backgroundVideo || undefined;
@@ -153,7 +179,7 @@ export default function HomePageClient({
     const needsRefresh =
       Boolean(initialFallbackMessage) || initialServices.length === 0 || initialProjects.length === 0;
 
-    if (!apiBaseUrl || !needsRefresh) {
+    if (!shouldShowFallbackNotice || !apiBaseUrl || !needsRefresh) {
       return;
     }
 
@@ -161,19 +187,10 @@ export default function HomePageClient({
 
     const refreshLiveContent = async () => {
       try {
-        const maintenanceData = await withTimeout<{ data?: { isMaintenanceMode?: boolean } }>(
-          `${apiBaseUrl}/public/maintenance`
-        );
-
-        if (maintenanceData?.data?.isMaintenanceMode) {
-          window.location.replace('/maintenance/');
-          return;
-        }
-
         const [contentResponse, servicesResponse, projectsResponse] = await Promise.all([
-          withTimeout<{ data?: unknown }>(`${apiBaseUrl}/public/site-content`).catch(() => null),
-          withTimeout<{ data?: unknown }>(`${apiBaseUrl}/services`).catch(() => null),
-          withTimeout<{ data?: unknown }>(`${apiBaseUrl}/showcase-projects`).catch(() => null),
+          withRetries(() => withTimeout<{ data?: unknown }>(`${apiBaseUrl}/public/site-content`), 2).catch(() => null),
+          withRetries(() => withTimeout<{ data?: unknown }>(`${apiBaseUrl}/services`), 2).catch(() => null),
+          withRetries(() => withTimeout<{ data?: unknown }>(`${apiBaseUrl}/showcase-projects`), 2).catch(() => null),
         ]);
 
         if (isCancelled) {
@@ -182,7 +199,6 @@ export default function HomePageClient({
 
         if (contentResponse?.data) {
           setContent((currentContent) => mergeSiteContent(currentContent, contentResponse.data));
-          setFallbackMessage(null);
         }
 
         if (Array.isArray(servicesResponse?.data)) {
@@ -192,10 +208,16 @@ export default function HomePageClient({
         if (Array.isArray(projectsResponse?.data)) {
           setProjects(projectsResponse.data as Project[]);
         }
+
+        if (contentResponse?.data || Array.isArray(servicesResponse?.data) || Array.isArray(projectsResponse?.data)) {
+          setFallbackMessage(null);
+        }
       } catch {
         if (!isCancelled) {
           setFallbackMessage((currentMessage) =>
-            currentMessage || 'Canlı içerik şu anda alınamadı; varsayılan içerik gösteriliyor.'
+            shouldShowFallbackNotice
+              ? currentMessage || 'Canlı içerik şu anda alınamadı; varsayılan içerik gösteriliyor.'
+              : null
           );
         }
       }

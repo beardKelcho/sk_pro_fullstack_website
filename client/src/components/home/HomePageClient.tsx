@@ -179,7 +179,7 @@ export default function HomePageClient({
     const needsRefresh =
       Boolean(initialFallbackMessage) || initialServices.length === 0 || initialProjects.length === 0;
 
-    if (!shouldShowFallbackNotice || !apiBaseUrl || !needsRefresh) {
+    if (!apiBaseUrl || !needsRefresh) {
       return;
     }
 

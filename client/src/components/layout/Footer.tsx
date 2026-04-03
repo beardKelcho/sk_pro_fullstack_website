@@ -28,12 +28,53 @@ type FooterContactData = {
 
 const STATIC_CONTACT: FooterContactData = {
   address: 'Istanbul, Turkiye',
-  phone: '+90 XXX XXX XX XX',
-  email: 'info@example.com',
-  socialLinks: {
-    instagram: 'https://instagram.com/example',
-    linkedin: 'https://linkedin.com/company/example',
-  },
+  phone: '+90 212 XXX XX XX',
+  email: 'info@skpro.com.tr',
+  socialLinks: {},
+};
+
+const isPlaceholderValue = (value?: string) => {
+  if (!value) {
+    return true;
+  }
+
+  const normalized = value.toLowerCase();
+  return (
+    normalized.includes('example.com') ||
+    normalized.includes('instagram.com/example') ||
+    normalized.includes('linkedin.com/company/example') ||
+    normalized.includes('new york') ||
+    normalized.includes('xxx xxx')
+  );
+};
+
+const normalizeFooterContactData = (value: FooterContactData | null | undefined): FooterContactData => {
+  if (!value) {
+    return STATIC_CONTACT;
+  }
+
+  const normalized: FooterContactData = {
+    address: isPlaceholderValue(value.address) ? STATIC_CONTACT.address : value.address,
+    phone: isPlaceholderValue(value.phone) ? STATIC_CONTACT.phone : value.phone,
+    email: isPlaceholderValue(value.email) ? STATIC_CONTACT.email : value.email,
+    socialLinks: {},
+  };
+
+  if (value.socialLinks?.instagram && !isPlaceholderValue(value.socialLinks.instagram)) {
+    normalized.socialLinks = {
+      ...normalized.socialLinks,
+      instagram: value.socialLinks.instagram,
+    };
+  }
+
+  if (value.socialLinks?.linkedin && !isPlaceholderValue(value.socialLinks.linkedin)) {
+    normalized.socialLinks = {
+      ...normalized.socialLinks,
+      linkedin: value.socialLinks.linkedin,
+    };
+  }
+
+  return normalized;
 };
 
 const iconClassName = 'h-5 w-5';
@@ -74,7 +115,7 @@ const getFooterContactData = async (): Promise<FooterContactData> => {
     }
 
     const payload = await response.json();
-    return payload?.data ?? STATIC_CONTACT;
+    return normalizeFooterContactData(payload?.data);
   } catch {
     return STATIC_CONTACT;
   }

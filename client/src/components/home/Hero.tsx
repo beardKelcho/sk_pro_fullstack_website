@@ -23,7 +23,11 @@ interface HeroProps {
 
 export default function Hero({ content }: HeroProps) {
     const rawData = unwrapHeroContent(content);
+    const title = rawData?.title || "YARATICILIĞIN SINIRLARINI ZORLAYIN";
     const subtitle = rawData?.subtitle || "";
+    const description = rawData?.description || "";
+    const primaryButtonText = rawData?.buttonText || 'Projelerimiz';
+    const primaryButtonLink = rawData?.buttonLink || '#projects';
     const slogans = rawData?.rotatingTexts || [];
 
     const [textIndex, setTextIndex] = useState(0);
@@ -55,7 +59,7 @@ export default function Hero({ content }: HeroProps) {
                 {/* ANA BAŞLIK - SABİT - BEYAZ */}
                 <div className="mb-6">
                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-black !text-white leading-none tracking-tight drop-shadow-2xl uppercase">
-                        YARATICILIĞIN<br className="hidden md:block" /> SINIRLARINI ZORLAYIN
+                        {title}
                     </h1>
                 </div>
 
@@ -66,13 +70,19 @@ export default function Hero({ content }: HeroProps) {
                     </p>
                 )}
 
+                {description && (
+                    <p className="!text-gray-300 text-base md:text-lg max-w-3xl leading-relaxed font-light mb-8 mx-auto drop-shadow-md">
+                        {description}
+                    </p>
+                )}
+
                 {/* CTA Butonlar */}
                 <div className="flex flex-col sm:flex-row gap-6 mt-4">
                     <a
-                        href="#projects"
+                        href={primaryButtonLink}
                         className="px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 hover:shadow-purple-500/40"
                     >
-                        Projelerimiz
+                        {primaryButtonText}
                     </a>
                     <a
                         href="#contact"

@@ -1,4 +1,4 @@
-import MainLayout from '@/components/layout/MainLayout';
+import StaticInfoLayout from '@/components/layout/StaticInfoLayout';
 import Link from 'next/link';
 
 export const metadata = {
@@ -10,7 +10,7 @@ const LAST_UPDATED_LABEL = '31 Mart 2026';
 
 export default function PrivacyPolicy() {
   return (
-    <MainLayout>
+    <StaticInfoLayout title="Gizlilik Politikasi">
       <div className="min-h-screen bg-gray-50 dark:bg-dark-surface py-20">
         <div className="container mx-auto px-6 max-w-4xl">
           <h1 className="text-4xl font-bold text-[#0A1128] dark:text-white mb-8">
@@ -123,6 +123,6 @@ export default function PrivacyPolicy() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </StaticInfoLayout>
   );
 }

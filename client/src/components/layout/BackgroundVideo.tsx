@@ -1,25 +1,12 @@
-'use client';
-
-import React, { useEffect, useRef } from 'react';
-
 interface BackgroundVideoProps {
     videoUrl?: string;
 }
 
-const BackgroundVideo: React.FC<BackgroundVideoProps> = ({ videoUrl }) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
-
-    useEffect(() => {
-        if (videoRef.current && videoUrl) {
-            videoRef.current.load();
-        }
-    }, [videoUrl]);
-
+const BackgroundVideo = ({ videoUrl }: BackgroundVideoProps) => {
     return (
         <div className="fixed inset-0 z-[-1] w-full h-full overflow-hidden">
             {videoUrl && (
                 <video
-                    ref={videoRef}
                     autoPlay
                     loop
                     muted

@@ -1,9 +1,6 @@
 import './globals.css';
 import './fonts.css';
 import type { Metadata } from 'next';
-import { Providers } from '@/components/providers';
-import 'react-toastify/dist/ReactToastify.css';
-import { ErrorProvider } from '@/components/providers/ErrorProvider';
 import { Analytics } from '@vercel/analytics/react';
 import LocalizedErrorBoundary from '@/components/common/LocalizedErrorBoundary';
 import GlobalClientShell from '@/components/layout/GlobalClientShell';
@@ -129,14 +126,10 @@ export default function RootLayout({
               </Script>
             </>
           )}
-          <Providers>
-            <ErrorProvider>
-              <div className="relative z-10">
-                {children}
-                <GlobalClientShell analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
-              </div>
-            </ErrorProvider>
-          </Providers>
+          <div className="relative z-10">
+            {children}
+            <GlobalClientShell analyticsId={process.env.NEXT_PUBLIC_GA_ID} />
+          </div>
           <Analytics />
         </LocalizedErrorBoundary>
       </body>

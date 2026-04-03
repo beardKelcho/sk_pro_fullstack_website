@@ -2,27 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ContactForm from '@/components/common/ContactForm';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
 
 jest.mock('@/services/api/axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
-
-const createTestQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: { retry: false },
-    mutations: { retry: false }
-  }
-});
-
-const renderWithClient = (ui: React.ReactElement) => {
-  const queryClient = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>
-      {ui}
-    </QueryClientProvider>
-  );
-};
 
 describe('ContactForm Component Testleri', () => {
   beforeEach(() => {
@@ -31,7 +14,7 @@ describe('ContactForm Component Testleri', () => {
   });
 
   it('form render edilmeli', () => {
-    renderWithClient(<ContactForm />);
+    render(<ContactForm />);
     expect(screen.getByLabelText('İsim *')).toBeInTheDocument();
     expect(screen.getByLabelText('E-posta *')).toBeInTheDocument();
     expect(screen.getByLabelText('Konu *')).toBeInTheDocument();
@@ -39,7 +22,7 @@ describe('ContactForm Component Testleri', () => {
   });
 
   it('form validasyonu çalışmalı', async () => {
-    renderWithClient(<ContactForm />);
+    render(<ContactForm />);
 
     const submitButton = screen.getByRole('button', { name: /gönder/i });
     fireEvent.click(submitButton);
@@ -47,10 +30,12 @@ describe('ContactForm Component Testleri', () => {
     await waitFor(() => {
       expect(mockAxios.post).not.toHaveBeenCalled();
     }, { timeout: 1000 });
+
+    expect(screen.getByRole('status')).toHaveTextContent('Lutfen tum alanlari doldurunuz');
   });
 
   it('geçerli form gönderimi çalışmalı', async () => {
-    renderWithClient(<ContactForm />);
+    render(<ContactForm />);
 
     // Fill out the form
     const nameInput = screen.getByLabelText('İsim *');
@@ -74,5 +59,7 @@ describe('ContactForm Component Testleri', () => {
         message: 'Test message'
       });
     });
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Mesajiniz basariyla gonderildi');
   });
 });

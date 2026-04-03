@@ -1,10 +1,12 @@
 'use client';
 
+import 'react-toastify/dist/ReactToastify.css';
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import dynamic from 'next/dynamic';
+import { Providers } from '@/components/providers';
+import { queryClient } from '@/lib/react-query';
 const AdminSidebar = dynamic(() => import('@/components/admin/AdminSidebar'), {
   ssr: false,
   loading: () => <div className="hidden h-screen w-20 shrink-0 border-r border-white/10 bg-white/40 dark:bg-gray-900/40 md:block" />,
@@ -18,6 +20,7 @@ import ProtectedRoute from '@/components/admin/ProtectedRoute';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 const OfflineIndicator = dynamic(() => import('@/components/common/OfflineIndicator'), { ssr: false });
 const Breadcrumb = dynamic(() => import('@/components/admin/Breadcrumb'), { ssr: false });
+const ToastContainer = dynamic(() => import('react-toastify').then((mod) => mod.ToastContainer), { ssr: false });
 
 export default function AdminLayout({
   children,
@@ -26,7 +29,6 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const normalizedPathname = pathname?.replace(/\/$/, '') || '';
-  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -94,64 +96,92 @@ export default function AdminLayout({
       cancelled = true;
       disconnect();
     };
-  }, [queryClient, normalizedPathname]);
+  }, [normalizedPathname]);
 
   // Login sayfası için farklı layout gösterme - ProtectedRoute kullanma
   if (normalizedPathname === '/admin/login' || normalizedPathname === '/admin') {
     return (
-      <main className={`min-h-screen bg-gray-50 dark:bg-gray-900 font-sans`}>
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-      </main>
+      <Providers>
+        <main className={`min-h-screen bg-gray-50 dark:bg-gray-900 font-sans`}>
+          <ErrorBoundary>
+            {children}
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
+          </ErrorBoundary>
+        </main>
+      </Providers>
     );
   }
 
   // Diğer admin sayfaları için ProtectedRoute kullan
   return (
-    <ProtectedRoute>
-      <ErrorBoundary>
-        <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-cyan-50/20 
-          dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 font-sans relative overflow-hidden`}>
-          {/* Animated background */}
-          <div className="fixed inset-0 gradient-animated opacity-5 dark:opacity-10 pointer-events-none" />
+    <Providers>
+      <ProtectedRoute>
+        <ErrorBoundary>
+          <div className={`min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-cyan-50/20
+            dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 font-sans relative overflow-hidden`}>
+            {/* Animated background */}
+            <div className="fixed inset-0 gradient-animated opacity-5 dark:opacity-10 pointer-events-none" />
 
-          {/* Floating orbs - Performans için azaltıldı */}
-          <div className="fixed inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-20 left-20 w-72 h-72 bg-[#0066CC]/5 rounded-full blur-3xl"
-              style={{ animationDelay: '0s', animationDuration: '8s' }} />
-            <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#00C49F]/5 rounded-full blur-3xl"
-              style={{ animationDelay: '2s', animationDuration: '10s' }} />
-          </div>
+            {/* Floating orbs - Performans için azaltıldı */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute top-20 left-20 w-72 h-72 bg-[#0066CC]/5 rounded-full blur-3xl"
+                style={{ animationDelay: '0s', animationDuration: '8s' }} />
+              <div className="absolute bottom-20 right-20 w-96 h-96 bg-[#00C49F]/5 rounded-full blur-3xl"
+                style={{ animationDelay: '2s', animationDuration: '10s' }} />
+            </div>
 
-          <OfflineIndicator />
-          <div className="flex h-screen overflow-hidden relative z-10">
-            {/* Sidebar */}
-            <AdminSidebar collapsed={!sidebarOpen} onToggleCollapse={toggleSidebar} />
+            <OfflineIndicator />
+            <ToastContainer
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
+            <div className="relative z-10 flex h-screen overflow-hidden">
+              {/* Sidebar */}
+              <AdminSidebar collapsed={!sidebarOpen} onToggleCollapse={toggleSidebar} />
 
-            {/* Main content */}
-            <div className="flex-1 overflow-auto">
-              {/* Header */}
-              <AdminHeader onToggleSidebar={toggleSidebar} onSearchClick={() => setSearchOpen(true)} />
+              {/* Main content */}
+              <div className="flex-1 overflow-auto">
+                {/* Header */}
+                <AdminHeader onToggleSidebar={toggleSidebar} onSearchClick={() => setSearchOpen(true)} />
 
-              {/* Global Search */}
-              {searchOpen && (
-                <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-              )}
+                {/* Global Search */}
+                {searchOpen && (
+                  <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+                )}
 
-              {/* Page content */}
-              <main className="p-6">
-                <ErrorBoundary>
-                  <div key={pathname} className="animate-in fade-in duration-200">
-                    <Breadcrumb />
-                    {children}
-                  </div>
-                </ErrorBoundary>
-              </main>
+                {/* Page content */}
+                <main className="p-6">
+                  <ErrorBoundary>
+                    <div key={pathname} className="animate-in fade-in duration-200">
+                      <Breadcrumb />
+                      {children}
+                    </div>
+                  </ErrorBoundary>
+                </main>
+              </div>
             </div>
           </div>
-        </div>
-      </ErrorBoundary>
-    </ProtectedRoute>
+        </ErrorBoundary>
+      </ProtectedRoute>
+    </Providers>
   );
 }

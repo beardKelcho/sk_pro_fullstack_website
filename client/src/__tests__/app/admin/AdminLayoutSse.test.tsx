@@ -17,15 +17,19 @@ jest.mock('framer-motion', () => ({
   useReducedMotion: () => true,
 }));
 
-jest.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => ({
-    invalidateQueries: invalidateQueriesMock,
-  }),
-}));
-
 jest.mock('react-toastify', () => ({
   toast: {
     info: jest.fn(),
+  },
+}));
+
+jest.mock('@/components/providers', () => ({
+  Providers: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+jest.mock('@/lib/react-query', () => ({
+  queryClient: {
+    invalidateQueries: invalidateQueriesMock,
   },
 }));
 

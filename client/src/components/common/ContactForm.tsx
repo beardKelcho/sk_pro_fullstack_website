@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import axios from '@/services/api/axios';
-import { toast } from 'react-toastify';
 import { Loader2, Send } from 'lucide-react';
 import { getUserFriendlyMessage, handleApiError } from '@/utils/apiErrorHandler';
 
@@ -14,6 +12,11 @@ interface ContactFormData {
   message: string;
 }
 
+type ContactFormFeedback = {
+  type: 'success' | 'error';
+  message: string;
+} | null;
+
 const ContactForm: React.FC = () => {
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
@@ -22,37 +25,46 @@ const ContactForm: React.FC = () => {
     message: ''
   });
 
-  // Submit mutation
-  const submitMutation = useMutation({
-    mutationFn: async (data: ContactFormData) => {
-      const res = await axios.post('/contact/send', data);
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success('Mesajınız başarıyla gönderildi! En kısa sürede size dönüş yapacağız.');
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
-      });
-    },
-    onError: (error: unknown) => {
-      toast.error(getUserFriendlyMessage(handleApiError(error)));
-    },
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<ContactFormFeedback>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Client-side validation
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      toast.error('Lütfen tüm alanları doldurunuz');
+      setFeedback({
+        type: 'error',
+        message: 'Lutfen tum alanlari doldurunuz',
+      });
       return;
     }
 
-    submitMutation.mutate(formData);
+    setIsSubmitting(true);
+    setFeedback(null);
+
+    void axios.post('/contact/send', formData)
+      .then(() => {
+        setFeedback({
+          type: 'success',
+          message: 'Mesajiniz basariyla gonderildi. En kisa surede size donus yapacagiz.',
+        });
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: ''
+        });
+      })
+      .catch((error: unknown) => {
+        setFeedback({
+          type: 'error',
+          message: getUserFriendlyMessage(handleApiError(error)),
+        });
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -63,7 +75,21 @@ const ContactForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      {feedback ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`rounded-lg border px-4 py-3 text-sm ${
+            feedback.type === 'success'
+              ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200'
+              : 'border-red-400/30 bg-red-500/10 text-red-200'
+          }`}
+        >
+          {feedback.message}
+        </div>
+      ) : null}
+
       {/* Name */}
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
@@ -76,7 +102,7 @@ const ContactForm: React.FC = () => {
           value={formData.name}
           onChange={handleChange}
           required
-          disabled={submitMutation.isPending}
+          disabled={isSubmitting}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0066CC] focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="Adınız Soyadınız"
         />
@@ -94,7 +120,7 @@ const ContactForm: React.FC = () => {
           value={formData.email}
           onChange={handleChange}
           required
-          disabled={submitMutation.isPending}
+          disabled={isSubmitting}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0066CC] focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="ornek@email.com"
         />
@@ -112,7 +138,7 @@ const ContactForm: React.FC = () => {
           value={formData.subject}
           onChange={handleChange}
           required
-          disabled={submitMutation.isPending}
+          disabled={isSubmitting}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0066CC] focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="Mesajınızın konusu"
         />
@@ -129,7 +155,7 @@ const ContactForm: React.FC = () => {
           value={formData.message}
           onChange={handleChange}
           required
-          disabled={submitMutation.isPending}
+          disabled={isSubmitting}
           rows={5}
           className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0066CC] focus:border-transparent transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="Mesajınızı buraya yazın..."
@@ -139,10 +165,10 @@ const ContactForm: React.FC = () => {
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={submitMutation.isPending}
+        disabled={isSubmitting}
         className="w-full px-6 py-3 bg-gradient-to-r from-[#0066CC] to-[#0052A3] hover:from-[#0052A3] hover:to-[#0066CC] text-white font-semibold rounded-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
       >
-        {submitMutation.isPending ? (
+        {isSubmitting ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
             Gönderiliyor...

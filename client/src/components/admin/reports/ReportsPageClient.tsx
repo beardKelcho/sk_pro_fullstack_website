@@ -1,248 +1,336 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { DownloadCloud, Loader2, FileText, BarChart2 } from 'lucide-react';
+import { DownloadCloud, Loader2, FileText, BarChart2, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';
 import reportService from '@/services/reportService';
-import inventoryService from '@/services/inventoryService';
-import { projectApi } from '@/services/api/project';
+import inventoryService, { type InventoryItem } from '@/services/inventoryService';
+import { getAllProjects, type Project } from '@/services/projectService';
+import {
+  buildInventoryStatusStats,
+  buildProjectStatusStats,
+  buildReportSummaryCards,
+  filterProjectsByScope,
+  getProjectScopeLabel,
+  type ReportProjectScope,
+} from '@/utils/reportInsights';
 import logger from '@/utils/logger';
 
-// Recharts kütüphanesini lazy load olarak içe aktar
-const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
-const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
-const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
-const Pie = dynamic(() => import('recharts').then(mod => mod.Pie), { ssr: false });
-const Cell = dynamic(() => import('recharts').then(mod => mod.Cell), { ssr: false });
-const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
-const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
-const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
-const Legend = dynamic(() => import('recharts').then(mod => mod.Legend), { ssr: false });
-const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
+const BarChart = dynamic(() => import('recharts').then((mod) => mod.BarChart), { ssr: false });
+const Bar = dynamic(() => import('recharts').then((mod) => mod.Bar), { ssr: false });
+const PieChart = dynamic(() => import('recharts').then((mod) => mod.PieChart), { ssr: false });
+const Pie = dynamic(() => import('recharts').then((mod) => mod.Pie), { ssr: false });
+const Cell = dynamic(() => import('recharts').then((mod) => mod.Cell), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then((mod) => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then((mod) => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then((mod) => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then((mod) => mod.Tooltip), { ssr: false });
+const Legend = dynamic(() => import('recharts').then((mod) => mod.Legend), { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then((mod) => mod.ResponsiveContainer), { ssr: false });
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+const PROJECT_SCOPE_OPTIONS: ReportProjectScope[] = ['all', 'active', 'upcoming', 'past'];
+
 export default function ReportsPage() {
-    const [downloadingInventory, setDownloadingInventory] = useState(false);
-    const [downloadingProjects, setDownloadingProjects] = useState(false);
+  const [downloadingInventory, setDownloadingInventory] = useState(false);
+  const [downloadingProjects, setDownloadingProjects] = useState(false);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [projectScope, setProjectScope] = useState<ReportProjectScope>('all');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
-    // Grafikler için state
-    const [inventoryStats, setInventoryStats] = useState<any[]>([]);
-    const [projectStatusStats, setProjectStatusStats] = useState<any[]>([]);
-    const [loadingStats, setLoadingStats] = useState(true);
+  const fetchStats = useCallback(async () => {
+    setLoadingStats(true);
+    setStatsError(null);
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            setLoadingStats(true);
-            try {
-                // Backendden verileri getir
-                const [invRes, curProjRes] = await Promise.all([
-                    inventoryService.getItems({ limit: 1000 }),
-                    projectApi.getAll()
-                ]);
+    try {
+      const [inventoryResponse, projectResponse] = await Promise.all([
+        inventoryService.getItems({ limit: 1000 }),
+        getAllProjects({ limit: 1000, dateScope: 'all' }),
+      ]);
 
-                const items = invRes.data || [];
-                const projects = Array.isArray(curProjRes) ? curProjRes : (curProjRes as any).data || [];
+      setInventoryItems(inventoryResponse.data || []);
+      setProjects(projectResponse.projects || []);
+      setLastUpdatedAt(new Date().toISOString());
+    } catch (error) {
+      logger.error('Rapor istatistikleri alınamadı', error);
+      setStatsError('Rapor verileri alınamadı. Lütfen yeniden deneyin.');
+    } finally {
+      setLoadingStats(false);
+    }
+  }, []);
 
-                // Envanter Durum Grubu
-                const statusCounts: Record<string, number> = {};
-                items.forEach((item: any) => {
-                    statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
-                });
-                const invData = Object.keys(statusCounts).map(key => ({
-                    name: key === 'AVAILABLE' ? 'Müsait' :
-                        key === 'IN_USE' ? 'Kullanımda' :
-                            key === 'MAINTENANCE' ? 'Bakımda' :
-                                key === 'MISSING' ? 'Kayıp' :
-                                    key === 'RETIRED' ? 'Emekli' : key,
-                    value: statusCounts[key]
-                }));
-                setInventoryStats(invData);
+  useEffect(() => {
+    void fetchStats();
+  }, [fetchStats]);
 
-                // Proje Durum Grubu
-                const projStatusCounts: Record<string, number> = {};
-                projects.forEach((proj: any) => {
-                    projStatusCounts[proj.status] = (projStatusCounts[proj.status] || 0) + 1;
-                });
-                const projData = Object.keys(projStatusCounts).map(key => ({
-                    name: key,
-                    toplam: projStatusCounts[key]
-                }));
-                setProjectStatusStats(projData);
+  const scopedProjects = useMemo(
+    () => filterProjectsByScope(projects, projectScope),
+    [projectScope, projects]
+  );
 
-            } catch (error) {
-                logger.error('Dashboard verisi alınamadı', error);
-            } finally {
-                setLoadingStats(false);
-            }
-        };
+  const inventoryStats = useMemo(
+    () => buildInventoryStatusStats(inventoryItems),
+    [inventoryItems]
+  );
 
-        fetchStats();
-    }, []);
+  const projectStatusStats = useMemo(
+    () => buildProjectStatusStats(scopedProjects),
+    [scopedProjects]
+  );
 
-    const handleDownloadInventory = async (format: 'excel' | 'pdf') => {
-        setDownloadingInventory(true);
-        try {
-            await reportService.downloadInventoryReport(format);
-            toast.success(`Envanter raporu ${format.toUpperCase()} olarak indiriliyor.`);
-        } catch (error) {
-            toast.error('Envanter raporu indirilemedi.');
-        } finally {
-            setDownloadingInventory(false);
-        }
-    };
+  const summaryCards = useMemo(
+    () => buildReportSummaryCards(inventoryItems, scopedProjects, projectScope),
+    [inventoryItems, projectScope, scopedProjects]
+  );
 
-    const handleDownloadProjects = async (format: 'excel' | 'pdf') => {
-        setDownloadingProjects(true);
-        try {
-            await reportService.downloadProjectsReport(format);
-            toast.success(`Projeler raporu ${format.toUpperCase()} olarak indiriliyor.`);
-        } catch (error) {
-            toast.error('Projeler raporu indirilemedi.');
-        } finally {
-            setDownloadingProjects(false);
-        }
-    };
+  const formattedLastUpdatedAt = useMemo(() => {
+    if (!lastUpdatedAt) {
+      return null;
+    }
 
-    return (
-        <div className="p-6 max-w-[1600px] mx-auto space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                        <BarChart2 className="w-6 h-6 text-indigo-500" />
-                        İş Zekası ve Raporlama
-                    </h1>
-                    <p className="mt-1 text-gray-600 dark:text-gray-300">
-                        Şirketinizin genel durumunu grafiklerle analiz edin ve Excel/PDF raporları oluşturun.
-                    </p>
-                </div>
-            </div>
+    return new Date(lastUpdatedAt).toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, [lastUpdatedAt]);
 
-            {/* Dashboard Grafikleri (Lazy Loaded) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                {/* Envanter Durumu Pasta Grafiği */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Genel Envanter Durumu</h3>
-                    <div className="h-[300px] w-full flex items-center justify-center">
-                        {loadingStats ? (
-                            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                        ) : inventoryStats.length === 0 ? (
-                            <span className="text-gray-500">Veri Bulunamadı</span>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={inventoryStats}
-                                        cx="50%"
-                                        cy="50%"
-                                        labelLine={false}
-                                        label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
-                                        outerRadius={80}
-                                        fill="#8884d8"
-                                        dataKey="value"
-                                    >
-                                        {inventoryStats.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        )}
-                    </div>
-                </div>
+  const handleDownloadInventory = async (format: 'excel' | 'pdf') => {
+    setDownloadingInventory(true);
+    try {
+      await reportService.downloadInventoryReport(format);
+      toast.success(`Envanter raporu ${format.toUpperCase()} olarak indiriliyor.`);
+    } catch (error) {
+      toast.error('Envanter raporu indirilemedi.');
+    } finally {
+      setDownloadingInventory(false);
+    }
+  };
 
-                {/* Proje Durumları Çubuk Grafiği */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Proje Durum Dağılımı</h3>
-                    <div className="h-[300px] w-full flex items-center justify-center">
-                        {loadingStats ? (
-                            <Loader2 className="w-8 h-8 animate-spin text-green-500" />
-                        ) : projectStatusStats.length === 0 ? (
-                            <span className="text-gray-500">Veri Bulunamadı</span>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={projectStatusStats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                                    <XAxis dataKey="name" tick={{ fill: '#888', fontSize: 12 }} />
-                                    <YAxis tick={{ fill: '#888' }} allowDecimals={false} />
-                                    <Tooltip cursor={{ fill: 'transparent' }} />
-                                    <Legend />
-                                    <Bar dataKey="toplam" fill="#00C49F" name="Proje Sayısı" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )}
-                    </div>
-                </div>
-            </div>
+  const handleDownloadProjects = async (format: 'excel' | 'pdf') => {
+    setDownloadingProjects(true);
+    try {
+      await reportService.downloadProjectsReport(format);
+      toast.success(`Projeler raporu ${format.toUpperCase()} olarak indiriliyor.`);
+    } catch (error) {
+      toast.error('Projeler raporu indirilemedi.');
+    } finally {
+      setDownloadingProjects(false);
+    }
+  };
 
-            {/* Rapor İndirme Kartları */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full pt-4">
-                {/* Envanter Raporu */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
-                    <div className="p-6 flex-grow">
-                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center mb-4">
-                            <FileText className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Envanter Detay Raporu</h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            Tüm departmanlardaki ekipmanların, güncel konum, miktar ve zimmet durumlarını içeren master döküm.
-                        </p>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 p-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-                        <button
-                            onClick={() => handleDownloadInventory('excel')}
-                            disabled={downloadingInventory}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50"
-                        >
-                            {downloadingInventory ? <Loader2 className="w-5 h-5 animate-spin" /> : <DownloadCloud className="w-5 h-5" />}
-                            Excel İndir
-                        </button>
-                        <button
-                            onClick={() => handleDownloadInventory('pdf')}
-                            disabled={downloadingInventory}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50"
-                        >
-                            {downloadingInventory ? <Loader2 className="w-5 h-5 animate-spin" /> : <DownloadCloud className="w-5 h-5" />}
-                            PDF İndir
-                        </button>
-                    </div>
-                </div>
-
-                {/* Projeler Raporu */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
-                    <div className="p-6 flex-grow">
-                        <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg flex items-center justify-center mb-4">
-                            <BarChart2 className="w-6 h-6" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Projeler & Bütçe Analizi</h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            Tüm tamamlanmış ve devam eden projelerin, bütçe verileri, başlangıç tarihleri ve güncel maliyet özetleri.
-                        </p>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 p-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-                        <button
-                            onClick={() => handleDownloadProjects('excel')}
-                            disabled={downloadingProjects}
-                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50"
-                        >
-                            {downloadingProjects ? <Loader2 className="w-5 h-5 animate-spin" /> : <DownloadCloud className="w-5 h-5" />}
-                            Excel İndir
-                        </button>
-                        <button
-                            onClick={() => handleDownloadProjects('pdf')}
-                            disabled={downloadingProjects}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50"
-                        >
-                            {downloadingProjects ? <Loader2 className="w-5 h-5 animate-spin" /> : <DownloadCloud className="w-5 h-5" />}
-                            PDF İndir
-                        </button>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="mx-auto max-w-[1600px] space-y-6 p-6">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-800 dark:text-white">
+            <BarChart2 className="h-6 w-6 text-indigo-500" />
+            Is Zekasi ve Raporlama
+          </h1>
+          <p className="mt-1 text-gray-600 dark:text-gray-300">
+            Sirketinizin genel durumunu grafiklerle analiz edin ve Excel/PDF raporlari olusturun.
+          </p>
         </div>
-    );
+
+        <div className="flex flex-col items-start gap-3 md:items-end">
+          <div className="flex flex-wrap gap-2">
+            {PROJECT_SCOPE_OPTIONS.map((scope) => {
+              const isActive = projectScope === scope;
+              return (
+                <button
+                  key={scope}
+                  type="button"
+                  onClick={() => setProjectScope(scope)}
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-500/10 dark:text-indigo-300'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white'
+                  }`}
+                >
+                  {getProjectScopeLabel(scope)}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+            {formattedLastUpdatedAt && <span>Son guncelleme: {formattedLastUpdatedAt}</span>}
+            <button
+              type="button"
+              onClick={() => void fetchStats()}
+              disabled={loadingStats}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:text-white"
+            >
+              {loadingStats ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Yenile
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {statsError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/10 dark:text-red-300">
+          <div className="flex items-center justify-between gap-3">
+            <span>{statsError}</span>
+            <button
+              type="button"
+              onClick={() => void fetchStats()}
+              className="rounded-md border border-red-200 px-3 py-1.5 font-medium text-red-700 transition-colors hover:bg-red-100 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/20"
+            >
+              Tekrar Dene
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
+        {summaryCards.map((card) => (
+          <div
+            key={card.key}
+            className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+          >
+            <div className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.label}</div>
+            <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">{card.value}</div>
+            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">{card.description}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Genel Envanter Durumu</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Tum ekipman kayitlarinin guncel durum dagilimi</p>
+            </div>
+          </div>
+          <div className="flex h-[300px] w-full items-center justify-center">
+            {loadingStats ? (
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            ) : inventoryStats.length === 0 ? (
+              <span className="text-gray-500">Veri bulunamadi</span>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={inventoryStats}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} (${((percent || 0) * 100).toFixed(0)}%)`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {inventoryStats.map((entry, index) => (
+                      <Cell key={entry.key} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Proje Durum Dagilimi</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {getProjectScopeLabel(projectScope)} kapsamindaki projelerin durum ozeti
+              </p>
+            </div>
+          </div>
+          <div className="flex h-[300px] w-full items-center justify-center">
+            {loadingStats ? (
+              <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+            ) : projectStatusStats.length === 0 ? (
+              <span className="text-gray-500">Secili kapsam icin veri bulunamadi</span>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={projectStatusStats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="name" tick={{ fill: '#888', fontSize: 12 }} />
+                  <YAxis tick={{ fill: '#888' }} allowDecimals={false} />
+                  <Tooltip cursor={{ fill: 'transparent' }} />
+                  <Legend />
+                  <Bar dataKey="toplam" fill="#00C49F" name="Proje Sayisi" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid w-full grid-cols-1 gap-6 pt-4 md:grid-cols-2">
+        <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex-grow p-6">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+              <FileText className="h-6 w-6" />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">Envanter Detay Raporu</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Tum departmanlardaki ekipmanlarin, guncel konum, miktar ve zimmet durumlarini iceren master dokum.
+            </p>
+          </div>
+          <div className="flex gap-3 border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
+            <button
+              onClick={() => void handleDownloadInventory('excel')}
+              disabled={downloadingInventory}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+            >
+              {downloadingInventory ? <Loader2 className="h-5 w-5 animate-spin" /> : <DownloadCloud className="h-5 w-5" />}
+              Excel Indir
+            </button>
+            <button
+              onClick={() => void handleDownloadInventory('pdf')}
+              disabled={downloadingInventory}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            >
+              {downloadingInventory ? <Loader2 className="h-5 w-5 animate-spin" /> : <DownloadCloud className="h-5 w-5" />}
+              PDF Indir
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex-grow p-6">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+              <BarChart2 className="h-6 w-6" />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">Projeler ve Butce Analizi</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Tum tamamlanmis ve devam eden projelerin, butce verileri, baslangic tarihleri ve guncel maliyet ozetleri.
+            </p>
+          </div>
+          <div className="flex gap-3 border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700/50">
+            <button
+              onClick={() => void handleDownloadProjects('excel')}
+              disabled={downloadingProjects}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+            >
+              {downloadingProjects ? <Loader2 className="h-5 w-5 animate-spin" /> : <DownloadCloud className="h-5 w-5" />}
+              Excel Indir
+            </button>
+            <button
+              onClick={() => void handleDownloadProjects('pdf')}
+              disabled={downloadingProjects}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            >
+              {downloadingProjects ? <Loader2 className="h-5 w-5 animate-spin" /> : <DownloadCloud className="h-5 w-5" />}
+              PDF Indir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

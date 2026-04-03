@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { globalSearch, getSearchSuggestions, SearchResult } from '@/services/searchService';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { useSavedSearches, useSearchHistory, useCreateSavedSearch, useDeleteSavedSearch, useClearSearchHistory } from '@/services/savedSearchService';
+import { buildSearchTypeCounts, filterSearchResponse, SearchTypeFilter } from '@/utils/globalSearchUtils';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
 
@@ -46,6 +47,7 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [resultTypeFilter, setResultTypeFilter] = useState<SearchTypeFilter>('all');
   const [activeTab, setActiveTab] = useState<'search' | 'saved' | 'history'>('search');
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -76,6 +78,16 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     enabled: query.length >= 2 && !showSuggestions,
     staleTime: 30000,
   });
+
+  const filteredSearch = useMemo(
+    () => filterSearchResponse(searchData, resultTypeFilter),
+    [searchData, resultTypeFilter]
+  );
+
+  const searchTypeCounts = useMemo(
+    () => buildSearchTypeCounts(searchData),
+    [searchData]
+  );
 
   // Click outside handler
   useClickOutside(containerRef, () => {
@@ -110,30 +122,29 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         onClose();
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
-        const allResults = searchData?.all || [];
         setSelectedIndex(prev =>
-          prev < allResults.length - 1 ? prev + 1 : prev
+          prev < filteredSearch.allResults.length - 1 ? prev + 1 : prev
         );
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
       } else if (e.key === 'Enter' && selectedIndex >= 0) {
         e.preventDefault();
-        const allResults = searchData?.all || [];
-        if (allResults[selectedIndex]) {
-          handleResultClick(allResults[selectedIndex]);
+        if (filteredSearch.allResults[selectedIndex]) {
+          handleResultClick(filteredSearch.allResults[selectedIndex]);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, searchData, handleResultClick, onClose]);
+  }, [filteredSearch.allResults, handleResultClick, isOpen, onClose, selectedIndex]);
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
     setShowSuggestions(value.length >= 2 && value.length < 3);
     setSelectedIndex(-1);
+    setResultTypeFilter('all');
     setActiveTab('search');
   };
 
@@ -185,18 +196,20 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const handleUseSavedSearch = (savedSearch: any) => {
     if (savedSearch.filters?.query) {
       setQuery(savedSearch.filters.query);
+      setResultTypeFilter('all');
       setActiveTab('search');
     }
   };
 
   const handleUseHistory = (historyItem: any) => {
     setQuery(historyItem.query);
+    setResultTypeFilter('all');
     setActiveTab('search');
   };
 
   if (!isOpen) return null;
 
-  const allResults = searchData?.all || [];
+  const allResults = filteredSearch.allResults;
   const suggestions = suggestionsData || [];
 
   return (
@@ -404,9 +417,49 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             </div>
           ) : allResults.length > 0 ? (
             <div className="py-2">
+              <div className="px-4 pb-3 flex flex-wrap gap-2 border-b border-gray-100 dark:border-gray-700/60">
+                {([
+                  'all',
+                  'equipment',
+                  'project',
+                  'task',
+                  'client',
+                  'user',
+                  'maintenance',
+                ] as SearchTypeFilter[]).map((type) => {
+                  const count = searchTypeCounts[type];
+                  if (type !== 'all' && count === 0) {
+                    return null;
+                  }
+
+                  const isActive = resultTypeFilter === type;
+                  const label = type === 'all' ? 'Tum Sonuclar' : typeLabels[type];
+
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setResultTypeFilter(type);
+                        setSelectedIndex(-1);
+                      }}
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        isActive
+                          ? 'border-[#0066CC] bg-[#0066CC]/10 text-[#0066CC] dark:border-primary-light dark:bg-primary-light/10 dark:text-primary-light'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white'
+                      }`}
+                    >
+                      <span>{label}</span>
+                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] text-gray-500 dark:bg-gray-900/50 dark:text-gray-300">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Kategorize edilmiş sonuçlar */}
-              {Object.entries(searchData?.results || {}).map(([type, results]: [string, SearchResult[]]) => {
-                if (results.length === 0) return null;
+              {filteredSearch.groupedResults.map(({ type, results }) => {
                 return (
                   <div key={type} className="mb-4">
                     <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
@@ -446,8 +499,16 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             </div>
           ) : (
             <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-              <p className="text-sm">Sonuç bulunamadı</p>
-              <p className="text-xs mt-2">Farklı bir arama terimi deneyin</p>
+              <p className="text-sm">
+                {searchData?.total
+                  ? 'Secili filtrede sonuc bulunamadi'
+                  : 'Sonuç bulunamadı'}
+              </p>
+              <p className="text-xs mt-2">
+                {searchData?.total
+                  ? 'Farkli bir tur secmeyi deneyin'
+                  : 'Farklı bir arama terimi deneyin'}
+              </p>
             </div>
           )}
         </div>
@@ -469,7 +530,11 @@ export default function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             </span>
           </div>
           {searchData && (
-            <span>{searchData.total} sonuç bulundu</span>
+            <span>
+              {allResults.length === searchData.total
+                ? `${searchData.total} sonuç bulundu`
+                : `${allResults.length} / ${searchData.total} sonuç gösteriliyor`}
+            </span>
           )}
         </div>
       </div>

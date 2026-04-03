@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import Icon from '@/components/common/Icon';
 import dynamic from 'next/dynamic';
@@ -12,7 +11,7 @@ interface ContactProps {
     content?: ContactContent;
 }
 
-const Contact: React.FC<ContactProps> = ({ content }) => {
+const Contact = ({ content }: ContactProps) => {
 
     if (!content) {
         return null;

@@ -349,8 +349,19 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
                                     <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                                 </div>
                             ) : projectsData?.data?.length === 0 ? (
-                                <div className="text-center py-12 text-gray-500">
-                                    Henüz proje eklenmemiş. &quot;Yeni Ekle&quot; sekmesinden proje oluşturun.
+                                <div className="text-center py-12 text-gray-500 space-y-4">
+                                    <p>Henüz proje kartı eklenmemiş.</p>
+                                    <p className="text-sm text-gray-400">
+                                        Medya kütüphanesindeki mevcut görsel ve videoları kullanarak ilk projeyi oluşturabilirsiniz.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setActiveTab('form'); resetForm(); }}
+                                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        İlk Projeyi Oluştur
+                                    </button>
                                 </div>
                             ) : (
                                 <DndContext

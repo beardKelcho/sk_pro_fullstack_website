@@ -61,15 +61,6 @@ export default function SiteManagementPage() {
         },
     });
 
-    // Fetch About from new CMS API
-    const { data: aboutData } = useQuery({
-        queryKey: ['admin-about'],
-        queryFn: async () => {
-            const res = await axios.get('/cms/about');
-            return res.data;
-        },
-    });
-
     // Fetch Contact from new CMS API
     const { data: contactData } = useQuery({
         queryKey: ['admin-contact'],
@@ -82,6 +73,8 @@ export default function SiteManagementPage() {
     const getSectionData = (section: string) => {
         return siteContent?.find((s: any) => s.section === section);
     };
+
+    const aboutSection = getSectionData('about');
 
     const cards: SectionCard[] = [
         // Note: Maintenance is now a separate component, handled outside the grid map or as a special case
@@ -99,8 +92,8 @@ export default function SiteManagementPage() {
             icon: <Building2 className="w-12 h-12" />,
             title: 'Hakkımızda',
             description: 'Şirket bilgileri, istatistikler ve görseller',
-            lastUpdated: aboutData?.data?.updatedAt,
-            isActive: true, // Always active (new CMS API)
+            lastUpdated: aboutSection?.updatedAt,
+            isActive: aboutSection?.isActive ?? true,
             onClick: () => setSelectedSection('about'),
         },
         {

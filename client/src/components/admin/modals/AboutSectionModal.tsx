@@ -43,8 +43,24 @@ const AboutSectionModal: React.FC<AboutSectionModalProps> = ({ isOpen, onClose }
     const { data: aboutData, isLoading } = useQuery({
         queryKey: ['admin-about'],
         queryFn: async () => {
-            const res = await axios.get('/cms/about');
-            return res.data;
+            const [siteContentRes, legacyRes] = await Promise.all([
+                axios.get('/admin/site-content'),
+                axios.get('/cms/about'),
+            ]);
+
+            const aboutSection = siteContentRes.data?.data?.find((section: any) => section.section === 'about');
+            const siteContentData = aboutSection?.data || {};
+            const legacyData = legacyRes.data?.data || {};
+
+            return {
+                data: {
+                    title: siteContentData.title || legacyData.title || '',
+                    description: siteContentData.description || legacyData.description || '',
+                    imageUrl: siteContentData.imageUrl || legacyData.imageUrl || '',
+                    stats: siteContentData.stats || legacyData.stats || [],
+                    updatedAt: aboutSection?.updatedAt || legacyData.updatedAt,
+                }
+            };
         },
         enabled: isOpen,
     });
@@ -74,12 +90,20 @@ const AboutSectionModal: React.FC<AboutSectionModalProps> = ({ isOpen, onClose }
     // Save mutation
     const saveAboutMutation = useMutation({
         mutationFn: async (data: AboutForm) => {
-            const res = await axios.put('/cms/about', data);
-            return res.data;
+            const [siteContentRes] = await Promise.all([
+                axios.post('/admin/site-content', {
+                    section: 'about',
+                    isActive: true,
+                    data,
+                }),
+                axios.put('/cms/about', data),
+            ]);
+            return siteContentRes.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-about'] });
-            queryClient.invalidateQueries({ queryKey: ['about'] }); // Public query
+            queryClient.invalidateQueries({ queryKey: ['admin-site-content'] });
+            queryClient.invalidateQueries({ queryKey: ['about'] }); // Legacy query
             toast.success('Hakkımızda bölümü güncellendi');
             onClose();
         },

@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import User from '../models/User';
 import { Session } from '../models/Session';
 import { CalendarIntegration } from '../models/CalendarIntegration';
@@ -51,11 +50,10 @@ const cleanupAndReseedAdmin = async () => {
         await mongoose.connection.close();
         process.exit(1);
       }
-      const hashedPassword = await bcrypt.hash(seedPassword, 12);
       const admin = await User.create({
         name: ADMIN_SEED_NAME,
         email: ADMIN_SEED_EMAIL,
-        password: hashedPassword,
+        password: seedPassword,
         role: 'ADMIN',
         isActive: true,
       });

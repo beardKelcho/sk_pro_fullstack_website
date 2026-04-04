@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import StageExperience, { StageSectionTitle } from '@/components/common/StageExperience';
 import Icon from '@/components/common/Icon';
 import NextImage from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 export interface Project {
     _id: string;
@@ -363,26 +365,46 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                     )}
                 </div>
 
-                {/* Lightbox for Photos */}
-                {lightbox && (
-                        <div
-                            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 animate-in fade-in duration-300"
+                {/* Lightbox & Video Modal Integration */}
+                <AnimatePresence>
+                    {lightbox && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 sm:p-8"
                             onClick={() => setLightbox(null)}
                         >
-                            <div className="relative w-full max-w-7xl" onClick={(e) => e.stopPropagation()}>
-                                {/* Close Button - Fixed to screen */}
-                                <button
-                                    onClick={() => setLightbox(null)}
-                                    className="fixed top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 transition-all z-[110] backdrop-blur-md border border-white/20 group"
-                                >
-                                    <Icon name="close" className="w-8 h-8 text-white group-hover:rotate-90 transition-transform duration-300" />
-                                    <span className="sr-only">Kapat</span>
-                                </button>
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                                className="relative w-full max-w-6xl flex flex-col items-center justify-center gap-4"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {/* Modal Header */}
+                                <div className="absolute -top-12 left-0 right-0 flex items-center justify-between px-2 text-white">
+                                    <div className="flex flex-col">
+                                        <h4 className="text-lg font-bold leading-none">{lightbox.title}</h4>
+                                        {lightbox.images.length > 1 && (
+                                            <span className="text-xs text-gray-400 mt-1">
+                                                Görsel {lightbox.currentIndex + 1} / {lightbox.images.length}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => setLightbox(null)}
+                                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all border border-white/10 active:scale-95 group focus:outline-none"
+                                    >
+                                        <Icon name="close" className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                                    </button>
+                                </div>
 
-                                {/* Image */}
+                                {/* Main Image Container */}
                                 <div
                                     key={lightbox.currentIndex}
-                                    className="relative h-[80vh] w-full animate-in fade-in zoom-in-95 duration-300"
+                                    className="relative w-full h-[75vh] sm:h-[80vh] flex items-center justify-center bg-black/20 rounded-2xl overflow-hidden shadow-2xl border border-white/5"
                                 >
                                     <NextImage
                                         src={lightbox.images[lightbox.currentIndex]}
@@ -390,78 +412,98 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
                                         fill
                                         unoptimized
                                         sizes="100vw"
-                                        className="object-contain rounded-xl"
+                                        className="object-contain"
+                                        priority
                                     />
-                                </div>
 
-                                {/* Navigation */}
-                                {lightbox.images.length > 1 && (
-                                    <>
-                                        <button
-                                            onClick={prevImage}
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
-                                        >
-                                            <Icon name="arrow-left" className="w-8 h-8 text-white" />
-                                        </button>
-                                        <button
-                                            onClick={nextImage}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
-                                        >
-                                            <Icon name="arrow-right" className="w-8 h-8 text-white" />
-                                        </button>
-
-                                        {/* Counter */}
-                                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm text-white text-sm font-medium">
-                                            {lightbox.currentIndex + 1} / {lightbox.images.length}
+                                    {/* Navigation Overlay Arrows (Desktop) */}
+                                    {lightbox.images.length > 1 && (
+                                        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4 pointer-events-none">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    prevImage();
+                                                }}
+                                                className="pointer-events-auto p-4 rounded-full bg-black/40 hover:bg-blue-600/80 text-white backdrop-blur-sm transition-all border border-white/10 hover:scale-110 group focus:outline-none"
+                                            >
+                                                <Icon name="arrow-left" className="w-6 h-6 group-active:-translate-x-1 transition-transform" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    nextImage();
+                                                }}
+                                                className="pointer-events-auto p-4 rounded-full bg-black/40 hover:bg-blue-600/80 text-white backdrop-blur-sm transition-all border border-white/10 hover:scale-110 group focus:outline-none"
+                                            >
+                                                <Icon name="arrow-right" className="w-6 h-6 group-active:translate-x-1 transition-transform" />
+                                            </button>
                                         </div>
-                                    </>
-                                )}
-
-                                {/* Title */}
-                                <div className="absolute top-4 left-4 px-4 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white font-semibold">
-                                    {lightbox.title}
+                                    )}
                                 </div>
-                            </div>
-                        </div>
+
+                                {/* Thumbnail indicators (Mobile / Small dots) */}
+                                {lightbox.images.length > 1 && (
+                                    <div className="flex gap-2 pb-2 overflow-x-auto max-w-full no-scrollbar">
+                                        {lightbox.images.map((_, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setLightbox(prev => prev ? { ...prev, currentIndex: idx } : null)}
+                                                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                                                    idx === lightbox.currentIndex 
+                                                    ? 'bg-blue-500 w-6' 
+                                                    : 'bg-white/20 hover:bg-white/40'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.div>
+                        </motion.div>
                     )}
 
-                {/* Video Modal */}
-                {selectedVideo && (
-                        <div
-                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 animate-in fade-in duration-300"
+                    {selectedVideo && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/98 backdrop-blur-lg p-4"
                             onClick={() => setSelectedVideo(null)}
                         >
-                            <div
-                                className="relative w-full max-w-6xl animate-in zoom-in-95 duration-300"
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="relative w-full max-w-5xl"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                {/* Close Button */}
-                                <button
-                                    onClick={() => setSelectedVideo(null)}
-                                    className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
-                                >
-                                    <Icon name="close" className="w-6 h-6 text-white" />
-                                </button>
-
-                                {/* Title */}
-                                <div className="absolute -top-12 left-0 px-4 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white font-semibold">
-                                    {selectedVideo.title}
+                                {/* Video Header */}
+                                <div className="absolute -top-14 left-0 right-0 flex items-center justify-between px-2">
+                                    <h4 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                                        {selectedVideo.title}
+                                    </h4>
+                                    <button
+                                        onClick={() => setSelectedVideo(null)}
+                                        className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-all border border-white/10 group active:scale-95"
+                                    >
+                                        <Icon name="close" className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-300" />
+                                    </button>
                                 </div>
 
-                                {/* Video Player */}
-                                <video
-                                    src={selectedVideo.url}
-                                    controls
-                                    autoPlay
-                                    muted
-                                    className="w-full aspect-video rounded-xl shadow-2xl bg-black"
-                                >
-                                    Tarayıcınız video oynatmayı desteklemiyor.
-                                </video>
-                            </div>
-                        </div>
+                                {/* Video Player with shadow effect */}
+                                <div className="relative rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.3)] border border-white/10 bg-black aspect-video">
+                                    <video
+                                        src={selectedVideo.url}
+                                        controls
+                                        autoPlay
+                                        className="w-full h-full object-contain"
+                                    >
+                                        Tarayıcınız video oynatmayı desteklemiyor.
+                                    </video>
+                                </div>
+                            </motion.div>
+                        </motion.div>
                     )}
-            </section>
+                </AnimatePresence>            </section>
         </StageExperience>
     );
 };

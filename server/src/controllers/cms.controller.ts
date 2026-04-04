@@ -16,13 +16,13 @@ const defaultAbout = {
 };
 
 const defaultContact = {
-    address: 'İstanbul, Türkiye',
+    address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
     phone: '+90 544 644 93 04',
     email: process.env.CONTACT_FORM_TO_EMAIL || 'info@skpro.com.tr',
-    mapUrl: '',
+    mapUrl: 'https://maps.google.com/maps?q=Zincirlidere%20Caddesi%20No%3A52%2FC%20%C5%9Ei%C5%9Fli%2F%C4%B0stanbul&t=&z=16&ie=UTF8&iwloc=&output=embed',
     socialLinks: {
-        instagram: 'https://instagram.com/skproduction',
-        linkedin: 'https://linkedin.com/company/skproduction'
+        instagram: 'https://www.instagram.com/skprotr/?hl=tr',
+        linkedin: 'https://www.linkedin.com/company/skpro/'
     }
 };
 

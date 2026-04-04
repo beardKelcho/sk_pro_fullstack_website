@@ -121,7 +121,7 @@
           "title": "7. Contact",
           "paragraphs": [
             "Pour toute question concernant cette politique, vous pouvez nous contacter :",
-            "E-mail : info@skpro.com.tr • Téléphone : +90 544 644 93 04 • Adresse : İstanbul, Türkiye"
+            "E-mail : info@skpro.com.tr • Téléphone : +90 544 644 93 04 • Adresse : Zincirlidere Caddesi No:52/C Şişli/İstanbul"
           ]
         }
       ]
@@ -175,7 +175,7 @@
           "title": "7. Contact",
           "paragraphs": [
             "Pour toute question concernant les conditions d’utilisation, vous pouvez nous contacter :",
-            "E-mail : info@skpro.com.tr • Téléphone : +90 544 644 93 04 • Adresse : İstanbul, Türkiye"
+            "E-mail : info@skpro.com.tr • Téléphone : +90 544 644 93 04 • Adresse : Zincirlidere Caddesi No:52/C Şişli/İstanbul"
           ]
         }
       ]
@@ -250,7 +250,7 @@
           "email": "E-mail"
         },
         "fallback": {
-          "address": "İstanbul, Türkiye",
+          "address": "Zincirlidere Caddesi No:52/C Şişli/İstanbul",
           "phone": "+90 544 644 93 04",
           "email": "info@skpro.com.tr"
         }

@@ -27,12 +27,12 @@ type FooterContactData = {
 };
 
 const STATIC_CONTACT: FooterContactData = {
-  address: 'İstanbul, Türkiye',
+  address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
   phone: '+90 544 644 93 04',
   email: 'info@skpro.com.tr',
   socialLinks: {
-    instagram: 'https://instagram.com/skproduction',
-    linkedin: 'https://linkedin.com/company/skproduction',
+    instagram: 'https://www.instagram.com/skprotr/?hl=tr',
+    linkedin: 'https://www.linkedin.com/company/skpro/',
   },
 };
 

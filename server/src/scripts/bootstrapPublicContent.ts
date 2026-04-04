@@ -147,17 +147,18 @@ const defaultSections = [
   {
     section: 'contact',
     data: {
-      address: 'İstanbul, Türkiye',
+      address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
       phone: '+90 544 644 93 04',
       email: 'info@skpro.com.tr',
+      mapUrl: 'https://maps.google.com/maps?q=Zincirlidere%20Caddesi%20No%3A52%2FC%20%C5%9Ei%C5%9Fli%2F%C4%B0stanbul&t=&z=16&ie=UTF8&iwloc=&output=embed',
       workingHours: [
         'Pazartesi - Cuma: 09:00 - 18:00',
         'Cumartesi: 10:00 - 14:00',
         'Pazar: Kapalı',
       ],
       socialLinks: {
-        instagram: 'https://instagram.com/skproduction',
-        linkedin: 'https://linkedin.com/company/skproduction',
+        instagram: 'https://www.instagram.com/skprotr/?hl=tr',
+        linkedin: 'https://www.linkedin.com/company/skpro/',
       },
       latitude: 41.057984,
       longitude: 28.987117,
@@ -254,7 +255,6 @@ const defaultShowcaseProjects = [
     type: 'photo' as const,
     title: 'TRT Tabii Dubai Lansman',
     category: 'LANSMAN',
-    coverUrl: '/restored-projects/project-1.png',
     order: 1,
     isActive: true,
   },
@@ -262,7 +262,6 @@ const defaultShowcaseProjects = [
     type: 'photo' as const,
     title: '29 Ekim Cumhuriyet Bayramı 100. Yıl Kutlamaları',
     category: 'KONSER',
-    coverUrl: '/restored-projects/project-2.png',
     order: 2,
     isActive: true,
   },
@@ -270,7 +269,6 @@ const defaultShowcaseProjects = [
     type: 'photo' as const,
     title: 'YouTube Influencer Etkinliği',
     category: 'LANSMAN',
-    coverUrl: '/restored-projects/project-3.png',
     order: 3,
     isActive: true,
   },
@@ -278,7 +276,6 @@ const defaultShowcaseProjects = [
     type: 'photo' as const,
     title: 'Haliç Kongre Merkezi',
     category: 'KONGRE',
-    coverUrl: '/restored-projects/project-4.png',
     order: 4,
     isActive: true,
   },
@@ -286,7 +283,6 @@ const defaultShowcaseProjects = [
     type: 'photo' as const,
     title: '2025 Kültür Yolu Festivali',
     category: 'KONSER',
-    coverUrl: '/restored-projects/project-5.png',
     order: 5,
     isActive: true,
   },
@@ -294,20 +290,19 @@ const defaultShowcaseProjects = [
     type: 'photo' as const,
     title: "19 Mayıs Atatürk'ü Anma Gençlik ve Spor Bayramı",
     category: 'KONSER',
-    coverUrl: '/restored-projects/project-6.png',
     order: 6,
     isActive: true,
   },
 ] as const;
 
 const defaultLegacyContact = {
-  address: 'İstanbul, Türkiye',
+  address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
   phone: '+90 544 644 93 04',
   email: 'info@skpro.com.tr',
-  mapUrl: '',
+  mapUrl: 'https://maps.google.com/maps?q=Zincirlidere%20Caddesi%20No%3A52%2FC%20%C5%9Ei%C5%9Fli%2F%C4%B0stanbul&t=&z=16&ie=UTF8&iwloc=&output=embed',
   socialLinks: {
-    instagram: 'https://instagram.com/skproduction',
-    linkedin: 'https://linkedin.com/company/skproduction',
+    instagram: 'https://www.instagram.com/skprotr/?hl=tr',
+    linkedin: 'https://www.linkedin.com/company/skpro/',
   },
 };
 

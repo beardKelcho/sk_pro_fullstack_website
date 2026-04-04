@@ -24,12 +24,12 @@ export const generateLocalBusinessSchema = () => {
     "image": "https://skpro.com.tr/images/sk-logo.png",
     "@id": "https://skpro.com.tr",
     "url": "https://skpro.com.tr",
-    "telephone": "+902120000000",
+    "telephone": "+905446449304",
     "email": "info@skpro.com.tr",
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "SK Production Merkez",
-      "addressLocality": "Istanbul",
+      "streetAddress": "Zincirlidere Caddesi No:52/C Şişli",
+      "addressLocality": "İstanbul",
       "addressRegion": "TR",
       "postalCode": "34000",
       "addressCountry": "TR"

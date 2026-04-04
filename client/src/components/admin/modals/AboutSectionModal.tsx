@@ -43,14 +43,17 @@ const AboutSectionModal: React.FC<AboutSectionModalProps> = ({ isOpen, onClose }
     const { data: aboutData, isLoading } = useQuery({
         queryKey: ['admin-about'],
         queryFn: async () => {
-            const [siteContentRes, legacyRes] = await Promise.all([
+            const [siteContentResult, legacyResult] = await Promise.allSettled([
                 axios.get('/admin/site-content'),
                 axios.get('/cms/about'),
             ]);
 
-            const aboutSection = siteContentRes.data?.data?.find((section: any) => section.section === 'about');
+            const siteContentSections =
+                siteContentResult.status === 'fulfilled' ? siteContentResult.value.data?.data || [] : [];
+            const aboutSection = siteContentSections.find((section: any) => section.section === 'about');
             const siteContentData = aboutSection?.data || {};
-            const legacyData = legacyRes.data?.data || {};
+            const legacyData =
+                legacyResult.status === 'fulfilled' ? legacyResult.value.data?.data || {} : {};
 
             return {
                 data: {

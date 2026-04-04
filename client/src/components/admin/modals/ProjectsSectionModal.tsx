@@ -57,9 +57,9 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
 
     // Fetch projects
     const { data: projectsData, isLoading: isProjectsLoading } = useQuery({
-        queryKey: ['showcase-projects-admin'],
+        queryKey: ['admin-showcase-projects'],
         queryFn: async () => {
-            const res = await axios.get('/showcase-projects');
+            const res = await axios.get('/showcase-projects/admin/all');
             return res.data;
         },
         enabled: isOpen,
@@ -88,7 +88,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
             }
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['showcase-projects-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-showcase-projects'] });
             toast.success(formData._id ? 'Proje güncellendi' : 'Proje oluşturuldu');
             setActiveTab('list');
             resetForm();
@@ -104,7 +104,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
             await axios.delete(`/showcase-projects/${id}`);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['showcase-projects-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-showcase-projects'] });
             toast.success('Proje silindi');
         },
         onError: (error: any) => {
@@ -119,13 +119,13 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
             return res.data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['showcase-projects-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-showcase-projects'] });
             toast.success('Sıralama güncellendi');
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Sıralama hatası');
             // Refetch to restore original order
-            queryClient.invalidateQueries({ queryKey: ['showcase-projects-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-showcase-projects'] });
         },
     });
 
@@ -153,7 +153,7 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
         const newOrder = arrayMove(projects, oldIndex, newIndex);
 
         // Update cache immediately for smooth UX
-        queryClient.setQueryData(['showcase-projects-admin'], {
+        queryClient.setQueryData(['admin-showcase-projects'], {
             ...projectsData,
             data: newOrder,
         });
@@ -245,6 +245,17 @@ const ProjectsSectionModal: React.FC<ProjectsSectionModalProps> = ({ isOpen, onC
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (formData.type === 'photo' && !formData.coverUrl && formData.imageUrls.length === 0) {
+            toast.error('Fotoğraf projesi için en az bir kapak veya galeri görseli seçin');
+            return;
+        }
+
+        if (formData.type === 'video' && !formData.videoUrl) {
+            toast.error('Video projesi için bir video seçin');
+            return;
+        }
+
         saveProjectMutation.mutate(formData);
     };
 

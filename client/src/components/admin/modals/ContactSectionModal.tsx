@@ -39,8 +39,31 @@ const ContactSectionModal: React.FC<ContactSectionModalProps> = ({ isOpen, onClo
     const { data: contactData, isLoading } = useQuery({
         queryKey: ['admin-contact'],
         queryFn: async () => {
-            const res = await axios.get('/cms/contact');
-            return res.data;
+            const [siteContentResult, legacyResult] = await Promise.allSettled([
+                axios.get('/admin/site-content'),
+                axios.get('/cms/contact'),
+            ]);
+
+            const siteContentSections =
+                siteContentResult.status === 'fulfilled' ? siteContentResult.value.data?.data || [] : [];
+            const contactSection = siteContentSections.find((section: any) => section.section === 'contact');
+            const siteContactData = contactSection?.data || {};
+            const legacyContactData =
+                legacyResult.status === 'fulfilled' ? legacyResult.value.data?.data || {} : {};
+
+            return {
+                data: {
+                    address: siteContactData.address || legacyContactData.address || '',
+                    phone: siteContactData.phone || legacyContactData.phone || '',
+                    email: siteContactData.email || legacyContactData.email || '',
+                    mapUrl: siteContactData.mapUrl || legacyContactData.mapUrl || '',
+                    socialLinks: {
+                        instagram: siteContactData.socialLinks?.instagram || legacyContactData.socialLinks?.instagram || '',
+                        linkedin: siteContactData.socialLinks?.linkedin || legacyContactData.socialLinks?.linkedin || '',
+                    },
+                    updatedAt: contactSection?.updatedAt || legacyContactData.updatedAt,
+                }
+            };
         },
         enabled: isOpen,
     });
@@ -64,11 +87,19 @@ const ContactSectionModal: React.FC<ContactSectionModalProps> = ({ isOpen, onClo
     // Save mutation
     const saveContactMutation = useMutation({
         mutationFn: async (data: ContactForm) => {
-            const res = await axios.put('/cms/contact', data);
-            return res.data;
+            const [siteContentRes] = await Promise.all([
+                axios.post('/admin/site-content', {
+                    section: 'contact',
+                    isActive: true,
+                    data,
+                }),
+                axios.put('/cms/contact', data),
+            ]);
+            return siteContentRes.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-contact'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-site-content'] });
             queryClient.invalidateQueries({ queryKey: ['contact'] }); // Public query
             queryClient.invalidateQueries({ queryKey: ['footer-contact'] }); // Footer query
             toast.success('İletişim bilgileri güncellendi');

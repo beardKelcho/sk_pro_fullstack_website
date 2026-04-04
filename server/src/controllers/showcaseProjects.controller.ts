@@ -2,10 +2,12 @@ import { Request, Response } from 'express';
 import ShowcaseProject from '../models/ShowcaseProject';
 import logger from '../utils/logger';
 
+const buildShowcaseQuery = (includeInactive = false) => (includeInactive ? {} : { isActive: true });
+
 // GET /api/showcase-projects - Public endpoint
 export const getShowcaseProjects = async (req: Request, res: Response) => {
     try {
-        const projects = await ShowcaseProject.find({ isActive: true })
+        const projects = await ShowcaseProject.find(buildShowcaseQuery())
             .sort({ order: 1, createdAt: -1 })
             .select('-__v');
 
@@ -15,6 +17,26 @@ export const getShowcaseProjects = async (req: Request, res: Response) => {
         });
     } catch (error) {
         logger.error('Get Showcase Projects Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Projeler getirilirken hata oluştu',
+        });
+    }
+};
+
+// GET /api/showcase-projects/admin/all - Admin endpoint
+export const getShowcaseProjectsAdmin = async (req: Request, res: Response) => {
+    try {
+        const projects = await ShowcaseProject.find(buildShowcaseQuery(true))
+            .sort({ order: 1, createdAt: -1 })
+            .select('-__v');
+
+        res.status(200).json({
+            success: true,
+            data: projects,
+        });
+    } catch (error) {
+        logger.error('Get Admin Showcase Projects Error:', error);
         res.status(500).json({
             success: false,
             message: 'Projeler getirilirken hata oluştu',

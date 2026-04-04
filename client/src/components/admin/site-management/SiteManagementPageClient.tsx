@@ -54,19 +54,51 @@ export default function SiteManagementPage() {
 
     // Fetch services (independent from CMS)
     const { data: servicesData } = useQuery({
-        queryKey: ['admin-services-count'],
+        queryKey: ['admin-services'],
         queryFn: async () => {
-            const res = await axios.get('/services');
+            const res = await axios.get('/services/admin/all');
             return res.data;
         },
     });
 
-    // Fetch Contact from new CMS API
+    const { data: projectsData } = useQuery({
+        queryKey: ['admin-showcase-projects'],
+        queryFn: async () => {
+            const res = await axios.get('/showcase-projects/admin/all');
+            return res.data;
+        },
+    });
+
+    // Fetch Contact with site-content as canonical source and CMS as legacy fallback
     const { data: contactData } = useQuery({
         queryKey: ['admin-contact'],
         queryFn: async () => {
-            const res = await axios.get('/cms/contact');
-            return res.data;
+            const [siteContentResult, legacyResult] = await Promise.allSettled([
+                axios.get('/admin/site-content'),
+                axios.get('/cms/contact'),
+            ]);
+
+            const siteContentSections =
+                siteContentResult.status === 'fulfilled' ? siteContentResult.value.data?.data || [] : [];
+            const contactSection = siteContentSections.find((section: any) => section.section === 'contact');
+            const siteContactData = contactSection?.data || {};
+            const legacyContactData =
+                legacyResult.status === 'fulfilled' ? legacyResult.value.data?.data || {} : {};
+
+            return {
+                data: {
+                    address: siteContactData.address || legacyContactData.address || '',
+                    phone: siteContactData.phone || legacyContactData.phone || '',
+                    email: siteContactData.email || legacyContactData.email || '',
+                    mapUrl: siteContactData.mapUrl || legacyContactData.mapUrl || '',
+                    socialLinks: {
+                        instagram: siteContactData.socialLinks?.instagram || legacyContactData.socialLinks?.instagram || '',
+                        linkedin: siteContactData.socialLinks?.linkedin || legacyContactData.socialLinks?.linkedin || '',
+                    },
+                    updatedAt: contactSection?.updatedAt || legacyContactData.updatedAt,
+                },
+                section: contactSection,
+            };
         },
     });
 
@@ -75,6 +107,9 @@ export default function SiteManagementPage() {
     };
 
     const aboutSection = getSectionData('about');
+    const contactSection = contactData?.section || getSectionData('contact');
+    const services = servicesData?.data || [];
+    const projects = projectsData?.data || [];
 
     const cards: SectionCard[] = [
         // Note: Maintenance is now a separate component, handled outside the grid map or as a special case
@@ -101,8 +136,8 @@ export default function SiteManagementPage() {
             icon: <Briefcase className="w-12 h-12" />,
             title: 'Hizmetler',
             description: 'Sunulan hizmetler ve ekipman listesi',
-            lastUpdated: servicesData?.data?.[0]?.updatedAt, // Use first service's update time
-            isActive: true, // Services section is always active (independent API)
+            lastUpdated: services[0]?.updatedAt,
+            isActive: services.some((service: any) => service.isActive !== false),
             onClick: () => setSelectedSection('services'),
         },
         {
@@ -111,7 +146,7 @@ export default function SiteManagementPage() {
             title: 'İletişim',
             description: 'İletişim bilgileri ve harita koordinatları',
             lastUpdated: contactData?.data?.updatedAt,
-            isActive: true, // Always active (new CMS API)
+            isActive: contactSection?.isActive ?? true,
             onClick: () => setSelectedSection('contact'),
         },
         {
@@ -119,8 +154,8 @@ export default function SiteManagementPage() {
             icon: <Tv className="w-12 h-12" />,
             title: 'Projeler',
             description: 'Konser, lansman ve etkinlik projeleri',
-            lastUpdated: siteContent?.[0]?.updatedAt, // Use first project's update time as proxy
-            isActive: true, // Projects section is always active
+            lastUpdated: projects[0]?.updatedAt,
+            isActive: projects.some((project: any) => project.isActive !== false),
             onClick: () => setSelectedSection('projects'),
         },
     ];

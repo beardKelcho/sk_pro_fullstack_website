@@ -1,5 +1,7 @@
+'use client';
+
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 const STATIC_CONTENT = {
   companyDescription: 'Profesyonel görüntü rejisi ve medya server çözümleri ile etkinliklerinize değer katıyoruz.',
@@ -109,9 +111,7 @@ const getFooterContactData = async (): Promise<FooterContactData> => {
   }
 
   try {
-    const response = await fetch(endpoint, {
-      next: { revalidate: 300 },
-    });
+    const response = await fetch(endpoint, { cache: 'no-store' });
 
     if (!response.ok) {
       return STATIC_CONTACT;
@@ -124,8 +124,25 @@ const getFooterContactData = async (): Promise<FooterContactData> => {
   }
 };
 
-const Footer = async () => {
-  const contactData = await getFooterContactData();
+const Footer = () => {
+  const [contactData, setContactData] = useState<FooterContactData>(STATIC_CONTACT);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const refreshFooterContact = async () => {
+      const data = await getFooterContactData();
+      if (!isCancelled) {
+        setContactData(data);
+      }
+    };
+
+    void refreshFooterContact();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   return (
     <footer className="relative z-20 border-t border-white/10 bg-black/80 py-16 text-gray-300 backdrop-blur-lg">

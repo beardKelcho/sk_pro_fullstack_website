@@ -88,6 +88,8 @@ describe('AuthController', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
       user: {
         id: userId,
         name: 'Admin User',

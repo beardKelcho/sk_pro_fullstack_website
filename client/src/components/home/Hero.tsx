@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { HeroContent } from '@/types/cms';
@@ -26,6 +27,10 @@ export default function Hero({ content }: HeroProps) {
     const rawData = unwrapHeroContent(content);
     const subtitle = rawData?.subtitle || "";
     const slogans = rawData?.rotatingTexts || [];
+    const title = rawData?.title || 'YARATICILIĞIN\nSINIRLARINI ZORLAYIN';
+    const titleLines = title.split('\n').map((line) => line.trim()).filter(Boolean);
+    const primaryButtonLabel = rawData?.buttonText || 'Projelerimiz';
+    const primaryButtonLink = rawData?.buttonLink || '#projects';
 
     const [textIndex, setTextIndex] = useState(0);
 
@@ -62,7 +67,13 @@ export default function Hero({ content }: HeroProps) {
                 {/* ANA BAŞLIK - SABİT - BEYAZ */}
                 <div className="mb-6">
                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-black !text-white leading-none tracking-tight drop-shadow-2xl uppercase">
-                        YARATICILIĞIN<br className="hidden md:block" /> SINIRLARINI ZORLAYIN
+                        {titleLines.map((line, index) => (
+                            <React.Fragment key={`${line}-${index}`}>
+                                {line}
+                                {index < titleLines.length - 1 ? <br className="hidden md:block" /> : null}
+                                {index < titleLines.length - 1 ? ' ' : null}
+                            </React.Fragment>
+                        ))}
                     </h1>
                 </div>
 
@@ -76,10 +87,10 @@ export default function Hero({ content }: HeroProps) {
                 {/* CTA Butonlar */}
                 <div className="flex flex-col sm:flex-row gap-6 mt-4">
                     <a
-                        href="#projects"
+                        href={primaryButtonLink}
                         className="px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/30 hover:shadow-purple-500/40"
                     >
-                        Projelerimiz
+                        {primaryButtonLabel}
                     </a>
                     <a
                         href="#contact"

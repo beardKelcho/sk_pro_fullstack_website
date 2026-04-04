@@ -2,10 +2,12 @@ import { Request, Response } from 'express';
 import Service from '../models/Service';
 import logger from '../utils/logger';
 
+const buildServiceQuery = (includeInactive = false) => (includeInactive ? {} : { isActive: true });
+
 // GET /api/services - Public endpoint
 export const getAllServices = async (req: Request, res: Response) => {
     try {
-        const services = await Service.find({ isActive: true })
+        const services = await Service.find(buildServiceQuery())
             .sort({ order: 1, createdAt: -1 })
             .select('-__v');
 
@@ -15,6 +17,26 @@ export const getAllServices = async (req: Request, res: Response) => {
         });
     } catch (error) {
         logger.error('Get Services Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Hizmetler getirilirken hata oluştu',
+        });
+    }
+};
+
+// GET /api/services/admin/all - Admin endpoint
+export const getAllServicesAdmin = async (req: Request, res: Response) => {
+    try {
+        const services = await Service.find(buildServiceQuery(true))
+            .sort({ order: 1, createdAt: -1 })
+            .select('-__v');
+
+        res.status(200).json({
+            success: true,
+            data: services,
+        });
+    } catch (error) {
+        logger.error('Get Admin Services Error:', error);
         res.status(500).json({
             success: false,
             message: 'Hizmetler getirilirken hata oluştu',

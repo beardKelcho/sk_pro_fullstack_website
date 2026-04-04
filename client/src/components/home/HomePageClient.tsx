@@ -178,10 +178,8 @@ export default function HomePageClient({
 
   useEffect(() => {
     const apiBaseUrl = getPublicApiBaseUrl();
-    const needsRefresh =
-      Boolean(initialFallbackMessage) || initialServices.length === 0 || initialProjects.length === 0;
 
-    if (!apiBaseUrl || !needsRefresh) {
+    if (!apiBaseUrl) {
       return;
     }
 
@@ -230,7 +228,7 @@ export default function HomePageClient({
     return () => {
       isCancelled = true;
     };
-  }, [initialFallbackMessage, initialProjects.length, initialServices.length]);
+  }, [initialFallbackMessage]);
 
   return (
     <>

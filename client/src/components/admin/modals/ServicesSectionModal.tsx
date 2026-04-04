@@ -62,9 +62,9 @@ const ServicesSectionModal: React.FC<ServicesSectionModalProps> = ({ isOpen, onC
 
     // Fetch services
     const { data: servicesData, isLoading: isServicesLoading } = useQuery({
-        queryKey: ['services-admin'],
+        queryKey: ['admin-services'],
         queryFn: async () => {
-            const res = await axios.get('/services');
+            const res = await axios.get('/services/admin/all');
             return res.data;
         },
         enabled: isOpen,
@@ -82,7 +82,8 @@ const ServicesSectionModal: React.FC<ServicesSectionModalProps> = ({ isOpen, onC
             }
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['services-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-services'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-services-count'] });
             toast.success(formData._id ? 'Hizmet güncellendi' : 'Hizmet oluşturuldu');
             setActiveTab('list');
             resetForm();
@@ -98,7 +99,8 @@ const ServicesSectionModal: React.FC<ServicesSectionModalProps> = ({ isOpen, onC
             await axios.delete(`/services/${id}`);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['services-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-services'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-services-count'] });
             toast.success('Hizmet silindi');
         },
         onError: (error: any) => {
@@ -113,14 +115,14 @@ const ServicesSectionModal: React.FC<ServicesSectionModalProps> = ({ isOpen, onC
             return res.data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['services-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-services'] });
             queryClient.invalidateQueries({ queryKey: ['admin-services-count'] });
             toast.success('Sıralama güncellendi');
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Sıralama hatası');
             // Refetch to restore original order
-            queryClient.invalidateQueries({ queryKey: ['services-admin'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-services'] });
         },
     });
 
@@ -202,7 +204,7 @@ const ServicesSectionModal: React.FC<ServicesSectionModalProps> = ({ isOpen, onC
         const newOrder = arrayMove(services, oldIndex, newIndex);
 
         // Update cache immediately for smooth UX
-        queryClient.setQueryData(['services-admin'], {
+        queryClient.setQueryData(['admin-services'], {
             ...servicesData,
             data: newOrder,
         });

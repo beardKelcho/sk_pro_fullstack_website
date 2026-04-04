@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import About from '../models/About';
 import Contact from '../models/Contact';
+import { SiteContent } from '../models/SiteContent';
 
 // Default data for first-time initialization
 const defaultAbout = {
@@ -26,21 +27,72 @@ const defaultContact = {
     }
 };
 
+const mergeAboutPayload = (siteContentData?: Record<string, unknown> | null, legacyAbout?: Record<string, unknown> | null) => ({
+    title: (siteContentData?.title as string) || (legacyAbout?.title as string) || defaultAbout.title,
+    description: (siteContentData?.description as string) || (legacyAbout?.description as string) || defaultAbout.description,
+    imageUrl:
+        (siteContentData?.imageUrl as string) ||
+        (siteContentData?.image as string) ||
+        (legacyAbout?.imageUrl as string) ||
+        defaultAbout.imageUrl,
+    stats:
+        (Array.isArray(siteContentData?.stats) && siteContentData?.stats.length > 0
+            ? siteContentData?.stats
+            : Array.isArray(legacyAbout?.stats) && legacyAbout?.stats.length > 0
+                ? legacyAbout?.stats
+                : defaultAbout.stats) as typeof defaultAbout.stats,
+});
+
+const mergeContactPayload = (siteContentData?: Record<string, unknown> | null, legacyContact?: Record<string, unknown> | null) => ({
+    address: (siteContentData?.address as string) || (legacyContact?.address as string) || defaultContact.address,
+    phone: (siteContentData?.phone as string) || (legacyContact?.phone as string) || defaultContact.phone,
+    email: (siteContentData?.email as string) || (legacyContact?.email as string) || defaultContact.email,
+    mapUrl: (siteContentData?.mapUrl as string) || (legacyContact?.mapUrl as string) || defaultContact.mapUrl,
+    socialLinks: {
+        instagram:
+            (siteContentData?.socialLinks as Record<string, unknown> | undefined)?.instagram as string ||
+            (legacyContact?.socialLinks as Record<string, unknown> | undefined)?.instagram as string ||
+            defaultContact.socialLinks.instagram,
+        linkedin:
+            (siteContentData?.socialLinks as Record<string, unknown> | undefined)?.linkedin as string ||
+            (legacyContact?.socialLinks as Record<string, unknown> | undefined)?.linkedin as string ||
+            defaultContact.socialLinks.linkedin,
+    },
+});
+
 // ==================== ABOUT ====================
 
 // Get About (Public)
 export const getAbout = async (req: Request, res: Response) => {
     try {
-        let about = await About.findOne();
+        let [about, siteContent] = await Promise.all([
+            About.findOne(),
+            SiteContent.findOne({ section: 'about' }),
+        ]);
 
-        // If no about document exists, create default one
+        const mergedAbout = mergeAboutPayload(
+            (siteContent?.data as Record<string, unknown> | null) || null,
+            (about?.toObject?.() as Record<string, unknown> | undefined) || null
+        );
+
         if (!about) {
-            about = await About.create(defaultAbout);
+            about = await About.create(mergedAbout);
+        }
+
+        if (!siteContent) {
+            siteContent = await SiteContent.create({
+                section: 'about',
+                isActive: true,
+                data: mergedAbout,
+            });
         }
 
         res.status(200).json({
             success: true,
-            data: about
+            data: {
+                ...mergedAbout,
+                updatedAt: siteContent?.updatedAt || about?.updatedAt,
+            }
         });
     } catch (error: unknown) {
         res.status(500).json({
@@ -64,17 +116,38 @@ export const updateAbout = async (req: Request, res: Response) => {
             });
         }
 
-        // Update or create (upsert)
-        const about = await About.findOneAndUpdate(
-            {},
-            { title, description, imageUrl, stats: stats || [] },
-            { new: true, upsert: true, runValidators: true }
-        );
+        const normalizedAbout = {
+            title,
+            description,
+            imageUrl,
+            stats: stats || [],
+        };
+
+        const [about, siteContent] = await Promise.all([
+            About.findOneAndUpdate(
+                {},
+                normalizedAbout,
+                { new: true, upsert: true, runValidators: true }
+            ),
+            SiteContent.findOneAndUpdate(
+                { section: 'about' },
+                {
+                    section: 'about',
+                    isActive: true,
+                    data: normalizedAbout,
+                    updatedBy: req.user?.id,
+                },
+                { new: true, upsert: true, runValidators: true }
+            ),
+        ]);
 
         res.status(200).json({
             success: true,
             message: 'Hakkımızda bölümü güncellendi',
-            data: about
+            data: {
+                ...normalizedAbout,
+                updatedAt: siteContent?.updatedAt || about?.updatedAt,
+            }
         });
     } catch (error: unknown) {
         res.status(500).json({
@@ -90,16 +163,34 @@ export const updateAbout = async (req: Request, res: Response) => {
 // Get Contact (Public)
 export const getContact = async (req: Request, res: Response) => {
     try {
-        let contact = await Contact.findOne();
+        let [contact, siteContent] = await Promise.all([
+            Contact.findOne(),
+            SiteContent.findOne({ section: 'contact' }),
+        ]);
 
-        // If no contact document exists, create default one
+        const mergedContact = mergeContactPayload(
+            (siteContent?.data as Record<string, unknown> | null) || null,
+            (contact?.toObject?.() as Record<string, unknown> | undefined) || null
+        );
+
         if (!contact) {
-            contact = await Contact.create(defaultContact);
+            contact = await Contact.create(mergedContact);
+        }
+
+        if (!siteContent) {
+            siteContent = await SiteContent.create({
+                section: 'contact',
+                isActive: true,
+                data: mergedContact,
+            });
         }
 
         res.status(200).json({
             success: true,
-            data: contact
+            data: {
+                ...mergedContact,
+                updatedAt: siteContent?.updatedAt || contact?.updatedAt,
+            }
         });
     } catch (error: unknown) {
         res.status(500).json({
@@ -123,23 +214,39 @@ export const updateContact = async (req: Request, res: Response) => {
             });
         }
 
-        // Update or create (upsert)
-        const contact = await Contact.findOneAndUpdate(
-            {},
-            {
-                address,
-                phone,
-                email,
-                mapUrl,
-                socialLinks: socialLinks || {}
-            },
-            { new: true, upsert: true, runValidators: true }
-        );
+        const normalizedContact = {
+            address,
+            phone,
+            email,
+            mapUrl,
+            socialLinks: socialLinks || {},
+        };
+
+        const [contact, siteContent] = await Promise.all([
+            Contact.findOneAndUpdate(
+                {},
+                normalizedContact,
+                { new: true, upsert: true, runValidators: true }
+            ),
+            SiteContent.findOneAndUpdate(
+                { section: 'contact' },
+                {
+                    section: 'contact',
+                    isActive: true,
+                    data: normalizedContact,
+                    updatedBy: req.user?.id,
+                },
+                { new: true, upsert: true, runValidators: true }
+            ),
+        ]);
 
         res.status(200).json({
             success: true,
             message: 'İletişim bilgileri güncellendi',
-            data: contact
+            data: {
+                ...normalizedContact,
+                updatedAt: siteContent?.updatedAt || contact?.updatedAt,
+            }
         });
     } catch (error: unknown) {
         res.status(500).json({

@@ -9,6 +9,7 @@
     "seed": "ts-node src/scripts/seed.ts",
     "seed:content": "ts-node src/scripts/seedSiteContent.ts",
     "seed:public-bootstrap": "ts-node src/scripts/bootstrapPublicContent.ts",
+    "import:cloudinary-assets": "ts-node src/scripts/importCloudinaryAssets.ts",
     "seed-images": "ts-node src/scripts/seedImages.ts",
     "reset-admin": "ts-node src/scripts/resetAdminPassword.ts",
     "migrate:cloudinary": "ts-node src/scripts/migrateToCloudinary.ts",

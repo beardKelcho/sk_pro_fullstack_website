@@ -8,6 +8,7 @@ import { useClickOutside } from '@/hooks/useClickOutside';
 import { authApi } from '@/services/api/auth';
 import { User } from '@/types/auth';
 import logger from '@/utils/logger';
+import { clearStoredAuth } from '@/utils/authStorage';
 import {
   useUnreadCount,
 } from '@/services/notificationService';
@@ -228,11 +229,7 @@ export default function AdminHeader({ onToggleSidebar, onSearchClick }: AdminHea
                     } catch (error) {
                       logger.error('Logout error:', error);
                     } finally {
-                      // Hem localStorage hem sessionStorage'dan temizle
-                      localStorage.removeItem('accessToken');
-                      localStorage.removeItem('user');
-                      sessionStorage.removeItem('accessToken');
-                      sessionStorage.removeItem('user');
+                      clearStoredAuth();
                       window.location.href = '/admin';
                     }
                   }}

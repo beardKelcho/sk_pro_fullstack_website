@@ -8,6 +8,7 @@ import { authApi } from '@/services/api/auth';
 import PasswordInput from '@/components/ui/PasswordInput';
 import { toast } from 'react-toastify';
 import logger from '@/utils/logger';
+import { setStoredAuth } from '@/utils/authStorage';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -128,8 +129,6 @@ export default function AdminLogin() {
           return;
         }
 
-        // accessToken httpOnly cookie olarak set edildi (XSS koruması)
-        // Kullanıcı metadata'sı (token DEĞİL) UI için storage'a kaydediliyor
         if (response.data.user) {
           const userData = {
             id: response.data.user.id || response.data.user._id,
@@ -140,11 +139,12 @@ export default function AdminLogin() {
             permissions: response.data.user.permissions || [],
             isActive: response.data.user.isActive !== undefined ? response.data.user.isActive : true,
           };
-          if (formData.rememberMe) {
-            localStorage.setItem('user', JSON.stringify(userData));
-          } else {
-            sessionStorage.setItem('user', JSON.stringify(userData));
-          }
+          setStoredAuth({
+            user: userData,
+            accessToken: response.data.accessToken,
+            refreshToken: response.data.refreshToken,
+            rememberMe: formData.rememberMe,
+          });
         }
 
         window.dispatchEvent(new CustomEvent('auth:login'));
@@ -203,7 +203,6 @@ export default function AdminLogin() {
       });
 
       if (response.success) {
-        // Kullanıcı metadata'sı UI için storage'a kaydediliyor
         if (response.user) {
           const userData = {
             id: response.user.id || response.user._id,
@@ -214,11 +213,12 @@ export default function AdminLogin() {
             permissions: response.user.permissions || [],
             isActive: response.user.isActive !== undefined ? response.user.isActive : true,
           };
-          if (formData.rememberMe) {
-            localStorage.setItem('user', JSON.stringify(userData));
-          } else {
-            sessionStorage.setItem('user', JSON.stringify(userData));
-          }
+          setStoredAuth({
+            user: userData,
+            accessToken: response.accessToken,
+            refreshToken: (response as { refreshToken?: string }).refreshToken,
+            rememberMe: formData.rememberMe,
+          });
         }
         window.dispatchEvent(new CustomEvent('auth:login'));
         router.replace('/admin/dashboard');

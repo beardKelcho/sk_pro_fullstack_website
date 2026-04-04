@@ -5,17 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { authApi } from '@/services/api/auth';
 import logger from '@/utils/logger';
+import { clearStoredAuth } from '@/utils/authStorage';
 
 export default function AdminIndexPage() {
     const router = useRouter();
 
     useEffect(() => {
         let isMounted = true;
-
-        const clearStoredUser = () => {
-            window.localStorage.removeItem('user');
-            window.sessionStorage.removeItem('user');
-        };
 
         const checkAuth = async () => {
             try {
@@ -35,7 +31,7 @@ export default function AdminIndexPage() {
 
             if (!isMounted) return;
 
-            clearStoredUser();
+            clearStoredAuth();
             router.replace('/admin/login');
         };
 

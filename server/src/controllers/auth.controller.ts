@@ -72,7 +72,8 @@ export class AuthController {
 
       res.status(200).json({
         success: true,
-        ...(mobile ? { accessToken, refreshToken } : {}),
+        accessToken,
+        refreshToken,
         user: {
           id: result.user._id,
           name: result.user.name,
@@ -132,8 +133,6 @@ export class AuthController {
   async refreshToken(req: Request, res: Response): Promise<Response | void> {
     try {
       const refreshTokenRaw = (req.cookies?.refreshToken as string) || (req.body?.refreshToken as string);
-      const mobile = isMobileClient(req) || Boolean(req.body?.refreshToken);
-
       if (!refreshTokenRaw) {
         return res.status(401).json({ success: false, message: 'Yenileme token\'ı bulunamadı' });
       }
@@ -156,7 +155,8 @@ export class AuthController {
 
       return res.status(200).json({
         success: true,
-        ...(mobile ? { accessToken: result.accessToken, refreshToken: result.refreshToken } : {}),
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       });
 
     } catch (error: unknown) {

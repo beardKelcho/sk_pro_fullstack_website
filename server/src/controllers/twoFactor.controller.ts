@@ -8,7 +8,7 @@ import { User } from '../models';
 import logger from '../utils/logger';
 import { logAction } from '../utils/auditLogger';
 import { Session } from '../models';
-import { createTokenHash, decode2FAChallenge, generateTokenPair, isMobileClient } from '../utils/authTokens';
+import { createTokenHash, decode2FAChallenge, generateTokenPair } from '../utils/authTokens';
 import { encryptField, decryptField } from '../utils/encryption';
 
 // Backwards-compatible aliases
@@ -426,11 +426,11 @@ export const verify2FALogin = async (req: Request, res: Response) => {
     res.cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 });
     res.cookie('accessToken', accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 });
 
-    const mobile = isMobileClient(req);
     res.status(200).json({
       success: true,
       message: '2FA doğrulaması başarılı',
-      ...(mobile ? { accessToken, refreshToken } : {}),
+      accessToken,
+      refreshToken,
       user: {
         id: user._id,
         name: user.name,

@@ -1,5 +1,11 @@
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
 import logger from '@/utils/logger';
+import {
+  clearStoredAuth,
+  getStoredAccessToken,
+  getStoredRefreshToken,
+  updateStoredTokens,
+} from '@/utils/authStorage';
 
 // Next.js rewrites kullanıyorsak relative path kullan, yoksa tam URL
 // Browser'da çalışıyorsa (client-side) relative path kullan (Next.js rewrites devreye girer)
@@ -14,12 +20,6 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 
-const clearStoredUser = () => {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem('user');
-  window.sessionStorage.removeItem('user');
-};
-
 // Axios instance oluştur
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -30,10 +30,17 @@ const apiClient = axios.create({
   timeout: 30000,
 });
 
-// Request interceptor - Token cookie'den otomatik gönderilir (withCredentials:true)
-// Web Storage (localStorage/sessionStorage) kullanılmıyor — XSS koruması
+type RetriableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+// Request interceptor - Cookie + Bearer fallback desteği
 apiClient.interceptors.request.use(
   (config) => {
+    const accessToken = getStoredAccessToken();
+    if (accessToken && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
     return config;
   },
   (error) => {
@@ -47,6 +54,8 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const originalRequest = error.config as RetriableRequestConfig | undefined;
+
     // Network hatası handling...
     if (!error.response) {
       // ... (Keep existing network error logic)
@@ -60,16 +69,59 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // 401 Handling - Simplified
+    // 401 Handling - Cookie bloklansa bile bearer refresh ile toparla
     if (error.response?.status === 401) {
+      const requestUrl = originalRequest?.url || '';
+      const isAuthLoginRequest = requestUrl.includes('/auth/login');
+      const isProfileRequest = requestUrl.includes('/auth/profile');
+      const isRefreshRequest = requestUrl.includes('/auth/refresh-token');
+      const storedRefreshToken = getStoredRefreshToken();
+
+      if (
+        originalRequest &&
+        !originalRequest._retry &&
+        !isAuthLoginRequest &&
+        !isRefreshRequest &&
+        storedRefreshToken
+      ) {
+        originalRequest._retry = true;
+
+        try {
+          const refreshResponse = await apiClient.post('/auth/refresh-token', {
+            refreshToken: storedRefreshToken,
+          });
+
+          const nextAccessToken = refreshResponse.data?.accessToken;
+          const nextRefreshToken = refreshResponse.data?.refreshToken;
+
+          if (nextAccessToken) {
+            updateStoredTokens({
+              accessToken: nextAccessToken,
+              refreshToken: nextRefreshToken,
+            });
+            originalRequest.headers.Authorization = `Bearer ${nextAccessToken}`;
+            return apiClient(originalRequest);
+          }
+        } catch (refreshError) {
+          if (process.env.NODE_ENV === 'development') {
+            logger.warn('Token refresh failed, falling back to login redirect.', refreshError);
+          }
+        }
+      }
+
       if (typeof window !== 'undefined') {
         const isMonitoringPage = window.location.pathname.includes('/admin/monitoring');
         const normalizedPathname = window.location.pathname.replace(/\/$/, '') || '';
         const isLoginPage = normalizedPathname.includes('/admin/login') || normalizedPathname === '/admin';
 
+        // Login sayfasındaki profile probe'u doğal olarak 401 dönebilir
+        if (isLoginPage && isProfileRequest) {
+          return Promise.reject(error);
+        }
+
         // Monitoring ve login sayfalarında isek kullanıcıyı tekrar login'e fırlatmıyoruz
         if (!isMonitoringPage && !isLoginPage) {
-          clearStoredUser();
+          clearStoredAuth();
           window.location.replace('/admin/login');
         }
       }

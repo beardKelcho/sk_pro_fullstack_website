@@ -250,50 +250,17 @@ const defaultServices = [
   },
 ] as const;
 
-const defaultShowcaseProjects = [
-  {
-    type: 'photo' as const,
-    title: 'TRT Tabii Dubai Lansman',
-    category: 'LANSMAN',
-    order: 1,
-    isActive: true,
-  },
-  {
-    type: 'photo' as const,
-    title: '29 Ekim Cumhuriyet Bayramı 100. Yıl Kutlamaları',
-    category: 'KONSER',
-    order: 2,
-    isActive: true,
-  },
-  {
-    type: 'photo' as const,
-    title: 'YouTube Influencer Etkinliği',
-    category: 'LANSMAN',
-    order: 3,
-    isActive: true,
-  },
-  {
-    type: 'photo' as const,
-    title: 'Haliç Kongre Merkezi',
-    category: 'KONGRE',
-    order: 4,
-    isActive: true,
-  },
-  {
-    type: 'photo' as const,
-    title: '2025 Kültür Yolu Festivali',
-    category: 'KONSER',
-    order: 5,
-    isActive: true,
-  },
-  {
-    type: 'photo' as const,
-    title: "19 Mayıs Atatürk'ü Anma Gençlik ve Spor Bayramı",
-    category: 'KONSER',
-    order: 6,
-    isActive: true,
-  },
-] as const;
+const defaultShowcaseProjects: Array<{
+  type: 'photo' | 'video';
+  title: string;
+  category: string;
+  description?: string;
+  coverUrl?: string;
+  imageUrls?: string[];
+  videoUrl?: string;
+  order: number;
+  isActive: boolean;
+}> = [];
 
 const defaultLegacyContact = {
   address: 'Zincirlidere Caddesi No:52/C Şişli/İstanbul',
@@ -341,7 +308,9 @@ const bootstrapPublicContent = async () => {
     console.log('Upserted public services');
 
     await ShowcaseProject.deleteMany({});
-    await ShowcaseProject.insertMany(defaultShowcaseProjects);
+    if (defaultShowcaseProjects.length > 0) {
+      await ShowcaseProject.insertMany(defaultShowcaseProjects);
+    }
     // eslint-disable-next-line no-console
     console.log('Upserted showcase projects');
 

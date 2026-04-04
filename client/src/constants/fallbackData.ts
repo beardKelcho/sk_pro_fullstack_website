@@ -114,47 +114,4 @@ export const fallbackContent: SiteContent = {
   }
 };
 
-export const fallbackProjects: Project[] = [
-  {
-    _id: 'fallback-project-1',
-    type: 'photo',
-    title: 'TRT Tabii Dubai Lansman',
-    category: 'LANSMAN',
-    order: 1,
-  },
-  {
-    _id: 'fallback-project-2',
-    type: 'photo',
-    title: '29 Ekim Cumhuriyet Bayramı 100. Yıl Kutlamaları',
-    category: 'KONSER',
-    order: 2,
-  },
-  {
-    _id: 'fallback-project-3',
-    type: 'photo',
-    title: 'YouTube Influencer Etkinliği',
-    category: 'LANSMAN',
-    order: 3,
-  },
-  {
-    _id: 'fallback-project-4',
-    type: 'photo',
-    title: 'Haliç Kongre Merkezi',
-    category: 'KONGRE',
-    order: 4,
-  },
-  {
-    _id: 'fallback-project-5',
-    type: 'photo',
-    title: '2025 Kültür Yolu Festivali',
-    category: 'KONSER',
-    order: 5,
-  },
-  {
-    _id: 'fallback-project-6',
-    type: 'photo',
-    title: "19 Mayıs Atatürk'ü Anma Gençlik ve Spor Bayramı",
-    category: 'KONSER',
-    order: 6,
-  },
-];
+export const fallbackProjects: Project[] = [];

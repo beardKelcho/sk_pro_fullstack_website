@@ -115,6 +115,10 @@ const Projects: React.FC<ProjectsProps> = ({ initialProjects = [] }) => {
         };
     }, [lightbox, selectedVideo]);
 
+    if (projects.length === 0) {
+        return null;
+    }
+
     // Video hover handlers
     const handleVideoHover = (projectId: string, shouldPlay: boolean) => {
         const video = videoRefs.current.get(projectId);

@@ -41,11 +41,11 @@ jobs:
 
       - name: Test Server
         working-directory: ./server
-        run: npm test
+        run: npm run test:ci
 
       - name: Test Client
         working-directory: ./client
-        run: npm test
+        run: npm run test:ci:stable
   # ============================================
   # STAGING DEPLOYMENT
   # ============================================

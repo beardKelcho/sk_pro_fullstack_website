@@ -6,7 +6,27 @@
 
 describe('Smoke Tests - Kritik Fonksiyonlar', () => {
   const waitForHomeContent = () => {
-    cy.contains(/SK Production/i, { timeout: 20000 }).should('be.visible');
+    cy.get('body', { timeout: 20000 }).should('be.visible');
+    cy.get('[data-testid="site-header"], [data-testid="maintenance-page"], main', {
+      timeout: 30000,
+    }).should('exist');
+  };
+
+  const withPublicSiteGuard = (callback: () => void) => {
+    cy.get('body', { timeout: 20000 }).then(($body) => {
+      const bodyText = $body.text().toLowerCase();
+      const isMaintenanceMode =
+        $body.find('[data-testid="maintenance-page"]').length > 0 ||
+        bodyText.includes('bakimdayiz') ||
+        bodyText.includes('bakımdayız');
+
+      if (isMaintenanceMode) {
+        cy.log('Bakım modu aktif — ilgili smoke adımı atlanıyor');
+        return;
+      }
+
+      callback();
+    });
   };
 
   beforeEach(() => {
@@ -20,69 +40,41 @@ describe('Smoke Tests - Kritik Fonksiyonlar', () => {
 
   it('navigasyon çalışmalı', () => {
     waitForHomeContent();
+    withPublicSiteGuard(() => {
+      cy.get('[data-testid="site-navigation"]', { timeout: 30000 })
+        .should('be.visible');
 
-    cy.get('body', { timeout: 10000 }).then(($body) => {
-      const isMaintenanceMode =
-        $body.find('[data-testid="maintenance-page"]').length > 0 ||
-        $body.text().toLowerCase().includes('maintenance') ||
-        $body.text().toLowerCase().includes('bakım');
+      cy.get('[data-testid="site-navigation"] a')
+        .its('length')
+        .should('be.gte', 4);
 
-      if (isMaintenanceMode) {
-        cy.log('Bakım modu aktif — navigasyon testi atlanıyor');
-        return;
-      }
-    });
+      cy.contains('[data-testid="site-navigation"] a', 'Projeler')
+        .should('have.attr', 'href')
+        .and('include', '#projects');
 
-    cy.get('body').then(($body) => {
-      const hasNavigation =
-        $body.find('nav[role="navigation"], header nav, [role="navigation"]').length > 0;
-
-      if (hasNavigation) {
-        cy.get('nav[role="navigation"], header nav, [role="navigation"]', { timeout: 20000 })
-          .should('exist')
-          .find('a')
-          .should('have.length.greaterThan', 0);
-        return;
-      }
-
-      cy.get('a[href="/#projects"], a[href="#projects"]', { timeout: 20000 }).should('exist');
-      cy.get('a[href="/#contact"], a[href="#contact"]', { timeout: 20000 }).should('exist');
+      cy.contains('[data-testid="site-navigation"] a', 'İletişim')
+        .should('have.attr', 'href')
+        .and('include', '#contact');
     });
   });
 
   it('footer görünmeli', () => {
     waitForHomeContent();
-
-    cy.get('body', { timeout: 10000 }).then(($body) => {
-      const isMaintenanceMode =
-        $body.find('[data-testid="maintenance-page"]').length > 0 ||
-        $body.text().toLowerCase().includes('maintenance') ||
-        $body.text().toLowerCase().includes('bakım');
-
-      if (isMaintenanceMode) {
-        cy.log('Bakım modu aktif — footer testi atlanıyor');
-        return;
-      }
-    });
-
-    cy.get('body').then(($body) => {
-      const hasFooter = $body.find('footer').length > 0;
-
-      if (hasFooter) {
-        cy.get('footer', { timeout: 20000 })
-          .scrollIntoView()
-          .should('be.visible');
-        return;
-      }
-
-      cy.contains(/Çalışma Saatleri|İletişim/i, { timeout: 20000 })
+    withPublicSiteGuard(() => {
+      cy.get('[data-testid="site-footer"]', { timeout: 30000 })
         .scrollIntoView()
+        .should('be.visible');
+
+      cy.contains('[data-testid="site-footer"]', 'İletişim', { timeout: 30000 })
+        .should('be.visible');
+
+      cy.contains('[data-testid="site-footer"]', 'Çalışma Saatleri', { timeout: 30000 })
         .should('be.visible');
     });
   });
 
   it('admin login sayfasına erişilebilmeli', () => {
-    cy.visit('/admin');
+    cy.visit('/admin/login/', { failOnStatusCode: false });
     cy.get('input[name="email"], input#email, input[type="text"][name="email"]', { timeout: 10000 }).should('be.visible');
     cy.get('input[name="password"], input#password, input[type="password"]', { timeout: 10000 }).should('be.visible');
     cy.get('button[type="submit"]', { timeout: 10000 }).should('be.visible');

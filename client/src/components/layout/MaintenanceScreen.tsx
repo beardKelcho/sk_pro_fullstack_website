@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 export default function MaintenanceScreen() {
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black p-4 text-white">
+    <div data-testid="maintenance-page" className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black p-4 text-white">
       <div className="max-w-xl w-full text-center animate-in fade-in slide-in-from-bottom-5 duration-700">
         <div className="mb-12 flex justify-center">
           <div className="relative h-20 w-48">

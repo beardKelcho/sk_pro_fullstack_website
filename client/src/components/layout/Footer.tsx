@@ -145,7 +145,7 @@ const Footer = () => {
   }, []);
 
   return (
-    <footer className="relative z-20 border-t border-white/10 bg-black/80 py-16 text-gray-300 backdrop-blur-lg">
+    <footer data-testid="site-footer" className="relative z-20 border-t border-white/10 bg-black/80 py-16 text-gray-300 backdrop-blur-lg">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-6">

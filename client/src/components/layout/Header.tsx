@@ -28,6 +28,7 @@ const Header: React.FC = () => {
 
   return (
     <header
+      data-testid="site-header"
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         isScrolled ? 'bg-white/90 shadow-lg backdrop-blur-md dark:bg-dark-background/90' : 'bg-transparent'
       }`}
@@ -46,7 +47,7 @@ const Header: React.FC = () => {
             <span className="text-xl font-bold text-[#0A1128] dark:text-white">SK Production</span>
           </Link>
 
-          <nav role="navigation" className="hidden md:flex items-center space-x-8">
+          <nav data-testid="site-navigation" role="navigation" className="hidden md:flex items-center space-x-8">
             {MENU_ITEMS.map((item) => (
               <Link
                 key={item.href}

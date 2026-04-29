@@ -177,7 +177,7 @@ jobs:
           npx wait-on http://127.0.0.1:3000 --timeout 120000
 
       - name: Run Cypress
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: client
           install: false

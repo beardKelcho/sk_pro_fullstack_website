@@ -7,8 +7,11 @@ on:
       - develop
   workflow_dispatch:
 
+env:
+  NODE_VERSION: '20.x'
+
 jobs:
-  on-success:
+  predeploy-checks:
     name: Build, Lint and Test
     runs-on: ubuntu-latest
     steps:
@@ -17,7 +20,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Install Server Dependencies
         working-directory: ./server
@@ -27,11 +32,11 @@ jobs:
         working-directory: ./client
         run: npm install --legacy-peer-deps
 
-      - name: Typecheck Server
+      - name: Build Server
         working-directory: ./server
         run: npm run build
 
-      - name: Typecheck Client
+      - name: Build Client
         working-directory: ./client
         run: npm run build
 
@@ -50,7 +55,7 @@ jobs:
   # STAGING DEPLOYMENT
   # ============================================
   deploy-staging:
-    needs: [on-success]
+    needs: [predeploy-checks]
     if: ${{ github.ref == 'refs/heads/develop' }}
     name: Deploy to Staging
     runs-on: ubuntu-latest
@@ -81,7 +86,7 @@ jobs:
   # PRODUCTION DEPLOYMENT
   # ============================================
   deploy-production:
-    needs: [on-success]
+    needs: [predeploy-checks]
     if: ${{ github.ref == 'refs/heads/main' }}
     name: Deploy to Production
     runs-on: ubuntu-latest
